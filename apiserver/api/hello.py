@@ -1,10 +1,8 @@
-from flask import Blueprint, request, jsonify
-from utils.request_utils import dataschema
-from voluptuous import Required, Schema
-import subprocess
+from flask import Blueprint
 
-app = Blueprint("core", __name__)
-        
+app = Blueprint("hello", __name__)
+
+
 @app.route("/", methods=["GET"])
 def hello_world():
     
