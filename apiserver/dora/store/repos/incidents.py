@@ -1,0 +1,2 @@
+class IncidentsRepoService:
+    pass
