@@ -3,7 +3,7 @@ from os import getenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base
 
-from apiserver.dora.utils.log import LOG
+from dora.utils.log import LOG
 
 DB_HOST = getenv("DORA_DB_HOST")
 DB_PORT = getenv("DORA_DB_PORT")
