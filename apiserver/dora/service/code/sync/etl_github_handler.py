@@ -16,7 +16,9 @@ from dora.store.models.code import (
     PullRequestState,
     PullRequest,
     PullRequestCommit,
-    PullRequestEvent, PullRequestEventType, )
+    PullRequestEvent,
+    PullRequestEventType,
+)
 from dora.store.repos.code import CodeRepoService
 from dora.utils.time import time_now
 
@@ -223,7 +225,6 @@ class GithubETLHandler:
             provider=UserIdentityProvider.GITHUB.value,
             merge_commit_sha=merge_commit_sha,
         )
-
 
     def _get_merge_commit_sha(
         self, raw_data: Dict, state: PullRequestState

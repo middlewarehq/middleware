@@ -2,7 +2,12 @@ import re
 from datetime import datetime
 from typing import List, Set, Dict, Optional
 
-from dora.store.models.code import OrgRepo, PullRequest, PullRequestRevertPRMapping, PullRequestRevertPRMappingActorType
+from dora.store.models.code import (
+    OrgRepo,
+    PullRequest,
+    PullRequestRevertPRMapping,
+    PullRequestRevertPRMappingActorType,
+)
 from dora.store.repos.code import CodeRepoService
 from dora.utils.time import time_now
 
@@ -11,7 +16,12 @@ class ReverPRsGitHubSync:
     MAX_RETRIES = 3
     RETRY_DELAY_SECONDS = 2
 
-    def __init__(self, org_repo: OrgRepo, prs: List[PullRequest], code_repo_service: CodeRepoService):
+    def __init__(
+        self,
+        org_repo: OrgRepo,
+        prs: List[PullRequest],
+        code_repo_service: CodeRepoService,
+    ):
         self.org_repo = org_repo
         self.repo_id = str(org_repo.id)
         self.org_name = org_repo.org_name
@@ -40,9 +50,8 @@ class ReverPRsGitHubSync:
 
         return list(revert_pr_mappings)
 
-
     def _get_revert_pr_mapping_for_original_prs(
-            self, prs: List[PullRequest]
+        self, prs: List[PullRequest]
     ) -> List[PullRequestRevertPRMapping]:
         """
         This function takes a list of PRs and for each PR it tries to
@@ -102,7 +111,7 @@ class ReverPRsGitHubSync:
         return revert_pr_mappings
 
     def _get_revert_pr_mapping_for_revert_prs(
-            self, prs: List[PullRequest]
+        self, prs: List[PullRequest]
     ) -> List[PullRequestRevertPRMapping]:
         """
         This function takes a list of pull requests and for each pull request
@@ -133,7 +142,9 @@ class ReverPRsGitHubSync:
         if len(revert_pr_numbers) == 0:
             return []
 
-        reverted_prs: List[PullRequest] = self.code_repo_service.get_reverted_prs_by_numbers(
+        reverted_prs: List[
+            PullRequest
+        ] = self.code_repo_service.get_reverted_prs_by_numbers(
             list(repo_ids), revert_pr_numbers
         )
 

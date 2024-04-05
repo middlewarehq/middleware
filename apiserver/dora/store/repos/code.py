@@ -5,11 +5,15 @@ from sqlalchemy import or_
 from sqlalchemy.orm import defer
 
 from dora.store import rollback_on_exc, session
-from dora.store.models.code import PullRequest, PullRequestEvent, OrgRepo, PullRequestRevertPRMapping
+from dora.store.models.code import (
+    PullRequest,
+    PullRequestEvent,
+    OrgRepo,
+    PullRequestRevertPRMapping,
+)
 
 
 class CodeRepoService:
-
     @rollback_on_exc
     def get_repo_by_id(self, repo_id: str) -> Optional[OrgRepo]:
         return session.query(OrgRepo).filter(OrgRepo.id == repo_id).one_or_none()
@@ -51,7 +55,7 @@ class CodeRepoService:
 
     @rollback_on_exc
     def get_prs_by_head_branch_match_strings(
-            self, repo_ids: List[str], match_strings: List[str]
+        self, repo_ids: List[str], match_strings: List[str]
     ) -> List[PullRequest]:
         query = (
             session.query(PullRequest)
@@ -74,7 +78,7 @@ class CodeRepoService:
 
     @rollback_on_exc
     def get_reverted_prs_by_numbers(
-            self, repo_ids: List[str], numbers: List[str]
+        self, repo_ids: List[str], numbers: List[str]
     ) -> List[PullRequest]:
         query = (
             session.query(PullRequest)
@@ -92,7 +96,7 @@ class CodeRepoService:
 
     @rollback_on_exc
     def save_revert_pr_mappings(
-            self, revert_pr_mappings: List[PullRequestRevertPRMapping]
+        self, revert_pr_mappings: List[PullRequestRevertPRMapping]
     ):
         [session.merge(revert_pr_map) for revert_pr_map in revert_pr_mappings]
         session.commit()
