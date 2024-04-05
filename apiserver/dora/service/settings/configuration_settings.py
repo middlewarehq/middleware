@@ -1,7 +1,8 @@
 from typing import Dict, Optional, List
-from dora.api.resources.settings_resource import adapt_configuration_settings_response
-from dora.service.settings.default_settings_data import get_default_setting_data
 
+from dora.utils.time import time_now
+
+from dora.service.settings.default_settings_data import get_default_setting_data
 from dora.service.settings.models import (
     ConfigurationSettings,
     ExcludedPRsSetting,
@@ -14,7 +15,6 @@ from dora.store.models.incidents.enums import IncidentSource, IncidentType
 from dora.store.models.settings.configuration_settings import SettingType, Settings
 from dora.store.models.settings.enums import EntityType
 from dora.store.repos.settings import SettingsRepoService
-from dora.utils.time import time_now
 
 
 class SettingsService:

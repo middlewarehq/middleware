@@ -1,11 +1,10 @@
+from dora.store import Base
 from sqlalchemy import (
     Column,
     String,
     DateTime,
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
-
-from dora.store import Base
 
 
 class Organization(Base):

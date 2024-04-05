@@ -1,3 +1,5 @@
+from dora.store.models import EntityType
+
 from dora.service.settings.models import (
     ConfigurationSettings,
     IncidentSettings,
@@ -5,7 +7,6 @@ from dora.service.settings.models import (
     IncidentTypesSetting,
     IncidentSourcesSetting,
 )
-from dora.store.models import EntityType
 
 
 def adapt_configuration_settings_response(config_settings: ConfigurationSettings):

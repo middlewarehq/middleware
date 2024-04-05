@@ -1,5 +1,6 @@
 import uuid
 
+from dora.store import Base
 from sqlalchemy import (
     Column,
     String,
@@ -9,8 +10,6 @@ from sqlalchemy import (
     Boolean,
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
-
-from dora.store import Base
 
 
 class Team(Base):

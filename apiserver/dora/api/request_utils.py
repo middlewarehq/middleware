@@ -1,10 +1,10 @@
-from werkzeug.exceptions import BadRequest
-from flask import request
 from functools import wraps
 from uuid import UUID
 
+from flask import request
 from stringcase import snakecase
 from voluptuous import Invalid
+from werkzeug.exceptions import BadRequest
 
 
 def queryschema(schema):

@@ -1,3 +1,4 @@
+from dora.store import Base
 from sqlalchemy import (
     Column,
     String,
@@ -10,7 +11,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID, ARRAY, JSONB, ENUM
 from sqlalchemy.orm import relationship
 
-from dora.store import Base
 from dora.store.models.incidents import IncidentSource
 
 

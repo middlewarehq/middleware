@@ -1,3 +1,4 @@
+from dora.store import Base
 from sqlalchemy import (
     Column,
     String,
@@ -8,7 +9,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY, JSONB, ENUM
 
-from dora.store import Base
 from dora.store.models.incidents.enums import IncidentType, IncidentBookmarkType
 
 

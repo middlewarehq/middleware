@@ -1,9 +1,9 @@
 import uuid
 
+from dora.store import Base
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ENUM
 
-from dora.store import Base
 from dora.store.models.code.workflows.enums import (
     RepoWorkflowType,
     RepoWorkflowProviders,

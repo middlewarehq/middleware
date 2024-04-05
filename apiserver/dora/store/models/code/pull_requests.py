@@ -1,9 +1,10 @@
 from datetime import datetime
+
 import pytz
+from dora.store import Base
 from sqlalchemy import Column, String, DateTime, ForeignKey, Integer, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
-from dora.store import Base
 from dora.store.models.code.enums import (
     PullRequestEventType,
     PullRequestState,
