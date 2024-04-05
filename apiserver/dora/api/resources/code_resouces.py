@@ -36,7 +36,7 @@ def adapt_pull_request(
         "reviewers": [
             adapt_user_info(r, username_user_map) for r in (pr.reviewers or [])
         ],
-        "pr_link": pr.url,
+        "url": pr.url,
         "base_branch": pr.base_branch,
         "head_branch": pr.head_branch,
         "created_at": pr.created_at.isoformat(),
