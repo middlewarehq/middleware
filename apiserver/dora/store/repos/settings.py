@@ -7,8 +7,8 @@ from dora.store.models import (
     Settings,
     SettingType,
     EntityType,
+    Users,
 )
-from dora.store.models import Users
 from dora.utils.time import time_now
 
 

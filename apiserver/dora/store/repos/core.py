@@ -1,8 +1,7 @@
 from typing import Optional
 
-from dora.store.models.core import Organization, Team, Users
-
 from dora.store import session, rollback_on_exc
+from dora.store.models.core import Organization, Team, Users
 
 
 class CoreRepoService:

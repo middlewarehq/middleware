@@ -1,5 +1,5 @@
-from dora.store.models.incidents.enums import IncidentSource, IncidentType
-from dora.store.models.settings.configuration_settings import SettingType
+from dora.store.models.incidents import IncidentSource, IncidentType
+from dora.store.models.settings import SettingType
 
 
 MIN_CYCLE_TIME_THRESHOLD = 3600

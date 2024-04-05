@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List
-from dora.store.models.incidents import IncidentSource, IncidentType
-
 
 from dora.store.models import EntityType
+from dora.store.models.incidents.enums import IncidentSource, IncidentType
 
 
 @dataclass
