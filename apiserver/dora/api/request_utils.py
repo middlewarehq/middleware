@@ -7,7 +7,7 @@ from stringcase import snakecase
 from voluptuous import Invalid
 
 
-def queryschema(app, schema):
+def queryschema(schema):
     def decorator(f):
         @wraps(f)
         def new_func(*args, **kwargs):
@@ -44,7 +44,7 @@ def boolean_validator(s: str):
         raise ValueError("Not a boolean")
 
 
-def dataschema(app, schema):
+def dataschema(schema):
     def decorator(f):
         @wraps(f)
         def new_func(*args, **kwargs):

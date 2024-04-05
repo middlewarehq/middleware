@@ -19,7 +19,6 @@ app = Blueprint("settings", __name__)
 
 @app.route("/teams/<team_id>/settings", methods={"GET"})
 @queryschema(
-    app,
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
@@ -57,7 +56,6 @@ def get_team_settings(team_id: str, setting_type: SettingType, setter_id: str):
 
 @app.route("/teams/<team_id>/settings", methods={"PUT"})
 @dataschema(
-    app,
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
@@ -91,7 +89,6 @@ def put_team_settings(
 
 @app.route("/users/<user_id>/settings", methods={"GET"})
 @queryschema(
-    app,
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
@@ -128,7 +125,6 @@ def get_user_settings(user_id: str, setting_type: SettingType, setter_id: str):
 
 @app.route("/users/<user_id>/settings", methods={"PUT"})
 @dataschema(
-    app,
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
@@ -163,7 +159,6 @@ def put_user_settings(
 
 @app.route("/orgs/<org_id>/settings", methods={"GET"})
 @queryschema(
-    app,
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
@@ -200,7 +195,6 @@ def get_org_settings(org_id: str, setting_type: SettingType, setter_id: str):
 
 @app.route("/orgs/<org_id>/settings", methods={"PUT"})
 @dataschema(
-    app,
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
