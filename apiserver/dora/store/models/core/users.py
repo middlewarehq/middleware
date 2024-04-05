@@ -1,4 +1,3 @@
-from dora.store import Base
 from sqlalchemy import (
     Column,
     String,
@@ -8,6 +7,8 @@ from sqlalchemy import (
     Boolean,
 )
 from sqlalchemy.dialects.postgresql import UUID
+
+from dora.store import Base
 
 
 class Users(Base):

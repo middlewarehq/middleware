@@ -1,10 +1,11 @@
 from datetime import timedelta
 from typing import List
 
+from werkzeug.exceptions import NotFound, BadRequest
+
 from dora.store.models.core import Organization, Team, Users
 from dora.store.repos.core import CoreRepoService
 from dora.utils.time import Interval
-from werkzeug.exceptions import NotFound, BadRequest
 
 
 class QueryValidator:

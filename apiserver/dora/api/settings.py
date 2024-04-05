@@ -1,16 +1,14 @@
 from typing import Dict
 
-from dora.service.query_validator import get_query_validator
-from dora.store.models import Organization, Users
-from dora.store.models import SettingType, EntityType
 from flask import Blueprint
 from voluptuous import Required, Schema, Coerce, All
 from werkzeug.exceptions import BadRequest, NotFound
 
 from dora.api.request_utils import dataschema, queryschema, uuid_validator
 from dora.api.resources.settings_resource import adapt_configuration_settings_response
-from dora.service.settings.configuration_settings import get_settings_service
-from dora.service.settings.setting_type_validator import settings_type_validator
+from dora.service.query_validator import get_query_validator
+from dora.service.settings import get_settings_service, settings_type_validator
+from dora.store.models import Organization, Users, SettingType, EntityType
 
 app = Blueprint("settings", __name__)
 

@@ -1,9 +1,9 @@
 from enum import Enum
 
-from dora.store import Base
 from sqlalchemy import Column, DateTime, ForeignKey, func, Boolean
 from sqlalchemy.dialects.postgresql import UUID, ENUM, JSONB
 
+from dora.store import Base
 from dora.store.models.settings.enums import EntityType
 
 """

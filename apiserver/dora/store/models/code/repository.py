@@ -1,10 +1,10 @@
 import uuid
 from typing import Tuple
 
-from dora.store import Base
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
+from dora.store import Base
 from dora.store.models.code.enums import (
     CodeProvider,
     BookmarkType,

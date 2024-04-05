@@ -1,14 +1,15 @@
 from typing import Optional, List
 
+from sqlalchemy import and_
+
 from dora.store import session, rollback_on_exc
 from dora.store.models import (
     Settings,
     SettingType,
     EntityType,
+    Users,
 )
-from dora.store.models import Users
 from dora.utils.time import time_now
-from sqlalchemy import and_
 
 
 class SettingsRepoService:

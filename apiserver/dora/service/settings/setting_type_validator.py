@@ -1,6 +1,6 @@
 from werkzeug.exceptions import BadRequest
 
-from dora.store.models.settings.configuration_settings import SettingType
+from dora.store.models.settings import SettingType
 
 
 def settings_type_validator(setting_type: str):
