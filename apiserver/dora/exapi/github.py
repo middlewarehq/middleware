@@ -9,6 +9,7 @@ from github.GithubException import RateLimitExceededException
 from github.Organization import Organization as GithubOrganization
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
+from github.PullRequestReview import PullRequestReview as GithubPullRequestReview
 from github.Repository import Repository as GithubRepository
 
 from dora.exapi.models.github import GitHubContributor
@@ -25,12 +26,25 @@ class GithubApiService:
     def __init__(self, access_token: str):
         self._token = access_token
         self._g = Github(self._token, per_page=PAGE_SIZE)
+        self.base_url = "https://api.github.com"
+        self.headers = {"Authorization": f"Bearer {self._token}"}
 
     @contextlib.contextmanager
     def temp_config(self, per_page: int = 30):
         self._g.per_page = per_page
         yield
         self._g.per_page = PAGE_SIZE
+
+    def check_pat(self) -> bool:
+        """
+        Checks if PAT is Valid
+        :returns:
+        :raises HTTPError: If the request fails and status code is not 200
+        """
+        url = f"{self.base_url}/personal_access_tokens/self"
+
+        response = requests.get(url, headers=self.headers)
+        return response.status_code == 200
 
     def get_org_list(self) -> [GithubOrganization]:
         try:
@@ -86,7 +100,9 @@ class GithubApiService:
     def get_pr_commits(self, pr: GithubPullRequest):
         return pr.get_commits()
 
-    def get_pr_reviews(self, pr: GithubPullRequest):
+    def get_pr_reviews(
+        self, pr: GithubPullRequest
+    ) -> GithubPaginatedList[GithubPullRequestReview]:
         return pr.get_reviews()
 
     def get_contributors(
@@ -120,14 +136,11 @@ class GithubApiService:
             )
 
         def _fetch_contributors(page: int = 0):
-            github_url = (
-                f"https://api.github.com/repos/{org_login}/{repo_name}/contributors"
-            )
-            headers = {}
-            if self._token:
-                headers = {"Authorization": f"Bearer {self._token}"}
+            github_url = f"{self.base_url}/repos/{org_login}/{repo_name}/contributors"
             query_params = dict(per_page=PAGE_SIZE, page=page)
-            response = requests.get(github_url, headers=headers, params=query_params)
+            response = requests.get(
+                github_url, headers=self.headers, params=query_params
+            )
             assert response.status_code == HTTPStatus.OK
             return response.json()
 
@@ -175,12 +188,11 @@ class GithubApiService:
             )
 
         def _fetch_members(page: int = 0):
-            github_url = f"https://api.github.com/orgs/{org_login}/members"
-            headers = {}
-            if self._token:
-                headers = {"Authorization": f"Bearer {self._token}"}
+            github_url = f"{self.base_url}/orgs/{org_login}/members"
             query_params = dict(per_page=PAGE_SIZE, page=page)
-            response = requests.get(github_url, headers=headers, params=query_params)
+            response = requests.get(
+                github_url, headers=self.headers, params=query_params
+            )
             assert response.status_code == HTTPStatus.OK
             return response.json()
 
@@ -214,14 +226,15 @@ class GithubApiService:
         page = 1
 
         def _fetch_workflow_runs(page: int = 1):
-            github_url = f"https://api.github.com/repos/{org_login}/{repo_name}/actions/workflows/{workflow_id}/runs"
-            headers = {"Authorization": f"Bearer {self._token}"}
+            github_url = f"{self.base_url}/repos/{org_login}/{repo_name}/actions/workflows/{workflow_id}/runs"
             query_params = dict(
                 per_page=PAGE_SIZE,
                 page=page,
                 created=f"created:>={bookmark.isoformat()}",
             )
-            response = requests.get(github_url, headers=headers, params=query_params)
+            response = requests.get(
+                github_url, headers=self.headers, params=query_params
+            )
 
             if response.status_code == HTTPStatus.NOT_FOUND:
                 LOG.error(
