@@ -9,6 +9,11 @@ from github.PullRequestReview import PullRequestReview as GithubPullRequestRevie
 from github.Repository import Repository as GithubRepository
 
 from dora.exapi.github import GithubApiService
+from dora.service.code.sync.etl_code_factory import ProviderETLHandler
+from dora.service.code.sync.revert_prs_github_sync import (
+    RevertPRsGitHubSyncHandler,
+    get_revert_prs_github_sync_handler,
+)
 from dora.store.models import UserIdentityProvider
 from dora.store.models.code import (
     OrgRepo,
@@ -18,23 +23,29 @@ from dora.store.models.code import (
     PullRequestCommit,
     PullRequestEvent,
     PullRequestEventType,
+    PullRequestRevertPRMapping,
 )
 from dora.store.repos.code import CodeRepoService
+from dora.store.repos.core import CoreRepoService
 from dora.utils.time import time_now
 
 PR_PROCESSING_CHUNK_SIZE = 100
 
 
-class GithubETLHandler:
+class GithubETLHandler(ProviderETLHandler):
     def __init__(
         self,
         org_id: str,
         github_api_service: GithubApiService,
         code_repo_service: CodeRepoService,
+        github_revert_pr_sync_handler: RevertPRsGitHubSyncHandler,
     ):
         self.org_id: str = org_id
         self._api: GithubApiService = github_api_service
         self.code_repo_service: CodeRepoService = code_repo_service
+        self.github_revert_pr_sync_handler: RevertPRsGitHubSyncHandler = (
+            github_revert_pr_sync_handler
+        )
         self.provider: str = UserIdentityProvider.GITHUB.value
 
     def check_pat_validity(self) -> bool:
@@ -65,7 +76,7 @@ class GithubETLHandler:
 
     def get_repo_pull_requests_data(
         self, org_repo: OrgRepo, bookmark: Bookmark
-    ) -> None:
+    ) -> Tuple[List[PullRequest], List[PullRequestCommit], List[PullRequestEvent]]:
         """
         This method returns all pull requests, their Commits and Events of a repo.
         :param org_repo: OrgRepo object to get pull requests for
@@ -111,7 +122,7 @@ class GithubETLHandler:
 
         if not filtered_prs:
             print("Nothing to process 🎉")
-            return
+            return [], [], []
 
         pull_requests: List[PullRequest] = []
         pr_commits: List[PullRequestCommit] = []
@@ -158,6 +169,11 @@ class GithubETLHandler:
         # )
 
         return pr_model, pr_events_model_list, pr_commits_model_list
+
+    def get_revert_prs_mapping(
+        self, prs: List[PullRequest]
+    ) -> List[PullRequestRevertPRMapping]:
+        return self.github_revert_pr_sync_handler(prs)
 
     def _process_github_repo(
         self, org_repos: List[OrgRepo], github_repo: GithubRepository
@@ -317,3 +333,23 @@ class GithubETLHandler:
         return datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%SZ").astimezone(
             tz=pytz.UTC
         )
+
+
+def get_github_etl_handler(org_id: str) -> GithubETLHandler:
+    def _get_access_token():
+        core_repo_service = CoreRepoService()
+        access_token = core_repo_service.get_access_token(
+            org_id, UserIdentityProvider.GITHUB
+        )
+        if not access_token:
+            raise Exception(
+                f"Access token not found for org {org_id} and provider {UserIdentityProvider.GITHUB.value}"
+            )
+        return access_token
+
+    return GithubETLHandler(
+        org_id,
+        GithubApiService(_get_access_token()),
+        CodeRepoService(),
+        get_revert_prs_github_sync_handler(),
+    )

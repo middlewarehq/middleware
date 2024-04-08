@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import List, Set, Dict, Optional
 
 from dora.store.models.code import (
-    OrgRepo,
     PullRequest,
     PullRequestRevertPRMapping,
     PullRequestRevertPRMappingActorType,
@@ -12,28 +11,21 @@ from dora.store.repos.code import CodeRepoService
 from dora.utils.time import time_now
 
 
-class ReverPRsGitHubSync:
-    MAX_RETRIES = 3
-    RETRY_DELAY_SECONDS = 2
-
+class RevertPRsGitHubSyncHandler:
     def __init__(
         self,
-        org_repo: OrgRepo,
-        prs: List[PullRequest],
         code_repo_service: CodeRepoService,
     ):
-        self.org_repo = org_repo
-        self.repo_id = str(org_repo.id)
-        self.org_name = org_repo.org_name
-        self.repo_name = org_repo.name
-        self.prs = prs
         self.code_repo_service = code_repo_service
 
-    def process_revert_prs(self):
+    def __call__(self, *args, **kwargs):
+        return self.process_revert_prs(*args, **kwargs)
+
+    def process_revert_prs(self, prs: List[PullRequest]) -> List[PullRequestRevertPRMapping]:
         revert_prs: List[PullRequest] = []
         original_prs: List[PullRequest] = []
 
-        for pr in self.prs:
+        for pr in prs:
             pr_number = (
                 self._get_revert_pr_number(pr.head_branch) if pr.head_branch else None
             )
@@ -185,3 +177,7 @@ class ReverPRsGitHubSync:
             return pr_num
         else:
             return None
+
+
+def get_revert_prs_github_sync_handler() -> RevertPRsGitHubSyncHandler:
+    return RevertPRsGitHubSyncHandler(CodeRepoService())
