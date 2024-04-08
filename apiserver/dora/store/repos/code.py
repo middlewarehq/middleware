@@ -10,10 +10,68 @@ from dora.store.models.code import (
     PullRequestEvent,
     OrgRepo,
     PullRequestRevertPRMapping,
+    PullRequestCommit,
+    Bookmark,
 )
 
 
 class CodeRepoService:
+    @rollback_on_exc
+    def get_active_org_repos(self, org_id: str) -> List[OrgRepo]:
+        return (
+            session.query(OrgRepo)
+            .filter(OrgRepo.org_id == org_id, OrgRepo.is_active.is_(True))
+            .all()
+        )
+
+    @rollback_on_exc
+    def update_org_repos(self, org_repos: List[OrgRepo]):
+        [session.merge(org_repo) for org_repo in org_repos]
+        session.commit()
+
+    @rollback_on_exc
+    def save_pull_requests_data(
+        self,
+        pull_requests: List[PullRequest],
+        pull_request_commits: List[PullRequestCommit],
+        pull_request_events: List[PullRequestEvent],
+    ):
+        [session.merge(pull_request) for pull_request in pull_requests]
+        [
+            session.merge(pull_request_commit)
+            for pull_request_commit in pull_request_commits
+        ]
+        [
+            session.merge(pull_request_event)
+            for pull_request_event in pull_request_events
+        ]
+        session.commit()
+
+    @rollback_on_exc
+    def save_revert_pr_mappings(
+        self, revert_pr_mappings: List[PullRequestRevertPRMapping]
+    ):
+        [session.merge(revert_pr_map) for revert_pr_map in revert_pr_mappings]
+        session.commit()
+
+    @rollback_on_exc
+    def get_org_repo_bookmark(self, org_repo: OrgRepo, bookmark_type):
+        return (
+            session.query(Bookmark)
+            .filter(
+                and_(
+                    Bookmark.repo_id == org_repo.id,
+                    Bookmark.type == bookmark_type.value,
+                )
+            )
+            .one_or_none()
+        )
+
+    @rollback_on_exc
+    def update_org_repo_bookmark(self, bookmark: Bookmark):
+        session.merge(bookmark)
+        session.commit()
+
     @rollback_on_exc
     def get_repo_by_id(self, repo_id: str) -> Optional[OrgRepo]:
         return session.query(OrgRepo).filter(OrgRepo.id == repo_id).one_or_none()

@@ -1,6 +1,8 @@
 import uuid
+from datetime import datetime
 from typing import Tuple
 
+import pytz
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
@@ -85,13 +87,18 @@ class Bookmark(Base):
     )
 
 
-class BookmarkPullRequestRevertPRMapping(Base):
-    __tablename__ = "BookmarkPullRequestRevertPRMapping"
-    repo_id = Column(
-        UUID(as_uuid=True), ForeignKey("OrgRepo.id"), primary_key=True, nullable=False
-    )
-    bookmark = Column(String, nullable=False)
+class BookmarkMergeToDeployBroker(Base):
+    __tablename__ = "BookmarkMergeToDeployBroker"
+
+    repo_id = Column(UUID(as_uuid=True), primary_key=True)
+    bookmark = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+    @property
+    def bookmark_date(self):
+        if not self.bookmark:
+            return None
+        return datetime.fromisoformat(self.bookmark).astimezone(tz=pytz.UTC)
