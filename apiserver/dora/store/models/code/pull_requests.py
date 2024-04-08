@@ -124,23 +124,6 @@ class PullRequestCommit(Base):
     )
 
 
-class BookmarkMergeToDeployBroker(Base):
-    __tablename__ = "BookmarkMergeToDeployBroker"
-
-    repo_id = Column(UUID(as_uuid=True), primary_key=True)
-    bookmark = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
-
-    @property
-    def bookmark_date(self):
-        if not self.bookmark:
-            return None
-        return datetime.fromisoformat(self.bookmark).astimezone(tz=pytz.UTC)
-
-
 class PullRequestRevertPRMapping(Base):
     __tablename__ = "PullRequestRevertPRMapping"
 
