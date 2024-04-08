@@ -65,3 +65,23 @@ class SettingsRepoService:
         session.merge(setting)
         session.commit()
         return setting
+
+    @rollback_on_exc
+    def get_settings(
+        self,
+        entity_id: str,
+        entity_type: EntityType,
+        setting_types: List[SettingType],
+    ) -> Optional[Settings]:
+        return (
+            session.query(Settings)
+            .filter(
+                and_(
+                    Settings.setting_type.in_(setting_types),
+                    Settings.entity_type == entity_type,
+                    Settings.entity_id == entity_id,
+                    Settings.is_deleted == False,
+                )
+            )
+            .all()
+        )
