@@ -9,7 +9,7 @@ from github.PullRequestReview import PullRequestReview as GithubPullRequestRevie
 from github.Repository import Repository as GithubRepository
 
 from dora.exapi.github import GithubApiService
-from dora.service.code.sync.etl_code_factory import ProviderETLHandler
+from dora.service.code.sync.etl_provider_handler import ProviderETLHandler
 from dora.service.code.sync.revert_prs_github_sync import (
     RevertPRsGitHubSyncHandler,
     get_revert_prs_github_sync_handler,
@@ -86,9 +86,9 @@ class GithubETLHandler(ProviderETLHandler):
         github_repo: GithubRepository = self._api.get_repo(
             org_repo.org_name, org_repo.name
         )
-        github_pull_requests: GithubPaginatedList[
-            GithubPullRequest
-        ] = self._api.get_pull_requests(github_repo)
+        github_pull_requests: GithubPaginatedList = self._api.get_pull_requests(
+            github_repo
+        )
 
         prs_to_process = []
         bookmark_time = datetime.fromisoformat(bookmark.bookmark)
