@@ -86,7 +86,7 @@ class GithubApiService:
 
     def get_pull_requests(
         self, repo: GithubRepository, state="all", sort="updated", direction="desc"
-    ) -> GithubPaginatedList:
+    ) -> GithubPaginatedList[GithubPullRequest]:
         return repo.get_pulls(state=state, sort=sort, direction=direction)
 
     def get_raw_prs(self, prs: [GithubPullRequest]):
