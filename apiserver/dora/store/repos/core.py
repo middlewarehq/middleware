@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from sqlalchemy import and_
 
@@ -43,6 +43,16 @@ class CoreRepoService:
     @rollback_on_exc
     def get_user(self, user_id) -> Optional[Users]:
         return session.query(Users).filter(Users.id == user_id).one_or_none()
+
+    @rollback_on_exc
+    def get_org_integrations_for_names(self, org_id: str, provider_names: List[str]):
+        return (
+            session.query(Integration)
+            .filter(
+                and_(Integration.org_id == org_id, Integration.name.in_(provider_names))
+            )
+            .all()
+        )
 
     @rollback_on_exc
     def get_access_token(self, org_id, provider: UserIdentityProvider) -> Optional[str]:
