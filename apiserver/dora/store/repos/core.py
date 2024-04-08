@@ -54,10 +54,6 @@ class CoreRepoService:
             .one_or_none()
         )
 
-        if not user_identity:
+        if not user_identity or not user_identity.access_token_enc_chunks:
             return None
-
-        if user_identity.access_token_enc_chunks:
-            return self._crypto.decrypt_chunks(user_identity.access_token_enc_chunks)
-
-        return None
+        return self._crypto.decrypt_chunks(user_identity.access_token_enc_chunks)
