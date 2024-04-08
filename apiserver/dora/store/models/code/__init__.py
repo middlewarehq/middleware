@@ -11,7 +11,6 @@ from .pull_requests import (
     PullRequest,
     PullRequestEvent,
     PullRequestCommit,
-    BookmarkMergeToDeployBroker,
     PullRequestRevertPRMapping,
 )
 from .repository import (
@@ -19,7 +18,7 @@ from .repository import (
     TeamRepos,
     RepoSyncLogs,
     Bookmark,
-    BookmarkPullRequestRevertPRMapping,
+    BookmarkMergeToDeployBroker,
 )
 from .workflows import (
     RepoWorkflow,
