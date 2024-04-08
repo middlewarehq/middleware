@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Set
 
 import pytz
 from github.PaginatedList import PaginatedList as GithubPaginatedList
@@ -86,9 +86,9 @@ class GithubETLHandler(ProviderETLHandler):
         github_repo: GithubRepository = self._api.get_repo(
             org_repo.org_name, org_repo.name
         )
-        github_pull_requests: GithubPaginatedList = self._api.get_pull_requests(
-            github_repo
-        )
+        github_pull_requests: GithubPaginatedList[
+            GithubPullRequest
+        ] = self._api.get_pull_requests(github_repo)
 
         prs_to_process = []
         bookmark_time = datetime.fromisoformat(bookmark.bookmark)
@@ -127,7 +127,7 @@ class GithubETLHandler(ProviderETLHandler):
         pull_requests: List[PullRequest] = []
         pr_commits: List[PullRequestCommit] = []
         pr_events: List[PullRequestEvent] = []
-        prs_added = set()
+        prs_added: Set[int] = set()
 
         for github_pr in filtered_prs:
             if github_pr.number in prs_added:
@@ -141,27 +141,34 @@ class GithubETLHandler(ProviderETLHandler):
             pr_commits += pr_commit_models
             prs_added.add(github_pr.number)
 
+        sorted(pull_requests, key=lambda x: x.state_changed_at)
+        return pull_requests, pr_commits, pr_events
+
     def process_pr(
         self, repo_id: str, pr: GithubPullRequest
     ) -> Tuple[PullRequest, List[PullRequestEvent], List[PullRequestCommit]]:
         pr_model: Optional[PullRequest] = self.code_repo_service.get_repo_pr_by_number(
             repo_id, pr.number
         )
-        pr_event_model_list = self.code_repo_service.get_pr_events(pr_model)
-        pr_commits_model_list = []
+        pr_event_model_list: List[
+            PullRequestEvent
+        ] = self.code_repo_service.get_pr_events(pr_model)
+        pr_commits_model_list: List = []
 
         reviews: List[GithubPullRequestReview] = list(self._api.get_pr_reviews(pr))
-        pr_model = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
-        pr_events_model_list = self._to_pr_events(
+        pr_model: PullRequest = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
+        pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
             reviews, pr_model, pr_event_model_list
         )
         if pr.merged_at:
-            commits = list(
+            commits: List[Dict] = list(
                 map(
                     lambda x: x.__dict__["_rawData"], list(self._api.get_pr_commits(pr))
                 )
             )
-            pr_commits_model_list = self._to_pr_commits(commits, pr_model)
+            pr_commits_model_list: List[PullRequestCommit] = self._to_pr_commits(
+                commits, pr_model
+            )
 
         # TODO: Cache PR metrics
         # pr_model = get_pr_cache_service().cache_pr_metrics(
@@ -177,7 +184,7 @@ class GithubETLHandler(ProviderETLHandler):
 
     def _process_github_repo(
         self, org_repos: List[OrgRepo], github_repo: GithubRepository
-    ):
+    ) -> OrgRepo:
 
         repo_idempotency_key_id_map = {
             org_repo.idempotency_key: str(org_repo.id) for org_repo in org_repos
@@ -199,7 +206,11 @@ class GithubETLHandler(ProviderETLHandler):
         return org_repo
 
     def _to_pr_model(
-        self, pr: PullRequest, pr_model, repo_id: str, review_comments: int = 0
+        self,
+        pr: GithubPullRequest,
+        pr_model: Optional[PullRequest],
+        repo_id: str,
+        review_comments: int = 0,
     ) -> PullRequest:
         state = self._get_state(pr)
         pr_id = pr_model.id if pr_model else uuid.uuid4()
@@ -215,7 +226,7 @@ class GithubETLHandler(ProviderETLHandler):
 
         return PullRequest(
             id=pr_id,
-            number=pr.number,
+            number=str(pr.number),
             title=pr.title,
             url=pr.html_url,
             created_at=pr.created_at.astimezone(pytz.UTC),
@@ -266,8 +277,8 @@ class GithubETLHandler(ProviderETLHandler):
         reviews: [GithubPullRequestReview],
         pr_model: PullRequest,
         pr_events_model: [PullRequestEvent],
-    ):
-        pr_events = []
+    ) -> List[PullRequestEvent]:
+        pr_events: List[PullRequestEvent] = []
         pr_event_id_map = {event.idempotency_key: event.id for event in pr_events_model}
 
         for review in reviews:
@@ -293,9 +304,9 @@ class GithubETLHandler(ProviderETLHandler):
 
     def _to_pr_commits(
         self,
-        commits,
+        commits: List[Dict],
         pr_model: PullRequest,
-    ):
+    ) -> List[PullRequestCommit]:
         """
         Sample commit
 
@@ -308,7 +319,7 @@ class GithubETLHandler(ProviderETLHandler):
         'author': {'login': 'abc', 'id': 95607047, 'node_id': 'abc', 'avatar_url': ''},
         }
         """
-        pr_commits = []
+        pr_commits: List[PullRequestCommit] = []
 
         for commit in commits:
             pr_commits.append(
