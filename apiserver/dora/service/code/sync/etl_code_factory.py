@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
-from dora.service.code.sync.etl_github_handler import GithubETLHandler
+from dora.service.code.sync.etl_github_handler import get_github_etl_handler
 from dora.store.models import UserIdentity
 from dora.store.models.code import (
     OrgRepo,
@@ -10,6 +9,7 @@ from dora.store.models.code import (
     PullRequestCommit,
     PullRequestEvent,
     PullRequestRevertPRMapping,
+    Bookmark,
 )
 
 
@@ -33,13 +33,13 @@ class ProviderETLHandler(ABC):
 
     @abstractmethod
     def get_repo_pull_requests_data(
-        self, org_repo: OrgRepo, bookmark: datetime
+        self, org_repo: OrgRepo, bookmark: Bookmark
     ) -> Tuple[List[PullRequest], List[PullRequestCommit], List[PullRequestEvent]]:
         """
         This method returns all pull requests, their Commits and Events of a repo. After the bookmark date.
         :param org_repo: OrgRepo object to get pull requests for
-        :param bookmark: Bookmark date to get all pull requests after this date
-        :return: Pull requests, their commits and events
+        :param bookmark: Bookmark object to get all pull requests after this date
+        :return: Pull requests sorted by state_changed_at date, their commits and events
         """
         pass
 
@@ -56,9 +56,9 @@ class ProviderETLHandler(ABC):
 
 
 class CodeETLFactory:
-    def __init__(self, provider: str):
-        self.provider = provider
+    def __init__(self, org_id: str):
+        self.org_id = org_id
 
-    def __call__(self, *args, **kwargs) -> ProviderETLHandler:
-        if self.provider == UserIdentity.GITHUB.value:
-            return GithubETLHandler(*args, **kwargs)
+    def __call__(self, provider: str) -> ProviderETLHandler:
+        if provider == UserIdentity.GITHUB.value:
+            return get_github_etl_handler(self.org_id)
