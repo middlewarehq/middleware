@@ -8,7 +8,8 @@ from dora.store.models.code import (
     OrgRepo,
     PullRequest,
     PullRequestCommit,
-    PullRequestEvent, PullRequestRevertPRMapping,
+    PullRequestEvent,
+    PullRequestRevertPRMapping,
 )
 
 
@@ -43,7 +44,9 @@ class ProviderETLHandler(ABC):
         pass
 
     @abstractmethod
-    def get_revert_prs_mapping(self, prs: List[PullRequest]) -> List[PullRequestRevertPRMapping]:
+    def get_revert_prs_mapping(
+        self, prs: List[PullRequest]
+    ) -> List[PullRequestRevertPRMapping]:
         """
         This method processes all PRs and returns the mapping of revert PRs with source PRs.
         :param prs: List of PRs to process

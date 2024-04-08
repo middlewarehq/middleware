@@ -21,7 +21,9 @@ class RevertPRsGitHubSyncHandler:
     def __call__(self, *args, **kwargs):
         return self.process_revert_prs(*args, **kwargs)
 
-    def process_revert_prs(self, prs: List[PullRequest]) -> List[PullRequestRevertPRMapping]:
+    def process_revert_prs(
+        self, prs: List[PullRequest]
+    ) -> List[PullRequestRevertPRMapping]:
         revert_prs: List[PullRequest] = []
         original_prs: List[PullRequest] = []
 
