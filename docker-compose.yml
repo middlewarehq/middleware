@@ -21,6 +21,7 @@ services:
       - "9696:9696"
       - "5432:5432"
       - "6379:6379"
+
     develop:
       watch:
         - action: sync
