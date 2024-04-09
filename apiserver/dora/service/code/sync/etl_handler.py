@@ -64,7 +64,9 @@ class CodeETLHandler:
                 pull_requests[-1].state_changed_at.astimezone(tz=pytz.UTC).isoformat()
             )
             self.code_repo_service.update_org_repo_bookmark(bookmark)
-            self.mtd_broker.pushback_merge_to_deploy_bookmark(str(org_repo.id), pull_requests)
+            self.mtd_broker.pushback_merge_to_deploy_bookmark(
+                str(org_repo.id), pull_requests
+            )
             self.__sync_revert_prs_mapping(org_repo, pull_requests)
         except Exception as e:
             LOG.error(f"Error syncing pull requests for repo {org_repo.name}: {str(e)}")
