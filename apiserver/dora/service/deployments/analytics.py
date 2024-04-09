@@ -100,22 +100,22 @@ class DeploymentAnalyticsService:
         Maps the pull requests to the deployments they were included in.
         This method takes a sorted list of pull requests and a sorted list of deployments and returns a dictionary
         """
-        pr_idx = 0
-        deployment_idx = 0
+        pr_count = 0
+        deployment_count = 0
         deployment_pr_map = defaultdict(
             list, {deployment: [] for deployment in deployments}
         )
 
-        while pr_idx < len(pull_requests) and deployment_idx < len(deployments):
-            pr = pull_requests[pr_idx]
-            deployment = deployments[deployment_idx]
+        while pr_count < len(pull_requests) and deployment_count < len(deployments):
+            pr = pull_requests[pr_count]
+            deployment = deployments[deployment_count]
 
             # Check if the PR was merged before or at the same time as the deployment
             if pr.state_changed_at <= deployment.conducted_at:
                 deployment_pr_map[deployment].append(pr)
-                pr_idx += 1
+                pr_count += 1
             else:
-                deployment_idx += 1
+                deployment_count += 1
 
         return deployment_pr_map
 
