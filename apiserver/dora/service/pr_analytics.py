@@ -13,7 +13,7 @@ class PullRequestAnalyticsService:
 
     def get_team_repos(self, team_id: str) -> List[OrgRepo]:
         return self.code_repo_service.get_team_repos(team_id)
-    
+
     def get_repo_by_id(self, team_id: str) -> List[OrgRepo]:
         return self.code_repo_service.get_repo_by_id(team_id)
 

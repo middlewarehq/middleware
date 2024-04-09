@@ -7,7 +7,9 @@ import json
 from flask import Blueprint
 from voluptuous import Required, Schema, Coerce, All, Optional
 from dora.api.resources.code_resouces import get_non_paginated_pr_response
-from dora.service.deployments.deployments_factory_service import DeploymentsFactoryService
+from dora.service.deployments.deployments_factory_service import (
+    DeploymentsFactoryService,
+)
 from dora.service.deployments.factory import get_deployments_factory
 from dora.service.pr_analytics import get_pr_analytics_service
 from dora.service.code.pr_filter import apply_pr_filter
@@ -101,21 +103,21 @@ def get_team_deployment_analytics(
 def get_prs_included_in_deployment(deployment_id: str):
     pr_analytics_service = get_pr_analytics_service()
     deployment_type: DeploymentType
-    
+
     (
         deployment_type,
         entity_id,
     ) = DeploymentsFactoryService.get_deployment_type_and_entity_id_from_deployment_id(
         deployment_id
     )
-    
+
     deployments_service: DeploymentsFactoryService = get_deployments_factory(
         deployment_type
     )
     deployment: Deployment = deployments_service.get_deployment_by_entity_id(entity_id)
     if not deployment:
         raise NotFound(f"Deployment not found for id {deployment_id}")
-    
+
     repo: OrgRepo = pr_analytics_service.get_repo_by_id(deployment.repo_id)
 
     prs: List[
@@ -124,7 +126,5 @@ def get_prs_included_in_deployment(deployment_id: str):
     repo_id_map = {repo.id: repo}
 
     return get_non_paginated_pr_response(
-        prs=prs,
-        repo_id_map=repo_id_map,
-        total_count=len(prs)
+        prs=prs, repo_id_map=repo_id_map, total_count=len(prs)
     )
