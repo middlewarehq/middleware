@@ -194,6 +194,7 @@ class CodeRepoService:
         interval: Interval,
         pr_filter: PRFilter = None,
         base_branches: List[str] = None,
+        has_non_null_mtd=False,
     ) -> List[PullRequest]:
         query = session.query(PullRequest).options(defer(PullRequest.data))
 
@@ -202,6 +203,9 @@ class CodeRepoService:
 
         query = self._filter_prs(query, pr_filter)
         query = self._filter_base_branch_on_regex(query, base_branches)
+
+        if has_non_null_mtd:
+            query = query.filter(PullRequest.merge_to_deploy.is_not(None))
 
         query = query.order_by(PullRequest.state_changed_at.asc())
 
@@ -230,6 +234,26 @@ class CodeRepoService:
             .order_by(PullRequest.state_changed_at.desc())
             .first()
         )
+
+    @rollback_on_exc
+    def get_repos_by_ids(self, ids: List[str]) -> List[OrgRepo]:
+        if not ids:
+            return []
+
+        return session.query(OrgRepo).filter(OrgRepo.id.in_(ids)).all()
+
+    @rollback_on_exc
+    def get_team_repos(self, team_id) -> List[OrgRepo]:
+        team_repos = (
+            session.query(TeamRepos)
+            .filter(and_(TeamRepos.team_id == team_id, TeamRepos.is_active == True))
+            .all()
+        )
+        if not team_repos:
+            return []
+
+        team_repo_ids = [tr.org_repo_id for tr in team_repos]
+        return self.get_repos_by_ids(team_repo_ids)
 
     def _filter_prs_by_repo_ids(self, query, repo_ids: List[str]):
         return query.filter(PullRequest.repo_id.in_(repo_ids))
