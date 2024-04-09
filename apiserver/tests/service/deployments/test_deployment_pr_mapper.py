@@ -23,7 +23,9 @@ def test_deployment_pr_mapper_picks_prs_directly_merged_to_head_branch():
     )
     assert DeploymentPRMapperService().get_all_prs_deployed(
         [pr_to_main, pr_to_release],
-        get_repo_workflow_run(head_branch=dep_branch, conducted_at=t + timedelta(days=7)),
+        get_repo_workflow_run(
+            head_branch=dep_branch, conducted_at=t + timedelta(days=7)
+        ),
     ) == [pr_to_release]
 
 
@@ -173,7 +175,9 @@ def test_deployment_pr_mapper_ignores_sub_prs_merged_post_main_pr_merge():
 
     prs = DeploymentPRMapperService().get_all_prs_deployed(
         [first_feature_pr, second_feature_pr, pr_to_release],
-        get_repo_workflow_run(head_branch=dep_branch, conducted_at=t + timedelta(days=5)),
+        get_repo_workflow_run(
+            head_branch=dep_branch, conducted_at=t + timedelta(days=5)
+        ),
     )
 
     assert sorted(prs) == sorted([first_feature_pr, pr_to_release])

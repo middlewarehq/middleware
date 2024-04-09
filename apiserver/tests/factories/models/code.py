@@ -6,7 +6,9 @@ from dora.store.models.code import (
     PullRequestEvent,
     PullRequestEventType,
     PullRequestState,
-    PullRequest, RepoWorkflowRuns, RepoWorkflowRunsStatus,
+    PullRequest,
+    RepoWorkflowRuns,
+    RepoWorkflowRunsStatus,
 )
 from dora.utils.time import time_now
 
