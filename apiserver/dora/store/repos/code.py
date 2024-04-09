@@ -107,7 +107,7 @@ class CodeRepoService:
         return pr_events
 
     @rollback_on_exc
-    def get_prs_by_pr_ids(self, pr_ids: List[str]):
+    def get_prs_by_ids(self, pr_ids: List[str]):
         query = (
             session.query(PullRequest)
             .options(defer(PullRequest.data))
