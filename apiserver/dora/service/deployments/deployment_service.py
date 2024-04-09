@@ -1,4 +1,5 @@
 from typing import List, Tuple
+from dora.store.models.code.workflows import RepoWorkflowType, RepoWorkflow
 
 from .factory import get_deployments_factory
 from .deployments_factory_service import DeploymentsFactoryService
@@ -55,6 +56,39 @@ class DeploymentsService:
         sorted_deployments = self._sort_deployments_by_date(deployments)
 
         return sorted_deployments
+
+    def get_filtered_team_repos_with_workflow_configured_deployments(
+        self, team_repos: List[TeamRepos]
+    ) -> List[TeamRepos]:
+        """
+        Get team repos with workflow deployments configured.
+        That is the repo has a workflow configured and team repo has deployment type as workflow.
+        """
+        filtered_team_repos: List[
+            TeamRepos
+        ] = self._filter_team_repos_using_workflow_deployments(team_repos)
+
+        repo_ids = [str(tr.org_repo_id) for tr in filtered_team_repos]
+        repo_id_to_team_repo_map = {
+            str(tr.org_repo_id): tr for tr in filtered_team_repos
+        }
+
+        repo_workflows: List[
+            RepoWorkflow
+        ] = self.workflow_repo_service.get_repo_workflow_by_repo_ids(
+            repo_ids, RepoWorkflowType.DEPLOYMENT
+        )
+        workflows_repo_ids = list(
+            set([str(workflow.org_repo_id) for workflow in repo_workflows])
+        )
+
+        team_repos_with_workflow_deployments = [
+            repo_id_to_team_repo_map[repo_id]
+            for repo_id in workflows_repo_ids
+            if repo_id in repo_id_to_team_repo_map
+        ]
+
+        return team_repos_with_workflow_deployments
 
     def _get_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
         return self.code_repo_service.get_active_team_repos_by_team_id(team_id)
