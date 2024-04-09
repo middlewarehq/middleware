@@ -54,6 +54,11 @@ class CodeRepoService:
         session.commit()
 
     @rollback_on_exc
+    def update_prs(self, prs: List[PullRequest]):
+        [session.merge(pr) for pr in prs]
+        session.commit()
+
+    @rollback_on_exc
     def save_revert_pr_mappings(
         self, revert_pr_mappings: List[PullRequestRevertPRMapping]
     ):
