@@ -5,6 +5,9 @@ from flask import request
 from stringcase import snakecase
 from voluptuous import Invalid
 from werkzeug.exceptions import BadRequest
+from dora.store.models.code.workflows import WorkflowFilter
+
+from dora.service.workflows.workflow_filter import get_workflow_filter_processor
 
 
 def queryschema(schema):
@@ -65,3 +68,10 @@ def dataschema(schema):
         return new_func
 
     return decorator
+
+
+def coerce_workflow_filter(filter_data: str) -> WorkflowFilter:
+    workflow_filter_processor = get_workflow_filter_processor()
+    return workflow_filter_processor.create_workflow_filter_from_json_string(
+        filter_data
+    )
