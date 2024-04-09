@@ -11,7 +11,7 @@ from dora.utils.lock import get_redis_lock_service, RedisLockService
 
 
 class MergeToDeployBrokerUtils:
-    def __init__(self, code_repo_service, redis_lock_service: RedisLockService):
+    def __init__(self, code_repo_service: CodeRepoService, redis_lock_service: RedisLockService):
         self.code_repo_service = code_repo_service
         self.redis_lock_service = redis_lock_service
 
