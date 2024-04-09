@@ -1,0 +1,107 @@
+from random import randint
+from uuid import uuid4
+
+from dora.store.models.code import (
+    PullRequestCommit,
+    PullRequestEvent,
+    PullRequestEventType,
+    PullRequestState,
+    PullRequest,
+)
+from dora.utils.time import time_now
+
+
+def get_pull_request(
+    id=None,
+    repo_id=None,
+    number=None,
+    author=None,
+    state=None,
+    head_branch=None,
+    base_branch=None,
+    requested_reviews=None,
+    data=None,
+    state_changed_at=None,
+    created_at=None,
+    updated_at=None,
+    meta=None,
+    reviewers=None,
+    first_commit_to_open=None,
+    first_response_time=None,
+    rework_time=None,
+    merge_time=None,
+    cycle_time=None,
+    merge_to_deploy=None,
+    lead_time=None,
+):
+    return PullRequest(
+        id=id or uuid4(),
+        repo_id=repo_id or uuid4(),
+        number=number or randint(10, 100),
+        author=author or "randomuser",
+        state=state or PullRequestState.OPEN,
+        head_branch=head_branch or "feature",
+        base_branch=base_branch or "main",
+        requested_reviews=requested_reviews or [],
+        data=data or {},
+        state_changed_at=state_changed_at or time_now(),
+        created_at=created_at or time_now(),
+        updated_at=updated_at or time_now(),
+        first_commit_to_open=first_commit_to_open,
+        first_response_time=first_response_time,
+        rework_time=rework_time,
+        merge_time=merge_time,
+        cycle_time=cycle_time,
+        merge_to_deploy=merge_to_deploy,
+        lead_time=lead_time,
+        reviewers=reviewers or ["randomuser1", "randomuser2"],
+        meta=meta or {},
+    )
+
+
+def get_pull_request_event(
+    id=None,
+    pull_request_id=None,
+    type=None,
+    reviewer=None,
+    state=None,
+    created_at=None,
+    idempotency_key=None,
+    org_repo_id=None,
+):
+    return PullRequestEvent(
+        id=id or uuid4(),
+        pull_request_id=pull_request_id or uuid4(),
+        type=type or PullRequestEventType.REVIEW.value,
+        data={
+            "user": {"login": reviewer or "User"},
+            "state": state or "APPROVED",
+            "author_association": "NONE",
+        },
+        created_at=created_at or time_now(),
+        idempotency_key=idempotency_key or str(randint(10, 100)),
+        org_repo_id=org_repo_id or uuid4(),
+        actor_username=reviewer or "randomuser",
+    )
+
+
+def get_pull_request_commit(
+    hash=None,
+    pr_id=None,
+    message=None,
+    url=None,
+    data=None,
+    author=None,
+    created_at=None,
+    org_repo_id=None,
+):
+    return PullRequestCommit(
+        hash=hash or uuid4(),
+        pull_request_id=pr_id or uuid4(),
+        message=message or "message",
+        url=url or "https://abc.com",
+        data=data or dict(),
+        author=author or "randomuser",
+        created_at=created_at or time_now(),
+        org_repo_id=org_repo_id or uuid4(),
+    )

@@ -9,7 +9,8 @@ from github.PullRequestReview import PullRequestReview as GithubPullRequestRevie
 from github.Repository import Repository as GithubRepository
 
 from dora.exapi.github import GithubApiService
-from dora.service.code.sync.etl_code_factory import ProviderETLHandler
+from dora.service.code.sync.etl_code_analytics import CodeETLAnalyticsService
+from dora.service.code.sync.etl_provider_handler import ProviderETLHandler
 from dora.service.code.sync.revert_prs_github_sync import (
     RevertPRsGitHubSyncHandler,
     get_revert_prs_github_sync_handler,
@@ -38,11 +39,15 @@ class GithubETLHandler(ProviderETLHandler):
         org_id: str,
         github_api_service: GithubApiService,
         code_repo_service: CodeRepoService,
+        code_etl_analytics_service: CodeETLAnalyticsService,
         github_revert_pr_sync_handler: RevertPRsGitHubSyncHandler,
     ):
         self.org_id: str = org_id
         self._api: GithubApiService = github_api_service
         self.code_repo_service: CodeRepoService = code_repo_service
+        self.code_etl_analytics_service: CodeETLAnalyticsService = (
+            code_etl_analytics_service
+        )
         self.github_revert_pr_sync_handler: RevertPRsGitHubSyncHandler = (
             github_revert_pr_sync_handler
         )
@@ -86,9 +91,9 @@ class GithubETLHandler(ProviderETLHandler):
         github_repo: GithubRepository = self._api.get_repo(
             org_repo.org_name, org_repo.name
         )
-        github_pull_requests: GithubPaginatedList[
-            GithubPullRequest
-        ] = self._api.get_pull_requests(github_repo)
+        github_pull_requests: GithubPaginatedList = self._api.get_pull_requests(
+            github_repo
+        )
 
         prs_to_process = []
         bookmark_time = datetime.fromisoformat(bookmark.bookmark)
@@ -170,10 +175,9 @@ class GithubETLHandler(ProviderETLHandler):
                 commits, pr_model
             )
 
-        # TODO: Cache PR metrics
-        # pr_model = get_pr_cache_service().cache_pr_metrics(
-        #     pr_model, pr_events_model_list, pr_commits_model_list
-        # )
+        pr_model = self.code_etl_analytics_service.create_pr_metrics(
+            pr_model, pr_events_model_list, pr_commits_model_list
+        )
 
         return pr_model, pr_events_model_list, pr_commits_model_list
 
@@ -362,5 +366,6 @@ def get_github_etl_handler(org_id: str) -> GithubETLHandler:
         org_id,
         GithubApiService(_get_access_token()),
         CodeRepoService(),
+        CodeETLAnalyticsService(),
         get_revert_prs_github_sync_handler(),
     )
