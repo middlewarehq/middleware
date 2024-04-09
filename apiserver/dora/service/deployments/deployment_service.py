@@ -9,6 +9,7 @@ from dora.service.deployments.models.models import Deployment, DeploymentType
 
 from dora.store.repos.code import CodeRepoService
 from dora.store.repos.workflows import WorkflowRepoService
+from dora.utils.time import Interval
 
 
 class DeploymentsService:
@@ -27,7 +28,7 @@ class DeploymentsService:
     def get_team_successful_deployments_in_interval(
         self,
         team_id: str,
-        interval,
+        interval: Interval,
         pr_filter: PRFilter = None,
         workflow_filter: WorkflowFilter = None,
     ) -> List[Deployment]:
