@@ -25,6 +25,7 @@ from dora.store.models.code import (
     PullRequestEvent,
     PullRequestEventType,
     PullRequestRevertPRMapping,
+    CodeProvider,
 )
 from dora.store.repos.code import CodeRepoService
 from dora.store.repos.core import CoreRepoService
@@ -51,7 +52,7 @@ class GithubETLHandler(ProviderETLHandler):
         self.github_revert_pr_sync_handler: RevertPRsGitHubSyncHandler = (
             github_revert_pr_sync_handler
         )
-        self.provider: str = UserIdentityProvider.GITHUB.value
+        self.provider: str = CodeProvider.GITHUB.value
 
     def check_pat_validity(self) -> bool:
         """
