@@ -9,7 +9,6 @@ from github.GithubException import RateLimitExceededException
 from github.Organization import Organization as GithubOrganization
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
-from github.PullRequestReview import PullRequestReview as GithubPullRequestReview
 from github.Repository import Repository as GithubRepository
 
 from dora.exapi.models.github import GitHubContributor
