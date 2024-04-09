@@ -6,7 +6,7 @@ from dora.store.models.code import (
     PullRequestEvent,
     PullRequestEventType,
     PullRequestState,
-    PullRequest,
+    PullRequest, RepoWorkflowRuns, RepoWorkflowRunsStatus,
 )
 from dora.utils.time import time_now
 
@@ -104,4 +104,34 @@ def get_pull_request_commit(
         author=author or "randomuser",
         created_at=created_at or time_now(),
         org_repo_id=org_repo_id or uuid4(),
+    )
+
+
+def get_repo_workflow_run(
+    id=None,
+    repo_workflow_id=None,
+    provider_workflow_run_id=None,
+    event_actor=None,
+    head_branch=None,
+    status=None,
+    conducted_at=None,
+    created_at=None,
+    updated_at=None,
+    meta=None,
+    duration=None,
+    html_url=None,
+):
+    return RepoWorkflowRuns(
+        id=id or uuid4(),
+        repo_workflow_id=repo_workflow_id or uuid4(),
+        provider_workflow_run_id=provider_workflow_run_id or "1234567",
+        event_actor=event_actor or "samad-yar-khan",
+        head_branch=head_branch or "master",
+        status=status or RepoWorkflowRunsStatus.SUCCESS,
+        conducted_at=conducted_at or time_now(),
+        created_at=created_at or time_now(),
+        updated_at=updated_at or time_now(),
+        duration=duration,
+        meta=meta,
+        html_url=html_url,
     )
