@@ -4,6 +4,7 @@ from typing import Dict, Optional, List
 import pytz
 
 from dora.exapi.github import GithubApiService
+from dora.service.workflows.sync.etl_provider_handler import ProviderETLHandler
 from dora.store.models import UserIdentityProvider
 from dora.store.models.code import (
     RepoWorkflowProviders,
@@ -20,7 +21,7 @@ DEFAULT_WORKFLOW_SYNC_DAYS = 31
 WORKFLOW_PROCESSING_CHUNK_SIZE = 100
 
 
-class GithubActionsETLHandler:
+class GithubActionsETLHandler(ProviderETLHandler):
     def __init__(self, org_id: str, github_api_service: GithubApiService):
         self.org_id = org_id
         self._api: GithubApiService = github_api_service
@@ -72,11 +73,15 @@ class GithubActionsETLHandler:
             )
             return []
 
-        bookmark.bookmark = self._get_new_bookmark_time_stamp(github_workflow_runs).isoformat()
+        bookmark.bookmark = self._get_new_bookmark_time_stamp(
+            github_workflow_runs
+        ).isoformat()
 
         return self._get_db_workflows(github_workflow_runs, str(repo_workflow.id))
 
-    def _get_new_bookmark_time_stamp(self, github_workflow_runs: List[Dict]) -> datetime:
+    def _get_new_bookmark_time_stamp(
+        self, github_workflow_runs: List[Dict]
+    ) -> datetime:
         """
         This method returns the new bookmark timestamp for the workflow runs.
         It returns the minimum timestamp of the pending jobs if there are any pending jobs.
