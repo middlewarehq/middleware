@@ -4,7 +4,7 @@ from typing import Dict, Optional, List
 import pytz
 
 from dora.exapi.github import GithubApiService
-from dora.service.workflows.sync.etl_provider_handler import ProviderETLHandler
+from dora.service.workflows.sync.etl_provider_handler import WorkflowProviderETLHandler
 from dora.store.models import UserIdentityProvider
 from dora.store.models.code import (
     RepoWorkflowProviders,
@@ -21,7 +21,7 @@ DEFAULT_WORKFLOW_SYNC_DAYS = 31
 WORKFLOW_PROCESSING_CHUNK_SIZE = 100
 
 
-class GithubActionsETLHandler(ProviderETLHandler):
+class GithubActionsETLHandler(WorkflowProviderETLHandler):
     def __init__(self, org_id: str, github_api_service: GithubApiService):
         self.org_id = org_id
         self._api: GithubApiService = github_api_service

@@ -10,7 +10,7 @@ from github.Repository import Repository as GithubRepository
 
 from dora.exapi.github import GithubApiService
 from dora.service.code.sync.etl_code_analytics import CodeETLAnalyticsService
-from dora.service.code.sync.etl_provider_handler import ProviderETLHandler
+from dora.service.code.sync.etl_provider_handler import CodeProviderETLHandler
 from dora.service.code.sync.revert_prs_github_sync import (
     RevertPRsGitHubSyncHandler,
     get_revert_prs_github_sync_handler,
@@ -34,7 +34,7 @@ from dora.utils.time import time_now
 PR_PROCESSING_CHUNK_SIZE = 100
 
 
-class GithubETLHandler(ProviderETLHandler):
+class GithubETLHandler(CodeProviderETLHandler):
     def __init__(
         self,
         org_id: str,

@@ -4,7 +4,7 @@ from typing import List
 import pytz
 
 from dora.service.code.integration import get_code_integration_service
-from dora.service.code.sync.etl_code_factory import ProviderETLHandler, CodeETLFactory
+from dora.service.code.sync.etl_code_factory import CodeProviderETLHandler, CodeETLFactory
 from dora.store.models.code import OrgRepo, BookmarkType, Bookmark, PullRequest
 from dora.store.repos.code import CodeRepoService
 from dora.utils.log import LOG
@@ -14,7 +14,7 @@ class CodeETLHandler:
     def __init__(
         self,
         code_repo_service: CodeRepoService,
-        etl_service: ProviderETLHandler,
+        etl_service: CodeProviderETLHandler,
     ):
         self.code_repo_service = code_repo_service
         self.etl_service = etl_service

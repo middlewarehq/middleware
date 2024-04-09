@@ -9,7 +9,7 @@ from dora.store.models.code import (
 )
 
 
-class ProviderETLHandler(ABC):
+class WorkflowProviderETLHandler(ABC):
     @abstractmethod
     def check_pat_validity(self) -> bool:
         """
