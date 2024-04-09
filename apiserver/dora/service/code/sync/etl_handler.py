@@ -8,6 +8,10 @@ from dora.service.code.sync.etl_code_factory import (
     CodeProviderETLHandler,
     CodeETLFactory,
 )
+from dora.service.merge_to_deploy_broker import (
+    get_merge_to_deploy_broker_utils_service,
+    MergeToDeployBrokerUtils,
+)
 from dora.store.models.code import OrgRepo, BookmarkType, Bookmark, PullRequest
 from dora.store.repos.code import CodeRepoService
 from dora.utils.log import LOG
@@ -18,9 +22,11 @@ class CodeETLHandler:
         self,
         code_repo_service: CodeRepoService,
         etl_service: CodeProviderETLHandler,
+        mtd_broker: MergeToDeployBrokerUtils,
     ):
         self.code_repo_service = code_repo_service
         self.etl_service = etl_service
+        self.mtd_broker = mtd_broker
 
     def sync_org_repos(self, org_id: str):
         org_repos: List[OrgRepo] = self._sync_org_repos(org_id)
@@ -58,6 +64,9 @@ class CodeETLHandler:
                 pull_requests[-1].state_changed_at.astimezone(tz=pytz.UTC).isoformat()
             )
             self.code_repo_service.update_org_repo_bookmark(bookmark)
+            self.mtd_broker.pushback_merge_to_deploy_bookmark(
+                str(org_repo.id), pull_requests
+            )
             self.__sync_revert_prs_mapping(org_repo, pull_requests)
         except Exception as e:
             LOG.error(f"Error syncing pull requests for repo {org_repo.name}: {str(e)}")
@@ -91,13 +100,16 @@ class CodeETLHandler:
 
 
 def sync_code_repos(org_id: str):
-    code_integration_service = get_code_integration_service()
-    code_repo_service = CodeRepoService()
+    code_providers: List[str] = get_code_integration_service().get_org_providers(org_id)
     etl_factory = CodeETLFactory(org_id)
-    for provider in code_integration_service.get_org_providers(org_id):
+
+    for provider in code_providers:
         try:
-            etl_handler = etl_factory(provider)
-            code_etl_handler = CodeETLHandler(code_repo_service, etl_handler)
+            code_etl_handler = CodeETLHandler(
+                CodeRepoService(),
+                etl_factory(provider),
+                get_merge_to_deploy_broker_utils_service(),
+            )
             code_etl_handler.sync_org_repos(org_id)
             LOG.info(f"Synced org repos for provider {provider}")
         except Exception as e:

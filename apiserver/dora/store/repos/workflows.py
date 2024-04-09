@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Tuple
 
 from sqlalchemy.orm import defer
@@ -24,6 +25,7 @@ class WorkflowRepoService:
     ) -> List[RepoWorkflow]:
         return (
             session.query(RepoWorkflow)
+            .options(defer(RepoWorkflow.meta))
             .filter(
                 RepoWorkflow.repo_id.in_(repo_ids),
                 RepoWorkflow.provider.in_(providers),
@@ -38,6 +40,7 @@ class WorkflowRepoService:
     ) -> RepoWorkflowRuns:
         return (
             session.query(RepoWorkflowRuns)
+            .options(defer(RepoWorkflow.meta))
             .filter(
                 RepoWorkflowRuns.repo_workflow_id == repo_workflow_id,
                 RepoWorkflowRuns.provider_workflow_run_id == provider_workflow_run_id,
@@ -78,6 +81,18 @@ class WorkflowRepoService:
                     RepoWorkflow.type == type,
                     RepoWorkflow.is_active.is_(True),
                 )
+            )
+            .all()
+        )
+
+    @rollback_on_exc
+    def get_repo_workflows_by_repo_id(self, repo_id: str) -> List[RepoWorkflow]:
+        return (
+            session.query(RepoWorkflow)
+            .options(defer(RepoWorkflow.meta))
+            .filter(
+                RepoWorkflow.org_repo_id == repo_id,
+                RepoWorkflow.is_active.is_(True),
             )
             .all()
         )
@@ -159,6 +174,27 @@ class WorkflowRepoService:
             .order_by(RepoWorkflowRuns.conducted_at.desc())
             .first()
         )
+
+    @rollback_on_exc
+    def get_repo_workflow_runs_conducted_after_time(
+        self, repo_id: str, from_time: datetime = None, limit_value: int = 500
+    ):
+        query = (
+            session.query(RepoWorkflowRuns)
+            .join(RepoWorkflow, RepoWorkflow.id == RepoWorkflowRuns.repo_workflow_id)
+            .filter(
+                RepoWorkflow.org_repo_id == repo_id,
+                RepoWorkflow.is_active.is_(True),
+                RepoWorkflowRuns.status == RepoWorkflowRunsStatus.SUCCESS,
+            )
+        )
+
+        if from_time:
+            query = query.filter(RepoWorkflowRuns.conducted_at >= from_time)
+
+        query = query.order_by(RepoWorkflowRuns.conducted_at)
+
+        return query.limit(limit_value).all()
 
     def _filter_active_repo_workflows(self, query):
         return query.filter(
