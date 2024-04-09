@@ -9,7 +9,11 @@ from dora.store.models.code.workflows.enums import (
     RepoWorkflowType,
 )
 from dora.store.models.code.workflows.filter import WorkflowFilter
-from dora.store.models.code.workflows.workflows import RepoWorkflow, RepoWorkflowRuns, RepoWorkflowRunsBookmark
+from dora.store.models.code.workflows.workflows import (
+    RepoWorkflow,
+    RepoWorkflowRuns,
+    RepoWorkflowRunsBookmark,
+)
 from dora.utils.time import Interval
 
 
@@ -36,7 +40,7 @@ class WorkflowRepoService:
             session.query(RepoWorkflowRuns)
             .filter(
                 RepoWorkflowRuns.repo_workflow_id == repo_workflow_id,
-                RepoWorkflowRuns.provider_workflow_run_id == provider_workflow_run_id
+                RepoWorkflowRuns.provider_workflow_run_id == provider_workflow_run_id,
             )
             .one_or_none()
         )
@@ -60,6 +64,7 @@ class WorkflowRepoService:
     def update_repo_workflow_runs_bookmark(self, bookmark: RepoWorkflowRunsBookmark):
         session.merge(bookmark)
         session.commit()
+
     @rollback_on_exc
     def get_repo_workflow_by_repo_ids(
         self, repo_ids: List[str], type: RepoWorkflowType
