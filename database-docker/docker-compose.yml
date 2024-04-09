@@ -1,0 +1,31 @@
+version: '1'
+
+services:
+  db:
+    image: postgres:14.3-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dora
+    ports:
+      - "5436:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    command: ["postgres", "-c", "max_prepared_transactions=0"]
+
+  dbmate:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+    volumes:
+      - ./db:/db
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/dora?sslmode=disable
+    working_dir: /
+    command: bash -c  "dbwait.sh && dbmate up && dbmate dump"
+
+volumes:
+  pgdata: {}
