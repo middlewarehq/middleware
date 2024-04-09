@@ -5,11 +5,11 @@ from typing import List
 
 
 class PullRequestAnalyticsService:
-    def __init__(self, repo_service):
-        self._code_repo: CodeRepoService = repo_service
+    def __init__(self, code_repo_service: CodeRepoService):
+        self.code_repo_service: CodeRepoService = code_repo_service
 
     def get_prs_by_ids(self, pr_ids: List[str]) -> List[PullRequest]:
-        return self._code_repo.get_prs_by_ids(pr_ids)
+        return self.code_repo_service.get_prs_by_ids(pr_ids)
 
 
 def get_pr_analytics_service():
