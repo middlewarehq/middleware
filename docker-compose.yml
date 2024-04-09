@@ -19,8 +19,8 @@ services:
 
     ports:
       - "9696:9696"
-      - "5432:5432"
-      - "6379:6379"
+      - "5436:5432"
+      - "6380:6379"
 
     develop:
       watch:
@@ -44,3 +44,7 @@ services:
         - action: sync+restart
           path: ./init_db.sh
           target: /app/init_db.sh
+
+        - action: sync+restart
+          path: ./apiserver/.env.local
+          target: /app/backend/apiserver/.env.local
