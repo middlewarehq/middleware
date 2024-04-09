@@ -109,6 +109,12 @@ class WorkflowETLHandler:
 
 
 def sync_org_workflows(org_id: str):
+    workflow_providers: List[
+        str
+    ] = get_workflows_integrations_service().get_org_providers(org_id)
+    if not workflow_providers:
+        LOG.info(f"No workflow integrations found for org {org_id}")
+        return
     code_repo_service = get_code_integration_service()
     workflow_repo_service = WorkflowRepoService()
     etl_service = WorkflowProviderETLHandler()
