@@ -1,3 +1,4 @@
+from werkzeug.exceptions import NotFound
 from collections import defaultdict
 from typing import Dict, List
 from datetime import datetime
@@ -5,6 +6,10 @@ import json
 
 from flask import Blueprint
 from voluptuous import Required, Schema, Coerce, All, Optional
+from dora.api.resources.code_resouces import get_non_paginated_pr_response
+from dora.service.deployments.deployments_factory_service import DeploymentsFactoryService
+from dora.service.deployments.factory import get_deployments_factory
+from dora.service.pr_analytics import get_pr_analytics_service
 from dora.service.code.pr_filter import apply_pr_filter
 
 from dora.api.request_utils import coerce_workflow_filter, queryschema
@@ -16,7 +21,7 @@ from dora.store.models.code.filter import PRFilter
 from dora.store.models.code.pull_requests import PullRequest
 from dora.store.models.code.repository import OrgRepo, TeamRepos
 from dora.store.models.code.workflows.filter import WorkflowFilter
-from dora.service.deployments.models.models import Deployment
+from dora.service.deployments.models.models import Deployment, DeploymentType
 from dora.store.repos.code import CodeRepoService
 
 
@@ -90,3 +95,36 @@ def get_team_deployment_analytics(
             for repo in org_repos
         },
     }
+
+
+@app.route("/deployments/<deployment_id>/prs", methods={"GET"})
+def get_prs_included_in_deployment(deployment_id: str):
+    pr_analytics_service = get_pr_analytics_service()
+    deployment_type: DeploymentType
+    
+    (
+        deployment_type,
+        entity_id,
+    ) = DeploymentsFactoryService.get_deployment_type_and_entity_id_from_deployment_id(
+        deployment_id
+    )
+    
+    deployments_service: DeploymentsFactoryService = get_deployments_factory(
+        deployment_type
+    )
+    deployment: Deployment = deployments_service.get_deployment_by_entity_id(entity_id)
+    if not deployment:
+        raise NotFound(f"Deployment not found for id {deployment_id}")
+    
+    repo: OrgRepo = pr_analytics_service.get_repo_by_id(deployment.repo_id)
+
+    prs: List[
+        PullRequest
+    ] = deployments_service.get_pull_requests_related_to_deployment(deployment)
+    repo_id_map = {repo.id: repo}
+
+    return get_non_paginated_pr_response(
+        prs=prs,
+        repo_id_map=repo_id_map,
+        total_count=len(prs)
+    )
