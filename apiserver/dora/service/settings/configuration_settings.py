@@ -321,7 +321,7 @@ class SettingsService:
 
     def get_settings_map(
         self,
-        entity_id: List[str],
+        entity_id: str,
         setting_types: List[SettingType],
         entity_type: EntityType,
         ignore_default_setting_type: List[SettingType] = None,
