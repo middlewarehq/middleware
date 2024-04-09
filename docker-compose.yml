@@ -9,9 +9,13 @@ services:
         ENVIRONMENT: ${ENVIRONMENT}
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=dora-oss
+      - DORA_DB_HOST=${DORA_DB_HOST}
+      - DORA_DB_NAME=${DORA_DB_NAME}
+      - DORA_DB_PASS=${DORA_DB_PASS}
+      - DORA_DB_PORT=${DORA_DB_PORT}
+      - DORA_DB_USER=${DORA_DB_USER}
+      - DORA_REDIS_HOST=${DORA_REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
     ports:
       - "9696:9696"
