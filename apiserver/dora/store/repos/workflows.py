@@ -1,4 +1,4 @@
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple
 
 from sqlalchemy.orm import defer
 from sqlalchemy import and_
@@ -9,11 +9,57 @@ from dora.store.models.code.workflows.enums import (
     RepoWorkflowType,
 )
 from dora.store.models.code.workflows.filter import WorkflowFilter
-from dora.store.models.code.workflows.workflows import RepoWorkflow, RepoWorkflowRuns
+from dora.store.models.code.workflows.workflows import RepoWorkflow, RepoWorkflowRuns, RepoWorkflowRunsBookmark
 from dora.utils.time import Interval
 
 
 class WorkflowRepoService:
+    @rollback_on_exc
+    def get_active_repo_workflows_by_repo_ids_and_providers(
+        self, repo_ids: List[str], providers: List[str]
+    ) -> List[RepoWorkflow]:
+        return (
+            session.query(RepoWorkflow)
+            .filter(
+                RepoWorkflow.repo_id.in_(repo_ids),
+                RepoWorkflow.provider.in_(providers),
+                RepoWorkflow.is_active.is_(True),
+            )
+            .all()
+        )
+
+    @rollback_on_exc
+    def get_repo_workflow_run_by_provider_workflow_run_id(
+        self, repo_workflow_id: str, provider_workflow_run_id: str
+    ) -> RepoWorkflowRuns:
+        return (
+            session.query(RepoWorkflowRuns)
+            .filter(
+                RepoWorkflowRuns.repo_workflow_id == repo_workflow_id,
+                RepoWorkflowRuns.provider_workflow_run_id == provider_workflow_run_id
+            )
+            .one_or_none()
+        )
+
+    @rollback_on_exc
+    def save_repo_workflow_runs(self, repo_workflow_runs: List[RepoWorkflowRuns]):
+        [session.merge(repo_workflow_run) for repo_workflow_run in repo_workflow_runs]
+        session.commit()
+
+    @rollback_on_exc
+    def get_repo_workflow_runs_bookmark(
+        self, repo_workflow_id: str
+    ) -> RepoWorkflowRunsBookmark:
+        return (
+            session.query(RepoWorkflowRunsBookmark)
+            .filter(RepoWorkflowRunsBookmark.repo_workflow_id == repo_workflow_id)
+            .one_or_none()
+        )
+
+    @rollback_on_exc
+    def update_repo_workflow_runs_bookmark(self, bookmark: RepoWorkflowRunsBookmark):
+        session.merge(bookmark)
+        session.commit()
     @rollback_on_exc
     def get_repo_workflow_by_repo_ids(
         self, repo_ids: List[str], type: RepoWorkflowType
