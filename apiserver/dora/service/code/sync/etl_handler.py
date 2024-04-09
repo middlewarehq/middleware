@@ -4,7 +4,10 @@ from typing import List
 import pytz
 
 from dora.service.code.integration import get_code_integration_service
-from dora.service.code.sync.etl_code_factory import CodeProviderETLHandler, CodeETLFactory
+from dora.service.code.sync.etl_code_factory import (
+    CodeProviderETLHandler,
+    CodeETLFactory,
+)
 from dora.store.models.code import OrgRepo, BookmarkType, Bookmark, PullRequest
 from dora.store.repos.code import CodeRepoService
 from dora.utils.log import LOG
