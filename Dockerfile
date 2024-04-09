@@ -48,6 +48,6 @@ RUN chmod +x /app/init_db.sh \
 
 ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:$PATH"
 
-EXPOSE 5432 6379 5000
+EXPOSE 5432 6379 9696
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
