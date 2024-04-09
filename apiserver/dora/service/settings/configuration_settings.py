@@ -1,4 +1,4 @@
-from typing import Dict, Optional, List
+from typing import Any, Dict, Optional, List
 
 from dora.service.settings.default_settings_data import get_default_setting_data
 from dora.service.settings.models import (
@@ -318,6 +318,53 @@ class SettingsService:
                 deleted_by=deleted_by,
             )
         )
+
+    def get_settings_map(
+        self,
+        entity_id: str,
+        setting_types: List[SettingType],
+        entity_type: EntityType,
+        ignore_default_setting_type: List[SettingType] = None,
+    ) -> Dict[SettingType, any]:
+
+        if not ignore_default_setting_type:
+            ignore_default_setting_type = []
+
+        settings: List[Settings] = self._settings_repo.get_settings(
+            entity_id=entity_id, setting_types=setting_types, entity_type=entity_type
+        )
+        setting_type_to_setting_map: Dict[
+            SettingType, Any
+        ] = self._get_setting_type_to_setting_map(
+            setting_types, settings, ignore_default_setting_type
+        )
+
+        return setting_type_to_setting_map
+
+    def _get_setting_type_to_setting_map(
+        self,
+        setting_types: List[SettingType],
+        settings: List[Settings],
+        ignore_default_setting_type: List[SettingType] = None,
+    ) -> Dict[SettingType, Any]:
+
+        if not ignore_default_setting_type:
+            ignore_default_setting_type = []
+
+        setting_type_to_setting_map: Dict[SettingType, Any] = {}
+        for setting in settings:
+            setting_type_to_setting_map[
+                setting.setting_type
+            ] = self._adapt_config_setting_from_db_setting(setting).specific_settings
+
+        for setting_type in setting_types:
+            if (setting_type not in setting_type_to_setting_map) and (
+                setting_type not in ignore_default_setting_type
+            ):
+                setting_type_to_setting_map[setting_type] = self.get_default_setting(
+                    setting_type
+                )
+        return setting_type_to_setting_map
 
 
 def get_settings_service():
