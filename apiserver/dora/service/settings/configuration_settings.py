@@ -366,6 +366,11 @@ class SettingsService:
                 )
         return setting_type_to_setting_map
 
+    def get_default_setting(self, setting_type: SettingType):
+        return self._handle_config_setting_from_db_setting(
+            setting_type, get_default_setting_data(setting_type)
+        )
+
 
 def get_settings_service():
     return SettingsService(SettingsRepoService())
