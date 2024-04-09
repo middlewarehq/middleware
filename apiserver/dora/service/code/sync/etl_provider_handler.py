@@ -11,7 +11,7 @@ from dora.store.models.code import (
 )
 
 
-class ProviderETLHandler(ABC):
+class CodeProviderETLHandler(ABC):
     @abstractmethod
     def check_pat_validity(self) -> bool:
         """
