@@ -1,3 +1,4 @@
+from datetime import datetime
 from operator import and_
 from typing import Optional, List
 
@@ -16,6 +17,7 @@ from dora.store.models.code import (
     TeamRepos,
     PullRequestState,
     PRFilter,
+    BookmarkMergeToDeployBroker,
 )
 
 
@@ -84,7 +86,7 @@ class CodeRepoService:
     def get_repo_pr_by_number(self, repo_id: str, pr_number) -> Optional[PullRequest]:
         return (
             session.query(PullRequest)
-            .options(defer("data"))
+            .options(defer(PullRequest.data))
             .filter(
                 and_(
                     PullRequest.repo_id == repo_id, PullRequest.number == str(pr_number)
@@ -100,7 +102,7 @@ class CodeRepoService:
 
         pr_events = (
             session.query(PullRequestEvent)
-            .options(defer("data"))
+            .options(defer(PullRequestEvent.data))
             .filter(PullRequestEvent.pull_request_id == pr_model.id)
             .all()
         )
@@ -121,7 +123,7 @@ class CodeRepoService:
     ) -> List[PullRequest]:
         query = (
             session.query(PullRequest)
-            .options(defer("data"))
+            .options(defer(PullRequest.data))
             .filter(
                 and_(
                     PullRequest.repo_id.in_(repo_ids),
@@ -144,7 +146,7 @@ class CodeRepoService:
     ) -> List[PullRequest]:
         query = (
             session.query(PullRequest)
-            .options(defer("data"))
+            .options(defer(PullRequest.data))
             .filter(
                 and_(
                     PullRequest.repo_id.in_(repo_ids),
@@ -155,13 +157,6 @@ class CodeRepoService:
         )
 
         return query.all()
-
-    @rollback_on_exc
-    def save_revert_pr_mappings(
-        self, revert_pr_mappings: List[PullRequestRevertPRMapping]
-    ):
-        [session.merge(revert_pr_map) for revert_pr_map in revert_pr_mappings]
-        session.commit()
 
     @rollback_on_exc
     def get_active_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
@@ -254,6 +249,40 @@ class CodeRepoService:
 
         team_repo_ids = [tr.org_repo_id for tr in team_repos]
         return self.get_repos_by_ids(team_repo_ids)
+
+    @rollback_on_exc
+    def get_merge_to_deploy_broker_bookmark(
+        self, repo_id: str
+    ) -> BookmarkMergeToDeployBroker:
+        return (
+            session.query(BookmarkMergeToDeployBroker)
+            .filter(BookmarkMergeToDeployBroker.repo_id == repo_id)
+            .one_or_none()
+        )
+
+    @rollback_on_exc
+    def update_merge_to_deploy_broker_bookmark(
+        self, bookmark: BookmarkMergeToDeployBroker
+    ):
+
+        session.merge(bookmark)
+        session.commit()
+
+    @rollback_on_exc
+    def get_prs_in_repo_merged_before_given_date_with_merge_to_deploy_as_null(
+        self, repo_id: str, to_time: datetime
+    ):
+        return (
+            session.query(PullRequest)
+            .options(defer(PullRequest.data))
+            .filter(
+                PullRequest.repo_id == repo_id,
+                PullRequest.state == PullRequestState.MERGED,
+                PullRequest.state_changed_at <= to_time,
+                PullRequest.merge_to_deploy.is_(None),
+            )
+            .all()
+        )
 
     def _filter_prs_by_repo_ids(self, query, repo_ids: List[str]):
         return query.filter(PullRequest.repo_id.in_(repo_ids))
