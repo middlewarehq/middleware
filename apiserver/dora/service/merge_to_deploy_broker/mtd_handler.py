@@ -12,6 +12,7 @@ from dora.store.models.code import (
 )
 from dora.store.repos.code import CodeRepoService
 from dora.store.repos.workflows import WorkflowRepoService
+from dora.utils.lock import RedisLockService, get_redis_lock_service
 
 DEPLOYMENTS_TO_PROCESS = 500
 
@@ -23,11 +24,13 @@ class MergeToDeployCacheHandler:
         code_repo_service: CodeRepoService,
         workflow_repo_service: WorkflowRepoService,
         deployment_pr_mapper_service: DeploymentPRMapperService,
+        redis_lock_service: RedisLockService,
     ):
         self.org_id = org_id
         self.code_repo_service = code_repo_service
         self.workflow_repo_service = workflow_repo_service
         self.deployment_pr_mapper_service = deployment_pr_mapper_service
+        self.redis_lock_service = redis_lock_service
 
     def process_org_mtd(self):
         org_repos: List[OrgRepo] = self.code_repo_service.get_active_org_repos(
@@ -35,7 +38,10 @@ class MergeToDeployCacheHandler:
         )
         for org_repo in org_repos:
             try:
-                self._process_deployments_for_merge_to_deploy_caching(str(org_repo.id))
+                with self.redis_lock_service.acquire_lock(
+                        "{org_repo}:" + f"{str(org_repo.id)}:merge_to_deploy_broker"
+                ):
+                    self._process_deployments_for_merge_to_deploy_caching(str(org_repo.id))
             except Exception as e:
                 print(f"Error syncing workflow for repo {str(org_repo.id)}: {str(e)}")
                 continue
@@ -69,7 +75,6 @@ class MergeToDeployCacheHandler:
             return
 
         for repo_workflow_run in repo_workflow_runs:
-            # TODO: Add a lock
             try:
                 self.code_repo_service.get_merge_to_deploy_broker_bookmark(repo_id)
                 self._cache_prs_merge_to_deploy_for_repo_workflow_run(
@@ -110,6 +115,6 @@ class MergeToDeployCacheHandler:
 
 def process_merge_to_deploy_cache(org_id: str):
     merge_to_deploy_cache_handler = MergeToDeployCacheHandler(
-        org_id, CodeRepoService(), WorkflowRepoService(), DeploymentPRMapperService()
+        org_id, CodeRepoService(), WorkflowRepoService(), DeploymentPRMapperService(), get_redis_lock_service()
     )
     merge_to_deploy_cache_handler.process_org_mtd()

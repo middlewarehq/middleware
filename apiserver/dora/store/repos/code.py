@@ -269,7 +269,6 @@ class CodeRepoService:
     def update_merge_to_deploy_broker_bookmark(
         self, bookmark: BookmarkMergeToDeployBroker
     ):
-
         session.merge(bookmark)
         session.commit()
 
