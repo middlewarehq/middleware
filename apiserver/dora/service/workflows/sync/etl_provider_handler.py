@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Tuple
 
 from dora.store.models.code import (
     OrgRepo,
@@ -25,12 +25,12 @@ class WorkflowProviderETLHandler(ABC):
         org_repo: OrgRepo,
         repo_workflow: RepoWorkflow,
         bookmark: RepoWorkflowRunsBookmark,
-    ) -> List[RepoWorkflowRuns]:
+    ) -> Tuple[List[RepoWorkflowRuns], RepoWorkflowRunsBookmark]:
         """
         This method returns all workflow runs of a repo's workflow. After the bookmark date.
         :param org_repo: OrgRepo object to get workflow runs for
         :param repo_workflow: RepoWorkflow object to get workflow runs for
         :param bookmark: Bookmark object to get all workflow runs after this date
-        :return: List of RepoWorkflowRuns objects
+        :return: List of RepoWorkflowRuns objects, RepoWorkflowRunsBookmark object
         """
         pass

@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
+from uuid import uuid4
 
 import pytz
 
@@ -14,6 +15,8 @@ from dora.store.models.code import (
     RepoWorkflowRunsBookmark,
     RepoWorkflow,
 )
+from dora.store.repos.core import CoreRepoService
+from dora.store.repos.workflows import WorkflowRepoService
 from dora.utils.log import LOG
 from dora.utils.time import ISO_8601_DATE_FORMAT, time_now
 
@@ -22,9 +25,15 @@ WORKFLOW_PROCESSING_CHUNK_SIZE = 100
 
 
 class GithubActionsETLHandler(WorkflowProviderETLHandler):
-    def __init__(self, org_id: str, github_api_service: GithubApiService):
+    def __init__(
+        self,
+        org_id: str,
+        github_api_service: GithubApiService,
+        workflow_repo_service: WorkflowRepoService,
+    ):
         self.org_id = org_id
         self._api: GithubApiService = github_api_service
+        self._workflow_repo_service = workflow_repo_service
         self._provider = RepoWorkflowProviders.GITHUB_ACTIONS.value
 
     def check_pat_validity(self) -> bool:
@@ -43,13 +52,13 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
         org_repo: OrgRepo,
         repo_workflow: RepoWorkflow,
         bookmark: RepoWorkflowRunsBookmark,
-    ) -> List[RepoWorkflowRuns]:
+    ) -> Tuple[List[RepoWorkflowRuns], RepoWorkflowRunsBookmark]:
         """
         This method returns all workflow runs of a repo's workflow. After the bookmark date.
         :param org_repo: OrgRepo object to get workflow runs for
         :param repo_workflow: RepoWorkflow object to get workflow runs for
         :param bookmark: Bookmark object to get all workflow runs after this date
-        :return: Workflow runs
+        :return: Workflow runs, Bookmark object
         """
         bookmark_time_stamp = datetime.fromisoformat(bookmark.bookmark)
         try:
@@ -77,7 +86,14 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
             github_workflow_runs
         ).isoformat()
 
-        return self._get_db_workflows(github_workflow_runs, str(repo_workflow.id))
+        repo_workflow_runs = [
+            self._adapt_github_workflows_to_workflow_runs(
+                str(repo_workflow.id), workflow_run
+            )
+            for workflow_run in github_workflow_runs
+        ]
+
+        return repo_workflow_runs, bookmark
 
     def _get_new_bookmark_time_stamp(
         self, github_workflow_runs: List[Dict]
@@ -95,29 +111,32 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
         ]
         return min(pending_job_timestamps) if pending_job_timestamps else time_now()
 
-    def _get_db_workflows(
-        self, github_workflows_runs: List[Dict], repo_workflow_id: str
-    ) -> List[RepoWorkflowRuns]:
-        repo_workflow_runs: List[RepoWorkflowRuns] = []
-        for run in github_workflows_runs:
-            repo_workflow_runs.append(
-                RepoWorkflowRuns(
-                    repo_workflow_id=repo_workflow_id,
-                    provider_workflow_run_id=str(run["id"]),
-                    event_actor=run["actor"]["login"],
-                    head_branch=run["head_branch"],
-                    status=self._get_repo_workflow_status(run),
-                    created_at=time_now(),
-                    updated_at=time_now(),
-                    conducted_at=self._get_datetime_from_gh_datetime(
-                        run["run_started_at"]
-                    ),
-                    duration=self._get_repo_workflow_run_duration(run),
-                    meta=run,
-                    html_url=run["html_url"],
-                )
-            )
-        return repo_workflow_runs
+    def _adapt_github_workflows_to_workflow_runs(
+        self, repo_workflow_id: str, github_workflow_run: Dict
+    ) -> RepoWorkflowRuns:
+        repo_workflow_run_in_db = self._workflow_repo_service.get_repo_workflow_run_by_provider_workflow_run_id(
+            repo_workflow_id, str(github_workflow_run["id"])
+        )
+        if repo_workflow_run_in_db:
+            workflow_run_id = repo_workflow_run_in_db.id
+        else:
+            workflow_run_id = uuid4()
+        return RepoWorkflowRuns(
+            id=workflow_run_id,
+            repo_workflow_id=repo_workflow_id,
+            provider_workflow_run_id=str(github_workflow_run["id"]),
+            event_actor=github_workflow_run["actor"]["login"],
+            head_branch=github_workflow_run["head_branch"],
+            status=self._get_repo_workflow_status(github_workflow_run),
+            created_at=time_now(),
+            updated_at=time_now(),
+            conducted_at=self._get_datetime_from_gh_datetime(
+                github_workflow_run["run_started_at"]
+            ),
+            duration=self._get_repo_workflow_run_duration(github_workflow_run),
+            meta=github_workflow_run,
+            html_url=github_workflow_run["html_url"],
+        )
 
     def _get_repo_workflow_status(
         self, github_workflow: Dict
@@ -154,8 +173,9 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
         )
 
 
-def get_github_actions_etl_handler(core_repo_service, org_id):
+def get_github_actions_etl_handler(org_id):
     def _get_access_token():
+        core_repo_service = CoreRepoService()
         access_token = core_repo_service.get_access_token(
             org_id, UserIdentityProvider.GITHUB
         )

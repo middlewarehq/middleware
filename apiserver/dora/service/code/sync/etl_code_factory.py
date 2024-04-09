@@ -10,3 +10,4 @@ class CodeETLFactory:
     def __call__(self, provider: str) -> CodeProviderETLHandler:
         if provider == CodeProvider.GITHUB.value:
             return get_github_etl_handler(self.org_id)
+        raise NotImplementedError(f"Unknown provider - {provider}")
