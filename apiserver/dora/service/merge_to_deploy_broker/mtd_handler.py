@@ -39,9 +39,11 @@ class MergeToDeployCacheHandler:
         for org_repo in org_repos:
             try:
                 with self.redis_lock_service.acquire_lock(
-                        "{org_repo}:" + f"{str(org_repo.id)}:merge_to_deploy_broker"
+                    "{org_repo}:" + f"{str(org_repo.id)}:merge_to_deploy_broker"
                 ):
-                    self._process_deployments_for_merge_to_deploy_caching(str(org_repo.id))
+                    self._process_deployments_for_merge_to_deploy_caching(
+                        str(org_repo.id)
+                    )
             except Exception as e:
                 print(f"Error syncing workflow for repo {str(org_repo.id)}: {str(e)}")
                 continue
@@ -115,6 +117,10 @@ class MergeToDeployCacheHandler:
 
 def process_merge_to_deploy_cache(org_id: str):
     merge_to_deploy_cache_handler = MergeToDeployCacheHandler(
-        org_id, CodeRepoService(), WorkflowRepoService(), DeploymentPRMapperService(), get_redis_lock_service()
+        org_id,
+        CodeRepoService(),
+        WorkflowRepoService(),
+        DeploymentPRMapperService(),
+        get_redis_lock_service(),
     )
     merge_to_deploy_cache_handler.process_org_mtd()
