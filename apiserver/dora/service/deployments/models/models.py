@@ -36,3 +36,11 @@ class Deployment:
     @property
     def id(self):
         return self.deployment_type.value + "|" + str(self.entity_id)
+
+
+@dataclass
+class DeploymentFrequencyMetrics:
+    total_deployments: int
+    daily_deployment_frequency: int
+    avg_weekly_deployment_frequency: int
+    avg_monthly_deployment_frequency: int
