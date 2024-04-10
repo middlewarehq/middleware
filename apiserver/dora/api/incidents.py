@@ -15,6 +15,7 @@ from dora.service.incidents.incidents import get_incident_service
 from dora.api.resources.incident_resources import (
     adapt_deployments_with_related_incidents,
     adapt_incident,
+    adapt_mean_time_to_recovery_metrics,
 )
 from dora.store.models.incidents import Incident
 
@@ -94,3 +95,28 @@ def get_deployments_with_related_incidents(
             deployments,
         )
     )
+
+
+@app.route("/team/<team_id>/mean_time_to_recovery", methods=["GET"])
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_mean_time_to_recovery(
+    team_id: str, from_time: datetime, to_time: datetime
+):
+    query_validator = get_query_validator()
+    interval = query_validator.interval_validator(from_time, to_time)
+    query_validator.team_validator(team_id)
+
+    incident_service = get_incident_service()
+
+    team_mean_time_to_recovery_metrics = (
+        incident_service.get_team_mean_time_to_recovery(team_id, interval)
+    )
+
+    return adapt_mean_time_to_recovery_metrics(team_mean_time_to_recovery_metrics)
