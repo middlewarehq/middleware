@@ -97,7 +97,7 @@ def get_deployments_with_related_incidents(
     )
 
 
-@app.route("/team/<team_id>/mean_time_to_recovery", methods=["GET"])
+@app.route("/teams/<team_id>/mean_time_to_recovery", methods=["GET"])
 @queryschema(
     Schema(
         {
