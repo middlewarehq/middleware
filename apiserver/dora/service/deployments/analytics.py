@@ -1,15 +1,24 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import List, Dict, Tuple
+
+from dora.utils.dict import (
+    get_average_of_dict_values,
+    get_key_to_count_map_from_key_to_list_map,
+)
 
 from .deployment_service import DeploymentsService, get_deployments_service
 from dora.store.models.code.filter import PRFilter
 from dora.store.models.code.pull_requests import PullRequest
 from dora.store.models.code.repository import TeamRepos
 from dora.store.models.code.workflows.filter import WorkflowFilter
-from dora.service.deployments.models.models import Deployment
+from dora.service.deployments.models.models import (
+    Deployment,
+    DeploymentFrequencyMetrics,
+)
 
 from dora.store.repos.code import CodeRepoService
-from dora.utils.time import Interval
+from dora.utils.time import Interval, generate_expanded_buckets
 
 
 class DeploymentAnalyticsService:
@@ -23,11 +32,16 @@ class DeploymentAnalyticsService:
 
     def get_team_successful_deployments_in_interval_with_related_prs(
         self,
-        team_id,
+        team_id: str,
         interval: Interval,
         pr_filter: PRFilter,
         workflow_filter: WorkflowFilter,
-    ) -> Dict[str, Dict[Deployment, List[PullRequest]]]:
+    ) -> Dict[str, List[Dict[Deployment, List[PullRequest]]]]:
+        """
+        Retrieves successful deployments within the specified interval for a given team,
+        along with related pull requests. Returns A dictionary mapping repository IDs to lists of deployments along with related pull requests. Each deployment is associated with a list of pull requests that contributed to it.
+        """
+
         deployments: List[
             Deployment
         ] = self.deployments_service.get_team_successful_deployments_in_interval(
@@ -68,6 +82,55 @@ class DeploymentAnalyticsService:
             repo_id_to_deployments_with_pr_map[repo_id].update(deployments_pr_map)
 
         return repo_id_to_deployments_with_pr_map
+
+    def get_team_deployment_frequency_metrics(
+        self,
+        team_id: str,
+        interval: Interval,
+        pr_filter: PRFilter,
+        workflow_filter: WorkflowFilter,
+    ) -> DeploymentFrequencyMetrics:
+
+        team_successful_deployments = (
+            self.deployments_service.get_team_successful_deployments_in_interval(
+                team_id, interval, pr_filter, workflow_filter
+            )
+        )
+
+        team_daily_deployments = generate_expanded_buckets(
+            team_successful_deployments, interval, "conducted_at", "daily"
+        )
+        team_weekly_deployments = generate_expanded_buckets(
+            team_successful_deployments, interval, "conducted_at", "weekly"
+        )
+        team_monthly_deployments = generate_expanded_buckets(
+            team_successful_deployments, interval, "conducted_at", "monthly"
+        )
+
+        daily_deployment_frequency = (
+            self._get_deployment_frequency_from_date_to_deployment_map(
+                team_daily_deployments
+            )
+        )
+
+        weekly_deployment_frequency = (
+            self._get_deployment_frequency_from_date_to_deployment_map(
+                team_weekly_deployments
+            )
+        )
+
+        monthly_deployment_frequency = (
+            self._get_deployment_frequency_from_date_to_deployment_map(
+                team_monthly_deployments
+            )
+        )
+
+        return DeploymentFrequencyMetrics(
+            len(team_successful_deployments),
+            daily_deployment_frequency,
+            weekly_deployment_frequency,
+            monthly_deployment_frequency,
+        )
 
     def _map_prs_to_repo_id_and_base_branch(
         self, pull_requests: List[PullRequest]
@@ -121,6 +184,19 @@ class DeploymentAnalyticsService:
 
     def _get_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
         return self.code_repo_service.get_active_team_repos_by_team_id(team_id)
+
+    def _get_deployment_frequency_from_date_to_deployment_map(
+        self, date_to_deployment_map: Dict[datetime, List[Deployment]]
+    ) -> int:
+        """
+        This method takes a dict of datetime representing (day/week/month) to Deployments and returns avg deployment frequency
+        """
+
+        date_to_deployment_count_map: Dict[
+            datetime, int
+        ] = get_key_to_count_map_from_key_to_list_map(date_to_deployment_map)
+
+        return get_average_of_dict_values(date_to_deployment_count_map)
 
 
 def get_deployment_analytics_service() -> DeploymentAnalyticsService:

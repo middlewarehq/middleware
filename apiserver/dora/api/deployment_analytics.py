@@ -15,15 +15,22 @@ from dora.service.pr_analytics import get_pr_analytics_service
 from dora.service.code.pr_filter import apply_pr_filter
 
 from dora.api.request_utils import coerce_workflow_filter, queryschema
-from dora.api.resources.deployment_resources import adapt_deployment
+from dora.api.resources.deployment_resources import (
+    adapt_deployment,
+    adapt_deployment_frequency_metrics,
+)
 from dora.service.deployments.analytics import get_deployment_analytics_service
 from dora.service.query_validator import get_query_validator
-from dora.store.models import Users, SettingType, EntityType
+from dora.store.models import SettingType, EntityType, Team
 from dora.store.models.code.filter import PRFilter
 from dora.store.models.code.pull_requests import PullRequest
 from dora.store.models.code.repository import OrgRepo, TeamRepos
 from dora.store.models.code.workflows.filter import WorkflowFilter
-from dora.service.deployments.models.models import Deployment, DeploymentType
+from dora.service.deployments.models.models import (
+    Deployment,
+    DeploymentFrequencyMetrics,
+    DeploymentType,
+)
 from dora.store.repos.code import CodeRepoService
 
 
@@ -67,7 +74,7 @@ def get_team_deployment_analytics(
     deployments_analytics_service = get_deployment_analytics_service()
 
     repo_id_to_deployments_map_with_prs: Dict[
-        str, Dict[Deployment, List[PullRequest]]
+        str, List[Dict[Deployment, List[PullRequest]]]
     ] = deployments_analytics_service.get_team_successful_deployments_in_interval_with_related_prs(
         team_id, interval, pr_filter, workflow_filter
     )
@@ -128,3 +135,41 @@ def get_prs_included_in_deployment(deployment_id: str):
     return get_non_paginated_pr_response(
         prs=prs, repo_id_map=repo_id_map, total_count=len(prs)
     )
+
+
+@app.route("/team/<team_id>/deployment_frequency", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
+            Optional("workflow_filter"): All(str, Coerce(coerce_workflow_filter)),
+        }
+    ),
+)
+def get_cockpit_lead_time_trends(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: Dict = None,
+    workflow_filter: WorkflowFilter = None,
+):
+
+    query_validator = get_query_validator()
+    interval = query_validator.interval_validator(from_time, to_time)
+    query_validator.team_validator(team_id)
+
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
+    deployments_analytics_service = get_deployment_analytics_service()
+
+    team_deployment_frequency_metrics: DeploymentFrequencyMetrics = (
+        deployments_analytics_service.get_team_deployment_frequency_metrics(
+            team_id, interval, pr_filter, workflow_filter
+        )
+    )
+
+    return adapt_deployment_frequency_metrics(team_deployment_frequency_metrics)
