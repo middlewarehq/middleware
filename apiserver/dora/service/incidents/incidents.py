@@ -1,7 +1,8 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Dict, Tuple
 from dora.service.incidents.models.mean_time_to_recovery import (
+    ChangeFailureRateMetrics,
     MeanTimeToRecoveryMetrics,
 )
 from dora.service.deployments.models.models import Deployment
@@ -125,6 +126,30 @@ class IncidentService:
                 weekly_mean_time_to_recovery[week] = MeanTimeToRecoveryMetrics()
 
         return weekly_mean_time_to_recovery
+
+    def calculate_change_failure_deployments(
+        self, deployment_incidents_map: Dict[Deployment, List[Incident]]
+    ) -> Tuple[List[Deployment], List[Deployment]]:
+        failed_deployments = [
+            deployment
+            for deployment, incidents in deployment_incidents_map.items()
+            if incidents
+        ]
+        all_deployments: List[Deployment] = list(deployment_incidents_map.keys())
+
+        return failed_deployments, all_deployments
+
+    def get_change_failure_rate_metrics(
+        self, deployments: List[Deployment], incidents: List[Incident]
+    ) -> ChangeFailureRateMetrics:
+        deployment_incidents_map = self.get_deployment_incidents_map(
+            deployments, incidents
+        )
+        (
+            failed_deployments,
+            all_deployments,
+        ) = self.calculate_change_failure_deployments(deployment_incidents_map)
+        return ChangeFailureRateMetrics(set(failed_deployments), set(all_deployments))
 
     def _calculate_incident_resolution_time(self, incident: Incident) -> int:
         return (incident.resolved_date - incident.creation_date).total_seconds()
