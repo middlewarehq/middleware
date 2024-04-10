@@ -4,7 +4,6 @@ from typing import Optional, List
 
 from sqlalchemy import or_
 from sqlalchemy.orm import defer
-from dora.utils.time import Interval
 
 from dora.store import rollback_on_exc, session
 from dora.store.models.code import (
@@ -19,6 +18,7 @@ from dora.store.models.code import (
     PRFilter,
     BookmarkMergeToDeployBroker,
 )
+from dora.utils.time import Interval
 
 
 class CodeRepoService:
@@ -287,6 +287,23 @@ class CodeRepoService:
             )
             .all()
         )
+
+    @rollback_on_exc
+    def get_repo_revert_prs_mappings_updated_in_interval(
+        self, repo_id, from_time, to_time
+    ) -> List[PullRequestRevertPRMapping]:
+        query = (
+            session.query(PullRequestRevertPRMapping)
+            .join(PullRequest, PullRequest.id == PullRequestRevertPRMapping.pr_id)
+            .filter(
+                PullRequest.repo_id == repo_id,
+                PullRequest.state == PullRequestState.MERGED,
+                PullRequestRevertPRMapping.updated_at.between(from_time, to_time),
+            )
+        )
+        query = query.order_by(PullRequest.updated_at.desc())
+
+        return query.all()
 
     def _filter_prs_by_repo_ids(self, query, repo_ids: List[str]):
         return query.filter(PullRequest.repo_id.in_(repo_ids))
