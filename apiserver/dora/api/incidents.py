@@ -106,9 +106,7 @@ def get_deployments_with_related_incidents(
         }
     ),
 )
-def get_team_mean_time_to_recovery(
-    team_id: str, from_time: datetime, to_time: datetime
-):
+def get_team_mttr(team_id: str, from_time: datetime, to_time: datetime):
     query_validator = get_query_validator()
     interval = query_validator.interval_validator(from_time, to_time)
     query_validator.team_validator(team_id)
@@ -120,3 +118,31 @@ def get_team_mean_time_to_recovery(
     )
 
     return adapt_mean_time_to_recovery_metrics(team_mean_time_to_recovery_metrics)
+
+
+@app.route("/teams/<team_id>/mean_time_to_recovery/trends", methods=["GET"])
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_mttr_trends(team_id: str, from_time: datetime, to_time: datetime):
+    query_validator = get_query_validator()
+    interval = query_validator.interval_validator(from_time, to_time)
+    query_validator.team_validator(team_id)
+
+    incident_service = get_incident_service()
+
+    weekly_mean_time_to_recovery_metrics = (
+        incident_service.get_team_mean_time_to_recovery_trends(team_id, interval)
+    )
+
+    return {
+        week.isoformat(): adapt_mean_time_to_recovery_metrics(
+            mean_time_to_recovery_metrics
+        )
+        for week, mean_time_to_recovery_metrics in weekly_mean_time_to_recovery_metrics.items()
+    }

@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
 class MeanTimeToRecoveryMetrics:
-    mean_time_to_recovery: float
-    incident_count: int
+    mean_time_to_recovery: Optional[float] = None
+    incident_count: int = 0
