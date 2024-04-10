@@ -1,6 +1,7 @@
 from typing import Dict, List
 from dora.service.incidents.models.mean_time_to_recovery import (
     MeanTimeToRecoveryMetrics,
+    ChangeFailureRateMetrics,
 )
 from dora.api.resources.deployment_resources import adapt_deployment
 from dora.service.deployments.models.models import Deployment
@@ -59,4 +60,12 @@ def adapt_mean_time_to_recovery_metrics(
     return {
         "mean_time_to_recovery": mean_time_to_recovery.mean_time_to_recovery,
         "incident_count": mean_time_to_recovery.incident_count,
+    }
+
+
+def adapt_change_failure_rate(change_failure_rate: ChangeFailureRateMetrics):
+    return {
+        "change_failure_rate": change_failure_rate.change_failure_rate,
+        "failed_deployments": change_failure_rate.failed_deployments_count,
+        "total_deployments": change_failure_rate.total_deployments_count,
     }
