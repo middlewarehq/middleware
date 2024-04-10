@@ -5,6 +5,7 @@ from datetime import datetime
 
 from flask import Blueprint
 from voluptuous import Required, Schema, Coerce, All, Optional
+from dora.service.incidents.models.mean_time_to_recovery import ChangeFailureRateMetrics
 from dora.service.deployments.deployment_service import (
     get_deployments_service,
 )
@@ -13,6 +14,7 @@ from dora.store.models.code.workflows.filter import WorkflowFilter
 from dora.utils.time import Interval
 from dora.service.incidents.incidents import get_incident_service
 from dora.api.resources.incident_resources import (
+    adapt_change_failure_rate,
     adapt_deployments_with_related_incidents,
     adapt_incident,
     adapt_mean_time_to_recovery_metrics,
@@ -146,3 +148,43 @@ def get_team_mttr_trends(team_id: str, from_time: datetime, to_time: datetime):
         )
         for week, mean_time_to_recovery_metrics in weekly_mean_time_to_recovery_metrics.items()
     }
+
+
+@app.route("/teams/<team_id>/change_failure_rate", methods=["GET"])
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
+            Optional("workflow_filter"): All(str, Coerce(coerce_workflow_filter)),
+        }
+    ),
+)
+def get_team_cfr(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: dict = None,
+    workflow_filter: WorkflowFilter = None,
+):
+
+    query_validator = get_query_validator()
+    interval = Interval(from_time, to_time)
+    query_validator.team_validator(team_id)
+
+    deployments: List[
+        Deployment
+    ] = get_deployments_service().get_team_all_deployments_in_interval(
+        team_id, interval, pr_filter, workflow_filter
+    )
+
+    incident_service = get_incident_service()
+
+    incidents: List[Incident] = incident_service.get_team_incidents(team_id, interval)
+
+    team_change_failure_rate: ChangeFailureRateMetrics = (
+        incident_service.get_change_failure_rate_metrics(deployments, incidents)
+    )
+
+    return adapt_change_failure_rate(team_change_failure_rate)
