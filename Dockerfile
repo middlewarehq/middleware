@@ -23,14 +23,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Final image
 FROM python:3.9-slim
-# Prevents Python from writing pyc files.
-ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 COPY --from=backend-build /opt/venv /opt/venv
 COPY --from=backend-build /app/backend /app/backend
 COPY ./database-docker/db/ /app/db/
 COPY ./init_db.sh /app/
+COPY ./generate_config_ini.sh /app/
 COPY ./supervisord.conf /etc/supervisord.conf
 
 RUN chmod +x /app/init_db.sh \
@@ -52,7 +51,8 @@ RUN chmod +x /app/init_db.sh \
   && mkdir -p /var/log/redis \
   && touch /var/log/redis/redis.log \
   && mkdir -p /var/log/apiserver \
-  && touch /var/log/apiserver/apiserver.log
+  && touch /var/log/apiserver/apiserver.log \
+  && /app/generate_config_ini.sh -t /app/backend/apiserver/dora/config
 
 ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:$PATH"
 
