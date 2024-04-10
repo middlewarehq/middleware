@@ -1,4 +1,5 @@
 from typing import Dict, List
+from datetime import datetime
 from dora.service.code.models.lead_time import LeadTimeMetrics
 from dora.store.models.code.repository import TeamRepos
 
@@ -11,7 +12,11 @@ from dora.service.deployments.deployment_service import (
     get_deployments_service,
 )
 
-from dora.utils.time import Interval
+from dora.utils.time import (
+    Interval,
+    fill_missing_week_buckets,
+    generate_expanded_buckets,
+)
 
 
 class LeadTimeService:
@@ -28,32 +33,52 @@ class LeadTimeService:
         team: Team,
         interval: Interval,
         pr_filter: Dict[str, PRFilter] = None,
-    ) -> Dict[TeamRepos, List[LeadTimeMetrics]]:
+    ) -> LeadTimeMetrics:
 
         team_repos = self._code_repo_service.get_active_team_repos_by_team_id(team.id)
 
-        (
-            team_repos_using_workflow_deployments,
-            team_repos_using_pr_deployments,
-        ) = self._deployments_service.get_filtered_team_repos_by_deployment_config(
-            team_repos
-        )
-
-        lead_time_metrics_using_workflow = (
-            self._get_lead_time_metrics_for_repos_using_workflow_deployments(
-                team_repos_using_workflow_deployments, interval, pr_filter
-            )
-        )
-
-        lead_time_metrics_using_pr = (
-            self._get_lead_time_metrics_for_repos_using_pr_deployments(
-                team_repos_using_pr_deployments, interval, pr_filter
-            )
-        )
-
         return self._get_weighted_avg_lead_time_metrics(
-            lead_time_metrics_using_workflow + lead_time_metrics_using_pr
+            self._get_team_repos_lead_time_metrics(team_repos, interval, pr_filter)
         )
+
+    def get_team_lead_time_metrics_trends(
+        self,
+        team: Team,
+        interval: Interval,
+        pr_filter: Dict[str, PRFilter] = None,
+    ) -> Dict[datetime, LeadTimeMetrics]:
+
+        team_repos = self._code_repo_service.get_active_team_repos_by_team_id(team.id)
+
+        lead_time_metrics: List[LeadTimeMetrics] = list(
+            set(self._get_team_repos_lead_time_metrics(team_repos, interval, pr_filter))
+        )
+
+        weekly_lead_time_metrics_map: Dict[
+            datetime, List[LeadTimeMetrics]
+        ] = generate_expanded_buckets(
+            lead_time_metrics, interval, "merged_at", "weekly"
+        )
+
+        weekly_lead_time_metrics_avg_map: Dict[
+            datetime, LeadTimeMetrics
+        ] = self.get_avg_lead_time_metrics_from_map(weekly_lead_time_metrics_map)
+
+        weekly_lead_time_metrics_avg_map = fill_missing_week_buckets(
+            weekly_lead_time_metrics_avg_map, interval, LeadTimeMetrics
+        )
+
+        return weekly_lead_time_metrics_avg_map
+
+    def get_avg_lead_time_metrics_from_map(
+        self, map_lead_time_metrics: Dict[datetime, List[LeadTimeMetrics]]
+    ) -> Dict[datetime, LeadTimeMetrics]:
+        map_avg_lead_time_metrics = {}
+        for key, lead_time_metrics in map_lead_time_metrics.items():
+            map_avg_lead_time_metrics[key] = self._get_weighted_avg_lead_time_metrics(
+                lead_time_metrics
+            )
+        return map_avg_lead_time_metrics
 
     def get_team_lead_time_prs(
         self,
@@ -82,6 +107,34 @@ class LeadTimeService:
         )
 
         return list(set(lead_time_prs_using_workflow + lead_time_prs_using_pr))
+
+    def _get_team_repos_lead_time_metrics(
+        self,
+        team_repos: TeamRepos,
+        interval: Interval,
+        pr_filter: Dict[str, PRFilter] = None,
+    ) -> List[LeadTimeMetrics]:
+
+        (
+            team_repos_using_workflow_deployments,
+            team_repos_using_pr_deployments,
+        ) = self._deployments_service.get_filtered_team_repos_by_deployment_config(
+            team_repos
+        )
+
+        lead_time_metrics_using_workflow = (
+            self._get_lead_time_metrics_for_repos_using_workflow_deployments(
+                team_repos_using_workflow_deployments, interval, pr_filter
+            )
+        )
+
+        lead_time_metrics_using_pr = (
+            self._get_lead_time_metrics_for_repos_using_pr_deployments(
+                team_repos_using_pr_deployments, interval, pr_filter
+            )
+        )
+
+        return lead_time_metrics_using_workflow + lead_time_metrics_using_pr
 
     def _get_lead_time_metrics_for_repos_using_workflow_deployments(
         self,
