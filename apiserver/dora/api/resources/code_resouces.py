@@ -1,4 +1,5 @@
 from typing import Dict, List
+from dora.service.code.models.lead_time import LeadTimeMetrics
 from dora.api.resources.core_resources import adapt_user_info
 from dora.store.models.code import PullRequest
 from dora.store.models.core import Users
@@ -88,4 +89,15 @@ def get_non_paginated_pr_response(
             for pr in prs
         ],
         "total_count": total_count,
+    }
+
+def adapt_lead_time_metrics(lead_time_metric: LeadTimeMetrics) -> Dict[str, any]:
+    return {
+        "lead_time": lead_time_metric.lead_time,
+        "first_commit_to_open": lead_time_metric.first_commit_to_open,
+        "first_response_time": lead_time_metric.first_response_time,
+        "rework_time": lead_time_metric.rework_time,
+        "merge_time": lead_time_metric.merge_time,
+        "merge_to_deploy": lead_time_metric.merge_to_deploy,
+        "pr_count": lead_time_metric.pr_count,
     }
