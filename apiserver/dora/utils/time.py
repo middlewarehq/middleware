@@ -239,25 +239,6 @@ def sort_dict_by_datetime_keys(input_dict):
     return sorted_dict
 
 
-def get_time_delta_based_on_granularity(date: datetime, granularity: str) -> timedelta:
-    """
-    Takes a date and a granularity.
-    Returns a timedelta based on the granularity.
-    Granularity options: 'daily', 'weekly', 'monthly'.
-    """
-    if granularity == "daily":
-        return timedelta(days=1)
-    if granularity == "weekly":
-        return timedelta(weeks=1)
-    if granularity == "monthly":
-        some_day_in_next_month = date.replace(day=28) + timedelta(days=4)
-        last_day_of_month = some_day_in_next_month - timedelta(
-            days=some_day_in_next_month.day
-        )
-        return last_day_of_month - date + timedelta(days=1)
-    raise ValueError("Invalid granularity. Choose 'daily', 'weekly', or 'monthly'.")
-
-
 def fill_missing_week_buckets(
     week_start_to_object_map: Dict[datetime, Any],
     interval: Interval,
