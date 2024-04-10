@@ -1,5 +1,6 @@
 import json
 from typing import Dict, List
+
 from datetime import datetime
 
 from flask import Blueprint
@@ -19,7 +20,6 @@ from dora.store.models.incidents import Incident
 
 from dora.api.request_utils import coerce_workflow_filter, queryschema
 from dora.service.query_validator import get_query_validator
-from dora.store.models import Users
 
 app = Blueprint("incidents", __name__)
 

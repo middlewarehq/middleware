@@ -1,11 +1,7 @@
-from dataclasses import dataclass
 from typing import List, Dict, Any
 
-from sqlalchemy import and_, or_
-from sqlalchemy.dialects.postgresql import Any
 from dora.service.settings.configuration_settings import get_settings_service
 from dora.service.settings.models import ExcludedPRsSetting
-
 from dora.store.models.code import PRFilter
 from dora.store.models.settings.configuration_settings import SettingType
 from dora.store.models.settings.enums import EntityType

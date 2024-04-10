@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import List, Tuple
 from uuid import uuid4
 
-from dora.service.code.integration import get_code_integration_service
+from dora.service.code import get_code_integration_service
 from dora.service.workflows.integration import get_workflows_integrations_service
 from dora.service.workflows.sync.etl_provider_handler import WorkflowProviderETLHandler
 from dora.store.models.code import (
