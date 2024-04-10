@@ -2,7 +2,10 @@ from typing import Dict
 from .core_resources import adapt_user_info
 from dora.store.models.core.users import Users
 
-from dora.service.deployments.models.models import Deployment
+from dora.service.deployments.models.models import (
+    Deployment,
+    DeploymentFrequencyMetrics,
+)
 
 
 def adapt_deployment(
@@ -21,4 +24,15 @@ def adapt_deployment(
         "status": deployment.status.value,
         "html_url": deployment.html_url,
         "meta": deployment.meta,
+    }
+
+
+def adapt_deployment_frequency_metrics(
+    deployment_frequency_metrics: DeploymentFrequencyMetrics,
+) -> Dict:
+    return {
+        "total_deployments": deployment_frequency_metrics.total_deployments,
+        "avg_daily_deployment_frequency": deployment_frequency_metrics.daily_deployment_frequency,
+        "avg_weekly_deployment_frequency": deployment_frequency_metrics.avg_weekly_deployment_frequency,
+        "avg_monthly_deployment_frequency": deployment_frequency_metrics.avg_monthly_deployment_frequency,
     }
