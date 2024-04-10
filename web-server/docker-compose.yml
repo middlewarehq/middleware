@@ -1,0 +1,8 @@
+version: '3'
+services:
+  web:
+    build: .
+    command: tail -f /dev/null
+    ports:
+      - "3000:3000"
+    image: jayantbh/mhq-web

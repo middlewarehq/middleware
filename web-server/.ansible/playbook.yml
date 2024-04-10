@@ -1,0 +1,128 @@
+---
+
+- hosts: all
+  become: true
+  pre_tasks:
+  - name: Install updates (Amazon) 
+    tags: always
+    dnf:
+      update_only: yes
+      update_cache: yes
+    when: ansible_distribution == "Amazon"
+
+  - name: Install necessary dependencies
+    tags: always
+    dnf:
+      name: "{{ item }}"
+      state: present
+      allowerasing: true
+    loop: 
+      - npm
+      - git
+      - tar
+      - curl
+    when: ansible_distribution == "Amazon"
+
+  - name: Install n -> Node package manager
+    tags: always
+    shell: npm install -g n 
+    when: ansible_distribution == "Amazon"
+
+  - name: Install Nodejs using n 
+    tags: always
+    shell: n 16
+    when: ansible_distribution == "Amazon"
+
+  - name: Install yarn using npm
+    tags: always
+    shell: npm install -g yarn
+    when: ansible_distribution == "Amazon"
+
+
+- hosts: web_servers
+  become: false
+  tasks:
+    - name: Create .aws directory
+      tags: aws
+      file:
+        path: /home/ec2-user/.aws
+        state: directory
+        mode: 0755
+
+    - name: Copy config and credentials to .aws directory 
+      tags: aws
+      copy:
+        src: "{{ item }}"
+        dest: /home/ec2-user/.aws
+      with_items:
+        - "{{ AWS_CONFIG }}" 
+        - "{{ AWS_CREDENTIALS }}" 
+      no_log: true
+
+    - name: Check SSH_AUTH_SOCK env variable
+      command: echo $SSH_AUTH_SOCK
+
+    - name: Clone/Update github repo
+      git:
+        repo: git@github.com:middlewarehq/web-manager-dash.git
+        version: main 
+        dest: /home/ec2-user/web-manager-dash
+        accept_hostkey: true
+        force: true
+    
+    - name: Create local_envs directory
+      file:
+        path: /home/ec2-user/web-manager-dash/.local_envs/
+        state: directory
+        mode: 0755
+
+    - name: Copy .env to remote server
+      copy:
+        src: "{{ item }}"
+        dest: /home/ec2-user/web-manager-dash/
+      with_items:
+        - "{{ ENV_FILE }}" 
+      no_log: true
+
+    - name: Install Node.js dependencies
+      yarn:
+        path: /home/ec2-user/web-manager-dash
+        state: present
+        production: false
+
+    - name: Build Next.js app
+      command: yarn build 
+      args:
+        chdir: /home/ec2-user/web-manager-dash
+      async: 1800
+      poll: 60
+      # no_log: true
+
+    - name: Create staging directory
+      file:
+        path: /home/ec2-user/staging/
+        state: directory
+        mode: 0755
+
+    - name: copy artifacts from web-manager-dash folder to staging folder
+      copy:
+        src: /home/ec2-user/web-manager-dash/artifacts/artifact.tar.gz
+        dest: /home/ec2-user/staging/
+        remote_src: true
+
+    - name: Extract artifacts
+      become: true
+      command: tar -xzf /home/ec2-user/staging/artifact.tar.gz -C /home/ec2-user/staging/
+
+    - name: Remove web-manager-dash folder
+      become: true
+      file:
+        path: /home/ec2-user/web-manager-dash
+        state: absent
+
+    - name: Start Next.js app
+      command: yarn box-server-start 
+      args:
+        chdir: /home/ec2-user/staging
+      async: 600
+      poll: 0

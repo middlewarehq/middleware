@@ -1,0 +1,2 @@
+[web_servers]
+172.31.9.106 ansible_user=ec2-user ENV_FILE=.env AWS_CONFIG=./aws/config AWS_CREDENTIALS=./aws/credentials

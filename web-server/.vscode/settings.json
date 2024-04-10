@@ -1,0 +1,26 @@
+{
+  "workbench.editor.labelFormat": "short",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "tsEssentialPlugins.autoImport.changeSorting": {
+    "track": ["@/constants/events"],
+    "useTheme": ["@mui/material"],
+    "captureException": ["@sentry/node"],
+    "useDispatch": ["@/store"],
+    "useSelector": ["@/store"],
+    "Line": ["@/components/Text", "../Text"],
+    "createContext": ["react"]
+  },
+  "tsEssentialPlugins.patchOutline": true,
+  "editor.linkedEditing": true,
+  "tsEssentialPlugins.enableMethodSnippets": false,
+  "cSpell.words": [
+    "collab",
+    "openai",
+    "opsgenie",
+    "pagerduty",
+    "Serie",
+    "zenduty"
+  ],
+}

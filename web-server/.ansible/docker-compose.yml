@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  my_service:
+    container_name: al23
+    image: amazonlinux_23:latest
+    volumes:
+      - $SSH_AUTH_SOCK:/ssh-agent
+    environment:
+      - SSH_AUTH_SOCK=/ssh-agent

@@ -1,0 +1,28 @@
+# See https://help.github.com/ignore-files/ for more about ignoring files.
+
+# dependencies
+node_modules
+
+# misc
+.DS_Store
+.env.local
+.env.*.local
+*.log*
+artifact.zip
+artifact.tar.gz
+artifacts/
+.local.*
+temp*.sh
+playwright-report
+.local_envs
+*.tmp
+storage.playwright.json
+ts-traces
+
+# Next.js
+.next
+tsconfig.tsbuildinfo
+.vercel
+
+# Sentry
+.sentryclirc
