@@ -27,10 +27,8 @@ class IncidentStatus(Enum):
 
 class IncidentType(Enum):
     INCIDENT = "INCIDENT"
-    ALERT = "ALERT"
     REVERT_PR = "REVERT_PR"
 
 
 class IncidentBookmarkType(Enum):
     SERVICE = "SERVICE"
-    TEAM = "TEAM"

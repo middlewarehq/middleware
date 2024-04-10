@@ -6,6 +6,7 @@ from dora.exapi.git_incidents import (
     get_git_incidents_api_service,
 )
 from dora.exapi.models.git_incidents import RevertPRMap
+from dora.service.incidents.sync.etl_provider_handler import IncidentsProviderETLHandler
 from dora.store.models.code import OrgRepo, PullRequest
 from dora.store.models.incidents import (
     IncidentSource,
@@ -23,7 +24,7 @@ from dora.utils.string import uuid4_str
 from dora.utils.time import time_now
 
 
-class GitIncidentsETLHandler:
+class GitIncidentsETLHandler(IncidentsProviderETLHandler):
     def __init__(
         self,
         org_id: str,
@@ -37,6 +38,7 @@ class GitIncidentsETLHandler:
     def check_pat_validity(self) -> bool:
         """
         Checks if Incident Source, "GIT_REPO" is enabled for the org
+        :return: True if enabled, False otherwise
         """
         return self.git_incidents_api_service.is_sync_enabled(self.org_id)
 
@@ -73,18 +75,18 @@ class GitIncidentsETLHandler:
 
         return updated_services
 
-    def sync_service_incidents(
+    def process_service_incidents(
         self,
-        service: OrgIncidentService,
+        incident_service: OrgIncidentService,
         bookmark: IncidentsBookmark,
     ) -> Tuple[List[Incident], List[IncidentOrgIncidentServiceMap], IncidentsBookmark]:
         """
         Sync incidents for the service
-        :param service: OrgIncidentService
+        :param incident_service: OrgIncidentService
         :param bookmark: IncidentsBookmark
         :return: List of Incidents, List of IncidentOrgIncidentServiceMap, IncidentsBookmark
         """
-        if not service or not isinstance(service, OrgIncidentService):
+        if not incident_service or not isinstance(incident_service, OrgIncidentService):
             raise Exception(f"Service not found")
 
         from_time: datetime = bookmark.bookmark
@@ -93,11 +95,11 @@ class GitIncidentsETLHandler:
         revert_pr_incidents: List[
             RevertPRMap
         ] = self.git_incidents_api_service.get_repo_revert_prs_in_interval(
-            service.key, from_time, to_time
+            incident_service.key, from_time, to_time
         )
         if not revert_pr_incidents:
             LOG.warning(
-                f"[GIT Incidents Sync] Incidents not received for service {str(service.id)} "
+                f"[GIT Incidents Sync] Incidents not received for service {str(incident_service.id)} "
                 f"in org {self.org_id} since {from_time.isoformat()}"
             )
             return [], [], bookmark
@@ -109,7 +111,7 @@ class GitIncidentsETLHandler:
         bookmark.bookmark = max(bookmark.bookmark, revert_pr_incidents[-1].updated_at)
 
         incidents, incident_org_incident_service_map_models = self._process_incidents(
-            service, revert_pr_incidents
+            incident_service, revert_pr_incidents
         )
 
         return incidents, incident_org_incident_service_map_models, bookmark
