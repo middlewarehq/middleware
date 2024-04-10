@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import List, Dict
 from dora.service.incidents.models.mean_time_to_recovery import (
     MeanTimeToRecoveryMetrics,
@@ -7,7 +8,7 @@ from dora.service.deployments.models.models import Deployment
 from dora.service.incidents.incident_filter import apply_incident_filter
 from dora.store.models.incidents.filter import IncidentFilter
 from dora.store.models.settings import EntityType, SettingType
-from dora.utils.time import Interval
+from dora.utils.time import Interval, generate_expanded_buckets
 
 from dora.store.models.incidents import Incident
 from dora.service.settings.configuration_settings import (
@@ -99,6 +100,31 @@ class IncidentService:
         resolved_team_incidents = self.get_resolved_team_incidents(team_id, interval)
 
         return self._get_incidents_mean_time_to_recovery(resolved_team_incidents)
+
+    def get_team_mean_time_to_recovery_trends(
+        self, team_id: str, interval: Interval
+    ) -> MeanTimeToRecoveryMetrics:
+
+        resolved_team_incidents = self.get_resolved_team_incidents(team_id, interval)
+
+        weekly_resolved_team_incidents: Dict[
+            datetime, List[Incident]
+        ] = generate_expanded_buckets(
+            resolved_team_incidents, interval, "resolved_date", "weekly"
+        )
+
+        weekly_mean_time_to_recovery: Dict[datetime, MeanTimeToRecoveryMetrics] = {}
+
+        for week, incidents in weekly_resolved_team_incidents.items():
+
+            if incidents:
+                weekly_mean_time_to_recovery[
+                    week
+                ] = self._get_incidents_mean_time_to_recovery(incidents)
+            else:
+                weekly_mean_time_to_recovery[week] = MeanTimeToRecoveryMetrics()
+
+        return weekly_mean_time_to_recovery
 
     def _calculate_incident_resolution_time(self, incident: Incident) -> int:
         return (incident.resolved_date - incident.creation_date).total_seconds()
