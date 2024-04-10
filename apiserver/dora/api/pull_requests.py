@@ -5,6 +5,7 @@ from flask import Blueprint
 from typing import Dict, List
 
 from voluptuous import Required, Schema, Coerce, All, Optional
+from dora.service.code.models.lead_time import LeadTimeMetrics
 from dora.service.code.lead_time import get_lead_time_service
 from dora.service.code.pr_filter import apply_pr_filter
 
@@ -128,3 +129,41 @@ def get_cockpit_lead_time(
     adapted_lead_time_metrics = adapt_lead_time_metrics(teams_average_lead_time_metrics)
 
     return adapted_lead_time_metrics
+
+
+@app.route("/team/<team_id>/lead_time/trends", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
+        }
+    ),
+)
+def get_cockpit_lead_time_trends(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: Dict = None,
+):
+
+    query_validator = get_query_validator()
+
+    interval: Interval = query_validator.interval_validator(from_time, to_time)
+    team: Team = query_validator.team_validator(team_id)
+
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
+    lead_time_service = get_lead_time_service()
+
+    weekly_lead_time_metrics_avg_map: Dict[
+        datetime, LeadTimeMetrics
+    ] = lead_time_service.get_team_lead_time_metrics_trends(team, interval, pr_filter)
+
+    return {
+        week.isoformat(): adapt_lead_time_metrics(average_lead_time_metrics)
+        for week, average_lead_time_metrics in weekly_lead_time_metrics_avg_map.items()
+    }
