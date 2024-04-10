@@ -1,3 +1,6 @@
+from typing import Dict, List
+from dora.api.resources.deployment_resources import adapt_deployment
+from dora.service.deployments.models.models import Deployment
 from dora.store.models.incidents import Incident
 from dora.api.resources.core_resources import adapt_user_info
 
@@ -31,3 +34,17 @@ def adapt_incident(
         "summary": incident.meta.get("summary"),
         "incident_type": incident.incident_type.value,
     }
+
+
+def adapt_deployments_with_related_incidents(
+    deployment: Deployment,
+    deployment_incidents_map: Dict[Deployment, List[Incident]],
+    username_user_map: dict = None,
+):
+    deployment_response = adapt_deployment(deployment, username_user_map)
+    incidents = deployment_incidents_map.get(deployment, [])
+    incident_response = list(
+        map(lambda incident: adapt_incident(incident, username_user_map), incidents)
+    )
+    deployment_response["incidents"] = incident_response
+    return deployment_response

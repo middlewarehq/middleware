@@ -1,11 +1,12 @@
 from typing import List
-from dora.store.models.incidents.enums import IncidentType
+from sqlalchemy import and_
 from dora.store import rollback_on_exc, session
 from dora.store.models.incidents import (
     Incident,
     IncidentFilter,
     IncidentOrgIncidentServiceMap,
     TeamIncidentService,
+    IncidentStatus,
 )
 from dora.utils.time import Interval
 
@@ -21,6 +22,32 @@ class IncidentsRepoService:
     def get_resolved_team_incidents(
         self, team_id: str, interval: Interval, incident_filter: IncidentFilter = None
     ) -> List[Incident]:
+        query = self._get_team_incidents_query(team_id, incident_filter)
+
+        query = query.filter(
+            and_(
+                Incident.status == IncidentStatus.RESOLVED.value,
+                Incident.resolved_date.between(interval.from_time, interval.to_time),
+            )
+        )
+
+        return query.all()
+
+    @rollback_on_exc
+    def get_team_incidents(
+        self, team_id: str, interval: Interval, incident_filter: IncidentFilter = None
+    ) -> List[Incident]:
+        query = self._get_team_incidents_query(team_id, incident_filter)
+
+        query = query.filter(
+            Incident.creation_date.between(interval.from_time, interval.to_time),
+        )
+
+        return query.all()
+
+    def _get_team_incidents_query(
+        self, team_id: str, incident_filter: IncidentFilter = None
+    ):
         query = (
             session.query(Incident)
             .join(
@@ -38,9 +65,5 @@ class IncidentsRepoService:
         )
 
         query = self._apply_incident_filter(query, incident_filter)
-        query = query.filter(Incident.incident_type == IncidentType.ALERT)
-        query = query.filter(
-            Incident.resolved_date.between(interval.from_time, interval.to_time),
-        )
 
-        return query.order_by(Incident.creation_date.asc()).all()
+        return query.order_by(Incident.creation_date.asc())
