@@ -94,7 +94,7 @@ def get_lead_time_prs(
     return get_non_paginated_pr_response(prs, repo_id_repo_map, len(prs))
 
 
-@app.route("/team/<team_id>/lead_time", methods={"GET"})
+@app.route("/teams/<team_id>/lead_time", methods={"GET"})
 @queryschema(
     Schema(
         {
@@ -131,7 +131,7 @@ def get_team_lead_time(
     return adapted_lead_time_metrics
 
 
-@app.route("/team/<team_id>/lead_time/trends", methods={"GET"})
+@app.route("/teams/<team_id>/lead_time/trends", methods={"GET"})
 @queryschema(
     Schema(
         {

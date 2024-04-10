@@ -137,7 +137,7 @@ def get_prs_included_in_deployment(deployment_id: str):
     )
 
 
-@app.route("/team/<team_id>/deployment_frequency", methods={"GET"})
+@app.route("/teams/<team_id>/deployment_frequency", methods={"GET"})
 @queryschema(
     Schema(
         {
@@ -175,7 +175,7 @@ def get_team_deployment_frequency(
     return adapt_deployment_frequency_metrics(team_deployment_frequency_metrics)
 
 
-@app.route("/team/<team_id>/deployment_frequency/trends", methods={"GET"})
+@app.route("/teams/<team_id>/deployment_frequency/trends", methods={"GET"})
 @queryschema(
     Schema(
         {
