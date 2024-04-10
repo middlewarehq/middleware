@@ -104,7 +104,7 @@ def get_lead_time_prs(
         }
     ),
 )
-def get_cockpit_lead_time(
+def get_team_lead_time(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
@@ -141,7 +141,7 @@ def get_cockpit_lead_time(
         }
     ),
 )
-def get_cockpit_lead_time_trends(
+def get_team_lead_time_trends(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
