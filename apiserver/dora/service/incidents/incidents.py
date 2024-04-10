@@ -9,7 +9,12 @@ from dora.service.deployments.models.models import Deployment
 from dora.service.incidents.incident_filter import apply_incident_filter
 from dora.store.models.incidents.filter import IncidentFilter
 from dora.store.models.settings import EntityType, SettingType
-from dora.utils.time import Interval, generate_expanded_buckets
+from dora.utils.time import (
+    Interval,
+    fill_missing_week_buckets,
+    generate_expanded_buckets,
+    get_given_weeks_monday,
+)
 
 from dora.store.models.incidents import Incident
 from dora.service.settings.configuration_settings import (
@@ -150,6 +155,34 @@ class IncidentService:
             all_deployments,
         ) = self.calculate_change_failure_deployments(deployment_incidents_map)
         return ChangeFailureRateMetrics(set(failed_deployments), set(all_deployments))
+
+    def get_weekly_change_failure_rate(
+        self,
+        interval: Interval,
+        deployments: List[Deployment],
+        incidents: List[Incident],
+    ) -> ChangeFailureRateMetrics:
+
+        deployments_incidents_map = self.get_deployment_incidents_map(
+            deployments, incidents
+        )
+        week_start_to_change_failure_rate_map: Dict[
+            datetime, ChangeFailureRateMetrics
+        ] = defaultdict(ChangeFailureRateMetrics)
+
+        for deployment, incidents in deployments_incidents_map.items():
+            week_start_date = get_given_weeks_monday(deployment.conducted_at)
+            if incidents:
+                week_start_to_change_failure_rate_map[
+                    week_start_date
+                ].failed_deployments.add(deployment)
+            week_start_to_change_failure_rate_map[
+                week_start_date
+            ].total_deployments.add(deployment)
+
+        return fill_missing_week_buckets(
+            week_start_to_change_failure_rate_map, interval, ChangeFailureRateMetrics
+        )
 
     def _calculate_incident_resolution_time(self, incident: Incident) -> int:
         return (incident.resolved_date - incident.creation_date).total_seconds()
