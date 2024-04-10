@@ -2,16 +2,34 @@ from datetime import datetime
 from typing import List
 
 from dora.exapi.models.git_incidents import RevertPRMap
+from dora.service.settings import SettingsService, get_settings_service
+from dora.store.models import SettingType, EntityType
 from dora.store.models.code import PullRequest, PullRequestRevertPRMapping
+from dora.store.models.incidents import IncidentSource
 from dora.store.repos.code import CodeRepoService
 
 
 class GitIncidentsAPIService:
     def __init__(
-        self,
-        code_repo_service: CodeRepoService,
+        self, code_repo_service: CodeRepoService, settings_service: SettingsService
     ):
         self.code_repo_service = code_repo_service
+        self.settings_service = settings_service
+
+    def is_sync_enabled(self, org_id: str):
+        setting = self.settings_service.get_settings(
+            setting_type=SettingType.INCIDENT_SOURCES_SETTING,
+            entity_type=EntityType.ORG,
+            entity_id=org_id,
+        )
+        if setting:
+            incident_sources_setting = setting.specific_settings
+        else:
+            incident_sources_setting = self.settings_service.get_default_setting(
+                SettingType.INCIDENT_SOURCES_SETTING
+            )
+        incident_sources = incident_sources_setting.incident_sources
+        return IncidentSource.GIT_REPO in incident_sources
 
     def get_org_repos(self, org_id: str):
         return self.code_repo_service.get_active_org_repos(org_id)
@@ -53,4 +71,4 @@ class GitIncidentsAPIService:
 
 
 def get_git_incidents_api_service():
-    return GitIncidentsAPIService(CodeRepoService())
+    return GitIncidentsAPIService(CodeRepoService(), get_settings_service())
