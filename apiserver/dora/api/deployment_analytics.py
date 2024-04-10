@@ -148,7 +148,7 @@ def get_prs_included_in_deployment(deployment_id: str):
         }
     ),
 )
-def get_cockpit_lead_time_trends(
+def get_team_deployment_frequency(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
@@ -173,3 +173,46 @@ def get_cockpit_lead_time_trends(
     )
 
     return adapt_deployment_frequency_metrics(team_deployment_frequency_metrics)
+
+
+@app.route("/team/<team_id>/deployment_frequency/trends", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
+            Optional("workflow_filter"): All(str, Coerce(coerce_workflow_filter)),
+        }
+    ),
+)
+def get_team_deployment_frequency_trends(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: Dict = None,
+    workflow_filter: WorkflowFilter = None,
+):
+
+    query_validator = get_query_validator()
+    interval = query_validator.interval_validator(from_time, to_time)
+    query_validator.team_validator(team_id)
+
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
+    deployments_analytics_service = get_deployment_analytics_service()
+
+    week_to_deployments_count_map: Dict[
+        datetime, int
+    ] = deployments_analytics_service.get_weekly_deployment_frequency_trends(
+        team_id, interval, pr_filter, workflow_filter
+    )
+
+    return {
+        "deployment_frequency_trends": {
+            week.isoformat(): {"count": deployment_count}
+            for week, deployment_count in week_to_deployments_count_map.items()
+        }
+    }

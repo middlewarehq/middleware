@@ -132,6 +132,26 @@ class DeploymentAnalyticsService:
             monthly_deployment_frequency,
         )
 
+    def get_weekly_deployment_frequency_trends(
+        self,
+        team_id: str,
+        interval: Interval,
+        pr_filter: PRFilter,
+        workflow_filter: WorkflowFilter,
+    ) -> Dict[datetime, int]:
+
+        team_successful_deployments = (
+            self.deployments_service.get_team_successful_deployments_in_interval(
+                team_id, interval, pr_filter, workflow_filter
+            )
+        )
+
+        team_weekly_deployments = generate_expanded_buckets(
+            team_successful_deployments, interval, "conducted_at", "weekly"
+        )
+
+        return get_key_to_count_map_from_key_to_list_map(team_weekly_deployments)
+
     def _map_prs_to_repo_id_and_base_branch(
         self, pull_requests: List[PullRequest]
     ) -> Dict[Tuple[str, str], List[PullRequest]]:
