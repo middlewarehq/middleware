@@ -91,6 +91,7 @@ def get_non_paginated_pr_response(
         "total_count": total_count,
     }
 
+
 def adapt_lead_time_metrics(lead_time_metric: LeadTimeMetrics) -> Dict[str, any]:
     return {
         "lead_time": lead_time_metric.lead_time,
