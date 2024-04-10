@@ -188,3 +188,48 @@ def get_team_cfr(
     )
 
     return adapt_change_failure_rate(team_change_failure_rate)
+
+
+@app.route("/teams/<team_id>/change_failure_rate/trends", methods=["GET"])
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
+            Optional("workflow_filter"): All(str, Coerce(coerce_workflow_filter)),
+        }
+    ),
+)
+def get_team_cfr_trends(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: dict = None,
+    workflow_filter: WorkflowFilter = None,
+):
+
+    query_validator = get_query_validator()
+    interval = Interval(from_time, to_time)
+    query_validator.team_validator(team_id)
+
+    deployments: List[
+        Deployment
+    ] = get_deployments_service().get_team_all_deployments_in_interval(
+        team_id, interval, pr_filter, workflow_filter
+    )
+
+    incident_service = get_incident_service()
+
+    incidents: List[Incident] = incident_service.get_team_incidents(team_id, interval)
+
+    team_weekly_change_failure_rate: Dict[
+        datetime, ChangeFailureRateMetrics
+    ] = incident_service.get_weekly_change_failure_rate(
+        interval, deployments, incidents
+    )
+
+    return {
+        week.isoformat(): adapt_change_failure_rate(change_failure_rate)
+        for week, change_failure_rate in team_weekly_change_failure_rate.items()
+    }
