@@ -1,5 +1,8 @@
 from collections import defaultdict
 from typing import List, Dict
+from dora.service.incidents.models.mean_time_to_recovery import (
+    MeanTimeToRecoveryMetrics,
+)
 from dora.service.deployments.models.models import Deployment
 from dora.service.incidents.incident_filter import apply_incident_filter
 from dora.store.models.incidents.filter import IncidentFilter
@@ -88,6 +91,35 @@ class IncidentService:
             deployment_incidents_map[current_deployment] = current_deployment_incidents
 
         return deployment_incidents_map
+
+    def get_team_mean_time_to_recovery(
+        self, team_id: str, interval: Interval
+    ) -> MeanTimeToRecoveryMetrics:
+
+        resolved_team_incidents = self.get_resolved_team_incidents(team_id, interval)
+
+        return self._get_incidents_mean_time_to_recovery(resolved_team_incidents)
+
+    def _calculate_incident_resolution_time(self, incident: Incident) -> int:
+        return (incident.resolved_date - incident.creation_date).total_seconds()
+
+    def _get_incidents_mean_time_to_recovery(
+        self, resolved_incidents: List[Incident]
+    ) -> MeanTimeToRecoveryMetrics:
+
+        incident_count = len(resolved_incidents)
+
+        mean_time_to_recovery = (
+            sum(
+                [
+                    self._calculate_incident_resolution_time(incident)
+                    for incident in resolved_incidents
+                ]
+            )
+            / incident_count
+        )
+
+        return MeanTimeToRecoveryMetrics(mean_time_to_recovery, incident_count)
 
 
 def get_incident_service():
