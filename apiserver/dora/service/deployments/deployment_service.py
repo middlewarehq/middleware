@@ -90,6 +90,40 @@ class DeploymentsService:
 
         return team_repos_with_workflow_deployments
 
+    def get_team_all_deployments_in_interval(
+        self,
+        team_id: str,
+        interval,
+        pr_filter: PRFilter = None,
+        workflow_filter: WorkflowFilter = None,
+    ) -> List[Deployment]:
+
+        team_repos = self._get_team_repos_by_team_id(team_id)
+        (
+            team_repos_using_workflow_deployments,
+            team_repos_using_pr_deployments,
+        ) = self.get_filtered_team_repos_by_deployment_config(team_repos)
+
+        deployments_using_workflow = self.workflow_based_deployments_service.get_repos_all_deployments_in_interval(
+            self._get_repo_ids_from_team_repos(team_repos_using_workflow_deployments),
+            interval,
+            workflow_filter,
+        )
+        deployments_using_pr = (
+            self.pr_based_deployments_service.get_repos_all_deployments_in_interval(
+                self._get_repo_ids_from_team_repos(team_repos_using_pr_deployments),
+                interval,
+                pr_filter,
+            )
+        )
+
+        deployments: List[Deployment] = (
+            deployments_using_workflow + deployments_using_pr
+        )
+        sorted_deployments = self._sort_deployments_by_date(deployments)
+
+        return sorted_deployments
+
     def _get_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
         return self.code_repo_service.get_active_team_repos_by_team_id(team_id)
 
@@ -99,6 +133,9 @@ class DeploymentsService:
     def get_filtered_team_repos_by_deployment_config(
         self, team_repos: List[TeamRepos]
     ) -> Tuple[List[TeamRepos], List[TeamRepos]]:
+        """
+        Splits the input TeamRepos list into two TeamRepos List, TeamRepos using workflow and TeamRepos using pr deployments.
+        """
         return self._filter_team_repos_using_workflow_deployments(
             team_repos
         ), self._filter_team_repos_using_pr_deployments(team_repos)
