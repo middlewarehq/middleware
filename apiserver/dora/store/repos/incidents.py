@@ -1,5 +1,7 @@
 from typing import List
+
 from sqlalchemy import and_
+
 from dora.store import rollback_on_exc, session
 from dora.store.models.incidents import (
     Incident,
@@ -7,17 +9,13 @@ from dora.store.models.incidents import (
     IncidentOrgIncidentServiceMap,
     TeamIncidentService,
     IncidentStatus,
+    IncidentType,
+    IncidentProvider,
 )
 from dora.utils.time import Interval
 
 
 class IncidentsRepoService:
-    def _apply_incident_filter(self, query, incident_filter: IncidentFilter = None):
-        if not incident_filter:
-            return query
-        query = query.filter(*incident_filter.filter_query)
-        return query
-
     @rollback_on_exc
     def get_resolved_team_incidents(
         self, team_id: str, interval: Interval, incident_filter: IncidentFilter = None
@@ -45,6 +43,22 @@ class IncidentsRepoService:
 
         return query.all()
 
+    @rollback_on_exc
+    def get_incident_by_key_type_and_provider(
+        self, key: str, incident_type: IncidentType, provider: IncidentProvider
+    ) -> Incident:
+        return (
+            session.query(Incident)
+            .filter(
+                and_(
+                    Incident.key == key,
+                    Incident.incident_type == incident_type,
+                    Incident.provider == provider.value,
+                )
+            )
+            .one_or_none()
+        )
+
     def _get_team_incidents_query(
         self, team_id: str, incident_filter: IncidentFilter = None
     ):
@@ -67,3 +81,9 @@ class IncidentsRepoService:
         query = self._apply_incident_filter(query, incident_filter)
 
         return query.order_by(Incident.creation_date.asc())
+
+    def _apply_incident_filter(self, query, incident_filter: IncidentFilter = None):
+        if not incident_filter:
+            return query
+        query = query.filter(*incident_filter.filter_query)
+        return query

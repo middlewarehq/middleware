@@ -12,5 +12,7 @@ def compare_objects_as_dicts(ob_1, ob_2, ignored_keys=[]):
         if key in ob_2.__dict__:
             del ob_2.__dict__[key]
 
-    print(ob_1.__dict__, "==", ob_2.__dict__)
-    return ob_1.__dict__ == ob_2.__dict__
+    if not ob_1.__dict__ == ob_2.__dict__:
+        print(ob_1.__dict__, "!=", ob_2.__dict__)
+        return False
+    return True
