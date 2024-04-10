@@ -11,11 +11,64 @@ from dora.store.models.incidents import (
     IncidentStatus,
     IncidentType,
     IncidentProvider,
+    OrgIncidentService,
+    IncidentsBookmark,
+    IncidentBookmarkType,
 )
 from dora.utils.time import Interval
 
 
 class IncidentsRepoService:
+    @rollback_on_exc
+    def get_org_incident_services(self, org_id: str) -> List[OrgIncidentService]:
+        return (
+            session.query(OrgIncidentService)
+            .filter(OrgIncidentService.org_id == org_id)
+            .all()
+        )
+
+    @rollback_on_exc
+    def update_org_incident_services(self, incident_services: List[OrgIncidentService]):
+        [session.merge(incident_service) for incident_service in incident_services]
+        session.commit()
+
+    @rollback_on_exc
+    def get_incidents_bookmark(
+        self,
+        entity_id: str,
+        entity_type: IncidentBookmarkType,
+        provider: IncidentProvider,
+    ) -> IncidentsBookmark:
+        return (
+            session.query(IncidentsBookmark)
+            .filter(
+                and_(
+                    IncidentsBookmark.entity_id == entity_id,
+                    IncidentsBookmark.entity_type == entity_type,
+                    IncidentsBookmark.provider == provider.value,
+                )
+            )
+            .one_or_none()
+        )
+
+    @rollback_on_exc
+    def save_incidents_bookmark(self, bookmark: IncidentsBookmark):
+        session.merge(bookmark)
+        session.commit()
+
+    @rollback_on_exc
+    def save_incidents_data(
+        self,
+        incidents: List[Incident],
+        incident_org_incident_service_map: List[IncidentOrgIncidentServiceMap],
+    ):
+        [session.merge(incident) for incident in incidents]
+        [
+            session.merge(incident_service_map)
+            for incident_service_map in incident_org_incident_service_map
+        ]
+        session.commit()
+
     @rollback_on_exc
     def get_resolved_team_incidents(
         self, team_id: str, interval: Interval, incident_filter: IncidentFilter = None
