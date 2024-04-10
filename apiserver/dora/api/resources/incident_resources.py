@@ -1,4 +1,7 @@
 from typing import Dict, List
+from dora.service.incidents.models.mean_time_to_recovery import (
+    MeanTimeToRecoveryMetrics,
+)
 from dora.api.resources.deployment_resources import adapt_deployment
 from dora.service.deployments.models.models import Deployment
 from dora.store.models.incidents import Incident
@@ -48,3 +51,12 @@ def adapt_deployments_with_related_incidents(
     )
     deployment_response["incidents"] = incident_response
     return deployment_response
+
+
+def adapt_mean_time_to_recovery_metrics(
+    mean_time_to_recovery: MeanTimeToRecoveryMetrics,
+):
+    return {
+        "mean_time_to_recovery": mean_time_to_recovery.mean_time_to_recovery,
+        "incident_count": mean_time_to_recovery.incident_count,
+    }
