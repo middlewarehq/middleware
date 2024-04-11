@@ -36,10 +36,7 @@ const ExtendedSidebarLayout: FC = ({ children }) => {
           zIndex: 5,
           display: 'block',
           flex: 1,
-          height: '100vh',
-          [theme.breakpoints.up('lg')]: {
-            ml: `${theme.sidebar.width}`
-          }
+          height: '100vh'
         }}
       >
         <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>

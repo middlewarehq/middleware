@@ -39,6 +39,7 @@ export const PageHeader: FC<
     subRoutes?: SubRoute[];
     selectBranch?: boolean;
     additionalFilters?: ReactNode[];
+    hideAllSelectors?: boolean;
   } & Omit<FlexBoxProps, 'title'>
 > = ({
   title,
@@ -50,10 +51,14 @@ export const PageHeader: FC<
   subRoutes,
   selectBranch,
   additionalFilters,
+  hideAllSelectors,
   ...props
 }) => {
-  const showSelectorSection =
-    Boolean(teamDateSelectorMode) || selectBranch || additionalFilters?.length;
+  const showSelectorSection = hideAllSelectors
+    ? false
+    : Boolean(teamDateSelectorMode) ||
+      selectBranch ||
+      additionalFilters?.length;
   const { toggleSidebar } = useContext(SidebarContext);
   const theme = useTheme();
 
@@ -71,11 +76,7 @@ export const PageHeader: FC<
       <FlexBox col gap1 {...props}>
         <FlexBox justifyBetween alignCenter>
           <FlexBox alignCenter>
-            <Box
-              display={{ lg: 'none', xs: 'flex' }}
-              mr={1}
-              position="relative"
-            >
+            <Box mr={1} position="relative">
               <Hotkey
                 hotkey="M"
                 onHotkey={toggleSidebar}
