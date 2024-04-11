@@ -1,4 +1,4 @@
-import { Chip, useTheme, alpha } from '@mui/material';
+import { Chip, alpha } from '@mui/material';
 import pluralize from 'pluralize';
 import { head } from 'ramda';
 import { useMemo } from 'react';
@@ -13,7 +13,6 @@ import {
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { useAuth } from '@/hooks/useAuth';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
-import { useFeature } from '@/hooks/useFeature';
 import {
   useStateDateConfig,
   useCurrentDateRangeLabel
@@ -24,10 +23,6 @@ import { IntegrationGroup } from '@/types/resources';
 import { NoIncidentsLabel } from './NoIncidentsLabel';
 import { useChangeFailureRateProps } from './sharedHooks';
 
-import {
-  CorelationInsightCardFooter,
-  UnavailableCorrelation
-} from '../CorelationInsightCardFooter';
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
@@ -57,13 +52,9 @@ const chartOptions = {
 } as ChartOptions;
 
 export const ChangeFailureRateCard = () => {
-  const theme = useTheme();
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
 
-  const isCorrelationInsightsEnabled = useFeature(
-    'enable_dora_metrics_correlation'
-  );
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isCodeProviderIntegrationEnabled = integrationSet.has(
     IntegrationGroup.CODE
@@ -75,12 +66,6 @@ export const ChangeFailureRateCard = () => {
 
   const canShowIncidentsData =
     isCodeProviderIntegrationEnabled && isIncidentProviderIntegrationEnabled;
-
-  const computedCorrelationFooter = !canShowIncidentsData ? (
-    <UnavailableCorrelation type="INTEGRATION" />
-  ) : (
-    <CorelationInsightCardFooter />
-  );
 
   const changeFailureRateProps = useChangeFailureRateProps();
   const prevChangeFailureRate = useSelector((s) =>
@@ -164,18 +149,7 @@ export const ChangeFailureRateCard = () => {
             )}
           </FlexBox>
         </FlexBox>
-        <FlexBox
-          col
-          justifyBetween
-          relative
-          fullWidth
-          sx={{
-            borderBottom:
-              isCorrelationInsightsEnabled &&
-              `1px solid ${theme.colors.secondary.light}`
-          }}
-          flexGrow={1}
-        >
+        <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowIncidentsData ? (
               <Chart2
@@ -292,7 +266,6 @@ export const ChangeFailureRateCard = () => {
           </FlexBox>
         </FlexBox>
       </FlexBox>
-      {isCorrelationInsightsEnabled && computedCorrelationFooter}
     </CardRoot>
   );
 };

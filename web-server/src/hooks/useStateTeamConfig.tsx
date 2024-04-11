@@ -74,14 +74,9 @@ export const useStateTeamConfig = () => {
   const dateRange = useMemo(() => [start, end] as DateRange, [end, start]);
 
   const stateSingleTeam = useSelector((state) => state.app.singleTeam);
-  const stateMultiTeam = useSelector((state) => state.app.multiTeam);
   const singleTeam = useMemo(
     () => stateSingleTeam.filter((team) => team?.id),
     [stateSingleTeam]
-  );
-  const multiTeam = useMemo(
-    () => stateMultiTeam.filter((team) => team?.id),
-    [stateMultiTeam]
   );
 
   const dateRangeUpdateHandler = useDateRangeUpdateHandler();
@@ -132,7 +127,6 @@ export const useStateTeamConfig = () => {
     singleTeam,
     singleTeamId: singleTeam?.[0]?.id,
     singleTeamMemberFilter: Boolean(singleTeam?.[0]?.member_filter_enabled),
-    multiTeam,
     setRange,
     partiallyUnselected,
     teamId,

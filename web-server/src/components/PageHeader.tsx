@@ -12,7 +12,6 @@ import { useRouter } from 'next/router';
 import { FC, ReactNode, useMemo, useContext, Fragment } from 'react';
 import { SidebarContext } from 'src/contexts/SidebarContext';
 
-import { CockpitBranchSelector } from '@/components/CockpitBranchSelector';
 import { TeamSelectorModes } from '@/types/resources';
 
 import { AvatarPageTitle } from './AvatarPageTitle';
@@ -40,7 +39,6 @@ export const PageHeader: FC<
     subRoutes?: SubRoute[];
     selectBranch?: boolean;
     additionalFilters?: ReactNode[];
-    enableCockpitBranchSelector?: boolean;
   } & Omit<FlexBoxProps, 'title'>
 > = ({
   title,
@@ -52,7 +50,6 @@ export const PageHeader: FC<
   subRoutes,
   selectBranch,
   additionalFilters,
-  enableCockpitBranchSelector,
   ...props
 }) => {
   const showSelectorSection =
@@ -107,7 +104,6 @@ export const PageHeader: FC<
             <Divider />
             <FlexBox display="flex" gap={1} alignCenter mb={-1}>
               {selectBranch && <BranchSelector />}
-              {enableCockpitBranchSelector && <CockpitBranchSelector />}
               {additionalFilters?.map((filter, i) => (
                 <Fragment key={i}>{filter}</Fragment>
               ))}

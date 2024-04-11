@@ -5,8 +5,8 @@ import { NoTeamSelected } from '@/components/NoTeamSelected';
 import { PageContentWrapper } from '@/components/PageContentWrapper';
 import { PageHeader } from '@/components/PageHeader';
 import { PageTitleWrapper } from '@/components/PageTitleWrapper';
-import { TeamSelectorModes } from '@/components/TeamSelector/TeamSelector';
 import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
+import { TeamSelectorModes } from '@/types/resources';
 
 export const PageWrapper: FC<{
   title?: ReactNode;
