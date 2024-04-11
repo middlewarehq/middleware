@@ -2,6 +2,7 @@ import * as yup from 'yup';
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { Integration } from '@/constants/integrations';
+import { INTEGRATION_CONFLICT_COLUMNS, enc } from '@/utils/auth-supplementary';
 import { db } from '@/utils/db';
 
 const pathnameSchema = yup.object().shape({
@@ -9,6 +10,11 @@ const pathnameSchema = yup.object().shape({
 });
 
 const deleteSchema = yup.object().shape({
+  provider: yup.string().oneOf(Object.values(Integration)).required()
+});
+
+const postSchema = yup.object().shape({
+  the_good_stuff: yup.string().required(),
   provider: yup.string().oneOf(Object.values(Integration)).required()
 });
 
@@ -40,6 +46,27 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
       name: provider
     })
     .returning('*');
+
+  res.send({ status: 'OK' });
+});
+
+endpoint.handle.POST(postSchema, async (req, res) => {
+  if (req.meta?.features?.use_mock_data) {
+    return res.send({ status: 'OK' });
+  }
+
+  const { org_id } = req.payload;
+  const { provider, the_good_stuff } = req.body;
+
+  await db('Integration')
+    .insert({
+      access_token_enc_chunks: enc(the_good_stuff),
+      updated_at: new Date(),
+      name: provider,
+      org_id
+    })
+    .onConflict(INTEGRATION_CONFLICT_COLUMNS)
+    .merge();
 
   res.send({ status: 'OK' });
 });
