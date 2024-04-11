@@ -10,20 +10,24 @@ import { TeamSelectorModes } from '@/types/resources';
 
 export const PageWrapper: FC<{
   title?: ReactNode;
+  hideAllSelectors?: boolean;
   subtitle?: ReactNode;
   pageTitle?: string;
   showDate?: boolean;
   teamDateSelectorMode?: TeamSelectorModes;
   headerChildren?: ReactNode;
   isLoading?: boolean;
+  showEvenIfNoTeamSelected?: boolean;
 }> = ({
   title = 'Collaborate',
+  hideAllSelectors,
   pageTitle,
   showDate = true,
   children,
   teamDateSelectorMode,
   headerChildren,
-  isLoading
+  isLoading,
+  showEvenIfNoTeamSelected = false
 }) => {
   const { noTeamSelected } = useSingleTeamConfig();
   // TODO: use fetchState
@@ -33,6 +37,7 @@ export const PageWrapper: FC<{
     <>
       <PageTitleWrapper>
         <PageHeader
+          hideAllSelectors={hideAllSelectors}
           loading={isLoaderActive}
           title={title}
           pageTitle={pageTitle}
@@ -46,7 +51,11 @@ export const PageWrapper: FC<{
         </PageHeader>
       </PageTitleWrapper>
       <PageContentWrapper>
-        {noTeamSelected ? <NoTeamSelected /> : children}
+        {!showEvenIfNoTeamSelected && noTeamSelected ? (
+          <NoTeamSelected />
+        ) : (
+          children
+        )}
       </PageContentWrapper>
     </>
   );

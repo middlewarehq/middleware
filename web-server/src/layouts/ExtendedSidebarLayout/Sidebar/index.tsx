@@ -5,8 +5,7 @@ import {
   styled,
   Divider,
   useTheme,
-  lighten,
-  useMediaQuery
+  lighten
 } from '@mui/material';
 import { useContext, useMemo } from 'react';
 
@@ -41,36 +40,20 @@ function Sidebar() {
     [theme.header.background, theme.sidebar.boxShadow]
   );
 
-  const sidebarVisible = useMediaQuery(theme.breakpoints.up('lg'));
-
   return (
     <>
-      {sidebarVisible ? (
-        <SidebarWrapper
-          sx={{
-            display: { xs: 'none', lg: 'inline-block' },
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            ...commonSidebarProps
-          }}
-        >
+      <Drawer
+        sx={{ boxShadow: `${theme.sidebar.boxShadow}` }}
+        anchor={theme.direction === 'rtl' ? 'right' : 'left'}
+        open={sidebarToggle}
+        onClose={closeSidebar}
+        variant="temporary"
+        elevation={9}
+      >
+        <SidebarWrapper sx={commonSidebarProps}>
           <SidebarContent />
         </SidebarWrapper>
-      ) : (
-        <Drawer
-          sx={{ boxShadow: `${theme.sidebar.boxShadow}` }}
-          anchor={theme.direction === 'rtl' ? 'right' : 'left'}
-          open={sidebarToggle}
-          onClose={closeSidebar}
-          variant="temporary"
-          elevation={9}
-        >
-          <SidebarWrapper sx={commonSidebarProps}>
-            <SidebarContent />
-          </SidebarWrapper>
-        </Drawer>
-      )}
+      </Drawer>
     </>
   );
 }

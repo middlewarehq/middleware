@@ -1,12 +1,12 @@
 import { Box, LinearProgress, styled } from '@mui/material';
 import Head from 'next/head';
 import { ReactElement } from 'react';
+import { Authenticated } from 'src/components/Authenticated';
+import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { useRedirectWithSession } from '@/constants/useRoute';
-import { Authenticated } from 'src/components/Authenticated';
-import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 const OverviewWrapper = styled(Box)(
   ({ theme }) => `
