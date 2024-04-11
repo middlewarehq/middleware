@@ -1,5 +1,5 @@
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
-import { Chip, useTheme } from '@mui/material';
+import { Chip } from '@mui/material';
 import { head } from 'ramda';
 import { useMemo } from 'react';
 
@@ -13,17 +13,12 @@ import {
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { useAuth } from '@/hooks/useAuth';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
-import { useFeature } from '@/hooks/useFeature';
 import { IntegrationGroup } from '@/types/resources';
 import { getDurationString } from '@/utils/date';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
 import { useMeanTimeToRestoreProps } from './sharedHooks';
 
-import {
-  CorelationInsightCardFooter,
-  UnavailableCorrelation
-} from '../CorelationInsightCardFooter';
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
@@ -53,24 +48,12 @@ const chartOptions = {
 } as ChartOptions;
 
 export const MeanTimeToRestoreCard = () => {
-  const theme = useTheme();
   const { integrationSet } = useAuth();
   const { isNoDataAvailable, ...meanTimeToRestoreProps } =
     useMeanTimeToRestoreProps();
-  const isCorrelationInsightsEnabled = useFeature(
-    'enable_dora_metrics_correlation'
-  );
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isIncidentProviderIntegrationEnabled = integrationSet.has(
     IntegrationGroup.INCIDENT
-  );
-
-  const computedCorrelationFooter = !isIncidentProviderIntegrationEnabled ? (
-    <UnavailableCorrelation type="INTEGRATION" />
-  ) : isNoDataAvailable ? (
-    <UnavailableCorrelation type="INSUFFICIENT_DATA" />
-  ) : (
-    <CorelationInsightCardFooter />
   );
 
   const canShowMTRData =
@@ -141,18 +124,7 @@ export const MeanTimeToRestoreCard = () => {
             )}
           </FlexBox>
         </FlexBox>
-        <FlexBox
-          col
-          justifyBetween
-          relative
-          fullWidth
-          sx={{
-            borderBottom:
-              isCorrelationInsightsEnabled &&
-              `1px solid ${theme.colors.secondary.light}`
-          }}
-          flexGrow={1}
-        >
+        <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowMTRData ? (
               <Chart2
@@ -228,7 +200,6 @@ export const MeanTimeToRestoreCard = () => {
           </FlexBox>
         </FlexBox>
       </FlexBox>
-      {isCorrelationInsightsEnabled && computedCorrelationFooter}
     </CardRoot>
   );
 };

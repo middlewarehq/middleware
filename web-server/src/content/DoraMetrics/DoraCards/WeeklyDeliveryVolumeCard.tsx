@@ -1,4 +1,4 @@
-import { alpha, Chip, useTheme } from '@mui/material';
+import { alpha, Chip } from '@mui/material';
 import { useRouter } from 'next/router';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
@@ -13,7 +13,6 @@ import {
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { useAuth } from '@/hooks/useAuth';
-import { useFeature } from '@/hooks/useFeature';
 import {
   useCurrentDateRangeLabel,
   useStateDateConfig
@@ -24,10 +23,6 @@ import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
 import { useAvgWeeklyDeploymentFrequency } from './sharedHooks';
 
-import {
-  CorelationInsightCardFooter,
-  UnavailableCorrelation
-} from '../CorelationInsightCardFooter';
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
@@ -68,16 +63,6 @@ export const WeeklyDeliveryVolumeCard = () => {
     IntegrationGroup.CODE
   );
 
-  const isCorrelationInsightsEnabled = useFeature(
-    'enable_dora_metrics_correlation'
-  );
-
-  const computedCorrelationFooter = !isCodeProviderIntegrationEnabled ? (
-    <UnavailableCorrelation type="INTEGRATION" />
-  ) : (
-    <CorelationInsightCardFooter />
-  );
-
   const weekDeliveryVolumeData = useSelector(
     (s) => s.doraMetrics.metrics_summary?.deployment_frequency_trends || {}
   );
@@ -104,8 +89,6 @@ export const WeeklyDeliveryVolumeCard = () => {
     ],
     [deploymentFrequencyProps?.backgroundColor, weekDeliveryVolumeData]
   );
-
-  const theme = useTheme();
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
 
@@ -158,18 +141,7 @@ export const WeeklyDeliveryVolumeCard = () => {
             </FlexBox>
           )}
         </FlexBox>
-        <FlexBox
-          col
-          justifyBetween
-          relative
-          fullWidth
-          flexGrow={1}
-          sx={{
-            borderBottom:
-              isCorrelationInsightsEnabled &&
-              `1px solid ${theme.colors.secondary.light}`
-          }}
-        >
+        <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isCodeProviderIntegrationEnabled ? (
               <Chart2
@@ -314,8 +286,6 @@ export const WeeklyDeliveryVolumeCard = () => {
           )}
         </FlexBox>
       </FlexBox>
-
-      {isCorrelationInsightsEnabled && computedCorrelationFooter}
     </CardRoot>
   );
 };

@@ -4,7 +4,6 @@ import Head from 'next/head';
 import { FC, useEffect, useRef } from 'react';
 
 import { track } from '@/constants/events';
-import { useFeature } from '@/hooks/useFeature';
 
 import errPattern from '../ErrorBoundaryFallback/err-pattern.png';
 import { FlexBox } from '../FlexBox';
@@ -15,7 +14,7 @@ export const MaintenanceModeDisplay: FC<{ title?: string }> = ({
   children,
   title
 }) => {
-  const enableAppMaintenance = useFeature('enable_app_maintenance');
+  const enableAppMaintenance = false;
   const theme = useTheme();
   const fireworksRef = useRef<Fireworks>(null);
 

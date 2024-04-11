@@ -13,10 +13,12 @@ import { appSlice } from '@/slices/app';
 import { resourcesSlice } from '@/slices/resources';
 import { useSelector } from '@/store';
 import { Team } from '@/types/api/teams';
-import { ActiveBranchMode, FetchTeamsResponse } from '@/types/resources';
+import {
+  ActiveBranchMode,
+  FetchTeamsResponse,
+  TeamSelectorModes
+} from '@/types/resources';
 import { groupObj } from '@/utils/objectArray';
-
-import { TeamSelectorModes } from './TeamSelector';
 
 type UseTeamSelectorSetupArgs = { mode: TeamSelectorModes };
 /**
@@ -26,20 +28,14 @@ type UseTeamSelectorSetupArgs = { mode: TeamSelectorModes };
  */
 export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   const dispatch = useDispatch();
-  const {
-    dateRange,
-    singleTeam,
-    singleTeamId,
-    multiTeam,
-    setRange,
-    partiallyUnselected
-  } = useStateTeamConfig();
+  const { dateRange, singleTeam, singleTeamId, setRange, partiallyUnselected } =
+    useStateTeamConfig();
   const { orgId } = useAuth();
   const [showAllTeams, setShowAllTeams] = useState(true);
   const activeBranchMode = useSelector((state) => state.app.branchMode);
   const isAllBranchMode = activeBranchMode === ActiveBranchMode.ALL;
   const isSingleMode = mode === 'single' || mode === 'single-only';
-  const teams = isSingleMode ? singleTeam : multiTeam;
+  const teams = singleTeam;
   const hideDateSelector = mode === 'single-only' || mode === 'multiple-only';
   const hideTeamSelector = mode === 'date-only';
 

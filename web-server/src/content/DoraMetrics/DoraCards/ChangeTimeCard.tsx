@@ -8,8 +8,7 @@ import {
   darken,
   List,
   ListItem,
-  Stack,
-  useTheme
+  Stack
 } from '@mui/material';
 import Link from 'next/link';
 import pluralize from 'pluralize';
@@ -31,15 +30,10 @@ import {
   usePropsForChangeTimeCard
 } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
-import { useFeature } from '@/hooks/useFeature';
 import { IntegrationGroup } from '@/types/resources';
 import { mergeDateValueTupleArray } from '@/utils/array';
 import { getDurationString } from '@/utils/date';
 
-import {
-  CorelationInsightCardFooter,
-  UnavailableCorrelation
-} from '../CorelationInsightCardFooter';
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
@@ -69,7 +63,6 @@ const chartOptions = {
 } as ChartOptions;
 
 export const ChangeTimeCard = () => {
-  const theme = useTheme();
   const { integrationSet } = useAuth();
   const { role } = useAuth();
   const isEng = isRoleLessThanEM(role);
@@ -96,18 +89,6 @@ export const ChangeTimeCard = () => {
 
   const showClassificationBadge =
     isSufficientDataAvailable && isCodeProviderIntegrationEnabled;
-
-  const isCorrelationInsightsEnabled = useFeature(
-    'enable_dora_metrics_correlation'
-  );
-
-  const computedFooter = !isCodeProviderIntegrationEnabled ? (
-    <UnavailableCorrelation type="INTEGRATION" />
-  ) : !isSufficientDataAvailable ? (
-    <UnavailableCorrelation type="INSUFFICIENT_DATA" />
-  ) : (
-    <CorelationInsightCardFooter />
-  );
 
   const series = useMemo(
     () => [
@@ -281,18 +262,7 @@ export const ChangeTimeCard = () => {
             )}
           </FlexBox>
         </FlexBox>
-        <FlexBox
-          col
-          justifyBetween
-          relative
-          fullWidth
-          sx={{
-            borderBottom:
-              isCorrelationInsightsEnabled &&
-              `1px solid ${theme.colors.secondary.light}`
-          }}
-          flexGrow={1}
-        >
+        <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isSufficientDataAvailable ? (
               <Chart2
@@ -438,8 +408,6 @@ export const ChangeTimeCard = () => {
           </FlexBox>
         </FlexBox>
       </FlexBox>
-
-      {isCorrelationInsightsEnabled && computedFooter}
     </CardRoot>
   );
 };

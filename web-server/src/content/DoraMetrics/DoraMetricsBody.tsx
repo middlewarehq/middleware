@@ -13,7 +13,6 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useDoraStats } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
-import { useFeature } from '@/hooks/useFeature';
 import {
   useSingleTeamConfig,
   useStateBranchConfig
@@ -45,7 +44,6 @@ export const DoraMetricsBody = () => {
   );
   const firstLoadDone = useSelector((s) => s.doraMetrics.firstLoadDone);
   const activeBranchMode = useSelector((s) => s.app.branchMode);
-  const enableCorrelations = useFeature('enable_dora_metrics_correlation');
 
   const isTeamInsightsEmpty = useSelector(
     (s) =>
@@ -86,7 +84,6 @@ export const DoraMetricsBody = () => {
     singleTeamId,
     memberFilter,
     singleTeamProdBranchesConfig,
-    enableCorrelations,
     team?.manager_id,
     activeBranchMode
   ]);

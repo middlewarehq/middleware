@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { reject, uniq } from 'ramda';
+import { uniq } from 'ramda';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import {
@@ -13,9 +13,7 @@ import {
   TeamRepoBranchDetails,
   ActiveBranchMode,
   TeamSettings,
-  FetchTeamSettingsAPIResponse,
-  ChangeTimeModes,
-  CockpitBranchMode
+  FetchTeamSettingsAPIResponse
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
@@ -33,8 +31,6 @@ type State = StateFetchConfig<{
   networkType: NetworkType;
   errors: ErrorMap;
   singleTeam: Team[];
-  /** @deprecated Use `orgChartTeamSelection` instead. */
-  multiTeam: Team[];
   allTeams: Team[];
   /** ISO Timestamps with timezone */
   dateRange: SerializableDateRange;
@@ -45,32 +41,8 @@ type State = StateFetchConfig<{
   sidebarState: Record<string, boolean>;
   teamsProdBranchMap: Record<ID, TeamRepoBranchDetails[]>;
   isUpdated: boolean;
-  manualSync: { inProgress: boolean; lastSynced?: string };
   prTableColumnsConfig: typeof DEFAULT_PR_TABLE_COLUMN_STATE_MAP;
-  changeTimeDefaultSelectedOption: ChangeTimeModes;
-  cockpitBranchMode: CockpitBranchMode;
 }>;
-
-export const DEFAULT_COLUMN_STATE_MAP = {
-  assignee: true,
-  reporter: false,
-  project: false,
-  status: true,
-  started_at: true,
-  completed_at: true,
-  story_points: true,
-  time_spent: true,
-  type: true,
-  current_sprint: false,
-  sprint_history: false,
-  is_planned: false,
-  dropped: false,
-  spilled: false,
-  carried_over: false,
-  priority: true,
-  created_at: false,
-  updated_at: false
-};
 
 export const DEFAULT_PR_TABLE_COLUMN_STATE_MAP = {
   commits: true,
@@ -93,35 +65,10 @@ export const DEFAULT_PR_TABLE_COLUMN_STATE_MAP = {
   base_branch: false
 };
 
-export const DEFAULT_COCKPIT_TABLE_COLUMN_STATE_MAP_V2 = {
-  first_commit_to_open: false,
-  first_response_time: false,
-  rework_time: false,
-  merge_time: false,
-  cycle_time: true,
-  merge_to_deploy: false,
-  lead_time: true,
-  completion_percentage: true,
-  planned_tickets_percentage: false,
-  previous_tickets_percentage: false,
-  adhoc_tickets_percentage: false,
-  adhoc_tasks_tickets_percentage: false,
-  adhoc_bugs_tickets_percentage: false,
-  dropped_tickets_percentage: false,
-  spillover_tickets_percentage: false,
-  bugs_percentage: true,
-  prs_merged_without_review: true,
-  planned_ticket_success_rate: true,
-  deployment_frequency: false,
-  change_failure_rate: false,
-  mean_time_to_restore: false
-};
-
 const initialState: State = {
   networkType: '4g',
   errors: {},
   singleTeam: [],
-  multiTeam: [],
   allTeams: [],
   dateRange: defaultRange.map((date) =>
     date.toISOString()
@@ -132,10 +79,7 @@ const initialState: State = {
   teamsProdBranchMap: null,
   isUpdated: false,
   sidebarState: {},
-  manualSync: { inProgress: false },
-  prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP,
-  changeTimeDefaultSelectedOption: ChangeTimeModes.CYCLE_TIME,
-  cockpitBranchMode: CockpitBranchMode.PROD
+  prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP
 };
 
 export const appSlice = createSlice({
@@ -151,32 +95,6 @@ export const appSlice = createSlice({
     setSingleTeam(state: State, action: PayloadAction<Team[] | undefined>) {
       const teams = action.payload.filter((team) => !team?.is_deleted);
       state.singleTeam = teams;
-    },
-    /** @deprecated Use `setAllTeams` from appSlice instead */
-    setMultiTeam(state: State, action: PayloadAction<Team[] | undefined>) {
-      const teams = action.payload.filter((team) => !team?.is_deleted);
-      state.multiTeam = teams;
-    },
-    removeTeam(state: State, action: PayloadAction<Team | undefined>) {
-      if (!action.payload) return;
-
-      const teamComparator = (team: Team) => team.id === action.payload.id;
-
-      state.singleTeam = reject(teamComparator, state.singleTeam);
-      state.multiTeam = reject(teamComparator, state.multiTeam);
-    },
-    toggleMultiTeam(state: State, action: PayloadAction<Team | undefined>) {
-      const teamComparator = (team: Team) => team.id === action.payload.id;
-
-      if (action.payload.is_deleted) {
-        state.multiTeam = reject(teamComparator, state.multiTeam);
-        return;
-      }
-
-      const exists = !!state.multiTeam.find(teamComparator);
-
-      if (!exists) state.multiTeam.push(action.payload);
-      else state.multiTeam = reject(teamComparator, state.multiTeam);
     },
     setTeamProdBranchMap(
       state: State,
@@ -227,12 +145,6 @@ export const appSlice = createSlice({
       }
       state.isUpdated = true;
     },
-    setCockpitBranchMode(
-      state: State,
-      action: PayloadAction<{ mode: CockpitBranchMode }>
-    ) {
-      state.cockpitBranchMode = action.payload.mode;
-    },
     setSidebarItemsState(
       state: State,
       action: PayloadAction<{ key: string; value: boolean }>
@@ -249,20 +161,11 @@ export const appSlice = createSlice({
         state.sidebarState[action.payload] =
           !state.sidebarState[action.payload];
     },
-    setManualSync(state: State, action: PayloadAction<State['manualSync']>) {
-      state.manualSync = action.payload;
-    },
     setPrTableColumnConfig(
       state: State,
       action: PayloadAction<typeof DEFAULT_PR_TABLE_COLUMN_STATE_MAP>
     ): void {
       state.prTableColumnsConfig = action.payload;
-    },
-    setChangeTimeSelectedOption(
-      state: State,
-      action: PayloadAction<ChangeTimeModes>
-    ): void {
-      state.changeTimeDefaultSelectedOption = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -272,10 +175,6 @@ export const appSlice = createSlice({
       'singleTeam',
       (state, action) => {
         state.singleTeam = state.singleTeam.map((team) => ({
-          ...team,
-          member_filter_enabled: action.payload
-        }));
-        state.multiTeam = state.multiTeam.map((team) => ({
           ...team,
           member_filter_enabled: action.payload
         }));
