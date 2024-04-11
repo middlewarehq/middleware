@@ -1,8 +1,10 @@
-import { uniq } from 'ramda';
+import { groupBy, prop, uniq } from 'ramda';
 import * as yup from 'yup';
 
+import { getTeamRepos } from '@/api/resources/team_repos';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
+import { Columns, Table } from '@/constants/db';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
 import { db, getFirstRow } from '@/utils/db';
@@ -21,8 +23,7 @@ const postSchema = yup.object().shape({
 const patchSchema = yup.object().shape({
   id: yup.string().uuid().required(),
   name: yup.string().nullable().optional(),
-  member_ids: yup.array().of(yup.string().uuid()).nullable().optional(),
-  manager_id: yup.string().uuid().nullable().optional()
+  repo_ids: yup.array().of(yup.string().uuid()).nullable().optional()
 });
 
 const deleteSchema = yup.object().shape({
@@ -41,10 +42,6 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   }
 
   const { org_id } = req.payload;
-  /**
-   * If `user_id` was passed, show teams where the user is either a
-   * reportee or a manager
-   */
 
   const getQuery = db('Team')
     .select('*')
@@ -52,11 +49,15 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     .andWhereNot('is_deleted', true)
     .orderBy('name', 'asc');
 
-  const data = await getQuery;
+  const teams = await getQuery;
+  const repos = (
+    await Promise.all(teams.map((team) => getTeamRepos(team.id)))
+  ).flat();
 
   res.send({
-    teams: data,
-    users: {}
+    teams: teams,
+    users: {},
+    teamReposMap: groupBy(prop('team_id'), repos)
   });
 });
 
@@ -65,15 +66,12 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { manager_id, repo_ids = [], org_id, name } = req.payload;
+  const { repo_ids = [], org_id, name } = req.payload;
 
-  const member_ids_to_insert = uniq<ID>(repo_ids)?.filter(
-    (id: ID) => id !== manager_id
-  );
+  const team = await createTeam(org_id, name, []);
+  const teamRepos = await addReposToTeam(team.id, repo_ids);
 
-  const data = await createTeam(org_id, name, member_ids_to_insert);
-
-  res.send(data);
+  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
 
 endpoint.handle.PATCH(patchSchema, async (req, res) => {
@@ -81,7 +79,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { manager_id, member_ids, org_id, id, name } = req.payload;
+  const { org_id, id, name, repo_ids } = req.payload;
 
   const upsertPayload: Record<string, any> = {
     id,
@@ -93,19 +91,13 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
   if (name) {
     upsertPayload.name = name;
   }
-  if (member_ids) {
-    upsertPayload.member_ids = uniq(member_ids);
 
-    if (Boolean(manager_id)) {
-      upsertPayload.member_ids = upsertPayload.member_ids.filter(
-        (id: string) => id !== manager_id
-      );
-    }
-  }
+  const [team, teamRepos] = await Promise.all([
+    updateTeam(id, name, []),
+    addReposToTeam(id, repo_ids)
+  ]);
 
-  const data = await updateTeam(id, name, member_ids);
-
-  res.send([data]);
+  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
 
 endpoint.handle.DELETE(deleteSchema, async (req, res) => {
@@ -142,7 +134,7 @@ const updateTeam = async (
 const createTeam = async (
   org_id: ID,
   team_name: string,
-  member_ids: string[]
+  member_ids: string[] = []
 ): Promise<BaseTeam> => {
   return handleRequest<BaseTeam>(`/org/${org_id}/team`, {
     method: 'POST',
@@ -151,4 +143,37 @@ const createTeam = async (
       member_ids: uniq(member_ids)
     }
   });
+};
+
+const addReposToTeam = async (team_id: ID, repo_ids: ID[]) => {
+  try {
+    await db(Table.TeamRepos)
+      .update({
+        [Columns[Table.TeamRepos].is_active]: false,
+        updated_at: new Date()
+      })
+      .where('team_id', team_id);
+  } catch (err) {}
+
+  try {
+    const payload = repo_ids.map((repo_id) => ({
+      [Columns[Table.TeamRepos].team_id]: team_id,
+      [Columns[Table.TeamRepos].org_repo_id]: repo_id,
+      [Columns[Table.TeamRepos].is_active]: true
+    }));
+    const data =
+      payload.length &&
+      (await db('TeamRepos')
+        .insert(
+          repo_ids.map((repo_id) => ({
+            [Columns[Table.TeamRepos].team_id]: team_id,
+            [Columns[Table.TeamRepos].org_repo_id]: repo_id,
+            [Columns[Table.TeamRepos].is_active]: true
+          }))
+        )
+        .onConflict(['team_id', 'org_repo_id'])
+        .merge()
+        .returning('*'));
+    return data;
+  } catch (err) {}
 };
