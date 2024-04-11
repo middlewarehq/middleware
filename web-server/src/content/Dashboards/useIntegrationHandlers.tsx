@@ -122,7 +122,9 @@ const ConfigureGithubModalBody: FC<{
                         onClose();
                       })
                       .catch((e) => {
-                        setError('Failed to link token');
+                        setError(
+                          'Failed to link token, please try again later'
+                        );
                         console.error('Failed to link token', e);
                       });
                   } else {
