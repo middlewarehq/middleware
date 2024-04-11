@@ -23,7 +23,6 @@ const postSchema = yup.object().shape({
 const patchSchema = yup.object().shape({
   id: yup.string().uuid().required(),
   name: yup.string().nullable().optional(),
-  manager_id: yup.string().uuid().nullable().optional(),
   repo_ids: yup.array().of(yup.string().uuid()).nullable().optional()
 });
 
