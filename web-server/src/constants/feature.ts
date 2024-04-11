@@ -4,22 +4,11 @@ const STAGE = 'staging';
 // const PROD = 'production';
 const INTERNAL = [STAGE, DEV];
 
-const FLEXILOANS_ORG_ID = '113bf31f-2c0d-49a0-8afb-cabf3472a418';
-const FLOBIZ_ORG_ID = '9ea3f71e-c936-49e2-8fcc-a7be8123ae85';
-const BHARATPE_ORG_ID = 'fa1bb500-16f3-45de-a63e-9a0b368b9b5c';
-const HAPPAY_ORG_ID = '1a17f131-4eba-4757-aef7-cbcc8546755c';
-const MHQ_PROD = '8e5667c5-a041-41b3-b219-39ad553429b0';
-const MHQ_STAGE = '5ad0fd6c-22a6-459d-8963-a3e14fcb6c4b';
-export const MIDDLEWARE_ORG_IDS = [MHQ_PROD, MHQ_STAGE];
+export const MIDDLEWARE_ORG_IDS = [] as string[];
 
-const ORGS_ENABLED_FOR_FEEDBACK_CYCLE = [FLOBIZ_ORG_ID];
-const ORGS_ENABLED_FOR_ONE_ON_ONE = [HAPPAY_ORG_ID];
-const ORGS_ENABLED_FOR_COCKPIT = [
-  FLEXILOANS_ORG_ID,
-  BHARATPE_ORG_ID,
-  MHQ_PROD,
-  MHQ_STAGE
-];
+const ORGS_ENABLED_FOR_FEEDBACK_CYCLE = [] as string[];
+const ORGS_ENABLED_FOR_ONE_ON_ONE = [] as string[];
+const ORGS_ENABLED_FOR_COCKPIT = [] as string[];
 
 const FEEDBACK_CYCLE_LIMITED_RELEASE = true;
 const ONE_ON_ONE_LIMITED_RELEASE = true;
