@@ -10,6 +10,8 @@ from dora.api.incidents import app as incidents_api
 from dora.api.integrations import app as integrations_api
 from dora.api.deployment_analytics import app as deployment_analytics_api
 
+from dora.store.initialise_db import initialize_database
+
 app = Flask(__name__)
 
 app.register_blueprint(core_api)
@@ -18,3 +20,9 @@ app.register_blueprint(pull_requests_api)
 app.register_blueprint(incidents_api)
 app.register_blueprint(deployment_analytics_api)
 app.register_blueprint(integrations_api)
+
+initialize_database(app)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
