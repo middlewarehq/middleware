@@ -151,7 +151,7 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
     def _process_revert_pr_incident(
         self, org_incident_service: OrgIncidentService, revert_pr_map: RevertPRMap
     ) -> Tuple[Incident, IncidentOrgIncidentServiceMap]:
-        incident_unique_id = revert_pr_map.original_pr.id
+        incident_unique_id = str(revert_pr_map.original_pr.id)
         existing_incident: Optional[
             Incident
         ] = self.incidents_repo_service.get_incident_by_key_type_and_provider(
@@ -164,7 +164,7 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
         incident = Incident(
             id=incident_id,
             provider=org_incident_service.provider,
-            key=incident_unique_id,
+            key=str(incident_unique_id),
             title=revert_pr_map.original_pr.title,
             incident_number=int(revert_pr_map.original_pr.number),
             status=IncidentStatus.RESOLVED.value,
