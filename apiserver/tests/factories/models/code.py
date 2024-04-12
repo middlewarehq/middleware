@@ -1,5 +1,11 @@
 from random import randint
 from uuid import uuid4
+from dora.service.deployments.models.models import (
+    Deployment,
+    DeploymentStatus,
+    DeploymentType,
+)
+from dora.utils.string import uuid4_str
 
 from dora.store.models.code import (
     PullRequestCommit,
@@ -140,4 +146,31 @@ def get_repo_workflow_run(
         duration=duration,
         meta=meta,
         html_url=html_url,
+    )
+
+
+def get_deployment(
+    repo_id=None,
+    entity_id=None,
+    actor=None,
+    head_branch=None,
+    status=None,
+    conducted_at=None,
+    meta=None,
+    duration=None,
+    html_url=None,
+    provider=None,
+):
+    return Deployment(
+        deployment_type=DeploymentType.WORKFLOW,
+        repo_id=repo_id or "1234567",
+        entity_id=entity_id or uuid4_str(),
+        provider=provider or "github",
+        actor=actor or "samad-yar-khan",
+        head_branch=head_branch or "master",
+        conducted_at=conducted_at or time_now(),
+        duration=duration,
+        status=status or DeploymentStatus.SUCCESS,
+        html_url=html_url or "",
+        meta=meta or {},
     )
