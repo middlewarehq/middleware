@@ -29,6 +29,9 @@ class CodeETLHandler:
         self.mtd_broker = mtd_broker
 
     def sync_org_repos(self, org_id: str):
+        if not self.etl_service.check_pat_validity():
+            LOG.error("Invalid PAT for code provider")
+            return
         org_repos: List[OrgRepo] = self._sync_org_repos(org_id)
         for org_repo in org_repos:
             try:
