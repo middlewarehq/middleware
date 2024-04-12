@@ -80,7 +80,7 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
                 f"Workflow: {str(repo_workflow.provider_workflow_id)}. Repo: {org_repo.org_name}/{org_repo.name}. "
                 f"Org: {self.org_id}"
             )
-            return []
+            return [], bookmark
 
         bookmark.bookmark = self._get_new_bookmark_time_stamp(
             github_workflow_runs
@@ -138,9 +138,8 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
             html_url=github_workflow_run["html_url"],
         )
 
-    def _get_repo_workflow_status(
-        self, github_workflow: Dict
-    ) -> RepoWorkflowRunsStatus:
+    @staticmethod
+    def _get_repo_workflow_status(github_workflow: Dict) -> RepoWorkflowRunsStatus:
         if github_workflow["status"] != "completed":
             return RepoWorkflowRunsStatus.PENDING
         if github_workflow["conclusion"] == "success":
@@ -167,7 +166,8 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
             (workflow_run_updated_at - workflow_run_conducted_at).total_seconds()
         )
 
-    def _get_datetime_from_gh_datetime(self, datetime_str: str) -> datetime:
+    @staticmethod
+    def _get_datetime_from_gh_datetime(datetime_str: str) -> datetime:
         return datetime.strptime(datetime_str, ISO_8601_DATE_FORMAT).astimezone(
             tz=pytz.UTC
         )
@@ -185,4 +185,6 @@ def get_github_actions_etl_handler(org_id):
             )
         return access_token
 
-    return GithubActionsETLHandler(org_id, GithubApiService(_get_access_token()))
+    return GithubActionsETLHandler(
+        org_id, GithubApiService(_get_access_token()), WorkflowRepoService()
+    )

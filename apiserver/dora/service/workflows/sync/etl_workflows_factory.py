@@ -10,6 +10,6 @@ class WorkflowETLFactory:
         self.org_id = org_id
 
     def __call__(self, provider: str) -> WorkflowProviderETLHandler:
-        if provider == RepoWorkflowProviders.GITHUB_ACTIONS.value:
+        if provider == RepoWorkflowProviders.GITHUB_ACTIONS.name:
             return get_github_actions_etl_handler(self.org_id)
         raise NotImplementedError(f"Unknown provider - {provider}")

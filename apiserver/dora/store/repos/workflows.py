@@ -8,6 +8,7 @@ from dora.store import session, rollback_on_exc
 from dora.store.models.code.workflows.enums import (
     RepoWorkflowRunsStatus,
     RepoWorkflowType,
+    RepoWorkflowProviders,
 )
 from dora.store.models.code.workflows.filter import WorkflowFilter
 from dora.store.models.code.workflows.workflows import (
@@ -21,13 +22,14 @@ from dora.utils.time import Interval
 class WorkflowRepoService:
     @rollback_on_exc
     def get_active_repo_workflows_by_repo_ids_and_providers(
-        self, repo_ids: List[str], providers: List[str]
+        self, repo_ids: List[str], providers: List[RepoWorkflowProviders]
     ) -> List[RepoWorkflow]:
+
         return (
             session.query(RepoWorkflow)
             .options(defer(RepoWorkflow.meta))
             .filter(
-                RepoWorkflow.repo_id.in_(repo_ids),
+                RepoWorkflow.org_repo_id.in_(repo_ids),
                 RepoWorkflow.provider.in_(providers),
                 RepoWorkflow.is_active.is_(True),
             )
@@ -40,7 +42,6 @@ class WorkflowRepoService:
     ) -> RepoWorkflowRuns:
         return (
             session.query(RepoWorkflowRuns)
-            .options(defer(RepoWorkflow.meta))
             .filter(
                 RepoWorkflowRuns.repo_workflow_id == repo_workflow_id,
                 RepoWorkflowRuns.provider_workflow_run_id == provider_workflow_run_id,
@@ -181,6 +182,7 @@ class WorkflowRepoService:
     ):
         query = (
             session.query(RepoWorkflowRuns)
+            .options(defer(RepoWorkflowRuns.meta))
             .join(RepoWorkflow, RepoWorkflow.id == RepoWorkflowRuns.repo_workflow_id)
             .filter(
                 RepoWorkflow.org_repo_id == repo_id,
