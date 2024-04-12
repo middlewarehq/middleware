@@ -2,7 +2,7 @@ from datetime import timedelta
 from dora.service.incidents.incidents import get_incident_service
 from dora.utils.time import time_now
 
-from tests.factories.models import get_incident, get_repo_workflow_run
+from tests.factories.models import get_incident, get_deployment
 
 
 # No incidents, no deployments
@@ -22,8 +22,8 @@ def test_get_deployment_incidents_count_map_returns_deployment_incident_count_ma
     incident_service = get_incident_service()
     incidents = []
     deployments = [
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=2)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(hours=6)),
+        get_deployment(conducted_at=time_now() - timedelta(days=2)),
+        get_deployment(conducted_at=time_now() - timedelta(hours=6)),
     ]
     deployment_incidents_count_map = incident_service.get_deployment_incidents_map(
         deployments,
@@ -48,8 +48,8 @@ def test_get_deployment_incidents_count_map_returns_deployment_incident_count_ma
     incident_service = get_incident_service()
     incidents = [get_incident(creation_date=time_now() - timedelta(days=1))]
     deployments = [
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=2)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(hours=6)),
+        get_deployment(conducted_at=time_now() - timedelta(days=2)),
+        get_deployment(conducted_at=time_now() - timedelta(hours=6)),
     ]
     deployment_incidents_count_map = incident_service.get_deployment_incidents_map(
         deployments, incidents
@@ -65,8 +65,8 @@ def test_get_deployment_incidents_count_map_returns_deployment_incident_count_ma
     incident_service = get_incident_service()
     incidents = [get_incident(creation_date=time_now() - timedelta(days=3))]
     deployments = [
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=2)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(hours=6)),
+        get_deployment(conducted_at=time_now() - timedelta(days=2)),
+        get_deployment(conducted_at=time_now() - timedelta(hours=6)),
     ]
     deployment_incidents_count_map = incident_service.get_deployment_incidents_map(
         deployments, incidents
@@ -79,8 +79,8 @@ def test_get_deployment_incidents_count_map_returns_deployment_incident_count_ma
     incident_service = get_incident_service()
     incidents = [get_incident(creation_date=time_now() - timedelta(hours=1))]
     deployments = [
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=2)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(hours=6)),
+        get_deployment(conducted_at=time_now() - timedelta(days=2)),
+        get_deployment(conducted_at=time_now() - timedelta(hours=6)),
     ]
     deployment_incidents_count_map = incident_service.get_deployment_incidents_map(
         deployments, incidents
@@ -101,11 +101,11 @@ def test_get_deployment_incidents_count_map_returns_deployment_incident_count_ma
         get_incident(creation_date=time_now() - timedelta(hours=1)),
     ]
     deployments = [
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=7)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=6)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=4)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(days=2)),
-        get_repo_workflow_run(conducted_at=time_now() - timedelta(hours=6)),
+        get_deployment(conducted_at=time_now() - timedelta(days=7)),
+        get_deployment(conducted_at=time_now() - timedelta(days=6)),
+        get_deployment(conducted_at=time_now() - timedelta(days=4)),
+        get_deployment(conducted_at=time_now() - timedelta(days=2)),
+        get_deployment(conducted_at=time_now() - timedelta(hours=6)),
     ]
     deployment_incidents_count_map = incident_service.get_deployment_incidents_map(
         deployments, incidents

@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import List
+from typing import List, Set
 
 from voluptuous import default_factory
+from dora.service.deployments.models.models import Deployment
+from dora.service.incidents.models.mean_time_to_recovery import ChangeFailureRateMetrics
 
 from dora.store.models.incidents import IncidentType, OrgIncidentService
 from dora.store.models.incidents.incidents import (
@@ -82,3 +84,10 @@ def get_incident_org_incident_map(
     incident_id: str = uuid4_str(), service_id: str = uuid4_str()
 ):
     return IncidentOrgIncidentServiceMap(incident_id=incident_id, service_id=service_id)
+
+
+def get_change_failure_rate_metrics(
+    failed_deployments: Set[Deployment] = None,
+    total_deployments: Set[Deployment] = None,
+):
+    return ChangeFailureRateMetrics(failed_deployments, total_deployments)
