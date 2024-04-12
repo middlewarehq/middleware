@@ -126,6 +126,8 @@ class GithubETLHandler(CodeProviderETLHandler):
             if pr not in filtered_prs:
                 filtered_prs.append(pr)
 
+        filtered_prs = filtered_prs[::-1]
+
         if not filtered_prs:
             print("Nothing to process 🎉")
             return [], [], []

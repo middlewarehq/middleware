@@ -60,6 +60,8 @@ class CodeETLHandler:
             self.code_repo_service.save_pull_requests_data(
                 pull_requests, pull_request_commits, pull_request_events
             )
+            if not pull_requests:
+                return
             bookmark.bookmark = (
                 pull_requests[-1].state_changed_at.astimezone(tz=pytz.UTC).isoformat()
             )
@@ -95,7 +97,6 @@ class CodeETLHandler:
                 type=BookmarkType.PR.value,
                 bookmark=default_pr_bookmark.isoformat(),
             )
-            self.code_repo_service.update_org_repo_bookmark(bookmark)
         return bookmark
 
 
