@@ -102,6 +102,9 @@ class CodeETLHandler:
 
 def sync_code_repos(org_id: str):
     code_providers: List[str] = get_code_integration_service().get_org_providers(org_id)
+    if not code_providers:
+        LOG.info(f"No code integrations found for org {org_id}")
+        return
     etl_factory = CodeETLFactory(org_id)
 
     for provider in code_providers:
