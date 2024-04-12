@@ -6,7 +6,11 @@ from dora.utils.string import uuid4_str
 @rollback_on_exc
 def initialize_database(app):
     with app.app_context():
-        default_org = session.query(Organization).filter(Organization.name == "default").one_or_none()
+        default_org = (
+            session.query(Organization)
+            .filter(Organization.name == "default")
+            .one_or_none()
+        )
         print("🚀default_org.id =", default_org.id)
         if default_org:
             return
@@ -20,5 +24,5 @@ def initialize_database(app):
         print("🚀default_org.id =", default_org.id)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     initialize_database()
