@@ -42,13 +42,14 @@ class CodeETLAnalyticsService:
         if pr_commits:
             pr.rework_cycles = self.get_rework_cycles(pr, pr_events, pr_commits)
             pr_commits.sort(key=lambda x: x.created_at)
-            pr.first_commit_to_open = (
-                pr.created_at - pr_commits[0].created_at
-            ).total_seconds()
+            first_commit_to_open = pr.created_at - pr_commits[0].created_at
+            if isinstance(first_commit_to_open, timedelta):
+                pr.first_commit_to_open = first_commit_to_open.total_seconds()
 
         return pr
 
-    def get_pr_performance(self, pr: PullRequest, pr_events: [PullRequestEvent]):
+    @staticmethod
+    def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
         pr_events.sort(key=lambda x: x.created_at)
         first_review = pr_events[0] if pr_events else None
         approved_reviews = list(
@@ -83,22 +84,24 @@ class CodeETLAnalyticsService:
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
 
+        cycle_time = pr.state_changed_at - pr.created_at
+        if isinstance(cycle_time, timedelta):
+            cycle_time = cycle_time.total_seconds()
+
         return PRPerformance(
             first_review_time=(first_review.created_at - pr.created_at).total_seconds()
             if first_review
             else -1,
             rework_time=rework_time,
             merge_time=merge_time,
-            cycle_time=(pr.state_changed_at - pr.created_at).total_seconds()
-            if pr.state == PullRequestState.MERGED
-            else -1,
+            cycle_time=cycle_time if pr.state == PullRequestState.MERGED else -1,
             blocking_reviews=len(blocking_reviews),
             approving_reviews=len(pr_events) - len(blocking_reviews),
             requested_reviews=len(pr.requested_reviews),
         )
 
+    @staticmethod
     def get_rework_cycles(
-        self,
         pr: PullRequest,
         pr_events: [PullRequestEvent],
         pr_commits: [PullRequestCommit],
@@ -158,10 +161,10 @@ class CodeETLAnalyticsService:
         )
         all_events = sorted(pr_commits + blocking_reviews, key=lambda x: x.created_at)
         rework_cycles = 0
-        for curr, next in zip(all_events[:-1], all_events[1:]):
-            if type(curr) == type(next):
+        for curr, next_event in zip(all_events[:-1], all_events[1:]):
+            if isinstance(curr, type(next_event)):
                 continue
-            if type(next) == PullRequestCommit:
+            if isinstance(next_event, PullRequestCommit):
                 rework_cycles += 1
 
         return rework_cycles
