@@ -40,8 +40,7 @@ class GithubApiService:
         :returns:
         :raises HTTPError: If the request fails and status code is not 200
         """
-        url = f"{self.base_url}/personal_access_tokens/self"
-
+        url = f"{self.base_url}/user"
         response = requests.get(url, headers=self.headers)
         return response.status_code == 200
 

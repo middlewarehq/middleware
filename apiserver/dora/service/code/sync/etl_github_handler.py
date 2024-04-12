@@ -126,6 +126,8 @@ class GithubETLHandler(CodeProviderETLHandler):
             if pr not in filtered_prs:
                 filtered_prs.append(pr)
 
+        filtered_prs = filtered_prs[::-1]
+
         if not filtered_prs:
             print("Nothing to process 🎉")
             return [], [], []
@@ -258,9 +260,8 @@ class GithubETLHandler(CodeProviderETLHandler):
             merge_commit_sha=merge_commit_sha,
         )
 
-    def _get_merge_commit_sha(
-        self, raw_data: Dict, state: PullRequestState
-    ) -> Optional[str]:
+    @staticmethod
+    def _get_merge_commit_sha(raw_data: Dict, state: PullRequestState) -> Optional[str]:
         if state != PullRequestState.MERGED:
             return None
 
@@ -268,7 +269,8 @@ class GithubETLHandler(CodeProviderETLHandler):
 
         return merge_commit_sha
 
-    def _get_state(self, pr: PullRequest) -> PullRequestState:
+    @staticmethod
+    def _get_state(pr: PullRequest) -> PullRequestState:
         if pr.merged_at:
             return PullRequestState.MERGED
 
@@ -277,8 +279,8 @@ class GithubETLHandler(CodeProviderETLHandler):
 
         return PullRequestState.OPEN
 
+    @staticmethod
     def _to_pr_events(
-        self,
         reviews: [GithubPullRequestReview],
         pr_model: PullRequest,
         pr_events_model: [PullRequestEvent],
@@ -345,7 +347,8 @@ class GithubETLHandler(CodeProviderETLHandler):
             )
         return pr_commits
 
-    def _dt_from_github_dt_string(self, dt_string: str) -> datetime:
+    @staticmethod
+    def _dt_from_github_dt_string(dt_string: str) -> datetime:
         return datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%SZ").astimezone(
             tz=pytz.UTC
         )

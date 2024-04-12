@@ -60,6 +60,8 @@ class CodeETLHandler:
             self.code_repo_service.save_pull_requests_data(
                 pull_requests, pull_request_commits, pull_request_events
             )
+            if not pull_requests:
+                return
             bookmark.bookmark = (
                 pull_requests[-1].state_changed_at.astimezone(tz=pytz.UTC).isoformat()
             )
@@ -95,12 +97,14 @@ class CodeETLHandler:
                 type=BookmarkType.PR.value,
                 bookmark=default_pr_bookmark.isoformat(),
             )
-            self.code_repo_service.update_org_repo_bookmark(bookmark)
         return bookmark
 
 
 def sync_code_repos(org_id: str):
     code_providers: List[str] = get_code_integration_service().get_org_providers(org_id)
+    if not code_providers:
+        LOG.info(f"No code integrations found for org {org_id}")
+        return
     etl_factory = CodeETLFactory(org_id)
 
     for provider in code_providers:
