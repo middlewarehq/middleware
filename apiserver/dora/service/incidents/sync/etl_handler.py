@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import List
 
 from dora.service.incidents.integration import get_incidents_integration_service
@@ -11,6 +12,7 @@ from dora.store.models.incidents import (
 )
 from dora.store.repos.incidents import IncidentsRepoService
 from dora.utils.log import LOG
+from dora.utils.string import uuid4_str
 from dora.utils.time import time_now
 
 
@@ -33,9 +35,7 @@ class IncidentsETLHandler:
             updated_services = self.etl_service.get_updated_incident_services(
                 incident_services
             )
-            self.incident_repo_service.update_org_incident_services(
-                org_id, updated_services
-            )
+            self.incident_repo_service.update_org_incident_services(updated_services)
             for service in updated_services:
                 try:
                     self._sync_service_incidents(service)
@@ -65,16 +65,20 @@ class IncidentsETLHandler:
             LOG.error(f"Error syncing incidents for service {service.key}: {str(e)}")
             return
 
-    def __get_incidents_bookmark(self, service: OrgIncidentService):
+    def __get_incidents_bookmark(
+        self, service: OrgIncidentService, default_sync_days: int = 31
+    ):
         bookmark = self.incident_repo_service.get_incidents_bookmark(
             str(service.id), IncidentBookmarkType.SERVICE, self.provider
         )
         if not bookmark:
+            default_pr_bookmark = time_now() - timedelta(days=default_sync_days)
             bookmark = IncidentsBookmark(
+                id=uuid4_str(),
                 entity_id=str(service.id),
                 entity_type=IncidentBookmarkType.SERVICE,
                 provider=self.provider.value,
-                bookmark=time_now(),
+                bookmark=default_pr_bookmark,
             )
         return bookmark
 
@@ -83,6 +87,9 @@ def sync_org_incidents(org_id: str):
     incident_providers: List[
         str
     ] = get_incidents_integration_service().get_org_providers(org_id)
+    if not incident_providers:
+        LOG.info(f"No incident providers found for org {org_id}")
+        return
     etl_factory = IncidentsETLFactory(org_id)
 
     for provider in incident_providers:
