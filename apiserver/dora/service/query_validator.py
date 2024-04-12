@@ -7,10 +7,18 @@ from dora.store.models.core import Organization, Team, Users
 from dora.store.repos.core import CoreRepoService
 from dora.utils.time import Interval
 
+DEFAULT_ORG_NAME = "default"
+
 
 class QueryValidator:
     def __init__(self, repo_service: CoreRepoService):
         self.repo_service = repo_service
+
+    def get_default_org(self) -> Organization:
+        org: Organization = self.repo_service.get_org_by_name(DEFAULT_ORG_NAME)
+        if org is None:
+            raise NotFound("Default org not found")
+        return org
 
     def org_validator(self, org_id: str) -> Organization:
         org: Organization = self.repo_service.get_org(org_id)

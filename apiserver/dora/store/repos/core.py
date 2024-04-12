@@ -19,6 +19,14 @@ class CoreRepoService:
         )
 
     @rollback_on_exc
+    def get_org_by_name(self, org_name: str):
+        return (
+            session.query(Organization)
+            .filter(Organization.name == org_name)
+            .one_or_none()
+        )
+
+    @rollback_on_exc
     def get_team(self, team_id: str) -> Team:
         return (
             session.query(Team)
