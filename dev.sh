@@ -72,6 +72,8 @@ function exit_script() {
     exit 0
 }
 
+clear 
+
 # Display header
 show_header
 
