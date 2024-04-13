@@ -8,7 +8,8 @@ import {
   darken,
   List,
   ListItem,
-  Stack
+  Stack,
+  useTheme
 } from '@mui/material';
 import Link from 'next/link';
 import pluralize from 'pluralize';
@@ -16,26 +17,29 @@ import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { FlexBox } from '@/components/FlexBox';
+import { useOverlayPage } from '@/components/OverlayPageContext';
 import { MiniSwitch } from '@/components/Shared';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import { ROUTES } from '@/constants/routes';
 import { isRoleLessThanEM } from '@/constants/useRoute';
+import { getTrendsDataFromArray } from '@/content/Cockpit/codeMetrics/shared';
 import {
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import {
-  getTrendsDataFromArray,
-  usePropsForChangeTimeCard
-} from '@/content/DoraMetrics/DoraCards/sharedHooks';
+import { usePropsForChangeTimeCard } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
-import { IntegrationGroup } from '@/types/resources';
+import { ChangeTimeModes } from '@/types/resources';
 import { mergeDateValueTupleArray } from '@/utils/array';
 import { getDurationString } from '@/utils/date';
 
+import { getDoraLink } from '../../PullRequests/DeploymentFrequencyGraph';
+import {
+  CorelationInsightCardFooter,
+  UnavailableCorrelation
+} from '../CorelationInsightCardFooter';
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
-import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
 
@@ -63,13 +67,12 @@ const chartOptions = {
 } as ChartOptions;
 
 export const ChangeTimeCard = () => {
-  const { integrationSet } = useAuth();
+  const { addPage } = useOverlayPage();
+  const theme = useTheme();
   const { role } = useAuth();
   const isEng = isRoleLessThanEM(role);
 
   const {
-    isShowingLeadTime,
-    isShowingCycleTime,
     reposCountWithWorkflowConfigured,
     isActiveModeSwitchDisabled,
     isSufficientDataAvailable,
@@ -83,12 +86,21 @@ export const ChangeTimeCard = () => {
     toggleActiveModeValue
   } = usePropsForChangeTimeCard();
 
-  const isCodeProviderIntegrationEnabled = integrationSet.has(
-    IntegrationGroup.CODE
-  );
+  const isCodeProviderIntegrationEnabled = true;
 
   const showClassificationBadge =
     isSufficientDataAvailable && isCodeProviderIntegrationEnabled;
+
+  // TODO: Implement this using feature.ts
+  const isCorrelationInsightsEnabled = true;
+
+  const computedFooter = !isCodeProviderIntegrationEnabled ? (
+    <UnavailableCorrelation type="INTEGRATION" />
+  ) : !isSufficientDataAvailable ? (
+    <UnavailableCorrelation type="INSUFFICIENT_DATA" />
+  ) : (
+    <CorelationInsightCardFooter />
+  );
 
   const series = useMemo(
     () => [
@@ -120,16 +132,13 @@ export const ChangeTimeCard = () => {
           <FlexBox gap1 alignCenter justifyBetween fullWidth>
             <FlexBox alignCenter gap1>
               <Line white huge bold py={1}>
-                {isShowingLeadTime ? 'Lead Time for Changes' : 'Cycle Time'}
+                Lead Time for Changes
               </Line>
               <MetricExternalRead
                 link={`https://docs.gitlab.com/ee/user/analytics/dora_metrics.html#lead-time-for-changes`}
-                label={
-                  isShowingLeadTime ? 'Lead Time for Changes' : 'Cycle Time'
-                }
+                label={'Lead Time for Changes'}
               >
-                {isShowingLeadTime &&
-                  isSufficientDataAvailable &&
+                {isSufficientDataAvailable &&
                   !isAllAssignedReposHaveDeploymentsConfigured && (
                     <FlexBox
                       color="white"
@@ -192,8 +201,7 @@ export const ChangeTimeCard = () => {
                       />
                     </FlexBox>
                   )}
-                {isShowingLeadTime &&
-                  isSufficientDataAvailable &&
+                {isSufficientDataAvailable &&
                   isAllAssignedReposHaveDeploymentsConfigured && (
                     <FlexBox
                       color="white"
@@ -262,7 +270,18 @@ export const ChangeTimeCard = () => {
             )}
           </FlexBox>
         </FlexBox>
-        <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
+        <FlexBox
+          col
+          justifyBetween
+          relative
+          fullWidth
+          sx={{
+            borderBottom:
+              isCorrelationInsightsEnabled &&
+              `1px solid ${theme.colors.secondary.light}`
+          }}
+          flexGrow={1}
+        >
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isSufficientDataAvailable ? (
               <Chart2
@@ -280,7 +299,7 @@ export const ChangeTimeCard = () => {
             {isSufficientDataAvailable ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={activeModeProps.color}>
-                  {isShowingLeadTime ? 'Avg. lead time' : 'Avg. cycle time'}
+                  {'Avg. lead time'}
                 </Line>
                 <FlexBox gap={2} alignCenter>
                   <Line
@@ -313,7 +332,16 @@ export const ChangeTimeCard = () => {
                       track('DORA_METRICS_SEE_DETAILS_CLICKED', {
                         viewed: 'CT'
                       });
-                      return console.error('OVERLAY PENDING');
+                      addPage({
+                        page: {
+                          title: 'Pull requests insights',
+                          ui: 'team_prs',
+                          props: {
+                            referrer: 'dora_metrics',
+                            metric: ChangeTimeModes.LEAD_TIME
+                          }
+                        }
+                      });
                     }}
                     color={activeModeProps.color}
                   >
@@ -330,8 +358,7 @@ export const ChangeTimeCard = () => {
                   >
                     <Line
                       sx={{
-                        fontWeight: isShowingCycleTime && 'bold',
-                        color: isShowingLeadTime && darken('#FFF', 0.25),
+                        color: darken('#FFF', 0.25),
                         opacity: isActiveModeSwitchDisabled && 0.6
                       }}
                     >
@@ -388,8 +415,7 @@ export const ChangeTimeCard = () => {
 
                     <Line
                       sx={{
-                        fontWeight: isShowingLeadTime && 'bold',
-                        color: isShowingCycleTime && darken('#FFF', 0.25),
+                        fontWeight: 'bold',
                         opacity: isActiveModeSwitchDisabled && 0.6
                       }}
                     >
@@ -408,6 +434,8 @@ export const ChangeTimeCard = () => {
           </FlexBox>
         </FlexBox>
       </FlexBox>
+
+      {isCorrelationInsightsEnabled && computedFooter}
     </CardRoot>
   );
 };

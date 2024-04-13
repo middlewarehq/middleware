@@ -1,3 +1,5 @@
+import { SvgIconTypeMap } from '@mui/material';
+import { OverridableComponent } from '@mui/material/OverridableComponent';
 import { ReactChild, ReactFragment, ReactPortal } from 'react';
 
 import { Row } from '@/constants/db';
@@ -514,7 +516,12 @@ export type CockpitCycleTimeApiResponse = {
 };
 
 export type TeamDoraMetricsApiResponseType = {
+  cycle_time_stats: CockpitCycleTimeApiResponse;
   lead_time_stats: CockpitLeadTimeApiResponse;
+  cycle_time_trends: {
+    current: CycleTimeTrends;
+    previous: CycleTimeTrends;
+  };
   lead_time_trends: {
     current: LeadTimeTrends;
     previous: LeadTimeTrends;
@@ -533,20 +540,16 @@ export type TeamDoraMetricsApiResponseType = {
     ChangeFailureRateTrendsBaseStats
   >;
   deployment_frequency_stats: {
-    current: Omit<
-      DeploymentFrequencyAnalyticsResponse,
-      'users_map' | 'teams_map'
-    >;
-    previous: Omit<
-      DeploymentFrequencyAnalyticsResponse,
-      'users_map' | 'teams_map'
-    >;
+    current: DeploymentFrequencyAnalyticsResponse;
+    previous: DeploymentFrequencyAnalyticsResponse;
   };
   deployment_frequency_trends: Record<DateString, DeploymentFrequencyTrendBase>;
   allReposAssignedToTeam: RepoWithSingleWorkflow[];
   workflowConfiguredRepos: RepoWithSingleWorkflow[];
   deploymentsConfigured: TeamDeploymentsConfigured['deployments_configured'];
   deploymentsConfiguredForAllRepos: TeamDeploymentsConfigured['deployments_configured_for_all_repos'];
+  summary_prs: PR[];
+  reverted_prs: PR[];
 };
 
 export enum ActiveBranchMode {
@@ -818,6 +821,7 @@ export type ChangeFailureRateApiResponse = UserAndTeamMapApiReturnType &
 export type DeploymentFrequencyBaseStats = {
   avg_deployment_frequency: number;
   total_deployments: number;
+  duration?: 'day' | 'week' | 'month';
 };
 
 export type DeploymentFrequencyAnalyticsResponse = UserAndTeamMapApiReturnType &
@@ -934,4 +938,15 @@ export type ReqRepo = {
   idempotency_key: string;
   name: string;
   slug: string;
+};
+
+export type DoraPropsType = {
+  count: number;
+  bg: string;
+  tooltip: string;
+  classification: string;
+  icon: OverridableComponent<SvgIconTypeMap<{}, 'svg'>>;
+  color: string;
+  backgroundColor: string;
+  interval: string;
 };
