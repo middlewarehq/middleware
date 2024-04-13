@@ -1,29 +1,66 @@
-import { groupBy, prop, uniq } from 'ramda';
+import { groupBy, prop, uniq, mapObjIndexed, forEachObjIndexed } from 'ramda';
 import * as yup from 'yup';
 
+import { enableOrgReposIfNotEnabled } from '@/api/integrations/orgs';
+import {
+  CodeSourceProvidersIntegration,
+  getProviderOrgs,
+  getRepos
+} from '@/api/internal/[org_id]/git_provider_org';
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
 import { Columns, Table } from '@/constants/db';
+import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
+import { ReqOrgRepo } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
 
 const getSchema = yup.object().shape({
-  user_id: yup.string().uuid().nullable().optional(),
-  include_teams: yup.array().of(yup.string().uuid()).nullable().optional()
+  provider: yup.string().required()
 });
 
 const postSchema = yup.object().shape({
-  repo_ids: yup.array().of(yup.string().uuid()).nullable().optional(),
   manager_id: yup.string().uuid().nullable().optional(),
-  name: yup.string().required()
+  name: yup.string().required(),
+  provider: yup.string().oneOf(Object.values(Integration)).required(),
+  org_repos: yup.lazy((obj) =>
+    yup.object(
+      mapObjIndexed(
+        () =>
+          yup.array().of(
+            yup.object().shape({
+              idempotency_key: yup.string().required(),
+              slug: yup.string().required(),
+              name: yup.string().required()
+            })
+          ),
+        obj
+      )
+    )
+  )
 });
 
 const patchSchema = yup.object().shape({
   id: yup.string().uuid().required(),
   name: yup.string().nullable().optional(),
-  repo_ids: yup.array().of(yup.string().uuid()).nullable().optional()
+  provider: yup.string().oneOf(Object.values(Integration)).required(),
+  org_repos: yup.lazy((obj) =>
+    yup.object(
+      mapObjIndexed(
+        () =>
+          yup.array().of(
+            yup.object().shape({
+              idempotency_key: yup.string().required(),
+              slug: yup.string().required(),
+              name: yup.string().required()
+            })
+          ),
+        obj
+      )
+    )
+  )
 });
 
 const deleteSchema = yup.object().shape({
@@ -41,22 +78,26 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { org_id } = req.payload;
-
+  const { org_id, provider } = req.payload;
   const getQuery = db('Team')
     .select('*')
     .where('org_id', org_id)
     .andWhereNot('is_deleted', true)
     .orderBy('name', 'asc');
 
-  const teams = await getQuery;
+  const [teams, orgRepos] = await Promise.all([
+    getQuery,
+    (
+      await getAllOrgRepos(org_id, provider as CodeSourceProvidersIntegration)
+    ).flat()
+  ]);
   const repos = (
     await Promise.all(teams.map((team) => getTeamRepos(team.id)))
   ).flat();
 
   res.send({
     teams: teams,
-    users: {},
+    orgRepos: orgRepos,
     teamReposMap: groupBy(prop('team_id'), repos)
   });
 });
@@ -66,12 +107,23 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { repo_ids = [], org_id, name } = req.payload;
+  const { org_repos, org_id, provider, name } = req.payload;
+  const orgReposList: ReqOrgRepo[] = [];
+  forEachObjIndexed(
+    (repos, org) => orgReposList.push({ org, repos }),
+    org_repos
+  );
 
-  const team = await createTeam(org_id, name, []);
-  const teamRepos = await addReposToTeam(team.id, repo_ids);
+  const [team, repos] = await Promise.all([
+    createTeam(org_id, name, []),
+    enableOrgReposIfNotEnabled(org_id, provider as Integration, orgReposList)
+  ]);
+  const teamRepos = await addReposToTeam(
+    team.id,
+    repos.map((r) => r.id)
+  );
 
-  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
+  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos), repos });
 });
 
 endpoint.handle.PATCH(patchSchema, async (req, res) => {
@@ -79,7 +131,12 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { org_id, id, name, repo_ids } = req.payload;
+  const { org_id, id, name, org_repos, provider } = req.payload;
+  const orgReposList: ReqOrgRepo[] = [];
+  forEachObjIndexed(
+    (repos, org) => orgReposList.push({ org, repos }),
+    org_repos
+  );
 
   const upsertPayload: Record<string, any> = {
     id,
@@ -92,10 +149,14 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     upsertPayload.name = name;
   }
 
-  const [team, teamRepos] = await Promise.all([
+  const [team, repos] = await Promise.all([
     updateTeam(id, name, []),
-    addReposToTeam(id, repo_ids)
+    enableOrgReposIfNotEnabled(org_id, provider as Integration, orgReposList)
   ]);
+  const teamRepos = await addReposToTeam(
+    id,
+    repos.map((r) => r.id)
+  );
 
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
@@ -176,4 +237,17 @@ const addReposToTeam = async (team_id: ID, repo_ids: ID[]) => {
         .returning('*'));
     return data;
   } catch (err) {}
+};
+
+export const getAllOrgRepos = async (
+  org_id: ID,
+  provider: CodeSourceProvidersIntegration
+) => {
+  const providerOrgs = await getProviderOrgs(org_id, provider).then(
+    (r) => r.data.orgs
+  );
+  const repos = await Promise.all(
+    providerOrgs.map((org) => getRepos(org_id, provider, org.login))
+  );
+  return repos;
 };

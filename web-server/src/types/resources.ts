@@ -928,3 +928,10 @@ export type UpdatedTeamDeploymentsApiResponse = {
   repos: BaseRepo[];
   workflows: RepoWorkflowExtended[];
 };
+export type ReqOrgRepo = { org: string; repos: RepoUniqueDetails[] };
+export type ReqRepo = {
+  org: string;
+  idempotency_key: string;
+  name: string;
+  slug: string;
+};

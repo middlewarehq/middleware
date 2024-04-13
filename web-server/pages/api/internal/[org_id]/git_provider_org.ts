@@ -10,7 +10,7 @@ import { Integration } from '@/constants/integrations';
 import { LoadedOrg } from '@/types/github';
 import { getBaseRepoFromUnionRepo } from '@/utils/code';
 
-type CodeSourceProvidersIntegration =
+export type CodeSourceProvidersIntegration =
   | Integration.GITHUB
   | Integration.GITLAB
   | Integration.BITBUCKET;
