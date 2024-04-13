@@ -7,6 +7,10 @@ import { FetchTeamSettingsAPIResponse } from '@/types/resources';
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
 });
+const getSchema = yup.object().shape({
+  setting_type: yup.string().required()
+});
+
 const putSchema = yup.object().shape({
   setting_type: yup.string().required(),
   setting_data: yup.object()
@@ -30,12 +34,16 @@ endpoint.handle.PUT(putSchema, async (req, res) => {
   );
 });
 
-endpoint.handle.GET(putSchema, async (req, res) => {
-  const { team_id } = req.payload;
-  // TODO: Implement the API call
+endpoint.handle.GET(getSchema, async (req, res) => {
+  const { team_id, setting_type } = req.payload;
   return res.send(
     await handleRequest<FetchTeamSettingsAPIResponse>(
-      `/teams/${team_id}/settings`
+      `/teams/${team_id}/settings`,
+      {
+        params: {
+          setting_type
+        }
+      }
     )
   );
 });
