@@ -1,7 +1,7 @@
 import { lighten, rgbToHex } from '@mui/material';
 import { useMemo } from 'react';
 
-import { getTrendsDataFromArray } from '@/content/DoraMetrics/DoraCards/sharedHooks';
+import { getTrendsDataFromArray } from '@/content/Cockpit/codeMetrics/shared';
 import { useSelector } from '@/store';
 import { brandColors } from '@/theme/schemes/theme';
 import { mergeDateValueTupleArray } from '@/utils/array';

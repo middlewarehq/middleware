@@ -5,5 +5,10 @@ export const overlaysImportMap = {
     import('@/components/OverlayComponents/Dummy').then((c) => ({
       default: c.Dummy
     }))
+  ),
+  team_prs: lazy(() =>
+    import('@/components/OverlayComponents/Dummy').then((c) => ({
+      default: c.Dummy
+    }))
   )
 };

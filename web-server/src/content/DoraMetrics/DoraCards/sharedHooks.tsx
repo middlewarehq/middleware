@@ -1,27 +1,20 @@
-import { differenceInDays, endOfDay, startOfDay } from 'date-fns';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { ChangeTimeThresholds } from '@/content/DoraMetrics/MetricsClassificationsThreshold';
+import {
+  ChangeTimeThresholds,
+  updatedDeploymentFrequencyThresholds
+} from '@/content/DoraMetrics/MetricsClassificationsThreshold';
 import { useAuth } from '@/hooks/useAuth';
-import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
 import { doraMetricsSlice } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
-import {
-  ChangeTimeModes,
-  DateValueTuple,
-  IntegrationGroup
-} from '@/types/resources';
+import { ChangeTimeModes, IntegrationGroup } from '@/types/resources';
 import { getDoraScore } from '@/utils/dora';
 
 import {
   changeFailureRateThresholds,
-  deploymentFrequencyThresholds,
   meanTimeToRestoreThresholds
 } from '../MetricsClassificationsThreshold';
 import { commonProps } from '../MetricsCommonProps';
-
-const DAYS_IN_MONTH = 31;
-const DAYS_IN_QUARTER = 90;
 
 export const useMeanTimeToRestoreProps = () => {
   const meanTimeToRestore = useSelector(
@@ -140,7 +133,6 @@ export const useDoraStats = () => {
 
 export const usePropsForChangeTimeCard = () => {
   const leadTimeProps = useLeadTimeProps();
-  const activeMode = useSelector((s) => s.doraMetrics.activeChangeTimeMode);
   const allAssignedRepos = useSelector(
     (s) => s.doraMetrics.allReposAssignedToTeam
   );
@@ -159,21 +151,9 @@ export const usePropsForChangeTimeCard = () => {
 
   const dispatch = useDispatch();
 
-  const defaultChangeTimeMode = useMemo(
-    () =>
-      leadTimeProps.count && isFinite(prevLeadTime)
-        ? ChangeTimeModes.LEAD_TIME
-        : ChangeTimeModes.CYCLE_TIME,
-    [leadTimeProps.count, prevLeadTime]
-  );
-
   useEffect(() => {
     dispatch(
-      doraMetricsSlice.actions.toggleActiveModeValue(
-        leadTimeProps.count && isFinite(prevLeadTime)
-          ? ChangeTimeModes.LEAD_TIME
-          : ChangeTimeModes.CYCLE_TIME
-      )
+      doraMetricsSlice.actions.toggleActiveModeValue(ChangeTimeModes.LEAD_TIME)
     );
   }, [dispatch, leadTimeProps.count, prevLeadTime]);
 
@@ -206,14 +186,13 @@ export const usePropsForChangeTimeCard = () => {
     );
   }, [allAssignedRepos, reposWithWorkflowConfigured]);
 
-  const isShowingLeadTime = ChangeTimeModes.LEAD_TIME === activeMode;
-  const isShowingCycleTime = ChangeTimeModes.CYCLE_TIME === activeMode;
+  const isShowingLeadTime = true;
+  const isShowingCycleTime = false;
 
   const reposCountWithWorkflowConfigured =
     allAssignedRepos.length - reposWithNoDeploymentsConfigured.length;
 
-  const isActiveModeSwitchDisabled =
-    defaultChangeTimeMode === ChangeTimeModes.CYCLE_TIME;
+  const isActiveModeSwitchDisabled = false;
 
   const isSufficientDataAvailable = useMemo(
     () => Boolean(activeModeCount && isFinite(prevChangeTime)),
@@ -238,73 +217,37 @@ export const usePropsForChangeTimeCard = () => {
 };
 
 export const useAvgWeeklyDeploymentFrequency = () => {
-  const { dates } = useSingleTeamConfig();
-
-  let avgWeeklyDeploymentFrequency = useSelector(
+  let avgDeploymentFrequency = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
         .avg_deployment_frequency || 0
   );
-  let prevAvgWeeklyDeploymentFrequency = useSelector(
+  let prevAvgDeploymentFrequency = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.deployment_frequency_stats.previous
         .avg_deployment_frequency || 0
   );
 
+  const interval = useSelector(
+    (s) =>
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current.duration
+  );
+
   const metricInterval = useMemo(() => {
-    const dateRange = differenceInDays(
-      endOfDay(dates.end),
-      startOfDay(dates.start)
-    );
-    if (dateRange < DAYS_IN_MONTH) {
-      return {
-        count: avgWeeklyDeploymentFrequency,
-        prev: prevAvgWeeklyDeploymentFrequency,
-        interval: 'week'
-      };
-    }
-    if (dateRange < DAYS_IN_QUARTER) {
-      return {
-        count: Math.ceil(avgWeeklyDeploymentFrequency * 4),
-        prev: Math.ceil(prevAvgWeeklyDeploymentFrequency * 4),
-        interval: 'month'
-      };
-    }
     return {
-      count: Math.ceil(avgWeeklyDeploymentFrequency * 12),
-      prev: Math.ceil(prevAvgWeeklyDeploymentFrequency * 12),
-      interval: 'quarter'
+      count: avgDeploymentFrequency,
+      prev: prevAvgDeploymentFrequency,
+      interval
     };
-  }, [
-    avgWeeklyDeploymentFrequency,
-    dates.end,
-    dates.start,
-    prevAvgWeeklyDeploymentFrequency
-  ]);
+  }, [avgDeploymentFrequency, interval, prevAvgDeploymentFrequency]);
 
   return useMemo(() => {
-    if (avgWeeklyDeploymentFrequency > deploymentFrequencyThresholds.elite)
-      return {
-        ...commonProps.elite,
-        ...metricInterval
-      };
-    else if (avgWeeklyDeploymentFrequency > deploymentFrequencyThresholds.high)
-      return {
-        ...commonProps.high,
-        ...metricInterval
-      };
-    else if (
-      avgWeeklyDeploymentFrequency > deploymentFrequencyThresholds.medium
-    )
-      return {
-        ...commonProps.medium,
-        ...metricInterval
-      };
+    const key = updatedDeploymentFrequencyThresholds(metricInterval);
     return {
-      ...commonProps.low,
+      ...commonProps[key],
       ...metricInterval
     };
-  }, [avgWeeklyDeploymentFrequency, metricInterval]);
+  }, [metricInterval]);
 };
 
 export const useChangeFailureRateProps = () => {
@@ -352,8 +295,4 @@ export const useChangeFailureRateProps = () => {
       ...cfrProps
     };
   }, [cfrProps, changeFailureRate]);
-};
-
-export const getTrendsDataFromArray = (trendsArr: DateValueTuple[]) => {
-  return trendsArr?.map((t) => t[1]).flat() || [];
 };
