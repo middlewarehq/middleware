@@ -11,7 +11,6 @@ def initialize_database(app):
             .filter(Organization.name == "default")
             .one_or_none()
         )
-        print("🚀default_org.id =", default_org.id)
         if default_org:
             return
         default_org = Organization(
@@ -21,7 +20,6 @@ def initialize_database(app):
         )
         session.add(default_org)
         session.commit()
-        print("🚀default_org.id =", default_org.id)
 
 
 if __name__ == "__main__":
