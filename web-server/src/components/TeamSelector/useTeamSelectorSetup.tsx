@@ -64,7 +64,6 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
 
   const updateUsers = useCallback(
     (res: AxiosResponse<FetchTeamsResponse>) => {
-      dispatch(resourcesSlice.actions.updateUsers(res.data.users));
       dispatch(resourcesSlice.actions.updateTeams(groupObj(res.data.teams)));
       dispatch(
         appSlice.actions.setTeamProdBranchMap(res.data.teamReposProdBranchMap)
