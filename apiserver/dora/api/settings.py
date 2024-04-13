@@ -1,7 +1,7 @@
 from typing import Dict
 
 from flask import Blueprint
-from voluptuous import Required, Schema, Coerce, All
+from voluptuous import Required, Schema, Coerce, All, Optional
 from werkzeug.exceptions import BadRequest, NotFound
 
 from dora.api.request_utils import dataschema, queryschema, uuid_validator
@@ -18,18 +18,22 @@ app = Blueprint("settings", __name__)
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
-            Required("setter_id"): All(str, Coerce(uuid_validator)),
+            Optional("setter_id"): All(str, Coerce(uuid_validator)),
         }
     ),
 )
-def get_team_settings(team_id: str, setting_type: SettingType, setter_id: str):
+def get_team_settings(team_id: str, setting_type: SettingType, setter_id: str = None):
 
     query_validator = get_query_validator()
 
     team = query_validator.team_validator(team_id)
-    setter = query_validator.user_validator(setter_id)
 
-    if str(setter.org_id) != str(team.org_id):
+    setter = None
+
+    if setter_id:
+        setter = query_validator.user_validator(setter_id)
+
+    if setter and str(setter.org_id) != str(team.org_id):
         raise BadRequest(f"User {setter_id} does not belong to team {team_id}")
 
     settings_service = get_settings_service()
@@ -55,21 +59,28 @@ def get_team_settings(team_id: str, setting_type: SettingType, setter_id: str):
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
-            Required("setter_id"): All(str, Coerce(uuid_validator)),
+            Optional("setter_id"): All(str, Coerce(uuid_validator)),
             Required("setting_data"): dict,
         }
     ),
 )
 def put_team_settings(
-    team_id: str, setting_type: SettingType, setter_id: str, setting_data: Dict = None
+    team_id: str,
+    setting_type: SettingType,
+    setter_id: str = None,
+    setting_data: Dict = None,
 ):
 
     query_validator = get_query_validator()
 
     team = query_validator.team_validator(team_id)
-    setter = query_validator.user_validator(setter_id)
 
-    if str(setter.org_id) != str(team.org_id):
+    setter = None
+
+    if setter_id:
+        setter = query_validator.user_validator(setter_id)
+
+    if setter and str(setter.org_id) != str(team.org_id):
         raise BadRequest(f"User {setter_id} does not belong to team {team_id}")
 
     settings_service = get_settings_service()
@@ -83,92 +94,26 @@ def put_team_settings(
     return adapt_configuration_settings_response(settings)
 
 
-@app.route("/users/<user_id>/settings", methods={"GET"})
-@queryschema(
-    Schema(
-        {
-            Required("setting_type"): All(str, Coerce(settings_type_validator)),
-            Required("setter_id"): All(str, Coerce(uuid_validator)),
-        }
-    ),
-)
-def get_user_settings(user_id: str, setting_type: SettingType, setter_id: str):
-    query_validator = get_query_validator()
-
-    user = query_validator.user_validator(user_id)
-    setter = query_validator.user_validator(setter_id)
-
-    if str(setter.org_id) != str(user.org_id):
-        raise BadRequest(f"User {setter_id} does not belong to org {str(user.org_id)}")
-
-    settings_service = get_settings_service()
-    settings = settings_service.get_settings(
-        setting_type=setting_type,
-        entity_type=EntityType.USER,
-        entity_id=user_id,
-    )
-
-    if not settings:
-        settings = settings_service.save_settings(
-            setting_type=setting_type,
-            entity_type=EntityType.USER,
-            entity_id=user_id,
-            setter=setter,
-        )
-
-    return adapt_configuration_settings_response(settings)
-
-
-@app.route("/users/<user_id>/settings", methods={"PUT"})
-@dataschema(
-    Schema(
-        {
-            Required("setting_type"): All(str, Coerce(settings_type_validator)),
-            Required("setter_id"): All(str, Coerce(uuid_validator)),
-            Required("setting_data"): dict,
-        }
-    ),
-)
-def put_user_settings(
-    user_id: str, setting_type: SettingType, setter_id: str, setting_data: Dict = None
-):
-    query_validator = get_query_validator()
-
-    user = query_validator.user_validator(user_id)
-    setter = query_validator.user_validator(setter_id)
-
-    if not setter:
-        raise NotFound(f"User not found for user_id {setter_id}")
-    if str(setter.org_id) != str(user.org_id):
-        raise BadRequest(f"User {setter_id} does not belong to org {str(user.org_id)}")
-
-    settings_service = get_settings_service()
-    settings = settings_service.save_settings(
-        setting_type=setting_type,
-        entity_type=EntityType.USER,
-        entity_id=user_id,
-        setter=setter,
-        setting_data=setting_data,
-    )
-    return adapt_configuration_settings_response(settings)
-
-
 @app.route("/orgs/<org_id>/settings", methods={"GET"})
 @queryschema(
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
-            Required("setter_id"): All(str, Coerce(uuid_validator)),
+            Optional("setter_id"): All(str, Coerce(uuid_validator)),
         }
     ),
 )
-def get_org_settings(org_id: str, setting_type: SettingType, setter_id: str):
+def get_org_settings(org_id: str, setting_type: SettingType, setter_id: str = None):
 
     query_validator = get_query_validator()
     org: Organization = query_validator.org_validator(org_id)
-    setter: Users = query_validator.user_validator(setter_id)
 
-    if str(setter.org_id) != str(org_id):
+    setter = None
+
+    if setter_id:
+        setter = query_validator.user_validator(setter_id)
+
+    if setter and str(setter.org_id) != str(org_id):
         raise BadRequest(f"User {setter_id} does not belong to org {org_id}")
 
     settings_service = get_settings_service()
@@ -194,19 +139,26 @@ def get_org_settings(org_id: str, setting_type: SettingType, setter_id: str):
     Schema(
         {
             Required("setting_type"): All(str, Coerce(settings_type_validator)),
-            Required("setter_id"): All(str, Coerce(uuid_validator)),
+            Optional("setter_id"): All(str, Coerce(uuid_validator)),
             Required("setting_data"): dict,
         }
     ),
 )
 def put_org_settings(
-    org_id: str, setting_type: SettingType, setter_id: str, setting_data: Dict = None
+    org_id: str,
+    setting_type: SettingType,
+    setter_id: str = None,
+    setting_data: Dict = None,
 ):
     query_validator = get_query_validator()
     org: Organization = query_validator.org_validator(org_id)
-    setter: Users = query_validator.user_validator(setter_id)
 
-    if str(setter.org_id) != str(org_id):
+    setter = None
+
+    if setter_id:
+        setter = query_validator.user_validator(setter_id)
+
+    if setter and str(setter.org_id) != str(org_id):
         raise BadRequest(f"User {setter_id} does not belong to org {org_id}")
 
     settings_service = get_settings_service()
