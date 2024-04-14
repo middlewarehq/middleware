@@ -4,12 +4,22 @@ set -e
 set -u
 set -x
 
-POSTGRES_USER="${POSTGRES_USER:-postgres}"
-POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
-POSTGRES_DB="${POSTGRES_DB:-dora-oss}"
-POSTGRES_PORT="${POSTGRES_PORT:-5432}"
-POSTGRES_HOST="${POSTGRES_HOST:-127.0.0.1}"
+POSTGRES_USER="${DORA_DB_USER:-postgres}"
+POSTGRES_PASSWORD="${DORA_DB_PASS:-postgres}"
+POSTGRES_DB="${DORA_DB_NAME:-dora-oss}"
+POSTGRES_PORT="${DORA_DB_PORT:-5432}"
+POSTGRES_HOST="${DORA_DB_HOST:-127.0.0.1}"
 
+wait_for_postgres() {
+    until su - postgres -c "psql -U postgres -c '\q'"; do
+        echo "PostgreSQL is unavailable - sleeping"
+        sleep 1
+    done
+    echo "PostgreSQL is up - continuing"
+}
+
+# Wait for PostgreSQL to become available
+wait_for_postgres
 
 
 su - postgres -c "psql -U postgres -c 'CREATE DATABASE \"$POSTGRES_DB\";'"
@@ -21,3 +31,4 @@ DB_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_
 
 /usr/local/bin/dbmate -u "$DB_URL" up
 
+exit 0
