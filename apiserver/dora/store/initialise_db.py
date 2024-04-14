@@ -11,8 +11,10 @@ def initialize_database(app):
             .filter(Organization.name == "default")
             .one_or_none()
         )
-        if default_org:
+        if not default_org:
             return
+
+        print("🚀default_org.id =", default_org.id)
         default_org = Organization(
             id=uuid4_str(),
             name="default",
