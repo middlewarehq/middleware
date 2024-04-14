@@ -1,26 +1,28 @@
-version: '1'
-
 services:
   dora-metrics:
+    container_name: dora-metrics
     build:
       context: ./
       dockerfile: Dockerfile
       args:
         ENVIRONMENT: ${ENVIRONMENT}
-    environment:
-      - ENVIRONMENT=${ENVIRONMENT}
-      - DORA_DB_HOST=${DORA_DB_HOST}
-      - DORA_DB_NAME=${DORA_DB_NAME}
-      - DORA_DB_PASS=${DORA_DB_PASS}
-      - DORA_DB_PORT=${DORA_DB_PORT}
-      - DORA_DB_USER=${DORA_DB_USER}
-      - DORA_REDIS_HOST=${DORA_REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
+        POSTGRES_DB_ENABLED: ${POSTGRES_DB_ENABLED:-true}
+        DB_INIT_ENABLED: ${DB_INIT_ENABLED:-true}
+        REDIS_ENABLED: ${REDIS_ENABLED:-true}
+        BACKEND_ENABLED: ${BACKEND_ENABLED:-true}
+        FRONTEND_ENABLED: ${FRONTEND_ENABLED:-true}
+
+    env_file:
+      - .env
 
     ports:
       - "9696:9696"
+      - "3005:3000"
       - "5436:5432"
       - "6380:6379"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
     develop:
       watch:
@@ -41,9 +43,11 @@ services:
         - action: rebuild
           path: ./supervisord.conf
 
-        - action: sync+restart
+        - action: rebuild
           path: ./init_db.sh
-          target: /app/init_db.sh
+
+        - action: rebuild
+          path: ./.env
 
         - action: sync+restart
           path: ./apiserver/.env.local
