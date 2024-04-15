@@ -1,7 +1,6 @@
 import { endOfDay, startOfDay } from 'date-fns';
 import * as yup from 'yup';
 
-import { fetchWorkflowConfiguredRepos } from '@/api/internal/team/[team_id]/deployment_freq';
 import { Endpoint } from '@/api-helpers/global';
 import {
   repoFiltersFromTeamProdBranches,
@@ -11,7 +10,6 @@ import {
 import { mockDoraMetrics } from '@/mocks/dora_metrics';
 import { TeamDoraMetricsApiResponseType } from '@/types/resources';
 import {
-  getFilters,
   fetchLeadTimeStats,
   fetchChangeFailureRateStats,
   fetchMeanTimeToRestoreStats,
@@ -20,28 +18,18 @@ import {
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
 
 import { getAllTeamsReposProdBranchesForOrgAsMap } from './repo_branches';
+import { getTeamPrs } from './insights';
 
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
 });
-const IdSchema = yup.string().uuid().required();
+
 const getSchema = yup.object().shape({
   org_id: yup.string().uuid().required(),
   branches: yup.string().optional().nullable(),
   from_date: yup.date().required(),
   to_date: yup.date().required(),
-  manager_teams_array: yup
-    .array()
-    .of(
-      yup
-        .object()
-        .shape({
-          manager_id: IdSchema.optional().nullable(),
-          team_ids: yup.array().of(IdSchema).required('Team IDs are required')
-        })
-        .required()
-    )
-    .required('Manager Teams Array is required')
+  repo_filters: yup.mixed().optional().nullable()
 });
 
 const endpoint = new Endpoint(pathSchema);
@@ -53,14 +41,13 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 
   const {
     org_id,
-    team_id,
+    team_id: teamId,
     from_date: rawFromDate,
     to_date: rawToDate,
     branches,
-    manager_teams_array
+    repo_filters
   } = req.payload;
 
-  const team_ids = manager_teams_array.map((m) => m.team_ids).flat();
   const teamProdBranchesMap =
     await getAllTeamsReposProdBranchesForOrgAsMap(org_id);
   const teamRepoFiltersMap =
@@ -70,25 +57,19 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   const to_date = endOfDay(new Date(rawToDate));
 
   const [prFilters, workflowFilters] = await Promise.all([
-    Promise.all(
-      team_ids.map((teamId) =>
-        updatePrFilterParams(
-          teamId,
-          {},
-          {
-            branches: branches,
-            repo_filters: !branches ? teamRepoFiltersMap[teamId] : null
-          }
-        ).then(({ pr_filter }) => ({
-          pr_filter
-        }))
-      )
-    ),
+    updatePrFilterParams(
+      teamId,
+      {},
+      {
+        branches: branches,
+        repo_filters: !branches ? teamRepoFiltersMap[teamId] : null
+      }
+    ).then(({ pr_filter }) => ({
+      pr_filter
+    })),
     Object.fromEntries(
-      Object.entries(
-        workFlowFiltersFromTeamProdBranches(teamProdBranchesMap)
-      ).filter(([id]) => team_ids.includes(id))
-    )
+      Object.entries(workFlowFiltersFromTeamProdBranches(teamProdBranchesMap))
+    )[teamId]
   ]);
 
   const {
@@ -100,66 +81,80 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     currentCycleEndDay
   } = getAggregateAndTrendsIntervalTime(from_date, to_date);
 
-  const prDataObject = {
-    from_time: isoDateString(currentCycleStartDay),
-    to_time: isoDateString(currentCycleEndDay),
-    teams_pr_filters: getFilters(prFilters, team_ids),
-    manager_teams_array
-  };
-
-  const workflowDataObject = {
-    from_time: isoDateString(currentCycleStartDay),
-    to_time: isoDateString(currentCycleEndDay),
-    teams_workflow_filters: workflowFilters,
-    manager_teams_array
-  };
-
   const [
     leadTimeResponse,
     meanTimeToRestoreResponse,
     changeFailureRateResponse,
-    deploymentFrequencyResponse,
-    workflowConfiguredReposResponse
+    deploymentFrequencyResponse
+    summaryPrs
   ] = await Promise.all([
     fetchLeadTimeStats({
-      org_id,
-      prDataObject,
+      teamId,
+      currStatsTimeObject: {
+        from_time: isoDateString(currentCycleStartDay),
+        to_time: isoDateString(currentCycleEndDay)
+      },
+      prevStatsTimeObject: {
+        from_time: isoDateString(prevCycleStartDay),
+        to_time: isoDateString(prevCycleEndDay)
+      },
       currTrendsTimeObject,
-      prevTrendsTimeObject
+      prevTrendsTimeObject,
+      prFilter: prFilters
     }),
     fetchMeanTimeToRestoreStats({
-      org_id,
-      prDataObject,
+      teamId,
+      currStatsTimeObject: {
+        from_time: isoDateString(currentCycleStartDay),
+        to_time: isoDateString(currentCycleEndDay)
+      },
+      prevStatsTimeObject: {
+        from_time: isoDateString(prevCycleStartDay),
+        to_time: isoDateString(prevCycleEndDay)
+      },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      prevCycleIntervalObject: {
-        prevCycleStartDay,
-        prevCycleEndDay
-      }
+      prFilter: prFilters
     }),
     fetchChangeFailureRateStats({
-      org_id,
-      prDataObject,
+      teamId,
+      currStatsTimeObject: {
+        from_time: isoDateString(currentCycleStartDay),
+        to_time: isoDateString(currentCycleEndDay)
+      },
+      prevStatsTimeObject: {
+        from_time: isoDateString(prevCycleStartDay),
+        to_time: isoDateString(prevCycleEndDay)
+      },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      prevCycleIntervalObject: {
-        prevCycleStartDay,
-        prevCycleEndDay
-      }
+      prFilter: prFilters,
+      workflowFilter: workflowFilters
     }),
     fetchDeploymentFrequencyStats({
-      org_id,
-      workflowDataObject,
+      teamId,
+      currStatsTimeObject: {
+        from_time: isoDateString(currentCycleStartDay),
+        to_time: isoDateString(currentCycleEndDay)
+      },
+      prevStatsTimeObject: {
+        from_time: isoDateString(prevCycleStartDay),
+        to_time: isoDateString(prevCycleEndDay)
+      },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      prevCycleIntervalObject: {
-        prevCycleStartDay,
-        prevCycleEndDay
-      }
-    }),
-    fetchWorkflowConfiguredRepos(team_id)
+      workflowFilter: workflowFilters
+    })
+    getTeamPrs({
+      team_id: teamId,
+      branches,
+      from_date: from_date,
+      to_date: to_date,
+      repo_filters
+    }).then((r) => r.data)
   ]);
 
+  console.log('🚀 ~ endpoint.handle.GET ~ leadTimeResponse:', leadTimeResponse);
   return res.send({
     lead_time_stats: leadTimeResponse.lead_time_stats,
     lead_time_trends: leadTimeResponse.lead_time_trends,
@@ -175,12 +170,8 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       deploymentFrequencyResponse.deployment_frequency_stats,
     deployment_frequency_trends:
       deploymentFrequencyResponse.deployment_frequency_trends,
-    allReposAssignedToTeam: workflowConfiguredReposResponse.all_team_repos,
-    workflowConfiguredRepos: workflowConfiguredReposResponse.repos_included,
-    deploymentsConfiguredForAllRepos:
-      workflowConfiguredReposResponse.deployments_configured_for_all_repos,
-    deploymentsConfigured:
-      workflowConfiguredReposResponse.deployments_configured
+    summary_prs: summaryPrs,
+    reverted_prs: []
   } as TeamDoraMetricsApiResponseType);
 });
 
