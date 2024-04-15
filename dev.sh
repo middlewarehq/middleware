@@ -269,6 +269,7 @@ function logger_menu(){
     echo "f : frontend webserver logs"
     echo "p : postgres db logs"
     echo "r : redis logs"
+    echo "c : cron logs"
     echo "x : Go back"
 
     read -n 1 log_option
@@ -281,6 +282,10 @@ function logger_menu(){
       b)
         clear
         follow_logs "apiserver"
+        ;;
+      c)
+        clear
+        follow_logs "cron"
         ;;
       f)
         clear

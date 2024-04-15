@@ -11,6 +11,7 @@ services:
         REDIS_ENABLED: ${REDIS_ENABLED:-true}
         BACKEND_ENABLED: ${BACKEND_ENABLED:-true}
         FRONTEND_ENABLED: ${FRONTEND_ENABLED:-true}
+        CRON_ENABLED: ${CRON_ENABLED:-true}
 
     env_file:
       - .env
@@ -52,3 +53,17 @@ services:
         - action: sync+restart
           path: ./apiserver/.env.local
           target: /app/backend/apiserver/.env.local
+
+        - action: sync+restart
+          path: ./apiserver/dora/sync_data.py
+          target: /app/backend/apiserver/dora/sync_data.py
+
+        - action: sync
+          path: ./web-server
+          target: /app/backend/web-server
+          ignore: 
+            - ./web-server/.vscode 
+            - ./web-server/node_modules
+
+        - action: rebuild
+          path: ./web-server/package.json
