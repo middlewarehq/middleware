@@ -3,6 +3,7 @@ import { useDispatch } from 'react-redux';
 
 import { Integration } from '@/constants/integrations';
 import { useAuth } from '@/hooks/useAuth';
+import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { fetchTeams } from '@/slices/team';
 import { useSelector } from '@/store';
 import { DB_OrgRepo } from '@/types/api/org_repo';
@@ -14,6 +15,9 @@ interface TeamsCRUDContextType {
   orgRepos: BaseRepo[];
   teams: Team[];
   teamReposMaps: Record<string, DB_OrgRepo[]>;
+  showTeamNameError: boolean;
+  handleTeamNameChange: (e: any) => void;
+  raiseTeamNameError: () => void;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -31,11 +35,27 @@ export const useTeamCRUD = () => {
 };
 
 export const TeamsCRUDProvider: React.FC = ({ children }) => {
+  // general slice data
   const dispatch = useDispatch();
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
   const orgRepos = useSelector((s) => s.team.orgRepos);
   const { orgId } = useAuth();
+
+  // team name logic
+  const teamName = useEasyState('');
+  const teamNameError = useBoolState(false);
+  const handleTeamNameChange = (e: any) => {
+    teamName.set(e.target.value);
+  };
+  const showTeamNameError = teamNameError.value;
+  const raiseTeamNameError = () => {
+    if (!teamName.value) {
+      teamNameError.true();
+    } else {
+      teamNameError.false();
+    }
+  };
 
   useEffect(() => {
     dispatch(
@@ -47,10 +67,13 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   }, [dispatch, orgId]);
 
   const contextValue: TeamsCRUDContextType = {
-    teamName: '',
+    teamName: teamName.value,
+    showTeamNameError,
+    raiseTeamNameError,
     teamReposMaps,
     teams,
-    orgRepos
+    orgRepos,
+    handleTeamNameChange
   };
 
   return (
