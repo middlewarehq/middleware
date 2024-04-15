@@ -8,36 +8,40 @@ import {
 } from '@mui/material';
 import { SyntheticEvent } from 'react';
 
-import { useTeamsConfig } from '@/components/Teams/useTeamsConfig';
+import {
+  useTeamCRUD,
+  TeamsCRUDProvider
+} from '@/components/Teams/useTeamsConfig';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { updateTeamReposProductionBranches } from '@/slices/team';
+import { useDispatch } from '@/store';
 import { BaseRepo } from '@/types/resources';
 
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
 
 export const CreateTeams = () => {
-  const { teamReposMaps, teams, orgRepos } = useTeamsConfig();
-  console.log('Debugging', { teamReposMaps, teams, orgRepos });
-
   return (
-    <FlexBox
-      gap={4}
-      col
-      justifyBetween
-      component={Card}
-      p={2}
-      maxWidth={'900px'}
-    >
-      <FlexBox col>
-        <Line huge semibold>
-          Create a Team
-        </Line>
-        <Line>Create a team to generate metric insights</Line>
+    <TeamsCRUDProvider>
+      <FlexBox
+        gap={4}
+        col
+        justifyBetween
+        component={Card}
+        p={2}
+        maxWidth={'900px'}
+      >
+        <FlexBox col>
+          <Line huge semibold>
+            Create a Team
+          </Line>
+          <Line>Create a team to generate metric insights</Line>
+        </FlexBox>
+        <TeamName />
+        <TeamRepos />
+        <ActionTray />
       </FlexBox>
-      <TeamName />
-      <TeamRepos />
-      <ActionTray />
-    </FlexBox>
+    </TeamsCRUDProvider>
   );
 };
 
@@ -82,7 +86,7 @@ const TeamName = () => {
 };
 
 const TeamRepos = () => {
-  const { orgRepos } = useTeamsConfig();
+  const { orgRepos } = useTeamCRUD();
   const selections = useEasyState<BaseRepo[]>([]);
   const options = orgRepos;
   const selectedValues = selections.value;
@@ -145,7 +149,15 @@ const TeamRepos = () => {
 const ActionTray = () => {
   const isSaveLoading = false;
   const disabledSave = false;
-  const onSave = () => {};
+  const dispatch = useDispatch();
+  const onSave = () => {
+    dispatch(
+      updateTeamReposProductionBranches({
+        team_id: 'team_id',
+        team_repos_data: []
+      })
+    );
+  };
   return (
     <FlexBox>
       <Button
