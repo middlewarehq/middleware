@@ -147,7 +147,7 @@ get_docker_interface_ip() {
 # Function to show the menu
 function show_menu() {
     if [ "${TUNNEL_ENABLED}" = false ]; then
-      echo -e "\n\e[31mSTAGE_TUNNEL environment variable doesn't exist. SSH tunneling will not be used.\e[0m"
+      echo -e "\n\e[31mSSH tunneling will not be used. Arguments not provided.\e[0m"
     fi
 
     echo -e "\nMenu Options:"
@@ -155,7 +155,7 @@ function show_menu() {
     echo "o : Open browser"
     echo "i : Show access info"
     echo "r : Restart docker watch"
-    echo "l : View docker logs"
+    echo "l : View logs"
     echo "e : Inspect docker container using exec"
     echo "t : Tunnelling options"
     echo "x : Exit"
@@ -167,6 +167,10 @@ function exit_script() {
     screen -S docker-compose-watch -X quit
     screen -S docker-exec -X quit
     screen -S docker-logs -X quit
+    screen -S apiserver-logs -X quit
+    screen -S webserver-logs -X quit
+    screen -S postgres-logs -X quit
+    screen -S redis-logs -X quit
     screen -S stage-ssh-tunnel -X quit
     docker-compose down -v
     exit 0
@@ -205,7 +209,7 @@ function tunnelling_menu(){
     show_header
 
     if [ "${TUNNEL_ENABLED}" = false ]; then
-      echo -e "\n\e[31mSTAGE_TUNNEL environment variable doesn't exist. SSH tunneling will not be used.\e[0m"
+      echo -e "\n\e[31mSSH tunneling will not be used. Arguments not provided.\e[0m"
     fi
 
     echo -e "\nTunnelling Options:"
@@ -226,6 +230,69 @@ function tunnelling_menu(){
         start_db_ssh_tunnel
         echo -e "\nPress Enter to go back to menu..."
         read -r
+        ;;
+      x)
+        break
+        ;;
+      *)
+        echo "Invalid option. Please try again."
+        ;;
+    esac
+  done
+}
+
+function follow_logs() {
+    log_type=$1
+    screen_name="${log_type}-logs"
+    log_file="/var/log/${log_type}/${log_type}.log"
+
+    if screen -ls | grep -q "$screen_name"; then
+        screen -S "$screen_name" -x
+    else
+        screen -S "$screen_name" -m bash -c "echo -e \"\e[1;32mUse the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable\n\e[0m\" && sleep 1 && docker exec -it dora-metrics /bin/bash -c \"tail -f $log_file\""
+    fi
+}
+
+function logger_menu(){
+  while true; do
+    clear
+    # Display header
+    show_header
+
+    if  "${TUNNEL_ENABLED}" = false ]; then
+      echo -e "\n\e[31mSSH tunneling will not be used. Arguments not provided.\e[0m"
+    fi
+
+    echo -e "\nView logs Options:"
+    echo "d : docker logs"
+    echo "b : backend apiserver logs"
+    echo "f : frontend webserver logs"
+    echo "p : postgres db logs"
+    echo "r : redis logs"
+    echo "x : Go back"
+
+    read -n 1 log_option
+    echo ""
+    case $log_option in 
+      d)
+        clear
+        follow_docker_logs
+        ;;
+      b)
+        clear
+        follow_logs "apiserver"
+        ;;
+      f)
+        clear
+        follow_logs "webserver"
+        ;;
+      p)
+        clear
+        follow_logs "postgres"
+        ;;
+      r)
+        clear
+        follow_logs "redis"
         ;;
       x)
         break
@@ -270,7 +337,7 @@ while true; do
             restart_docker_watch
             ;;
         l)
-            follow_docker_logs
+            logger_menu
             ;;
         e)
             inspect_inside_container
