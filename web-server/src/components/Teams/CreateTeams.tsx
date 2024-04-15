@@ -22,25 +22,41 @@ import { Line } from '../Text';
 export const CreateTeams = () => {
   return (
     <TeamsCRUDProvider>
-      <FlexBox
-        gap={4}
-        col
-        justifyBetween
-        component={Card}
-        p={2}
-        maxWidth={'900px'}
-      >
-        <FlexBox col>
-          <Line huge semibold>
-            Create a Team
-          </Line>
-          <Line>Create a team to generate metric insights</Line>
-        </FlexBox>
-        <TeamName />
-        <TeamRepos />
-        <ActionTray />
-      </FlexBox>
+      <TeamsCRUD />
     </TeamsCRUDProvider>
+  );
+};
+
+export const TeamsCRUD = () => {
+  const { isPageLoading } = useTeamCRUD();
+  return (
+    <>
+      {isPageLoading ? (
+        <FlexBox alignCenter gap2>
+          <CircularProgress size="20px" />
+          <Line>Loading...</Line>
+        </FlexBox>
+      ) : (
+        <FlexBox
+          gap={4}
+          col
+          justifyBetween
+          component={Card}
+          p={2}
+          maxWidth={'900px'}
+        >
+          <FlexBox col>
+            <Line huge semibold>
+              Create a Team
+            </Line>
+            <Line>Create a team to generate metric insights</Line>
+          </FlexBox>
+          <TeamName />
+          <TeamRepos />
+          <ActionTray />
+        </FlexBox>
+      )}
+    </>
   );
 };
 

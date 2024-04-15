@@ -8,6 +8,7 @@ import {
 } from 'react';
 
 import { Integration } from '@/constants/integrations';
+import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { fetchTeams, createTeam } from '@/slices/team';
@@ -36,6 +37,7 @@ interface TeamsCRUDContextType {
   onSave: (callBack?: AnyFunction) => void;
   isSaveLoading: boolean;
   unselectRepo: (id: BaseRepo['id']) => void;
+  isPageLoading: boolean;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -60,6 +62,9 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   const teams = useSelector((s) => s.team.teams);
   const orgRepos = useSelector((s) => s.team.orgRepos);
   const { orgId, org } = useAuth();
+  const isPageLoading = useSelector(
+    (s) => s.team.requests?.teams === FetchState.REQUEST
+  );
   useEffect(() => {
     dispatch(
       fetchTeams({
@@ -192,7 +197,8 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     raiseTeamRepoError,
     onSave,
     isSaveLoading: isSaveLoading.value,
-    unselectRepo
+    unselectRepo,
+    isPageLoading
   };
 
   return (
