@@ -6,12 +6,12 @@ import {
   IntervalTimeMap,
   MeanTimeToRestoreApiResponse,
   ChangeFailureRateApiResponse,
-  ChangeFailureRateTrendsBaseStats,
   LeadTimeApiResponse,
   LeadTimeTrendsApiResponse,
   DeploymentFrequencyApiResponse,
   DeploymentFrequencyTrends,
-  MeanTimeToRestoreApiTrendsResponse
+  MeanTimeToRestoreApiTrendsResponse,
+  ChangeFailureRateTrendsApiResponse
 } from '@/types/resources';
 
 export const getFilters = (filtersArray: any[], teamIds: ID[]) => {
@@ -41,24 +41,24 @@ export const fetchLeadTimeStats = async (params: {
   } = params;
 
   const data = await Promise.all([
-    handleRequest<LeadTimeApiResponse>(`/team/${teamId}/lead_time`, {
+    handleRequest<LeadTimeApiResponse>(`/teams/${teamId}/lead_time`, {
       params: { ...currStatsTimeObject, ...prFilter }
     }),
-    handleRequest<LeadTimeApiResponse>(`/team/${teamId}/lead_time`, {
+    handleRequest<LeadTimeApiResponse>(`/teams/${teamId}/lead_time`, {
       params: { ...prevStatsTimeObject, ...prFilter }
     }),
     handleRequest<LeadTimeTrendsApiResponse>(
-      `/team/${teamId}/lead_time/trends`,
+      `/teams/${teamId}/lead_time/trends`,
       {
-        data: { ...currTrendsTimeObject, ...prFilter }
+        params: { ...currTrendsTimeObject, ...prFilter }
       }
     ),
     handleRequest<LeadTimeTrendsApiResponse>(
-      `/team/${teamId}/lead_time/trends`,
+      `/teams/${teamId}/lead_time/trends`,
       {
-        data: {
-          ...prFilter,
-          ...prevTrendsTimeObject
+        params: {
+          ...prevTrendsTimeObject,
+          ...prFilter
         }
       }
     )
@@ -77,8 +77,8 @@ export const fetchLeadTimeStats = async (params: {
       previous: prevLeadTimeResponse
     },
     lead_time_trends: {
-      current: currIntervalLeadTimeTrends.lead_time_trends,
-      previous: prevIntervalLeadTimeTrends.lead_time_trends
+      current: currIntervalLeadTimeTrends,
+      previous: prevIntervalLeadTimeTrends
     }
   };
 };
@@ -106,13 +106,13 @@ export const fetchMeanTimeToRestoreStats = async (params: {
     prevMeanTimeToRestoreTrends
   ] = await Promise.all([
     handleRequest<MeanTimeToRestoreApiResponse>(
-      `/team/${teamId}/mean_time_to_restore_service`,
+      `/teams/${teamId}/mean_time_to_recovery`,
       {
         params: { ...currStatsTimeObject }
       }
     ),
     handleRequest<MeanTimeToRestoreApiResponse>(
-      `/team/${teamId}/mean_time_to_restore_service`,
+      `/teams/${teamId}/mean_time_to_recovery`,
       {
         params: {
           ...prevStatsTimeObject
@@ -120,19 +120,19 @@ export const fetchMeanTimeToRestoreStats = async (params: {
       }
     ),
     handleRequest<MeanTimeToRestoreApiTrendsResponse>(
-      `/team/${teamId}/mean_time_to_restore_service/trends`,
+      `/teams/${teamId}/mean_time_to_recovery/trends`,
       {
         params: { ...currTrendsTimeObject }
       }
-    ).then((r) => r.mean_time_to_restore),
+    ),
     handleRequest<MeanTimeToRestoreApiTrendsResponse>(
-      `/team/${teamId}/mean_time_to_restore_service/trends`,
+      `/teams/${teamId}/mean_time_to_recovery/trends`,
       {
         params: {
           ...prevTrendsTimeObject
         }
       }
-    ).then((r) => r.mean_time_to_restore)
+    )
   ]);
 
   return {
@@ -175,7 +175,7 @@ export const fetchChangeFailureRateStats = async (params: {
     prevChangeFailureRateTrends
   ] = await Promise.all([
     handleRequest<ChangeFailureRateApiResponse>(
-      `/team/${teamId}/change_failure_rate`,
+      `/teams/${teamId}/change_failure_rate`,
       {
         params: {
           ...currStatsTimeObject,
@@ -185,7 +185,7 @@ export const fetchChangeFailureRateStats = async (params: {
       }
     ),
     handleRequest<ChangeFailureRateApiResponse>(
-      `/team/${teamId}/change_failure_rate`,
+      `/teams/${teamId}/change_failure_rate`,
       {
         params: {
           ...prevStatsTimeObject,
@@ -194,24 +194,26 @@ export const fetchChangeFailureRateStats = async (params: {
         }
       }
     ),
-    handleRequest<{
-      change_failure_rate: Record<DateString, ChangeFailureRateTrendsBaseStats>;
-    }>(`/team/${teamId}/change_failure_rate/trends`, {
-      params: {
-        ...currTrendsTimeObject,
-        ...prFilter,
-        ...workflowFilter
+    handleRequest<ChangeFailureRateTrendsApiResponse>(
+      `/teams/${teamId}/change_failure_rate/trends`,
+      {
+        params: {
+          ...currTrendsTimeObject,
+          ...prFilter,
+          ...workflowFilter
+        }
       }
-    }).then((r) => r.change_failure_rate),
-    handleRequest<{
-      change_failure_rate: Record<DateString, ChangeFailureRateTrendsBaseStats>;
-    }>(`/team/${teamId}/change_failure_rate/trends`, {
-      params: {
-        ...prevTrendsTimeObject,
-        ...prFilter,
-        ...workflowFilter
+    ),
+    handleRequest<ChangeFailureRateTrendsApiResponse>(
+      `/teams/${teamId}/change_failure_rate/trends`,
+      {
+        params: {
+          ...prevTrendsTimeObject,
+          ...prFilter,
+          ...workflowFilter
+        }
       }
-    }).then((r) => r.change_failure_rate)
+    )
   ]);
 
   return {
@@ -235,6 +237,7 @@ export const fetchDeploymentFrequencyStats = async (params: {
   prevStatsTimeObject: IntervalTimeMap;
   currTrendsTimeObject: IntervalTimeMap;
   prevTrendsTimeObject: IntervalTimeMap;
+  prFilter: ReturnType<typeof getFilters>;
 }) => {
   const {
     teamId,
@@ -242,7 +245,8 @@ export const fetchDeploymentFrequencyStats = async (params: {
     prevStatsTimeObject,
     currTrendsTimeObject,
     prevTrendsTimeObject,
-    workflowFilter
+    workflowFilter,
+    prFilter
   } = params;
 
   const [
@@ -254,7 +258,7 @@ export const fetchDeploymentFrequencyStats = async (params: {
     handleRequest<DeploymentFrequencyApiResponse>(
       `/teams/${teamId}/deployment_frequency`,
       {
-        params: { ...workflowFilter, ...currStatsTimeObject }
+        params: { ...prFilter, ...workflowFilter, ...currStatsTimeObject }
       }
     ),
     handleRequest<DeploymentFrequencyApiResponse>(
@@ -262,6 +266,7 @@ export const fetchDeploymentFrequencyStats = async (params: {
       {
         params: {
           ...workflowFilter,
+          ...prFilter,
           ...prevStatsTimeObject
         }
       }
@@ -269,18 +274,19 @@ export const fetchDeploymentFrequencyStats = async (params: {
     handleRequest<DeploymentFrequencyTrends>(
       `/teams/${teamId}/deployment_frequency/trends`,
       {
-        data: { ...workflowFilter, ...currTrendsTimeObject }
+        params: { ...workflowFilter, ...prFilter, ...currTrendsTimeObject }
       }
-    ).then((r) => r.deployment_frequency_trends),
+    ),
     handleRequest<DeploymentFrequencyTrends>(
       `/teams/${teamId}/deployment_frequency/trends`,
       {
-        data: {
+        params: {
           ...workflowFilter,
+          ...prFilter,
           ...prevTrendsTimeObject
         }
       }
-    ).then((r) => r.deployment_frequency_trends)
+    )
   ]);
 
   return {
