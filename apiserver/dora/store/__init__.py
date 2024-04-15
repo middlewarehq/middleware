@@ -1,4 +1,6 @@
 from os import getenv
+from functools import wraps
+
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base
@@ -31,6 +33,7 @@ def rollback_on_exc(func):
             LOG.error(f"Error in {func.__name__} - {str(e)}")
             raise
         finally:
-            session.close()
+            # session.close()
+            pass
 
     return wrapper
