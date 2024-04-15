@@ -13,7 +13,8 @@ import {
   TeamIncidentSettingsResponse,
   IncidentSettings,
   PR,
-  BaseRepo
+  BaseRepo,
+  RepoUniqueDetails
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 import { getUrlParam } from '@/utils/url';
@@ -135,6 +136,26 @@ export const fetchTeams = createAsyncThunk(
       orgRepos: BaseRepo[];
     }>(`/resources/orgs/${params.org_id}/teams/v2`, {
       params
+    });
+  }
+);
+
+export const createTeam = createAsyncThunk(
+  'teams/createTeam',
+  async (params: {
+    org_id: ID;
+    team_name: string;
+    org_repos: Record<string, RepoUniqueDetails[]>;
+    provider: Integration;
+  }) => {
+    const { org_id, team_name, org_repos, provider } = params;
+    return await handleApi<BaseTeam>(`/resources/orgs/${org_id}/teams/v2`, {
+      method: 'POST',
+      data: {
+        name: team_name,
+        org_repos: org_repos,
+        provider: provider
+      }
     });
   }
 );
