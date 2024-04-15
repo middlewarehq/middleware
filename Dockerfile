@@ -84,6 +84,9 @@ RUN chmod +x /app/init_db.sh \
   && touch /var/log/cron/cron.log \
   && chmod 0644 /etc/cron.d/cronjob \
   && crontab /etc/cron.d/cronjob \
+  && yarn cache clean \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* \
   && /app/generate_config_ini.sh -t /app/backend/apiserver/dora/config
 
 ARG POSTGRES_DB_ENABLED=true
