@@ -38,6 +38,13 @@ The backend is available on your host at http://localhost:8000.
     ```
     # .env file
 
+    DORA_DB_HOST=localhost
+    DORA_DB_NAME=dora
+    DORA_DB_PASS=postgres
+    DORA_DB_PORT=5432
+    DORA_DB_USER=postgres
+    DORA_REDIS_HOST=localhost
+    REDIS_PORT=6379
     ENVIRONMENT=dev
 
     POSTGRES_DB_ENABLED=true
@@ -45,6 +52,19 @@ The backend is available on your host at http://localhost:8000.
     REDIS_ENABLED=true
     BACKEND_ENABLED=true
     FRONTEND_ENABLED=true
+    CRON_ENABLED=true
+
+    NEXT_PUBLIC_APP_ENVIRONMENT="development"
+    INTERNAL_API_BASE_URL=http://localhost:9696
+    DB_HOST=rds-staging-proxy.proxy-cupgmfepxjnb.ap-south-1.rds.amazonaws.com
+    DB_NAME=postgres
+    DB_PASS=8ce5d91c7794db78
+    DB_PORT=5432
+    DB_USER=postgres
+
+    # For using db on host machine. Useful when using ssh tunnelling
+    DB_HOST=host.docker.internal
+    DB_PORT=5433
     ```
     Set `ENVIRONMENT=prod` to run it in production setup.
 
