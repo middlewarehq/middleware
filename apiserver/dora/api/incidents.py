@@ -5,6 +5,9 @@ from datetime import datetime
 
 from flask import Blueprint
 from voluptuous import Required, Schema, Coerce, All, Optional
+from dora.service.code.pr_filter import apply_pr_filter
+from dora.store.models.code.filter import PRFilter
+from dora.store.models.settings import SettingType, EntityType
 from dora.service.incidents.models.mean_time_to_recovery import ChangeFailureRateMetrics
 from dora.service.deployments.deployment_service import (
     get_deployments_service,
@@ -74,6 +77,10 @@ def get_deployments_with_related_incidents(
     query_validator = get_query_validator()
     interval = Interval(from_time, to_time)
     query_validator.team_validator(team_id)
+
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
 
     deployments: List[
         Deployment
@@ -173,6 +180,10 @@ def get_team_cfr(
     interval = Interval(from_time, to_time)
     query_validator.team_validator(team_id)
 
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
     deployments: List[
         Deployment
     ] = get_deployments_service().get_team_all_deployments_in_interval(
@@ -212,6 +223,10 @@ def get_team_cfr_trends(
     query_validator = get_query_validator()
     interval = Interval(from_time, to_time)
     query_validator.team_validator(team_id)
+
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
 
     deployments: List[
         Deployment
