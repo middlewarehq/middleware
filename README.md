@@ -24,7 +24,7 @@ The backend is available on your host at http://localhost:8000.
 ### Using Docker
 1. **Clone the Repository**: 
    ```bash
-   git clone https://github.com/your-username/dora-metrics.git
+   git clone https://github.com/middlewarehq/dora-metrics
    ```
 
 2. **Navigate to the Project Directory**:
