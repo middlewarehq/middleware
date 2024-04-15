@@ -507,12 +507,9 @@ export type LeadTimeApiResponse = {
   merge_time: number;
   merge_to_deploy: number;
   pr_count: number;
-  team_id: ID;
 };
 
-export type LeadTimeTrendsApiResponse = {
-  lead_time_trends: Record<DateString, Omit<LeadTimeApiResponse, 'team_id'>>;
-};
+export type LeadTimeTrendsApiResponse = Record<DateString, LeadTimeApiResponse>;
 
 export type DeploymentFrequencyApiResponse = {
   total_deployments: number;
@@ -521,18 +518,17 @@ export type DeploymentFrequencyApiResponse = {
   avg_monthly_deployment_frequency: number;
 };
 
-export type DeploymentFrequencyTrends = {
-  deployment_frequency_trends: Record<DateString, { count: number }>;
-};
+export type DeploymentFrequencyTrends = Record<DateString, { count: number }>;
 
 export type MeanTimeToRestoreApiResponse = {
-  time_to_restore_average: number;
+  mean_time_to_recovery: number;
   incident_count: number;
 };
 
-export type MeanTimeToRestoreApiTrendsResponse = {
-  mean_time_to_restore: Array<[DateString, number]>;
-};
+export type MeanTimeToRestoreApiTrendsResponse = Record<
+  DateString,
+  MeanTimeToRestoreApiResponse
+>;
 
 export type ChangeFailureRateApiResponse = {
   change_failure_rate: number;
@@ -540,16 +536,14 @@ export type ChangeFailureRateApiResponse = {
   total_deployments: number;
 };
 
-export type ChangeFailureRateTrendsApiResponse = {
-  change_failure_rate: Record<
-    DateString,
-    {
-      percentage: number;
-      failed_deployments: number;
-      total_deployments: number;
-    }
-  >;
-};
+export type ChangeFailureRateTrendsApiResponse = Record<
+  DateString,
+  {
+    percentage: number;
+    failed_deployments: number;
+    total_deployments: number;
+  }
+>;
 
 export type TeamDoraMetricsApiResponseType = {
   lead_time_stats: {
@@ -557,35 +551,34 @@ export type TeamDoraMetricsApiResponseType = {
     previous: LeadTimeApiResponse;
   };
   lead_time_trends: {
-    current: LeadTimeTrendsApiResponse['lead_time_trends'];
-    previous: LeadTimeTrendsApiResponse['lead_time_trends'];
+    current: LeadTimeTrendsApiResponse;
+    previous: LeadTimeTrendsApiResponse;
   };
   mean_time_to_restore_stats: {
     current: MeanTimeToRestoreApiResponse;
     previous: MeanTimeToRestoreApiResponse;
   };
   mean_time_to_restore_trends: {
-    current: MeanTimeToRestoreApiTrendsResponse['mean_time_to_restore'];
-    previous: MeanTimeToRestoreApiTrendsResponse['mean_time_to_restore'];
+    current: MeanTimeToRestoreApiTrendsResponse;
+    previous: MeanTimeToRestoreApiTrendsResponse;
   };
   change_failure_rate_stats: {
     current: ChangeFailureRateApiResponse;
     previous: ChangeFailureRateApiResponse;
   };
   change_failure_rate_trends: {
-    current: ChangeFailureRateTrendsApiResponse['change_failure_rate'];
-    previous: ChangeFailureRateTrendsApiResponse['change_failure_rate'];
+    current: ChangeFailureRateTrendsApiResponse;
+    previous: ChangeFailureRateTrendsApiResponse;
   };
   deployment_frequency_stats: {
     current: DeploymentFrequencyApiResponse;
     previous: DeploymentFrequencyApiResponse;
   };
   deployment_frequency_trends: {
-    current: DeploymentFrequencyTrends['deployment_frequency_trends'];
-    previous: DeploymentFrequencyTrends['deployment_frequency_trends'];
+    current: DeploymentFrequencyTrends;
+    previous: DeploymentFrequencyTrends;
   };
-  summary_prs: PR[];
-  reverted_prs: PR[];
+  lead_time_prs: PR[];
 };
 
 export enum ActiveBranchMode {
