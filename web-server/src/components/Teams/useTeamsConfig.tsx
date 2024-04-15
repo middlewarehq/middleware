@@ -150,13 +150,17 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
             });
             return console.error('Failed to create team', res.meta);
           }
-          callBack?.(res);
+          enqueueSnackbar('Team created successfully, refreshing...', {
+            variant: 'success',
+            autoHideDuration: 2000
+          });
           dispatch(
             fetchTeams({
               org_id: orgId,
               provider: Integration.GITHUB
             })
           );
+          callBack?.(res);
         })
         .finally(isSaveLoading.false);
     },
