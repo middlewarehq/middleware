@@ -6,6 +6,7 @@ import {
   CircularProgress,
   TextField
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import {
   useTeamCRUD,
@@ -132,23 +133,41 @@ const TeamRepos = () => {
 };
 
 const ActionTray = () => {
-  const { onSave, isSaveLoading } = useTeamCRUD();
+  const { onSave, isSaveLoading, teamName, selectedRepos } = useTeamCRUD();
+  const { enqueueSnackbar } = useSnackbar();
 
   return (
     <FlexBox>
-      <Button
-        disabled={isSaveLoading}
-        variant="contained"
-        onClick={() => onSave()}
-        sx={{
-          minWidth: '200px',
-          '&.Mui-disabled': {
-            borderColor: 'secondary.light'
+      <FlexBox
+        onClick={() => {
+          if (!teamName) {
+            return enqueueSnackbar('Please enter a team name', {
+              variant: 'error',
+              autoHideDuration: 2000
+            });
+          }
+          if (!selectedRepos.length) {
+            return enqueueSnackbar('Please select at least one repository', {
+              variant: 'error',
+              autoHideDuration: 2000
+            });
           }
         }}
       >
-        {isSaveLoading ? <CircularProgress size={'18px'} /> : 'Save'}
-      </Button>
+        <Button
+          disabled={isSaveLoading || !teamName || !selectedRepos.length}
+          variant="contained"
+          onClick={() => onSave()}
+          sx={{
+            minWidth: '200px',
+            '&.Mui-disabled': {
+              borderColor: 'secondary.light'
+            }
+          }}
+        >
+          {isSaveLoading ? <CircularProgress size={'18px'} /> : 'Save'}
+        </Button>
+      </FlexBox>
     </FlexBox>
   );
 };

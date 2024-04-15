@@ -1,5 +1,11 @@
 import { useSnackbar } from 'notistack';
-import { createContext, useContext, useEffect, SyntheticEvent } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  SyntheticEvent,
+  useCallback
+} from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { useAuth } from '@/hooks/useAuth';
@@ -65,77 +71,92 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   // team name logic
   const teamName = useEasyState('');
   const teamNameError = useBoolState(false);
-  const handleTeamNameChange = (e: any) => {
-    teamName.set(e.target.value);
-  };
+  const handleTeamNameChange = useCallback(
+    (e: any) => {
+      depFn(teamName.set, e.target.value);
+    },
+    [teamName.set]
+  );
   const showTeamNameError = teamNameError.value;
-  const raiseTeamNameError = () => {
+  const raiseTeamNameError = useCallback(() => {
     if (!teamName.value) {
-      teamNameError.true();
+      depFn(teamNameError.true);
     } else {
-      teamNameError.false();
+      depFn(teamNameError.false);
     }
-  };
+  }, [teamName.value, teamNameError.false, teamNameError.true]);
 
   // team-repo selection logic
   const selections = useEasyState<BaseRepo[]>([]);
   const repoOptions = orgRepos;
   const selectedRepos = selections.value;
-  const handleRepoSelectionChange = (
-    _: SyntheticEvent<Element, Event>,
-    value: BaseRepo[]
-  ) => {
-    selections.set(value);
-  };
+  const handleRepoSelectionChange = useCallback(
+    (_: SyntheticEvent<Element, Event>, value: BaseRepo[]) => {
+      depFn(selections.set, value);
+    },
+    [selections.set]
+  );
   const teamRepoError = useBoolState();
-  const raiseTeamRepoError = () => {
+  const raiseTeamRepoError = useCallback(() => {
     if (!selections.value.length) {
-      teamRepoError.true();
+      depFn(teamRepoError.true);
     } else {
-      teamRepoError.false();
+      depFn(teamRepoError.false);
     }
-  };
+  }, [selections.value.length, teamRepoError.false, teamRepoError.true]);
 
   // save team logic
   const isSaveLoading = useBoolState();
-  const onSave = (callBack?: AnyFunction) => {
-    depFn(isSaveLoading.true);
-    const repoPayload = {
-      [org.name]: selections.value.map(
-        (repo) =>
-          ({
-            idempotency_key: repo.id,
-            name: repo.name,
-            slug: repo.slug
-          }) as RepoUniqueDetails
+  const onSave = useCallback(
+    (callBack?: AnyFunction) => {
+      depFn(isSaveLoading.true);
+      const repoPayload = {
+        [org.name]: selections.value.map(
+          (repo) =>
+            ({
+              idempotency_key: repo.id,
+              name: repo.name,
+              slug: repo.slug
+            }) as RepoUniqueDetails
+        )
+      };
+      dispatch(
+        createTeam({
+          org_id: orgId,
+          team_name: teamName.value,
+          org_repos: repoPayload,
+          provider: Integration.GITHUB
+        })
       )
-    };
-    dispatch(
-      createTeam({
-        org_id: orgId,
-        team_name: teamName.value,
-        org_repos: repoPayload,
-        provider: Integration.GITHUB
-      })
-    )
-      .then((res) => {
-        callBack?.(res);
-        dispatch(
-          fetchTeams({
-            org_id: orgId,
-            provider: Integration.GITHUB
-          })
-        );
-      })
-      .catch((e) => {
-        enqueueSnackbar('Failed to create team', {
-          variant: 'error',
-          autoHideDuration: 2000
-        });
-        console.error('Failed to create team', e);
-      })
-      .finally(isSaveLoading.false);
-  };
+        .then((res) => {
+          callBack?.(res);
+          dispatch(
+            fetchTeams({
+              org_id: orgId,
+              provider: Integration.GITHUB
+            })
+          );
+        })
+        .catch((e) => {
+          enqueueSnackbar('Failed to create team', {
+            variant: 'error',
+            autoHideDuration: 2000
+          });
+          console.error('Failed to create team', e);
+        })
+        .finally(isSaveLoading.false);
+    },
+    [
+      dispatch,
+      enqueueSnackbar,
+      isSaveLoading.false,
+      isSaveLoading.true,
+      org.name,
+      orgId,
+      selections.value,
+      teamName.value
+    ]
+  );
 
   const contextValue: TeamsCRUDContextType = {
     teamName: teamName.value,
