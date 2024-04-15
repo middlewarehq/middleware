@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, SyntheticEvent } from 'react';
 import { useDispatch } from 'react-redux';
 
 import { Integration } from '@/constants/integrations';
@@ -11,13 +11,21 @@ import { Team } from '@/types/api/teams';
 import { BaseRepo } from '@/types/resources';
 
 interface TeamsCRUDContextType {
-  teamName: string;
   orgRepos: BaseRepo[];
   teams: Team[];
   teamReposMaps: Record<string, DB_OrgRepo[]>;
+  teamName: string;
   showTeamNameError: boolean;
   handleTeamNameChange: (e: any) => void;
   raiseTeamNameError: () => void;
+  repoOptions: BaseRepo[];
+  selectedRepos: BaseRepo[];
+  handleRepoSelectionChange: (
+    _: SyntheticEvent<Element, Event>,
+    value: BaseRepo[]
+  ) => void;
+  teamRepoError: boolean;
+  raiseTeamRepoError: () => void;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -57,6 +65,25 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     }
   };
 
+  // team-repo selection logic
+  const selections = useEasyState<BaseRepo[]>([]);
+  const repoOptions = orgRepos;
+  const selectedRepos = selections.value;
+  const handleRepoSelectionChange = (
+    _: SyntheticEvent<Element, Event>,
+    value: BaseRepo[]
+  ) => {
+    selections.set(value);
+  };
+  const teamRepoError = useBoolState();
+  const raiseTeamRepoError = () => {
+    if (!selections.value.length) {
+      teamRepoError.true();
+    } else {
+      teamRepoError.false();
+    }
+  };
+
   useEffect(() => {
     dispatch(
       fetchTeams({
@@ -73,7 +100,12 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     teamReposMaps,
     teams,
     orgRepos,
-    handleTeamNameChange
+    handleTeamNameChange,
+    repoOptions,
+    selectedRepos,
+    handleRepoSelectionChange,
+    teamRepoError: teamRepoError.value,
+    raiseTeamRepoError
   };
 
   return (
