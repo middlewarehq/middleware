@@ -4,7 +4,7 @@ import { privateDecrypt, publicEncrypt } from 'crypto';
 
 const CHUNK_SIZE = 127;
 export const enc = (data?: string) => {
-  const key = process.env.TOKEN_ENC_PUB_KEY;
+  const key = process.env.SECRET_PUBLIC_KEY;
   try {
     return data
       ? splitEvery(CHUNK_SIZE, data).map((chunk) =>
@@ -17,7 +17,7 @@ export const enc = (data?: string) => {
 };
 
 export const dec = (chunks: string[]) => {
-  const key = process.env.TOKEN_ENC_PRI_KEY;
+  const key = process.env.SECRET_PRIVATE_KEY;
   return chunks
     .map((chunk) => privateDecrypt(key, Buffer.from(chunk, 'base64')))
     .join('');

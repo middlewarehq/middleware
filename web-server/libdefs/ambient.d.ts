@@ -70,12 +70,10 @@ declare type User = {
 declare namespace NodeJS {
   export interface ProcessEnv {
     NEXT_PUBLIC_BUILD_TIME: string;
-    NEXT_PUBLIC_APP_ENVIRONMENT: 'production' | 'development' | 'demo';
+    NEXT_PUBLIC_APP_ENVIRONMENT: 'production' | 'development';
     INTERNAL_API_BASE_URL: string;
-    TOKEN_ENC_PUB_KEY: string;
-    TOKEN_ENC_PRI_KEY: string;
-    GITHUB_ID: string;
-    GITHUB_SECRET: string;
+    SECRET_PUBLIC_KEY: string;
+    SECRET_PRIVATE_KEY: string;
     DB_HOST: string;
     DB_NAME: string;
     DB_PASS: string;

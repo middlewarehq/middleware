@@ -109,7 +109,7 @@
     "@octokit/types": "^6.34.0",
     "@playwright/test": "^1.28.0",
     "@types/js-cookie": "^3.0.2",
-    "@types/node": "17.0.21",
+    "@types/node": "^16.17.0",
     "@types/nprogress": "0.2.0",
     "@types/pluralize": "^0.0.29",
     "@types/ramda": "^0.28.7",
