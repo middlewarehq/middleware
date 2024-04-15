@@ -193,6 +193,9 @@ class IncidentService:
 
         incident_count = len(resolved_incidents)
 
+        if not incident_count:
+            return MeanTimeToRecoveryMetrics()
+
         mean_time_to_recovery = (
             sum(
                 [
