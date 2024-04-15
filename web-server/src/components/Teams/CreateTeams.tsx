@@ -6,16 +6,13 @@ import {
   CircularProgress,
   TextField
 } from '@mui/material';
-import { SyntheticEvent } from 'react';
 
 import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
-import { useEasyState } from '@/hooks/useEasyState';
 import { updateTeamReposProductionBranches } from '@/slices/team';
 import { useDispatch } from '@/store';
-import { BaseRepo } from '@/types/resources';
 
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
@@ -78,17 +75,14 @@ const TeamName = () => {
 };
 
 const TeamRepos = () => {
-  const { orgRepos } = useTeamCRUD();
-  const selections = useEasyState<BaseRepo[]>([]);
-  const options = orgRepos;
-  const selectedValues = selections.value;
-  const handleSelectionChange = (
-    _: SyntheticEvent<Element, Event>,
-    value: BaseRepo[]
-  ) => {
-    selections.set(value);
-  };
-  const teamRepoError = false;
+  const {
+    repoOptions,
+    teamRepoError,
+    handleRepoSelectionChange,
+    selectedRepos,
+    raiseTeamRepoError
+  } = useTeamCRUD();
+
   return (
     <FlexBox col gap={2} relative>
       <FlexBox col>
@@ -98,18 +92,19 @@ const TeamRepos = () => {
         <Line>Select repositories for this team</Line>
       </FlexBox>
       <Autocomplete
+        onBlur={raiseTeamRepoError}
         disableCloseOnSelect
         disableClearable
         sx={{ width: '260px', height: '48px', minWidth: '260px' }}
         multiple
-        options={options}
-        value={selectedValues}
-        onChange={handleSelectionChange}
+        options={repoOptions}
+        value={selectedRepos}
+        onChange={handleRepoSelectionChange}
         getOptionLabel={(option) => option.name}
         renderInput={(params) => (
           <TextField
             {...params}
-            label={`${selectedValues.length} selected`}
+            label={`${selectedRepos.length} selected`}
             error={teamRepoError}
           />
         )}
