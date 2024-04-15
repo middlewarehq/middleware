@@ -4,14 +4,17 @@ import {
   Button,
   Card,
   CircularProgress,
+  Divider,
   TextField
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
+import { FC } from 'react';
 
 import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
+import { BaseRepo } from '@/types/resources';
 
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
@@ -90,44 +93,47 @@ const TeamRepos = () => {
         </Line>
         <Line>Select repositories for this team</Line>
       </FlexBox>
-      <Autocomplete
-        onBlur={raiseTeamRepoError}
-        disableCloseOnSelect
-        disableClearable
-        sx={{ width: '260px', height: '48px', minWidth: '260px' }}
-        multiple
-        options={repoOptions}
-        value={selectedRepos}
-        onChange={handleRepoSelectionChange}
-        getOptionLabel={(option) => option.name}
-        renderInput={(params) => (
-          <TextField
-            {...params}
-            label={`${selectedRepos.length} selected`}
-            error={teamRepoError}
-          />
-        )}
-        renderOption={(props, option, { selected }) => (
-          <li {...props}>
-            <FlexBox
-              gap={2}
-              justifyBetween
-              fullWidth
-              sx={{
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                overflow: 'hidden'
-              }}
-            >
-              <Line sx={{ maxWidth: '200px', overflow: 'hidden' }}>
-                {option.name}
-              </Line>
-              {selected ? <Close fontSize="small" /> : null}
-            </FlexBox>
-          </li>
-        )}
-        renderTags={() => null}
-      />
+      <FlexBox>
+        <Autocomplete
+          onBlur={raiseTeamRepoError}
+          disableCloseOnSelect
+          disableClearable
+          sx={{ width: '260px', height: '48px', minWidth: '260px' }}
+          multiple
+          options={repoOptions}
+          value={selectedRepos}
+          onChange={handleRepoSelectionChange}
+          getOptionLabel={(option) => option.name}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={`${selectedRepos.length} selected`}
+              error={teamRepoError}
+            />
+          )}
+          renderOption={(props, option, { selected }) => (
+            <li {...props}>
+              <FlexBox
+                gap={2}
+                justifyBetween
+                fullWidth
+                sx={{
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden'
+                }}
+              >
+                <Line sx={{ maxWidth: '200px', overflow: 'hidden' }}>
+                  {option.name}
+                </Line>
+                {selected ? <Close fontSize="small" /> : null}
+              </FlexBox>
+            </li>
+          )}
+          renderTags={() => null}
+        />
+        <DisplayRepos />
+      </FlexBox>
     </FlexBox>
   );
 };
@@ -167,6 +173,44 @@ const ActionTray = () => {
         >
           {isSaveLoading ? <CircularProgress size={'18px'} /> : 'Save'}
         </Button>
+      </FlexBox>
+    </FlexBox>
+  );
+};
+
+const DisplayRepos = () => {
+  const { selectedRepos } = useTeamCRUD();
+  return (
+    <FlexBox gap2 ml={2}>
+      <Divider flexItem orientation="vertical" />
+      <FlexBox flexWrap={'wrap'} gap2>
+        {selectedRepos.map((repo) => (
+          <RepoItem repo={repo} key={repo.id} />
+        ))}
+      </FlexBox>
+    </FlexBox>
+  );
+};
+
+const RepoItem: FC<{ repo: BaseRepo }> = ({ repo }) => {
+  const { unselectRepo } = useTeamCRUD();
+  return (
+    <FlexBox height={'49px'} component={Card} gap={2} alignCenter px={2}>
+      {repo.name}{' '}
+      <FlexBox
+        pointer
+        onClick={() => {
+          unselectRepo(repo.id);
+        }}
+        title="Remove repo"
+        sx={{
+          '&:hover': {
+            filter: 'brightness(0.7)'
+          },
+          transition: 'filter 0.2s'
+        }}
+      >
+        <Close fontSize="small" />
       </FlexBox>
     </FlexBox>
   );
