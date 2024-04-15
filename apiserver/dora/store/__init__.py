@@ -5,11 +5,11 @@ from sqlalchemy.orm import Session, declarative_base
 
 from dora.utils.log import LOG
 
-DB_HOST = getenv("DORA_DB_HOST")
-DB_PORT = getenv("DORA_DB_PORT")
-DB_USER = getenv("DORA_DB_USER")
-DB_PASS = getenv("DORA_DB_PASS")
-DB_NAME = getenv("DORA_DB_NAME")
+DB_HOST = getenv("DB_HOST")
+DB_PORT = getenv("DB_PORT")
+DB_USER = getenv("DB_USER")
+DB_PASS = getenv("DB_PASS")
+DB_NAME = getenv("DB_NAME")
 
 ENVIRONMENT = getenv("ENVIRONMENT")
 

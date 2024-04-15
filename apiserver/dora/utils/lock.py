@@ -3,8 +3,8 @@ from os import getenv
 from redis import Redis
 from redis_lock import Lock
 
-REDIS_HOST = getenv("DORA_REDIS_HOST", "localhost")
-REDIS_PORT = getenv("DORA_REDIS_PORT", 6379)
+REDIS_HOST = getenv("REDIS_HOST", "localhost")
+REDIS_PORT = getenv("REDIS_PORT", 6379)
 REDIS_DB = 0
 REDIS_PASSWORD = ""
 SSL_STATUS = True if REDIS_HOST != "localhost" else False
