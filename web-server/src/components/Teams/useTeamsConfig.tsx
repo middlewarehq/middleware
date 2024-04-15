@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { createContext, useContext, useEffect, SyntheticEvent } from 'react';
 
 import { Integration } from '@/constants/integrations';
@@ -46,6 +47,7 @@ export const useTeamCRUD = () => {
 
 export const TeamsCRUDProvider: React.FC = ({ children }) => {
   // team slice logic
+  const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
@@ -124,6 +126,13 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
             provider: Integration.GITHUB
           })
         );
+      })
+      .catch((e) => {
+        enqueueSnackbar('Failed to create team', {
+          variant: 'error',
+          autoHideDuration: 2000
+        });
+        console.error('Failed to create team', e);
       })
       .finally(isSaveLoading.false);
   };
