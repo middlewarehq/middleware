@@ -4,11 +4,11 @@ set -e
 set -u
 set -x
 
-POSTGRES_USER="${DORA_DB_USER:-postgres}"
-POSTGRES_PASSWORD="${DORA_DB_PASS:-postgres}"
-POSTGRES_DB="${DORA_DB_NAME:-dora-oss}"
-POSTGRES_PORT="${DORA_DB_PORT:-5432}"
-POSTGRES_HOST="${DORA_DB_HOST:-127.0.0.1}"
+POSTGRES_USER="${DB_USER:-postgres}"
+POSTGRES_PASSWORD="${DB_PASS:-postgres}"
+POSTGRES_DB="${DB_NAME:-dora-oss}"
+POSTGRES_PORT="${DB_PORT:-5432}"
+POSTGRES_HOST="${DB_HOST:-127.0.0.1}"
 
 wait_for_postgres() {
     until su - postgres -c "psql -U postgres -c '\q'"; do

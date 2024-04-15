@@ -38,15 +38,34 @@ The backend is available on your host at http://localhost:8000.
     ```
     # .env file
 
+    DB_HOST=localhost
+    DB_NAME=dora
+    DB_PASS=postgres
+    DB_PORT=5432
+    DB_USER=postgres
+    REDIS_HOST=localhost
+    REDIS_PORT=6379
     ENVIRONMENT=dev
 
+    # Enable/Disable individual services
     POSTGRES_DB_ENABLED=true
     DB_INIT_ENABLED=true
     REDIS_ENABLED=true
     BACKEND_ENABLED=true
     FRONTEND_ENABLED=true
+    CRON_ENABLED=true
+
+    NEXT_PUBLIC_APP_ENVIRONMENT="development"
+    INTERNAL_API_BASE_URL=http://localhost:9696
+
+    # For using db on host machine. Useful when using ssh tunnelling
+    DB_HOST=host.docker.internal
+    DB_PORT=5433
     ```
-    Set `ENVIRONMENT=prod` to run it in production setup.
+    Set `ENVIRONMENT=prod` to run it in production setup.\
+    Setting `DB_HOST` as `host.docker.internal` will help when you want to connect to a db instance which
+    is running on your host machine. Also update `DB_PORT` accordingly.
+
 
 4. **Run `dev.sh` script in the project root**\
     `./dev.sh` can be run with either no arguments or all arguments need to provided for creating the ssh tunnel.\
