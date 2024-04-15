@@ -13,6 +13,8 @@ import { mockTeamPullRequests } from '@/mocks/pull-requests';
 import { BasePR, Comparison, PR, RepoFilterConfig } from '@/types/resources';
 import { getCycleTimeForPr } from '@/utils/code';
 import { isoDateString, getDateWithComparisonRanges } from '@/utils/date';
+import { getFilters } from '@/utils/cockpitMetricUtils';
+import { handleRequest } from '@/api-helpers/axios';
 
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
@@ -100,7 +102,7 @@ export const getTeamPrs = async ({
   );
 
   return await batchPaginatedRequest<BasePR>(
-    `/teams/${team_id}/prs_within_cycle_time`,
+    `/teams/${team_id}/lead_time/prs`,
     params
   ).then((r) => ({
     ...r,
@@ -136,4 +138,15 @@ export const getTeamPrsWithComparisonSegment = ({
   }).then((r) => r.data);
 
   return [currentSegmentPromise, previousSegmentPromise];
+};
+
+export const getTeamLeadTimePRs = (
+  team_id: string,
+  from_time: Date | DateString,
+  to_time: Date | DateString,
+  prFilter: ReturnType<typeof getFilters>
+) => {
+  return handleRequest<{ data: PR[] }>(`/teams/${team_id}/lead_time/prs`, {
+    params: { from_time, to_time, ...prFilter }
+  });
 };

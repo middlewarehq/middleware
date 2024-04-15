@@ -499,57 +499,86 @@ export type TeamCycleTimeForChangeDetails = {
   prev_weekly_average_cycle_time: number[];
 };
 
-export type CockpitLeadTimeApiResponse = {
-  current_average: number;
-  previous_average: number;
-  breakdown: LeadTimeBreakdown;
-  team_analytics: TeamAnalyticsForChangeTime<LeadTimeBreakdown>[];
-  manager_analytics: ManagerAnalyticsChangeTime<LeadTimeBreakdown>[];
+export type LeadTimeApiResponse = {
+  lead_time: number;
+  first_commit_to_open: number;
+  first_response_time: number;
+  rework_time: number;
+  merge_time: number;
+  merge_to_deploy: number;
+  pr_count: number;
 };
 
-export type CockpitCycleTimeApiResponse = {
-  current_average: number;
-  previous_average: number;
-  breakdown: CycleTimeBreakdown;
-  team_analytics: TeamAnalyticsForChangeTime<CycleTimeBreakdown>[];
-  manager_analytics: ManagerAnalyticsChangeTime<CycleTimeBreakdown>[];
+export type LeadTimeTrendsApiResponse = Record<DateString, LeadTimeApiResponse>;
+
+export type DeploymentFrequencyApiResponse = {
+  total_deployments: number;
+  avg_daily_deployment_frequency: number;
+  avg_weekly_deployment_frequency: number;
+  avg_monthly_deployment_frequency: number;
 };
+
+export type DeploymentFrequencyTrends = Record<DateString, { count: number }>;
+
+export type MeanTimeToRestoreApiResponse = {
+  mean_time_to_recovery: number;
+  incident_count: number;
+};
+
+export type MeanTimeToRestoreApiTrendsResponse = Record<
+  DateString,
+  MeanTimeToRestoreApiResponse
+>;
+
+export type ChangeFailureRateApiResponse = {
+  change_failure_rate: number;
+  failed_deployments: number;
+  total_deployments: number;
+};
+
+export type ChangeFailureRateTrendsApiResponse = Record<
+  DateString,
+  {
+    percentage: number;
+    failed_deployments: number;
+    total_deployments: number;
+  }
+>;
 
 export type TeamDoraMetricsApiResponseType = {
-  cycle_time_stats: CockpitCycleTimeApiResponse;
-  lead_time_stats: CockpitLeadTimeApiResponse;
-  cycle_time_trends: {
-    current: CycleTimeTrends;
-    previous: CycleTimeTrends;
+  lead_time_stats: {
+    current: LeadTimeApiResponse;
+    previous: LeadTimeApiResponse;
   };
   lead_time_trends: {
-    current: LeadTimeTrends;
-    previous: LeadTimeTrends;
+    current: LeadTimeTrendsApiResponse;
+    previous: LeadTimeTrendsApiResponse;
   };
   mean_time_to_restore_stats: {
-    current: MeanTimeToRestoreAnalyticsResponse;
-    previous: MeanTimeToRestoreAnalyticsResponse;
+    current: MeanTimeToRestoreApiResponse;
+    previous: MeanTimeToRestoreApiResponse;
   };
-  mean_time_to_restore_trends: Record<DateString, number>;
+  mean_time_to_restore_trends: {
+    current: MeanTimeToRestoreApiTrendsResponse;
+    previous: MeanTimeToRestoreApiTrendsResponse;
+  };
   change_failure_rate_stats: {
-    current: ChangeFailureRateAnalyticsResponse;
-    previous: ChangeFailureRateAnalyticsResponse;
+    current: ChangeFailureRateApiResponse;
+    previous: ChangeFailureRateApiResponse;
   };
-  change_failure_rate_trends: Record<
-    DateString,
-    ChangeFailureRateTrendsBaseStats
-  >;
+  change_failure_rate_trends: {
+    current: ChangeFailureRateTrendsApiResponse;
+    previous: ChangeFailureRateTrendsApiResponse;
+  };
   deployment_frequency_stats: {
-    current: DeploymentFrequencyAnalyticsResponse;
-    previous: DeploymentFrequencyAnalyticsResponse;
+    current: DeploymentFrequencyApiResponse;
+    previous: DeploymentFrequencyApiResponse;
   };
-  deployment_frequency_trends: Record<DateString, DeploymentFrequencyTrendBase>;
-  allReposAssignedToTeam: RepoWithSingleWorkflow[];
-  workflowConfiguredRepos: RepoWithSingleWorkflow[];
-  deploymentsConfigured: TeamDeploymentsConfigured['deployments_configured'];
-  deploymentsConfiguredForAllRepos: TeamDeploymentsConfigured['deployments_configured_for_all_repos'];
-  summary_prs: PR[];
-  reverted_prs: PR[];
+  deployment_frequency_trends: {
+    current: DeploymentFrequencyTrends;
+    previous: DeploymentFrequencyTrends;
+  };
+  lead_time_prs: PR[];
 };
 
 export enum ActiveBranchMode {
@@ -790,8 +819,6 @@ export type MeanTimeToRestoreAnalyticsResponse = MeanTimeToRestoreBaseStats & {
     } & MeanTimeToRestoreBaseStats
   >;
 };
-export type MeanTimeToRestoreApiResponse = UserAndTeamMapApiReturnType &
-  MeanTimeToRestoreAnalyticsResponse;
 
 export type ChangeFailureRateBaseStats = {
   change_failure_rate: number;
@@ -814,9 +841,6 @@ export type ChangeFailureRateAnalyticsResponse = ChangeFailureRateBaseStats & {
     } & ChangeFailureRateBaseStats
   >;
 };
-
-export type ChangeFailureRateApiResponse = UserAndTeamMapApiReturnType &
-  ChangeFailureRateAnalyticsResponse;
 
 export type DeploymentFrequencyBaseStats = {
   avg_deployment_frequency: number;
