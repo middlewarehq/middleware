@@ -22,6 +22,8 @@ services:
       - db
     environment:
       - DATABASE_URL=postgres://postgres:postgres@db:5432/dora?sslmode=disable
+    volumes:
+      - ./dbmate-docker/db:/db
     working_dir: /
     command: bash -c  "dbwait.sh && dbmate up && dbmate dump"
 

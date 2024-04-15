@@ -76,7 +76,6 @@ CREATE TABLE public."Incident" (
     id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
     provider character varying NOT NULL,
     key character varying NOT NULL,
-    service_id uuid,
     incident_number integer,
     status character varying,
     title character varying,
@@ -406,6 +405,23 @@ CREATE TABLE public."TeamRepos" (
     deployment_type character varying DEFAULT 'PR_MERGE'::character varying NOT NULL
 );
 
+
+--
+-- Name: UIPreferences; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."UIPreferences" (
+    setting_type character varying NOT NULL,
+    entity_type character varying NOT NULL,
+    entity_id uuid NOT NULL,
+    data jsonb DEFAULT '{}'::jsonb NOT NULL,
+    setter_type character varying NOT NULL,
+    setter_id uuid,
+    created_at timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text) NOT NULL,
+    updated_at timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text) NOT NULL
+);
+
+
 --
 -- Name: UserIdentity; Type: TABLE; Schema: public; Owner: -
 --
@@ -462,11 +478,11 @@ ALTER TABLE ONLY public."Incident"
 
 
 --
--- Name: Incident Incident_service_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: Incident Incident_provider_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public."Incident"
-    ADD CONSTRAINT "Incident_service_id_key" UNIQUE (provider, service_id, key);
+    ADD CONSTRAINT "Incident_provider_key" UNIQUE (provider, key);
 
 
 --
@@ -623,6 +639,15 @@ ALTER TABLE ONLY public."TeamRepos"
 ALTER TABLE ONLY public."Team"
     ADD CONSTRAINT "Team_pkey" PRIMARY KEY (id);
 
+
+--
+-- Name: UIPreferences UIPreferences_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."UIPreferences"
+    ADD CONSTRAINT "UIPreferences_pkey" PRIMARY KEY (setting_type, entity_type, entity_id);
+
+
 --
 -- Name: Users Users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
@@ -706,20 +731,6 @@ ALTER TABLE ONLY public."RepoWorkflowRuns"
 --
 
 CREATE INDEX "Incident_key_provider_index" ON public."Incident" USING btree (key, provider);
-
-
---
--- Name: Incident_service_id_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX "Incident_service_id_index" ON public."Incident" USING btree (service_id);
-
-
---
--- Name: Incident_service_id_provider_index; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX "Incident_service_id_provider_index" ON public."Incident" USING btree (service_id, provider);
 
 
 --
@@ -1008,6 +1019,13 @@ CREATE INDEX teamincidentservice_service_id ON public."TeamIncidentService" USIN
 
 CREATE INDEX teamrepos_org_repo_id_index ON public."TeamRepos" USING btree (org_repo_id);
 
+
+--
+-- Name: uipreferences_unique_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uipreferences_unique_index ON public."Settings" USING btree (setting_type, entity_type, entity_id);
+
 --
 -- Name: user_identity_fetch; Type: INDEX; Schema: public; Owner: -
 --
@@ -1065,14 +1083,6 @@ ALTER TABLE ONLY public."IncidentOrgIncidentServiceMap"
 
 ALTER TABLE ONLY public."IncidentOrgIncidentServiceMap"
     ADD CONSTRAINT "IncidentOrgIncidentServiceMap_service_id_fkey" FOREIGN KEY (service_id) REFERENCES public."OrgIncidentService"(id);
-
-
---
--- Name: Incident Incident_service_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."Incident"
-    ADD CONSTRAINT "Incident_service_id_fkey" FOREIGN KEY (service_id) REFERENCES public."OrgIncidentService"(id) ON DELETE CASCADE;
 
 
 --
@@ -1232,6 +1242,14 @@ ALTER TABLE ONLY public."Team"
 
 ALTER TABLE ONLY public."Team"
     ADD CONSTRAINT "Team_org_id_fkey" FOREIGN KEY (org_id) REFERENCES public."Organization"(id);
+
+
+--
+-- Name: UIPreferences UIPreferences_setter_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."UIPreferences"
+    ADD CONSTRAINT "UIPreferences_setter_user_id_fkey" FOREIGN KEY (setter_id) REFERENCES public."Users"(id);
 
 
 --
