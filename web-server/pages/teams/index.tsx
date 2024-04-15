@@ -16,6 +16,7 @@ function Page() {
       }
       pageTitle="Teams"
       showEvenIfNoTeamSelected
+      hideAllSelectors
     >
       <CreateTeams />
     </PageWrapper>
