@@ -35,6 +35,7 @@ interface TeamsCRUDContextType {
   raiseTeamRepoError: () => void;
   onSave: (callBack?: AnyFunction) => void;
   isSaveLoading: boolean;
+  unselectRepo: (id: BaseRepo['id']) => void;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -104,6 +105,15 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
       depFn(teamRepoError.false);
     }
   }, [selections.value.length, teamRepoError.false, teamRepoError.true]);
+  const unselectRepo = useCallback(
+    (id: BaseRepo['id']) => {
+      depFn(
+        selections.set,
+        selections.value.filter((r) => r.id !== id)
+      );
+    },
+    [selections.set, selections.value]
+  );
 
   // save team logic
   const isSaveLoading = useBoolState();
@@ -172,7 +182,8 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     teamRepoError: teamRepoError.value,
     raiseTeamRepoError,
     onSave,
-    isSaveLoading: isSaveLoading.value
+    isSaveLoading: isSaveLoading.value,
+    unselectRepo
   };
 
   return (
