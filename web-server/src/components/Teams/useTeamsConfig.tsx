@@ -92,12 +92,6 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   const selections = useEasyState<BaseRepo[]>([]);
   const repoOptions = orgRepos;
   const selectedRepos = selections.value;
-  const handleRepoSelectionChange = useCallback(
-    (_: SyntheticEvent<Element, Event>, value: BaseRepo[]) => {
-      depFn(selections.set, value);
-    },
-    [selections.set]
-  );
   const teamRepoError = useBoolState();
   const raiseTeamRepoError = useCallback(() => {
     if (!selections.value.length) {
@@ -106,6 +100,13 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
       depFn(teamRepoError.false);
     }
   }, [selections.value.length, teamRepoError.false, teamRepoError.true]);
+  const handleRepoSelectionChange = useCallback(
+    (_: SyntheticEvent<Element, Event>, value: BaseRepo[]) => {
+      depFn(selections.set, value);
+      depFn(teamRepoError.false);
+    },
+    [selections.set, teamRepoError.false]
+  );
   const unselectRepo = useCallback(
     (id: BaseRepo['id']) => {
       if (selections.value.length === 1) {
