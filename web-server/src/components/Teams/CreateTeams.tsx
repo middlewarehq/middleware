@@ -181,8 +181,8 @@ const ActionTray = () => {
 const DisplayRepos = () => {
   const { selectedRepos } = useTeamCRUD();
   return (
-    <FlexBox gap2 ml={2}>
-      <Divider flexItem orientation="vertical" />
+    <FlexBox gap2 ml={2} height={'49px'}>
+      {!!selectedRepos.length && <Divider flexItem orientation="vertical" />}
       <FlexBox flexWrap={'wrap'} gap2>
         {selectedRepos.map((repo) => (
           <RepoItem repo={repo} key={repo.id} />

@@ -72,13 +72,6 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   // team name logic
   const teamName = useEasyState('');
   const teamNameError = useBoolState(false);
-  const handleTeamNameChange = useCallback(
-    (e: any) => {
-      depFn(teamName.set, e.target.value);
-    },
-    [teamName.set]
-  );
-  const showTeamNameError = teamNameError.value;
   const raiseTeamNameError = useCallback(() => {
     if (!teamName.value) {
       depFn(teamNameError.true);
@@ -86,6 +79,14 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
       depFn(teamNameError.false);
     }
   }, [teamName.value, teamNameError.false, teamNameError.true]);
+
+  const handleTeamNameChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      depFn(teamName.set, e.target.value);
+      depFn(raiseTeamNameError);
+    },
+    [raiseTeamNameError, teamName.set]
+  );
 
   // team-repo selection logic
   const selections = useEasyState<BaseRepo[]>([]);
@@ -107,12 +108,15 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   }, [selections.value.length, teamRepoError.false, teamRepoError.true]);
   const unselectRepo = useCallback(
     (id: BaseRepo['id']) => {
+      if (selections.value.length === 1) {
+        depFn(teamRepoError.true);
+      }
       depFn(
         selections.set,
         selections.value.filter((r) => r.id !== id)
       );
     },
-    [selections.set, selections.value]
+    [selections.set, selections.value, teamRepoError.true]
   );
 
   // save team logic
@@ -170,7 +174,7 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
 
   const contextValue: TeamsCRUDContextType = {
     teamName: teamName.value,
-    showTeamNameError,
+    showTeamNameError: teamNameError.value,
     raiseTeamNameError,
     teamReposMaps,
     teams,
