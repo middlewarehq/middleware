@@ -31,10 +31,32 @@ The backend is available on your host at http://localhost:8000.
    ```bash
    cd dora-metrics
    ```
-3. **Run Docker Compose**
-   ```bash
-   docker-compose up -d
-   ```
+
+3. **Set Environment variables**\
+    Make `.env` file in the project root directory and put environment variables for frontend and backend in it.\
+    You can also specify which individual services to enable if you don't want to start all the services.
+    ```
+    # .env file
+
+    ENVIRONMENT=dev
+
+    POSTGRES_DB_ENABLED=true
+    DB_INIT_ENABLED=true
+    REDIS_ENABLED=true
+    BACKEND_ENABLED=true
+    FRONTEND_ENABLED=true
+    ```
+    Set `ENVIRONMENT=prod` to run it in production setup.
+
+4. **Run `dev.sh` script in the project root**\
+    `./dev.sh` can be run with either no arguments or all arguments need to provided for creating the ssh tunnel.\
+    The usage is as follows:
+    ```bash
+    Usage: ./dev.sh [-i identity_file] [-l local_port] [-r remote_host] [-p remote_port] [-u ssh_user] [-h ssh_host]
+    ```
+    ```bash
+    ./dev.sh  -i /path/to/private_key -l 5433 -r staging_db.rds.amazonaws.com -p 5432 -u ec2-user -h 10.3.17.192
+    ```
    
 ### Manual Setup
 To set up dora-metrics locally, follow these steps:
