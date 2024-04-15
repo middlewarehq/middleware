@@ -49,11 +49,13 @@ COPY --from=frontend-build /app/frontend/web-server/ /app/frontend/web-server
 COPY ./database-docker/db/ /app/db/
 COPY ./init_db.sh /app/
 COPY ./generate_config_ini.sh /app/
+COPY ./cronjob.txt /etc/cron.d/cronjob
 COPY ./supervisord.conf /etc/supervisord.conf
 
 RUN chmod +x /app/init_db.sh \
   && apt-get update && apt-get install -y --no-install-recommends \
   libpq-dev \
+  cron \
   postgresql \
   postgresql-contrib \
   redis-server \
@@ -78,6 +80,10 @@ RUN chmod +x /app/init_db.sh \
   && touch /var/log/apiserver/apiserver.log \
   && mkdir -p /var/log/webserver \
   && touch /var/log/webserver/webserver.log \
+  && mkdir -p /var/log/cron \
+  && touch /var/log/cron/cron.log \
+  && chmod 0644 /etc/cron.d/cronjob \
+  && crontab /etc/cron.d/cronjob \
   && /app/generate_config_ini.sh -t /app/backend/apiserver/dora/config
 
 ARG POSTGRES_DB_ENABLED=true
@@ -85,12 +91,14 @@ ARG DB_INIT_ENABLED=true
 ARG REDIS_ENABLED=true
 ARG BACKEND_ENABLED=true
 ARG FRONTEND_ENABLED=true
+ARG CRON_ENABLED=true
 
 ENV POSTGRES_DB_ENABLED=$POSTGRES_DB_ENABLED
 ENV DB_INIT_ENABLED=$DB_INIT_ENABLED
 ENV REDIS_ENABLED=$REDIS_ENABLED
 ENV BACKEND_ENABLED=$BACKEND_ENABLED
 ENV FRONTEND_ENABLED=$FRONTEND_ENABLED
+ENV CRON_ENABLED=$CRON_ENABLED
 ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:$PATH"
 
 EXPOSE 5432 6379 9696 3000
