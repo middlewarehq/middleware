@@ -22,7 +22,6 @@ const getSchema = yup.object().shape({
 });
 
 const postSchema = yup.object().shape({
-  manager_id: yup.string().uuid().nullable().optional(),
   name: yup.string().required(),
   provider: yup.string().oneOf(Object.values(Integration)).required(),
   org_repos: yup.lazy((obj) =>

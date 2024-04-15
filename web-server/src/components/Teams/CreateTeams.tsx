@@ -11,8 +11,6 @@ import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
-import { updateTeamReposProductionBranches } from '@/slices/team';
-import { useDispatch } from '@/store';
 
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
@@ -134,23 +132,14 @@ const TeamRepos = () => {
 };
 
 const ActionTray = () => {
-  const isSaveLoading = false;
-  const disabledSave = false;
-  const dispatch = useDispatch();
-  const onSave = () => {
-    dispatch(
-      updateTeamReposProductionBranches({
-        team_id: 'team_id',
-        team_repos_data: []
-      })
-    );
-  };
+  const { onSave, isSaveLoading } = useTeamCRUD();
+
   return (
     <FlexBox>
       <Button
-        disabled={disabledSave || isSaveLoading}
+        disabled={isSaveLoading}
         variant="contained"
-        onClick={onSave}
+        onClick={() => onSave()}
         sx={{
           minWidth: '200px',
           '&.Mui-disabled': {

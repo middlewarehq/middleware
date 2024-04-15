@@ -1,14 +1,14 @@
 import { createContext, useContext, useEffect, SyntheticEvent } from 'react';
-import { useDispatch } from 'react-redux';
 
 import { Integration } from '@/constants/integrations';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
-import { fetchTeams } from '@/slices/team';
-import { useSelector } from '@/store';
+import { fetchTeams, createTeam } from '@/slices/team';
+import { useDispatch, useSelector } from '@/store';
 import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Team } from '@/types/api/teams';
-import { BaseRepo } from '@/types/resources';
+import { BaseRepo, RepoUniqueDetails } from '@/types/resources';
+import { depFn } from '@/utils/fn';
 
 interface TeamsCRUDContextType {
   orgRepos: BaseRepo[];
@@ -16,7 +16,7 @@ interface TeamsCRUDContextType {
   teamReposMaps: Record<string, DB_OrgRepo[]>;
   teamName: string;
   showTeamNameError: boolean;
-  handleTeamNameChange: (e: any) => void;
+  handleTeamNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   raiseTeamNameError: () => void;
   repoOptions: BaseRepo[];
   selectedRepos: BaseRepo[];
@@ -26,6 +26,8 @@ interface TeamsCRUDContextType {
   ) => void;
   teamRepoError: boolean;
   raiseTeamRepoError: () => void;
+  onSave: (callBack?: AnyFunction) => void;
+  isSaveLoading: boolean;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -43,12 +45,20 @@ export const useTeamCRUD = () => {
 };
 
 export const TeamsCRUDProvider: React.FC = ({ children }) => {
-  // general slice data
+  // team slice logic
   const dispatch = useDispatch();
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
   const orgRepos = useSelector((s) => s.team.orgRepos);
-  const { orgId } = useAuth();
+  const { orgId, org } = useAuth();
+  useEffect(() => {
+    dispatch(
+      fetchTeams({
+        org_id: orgId,
+        provider: Integration.GITHUB
+      })
+    );
+  }, [dispatch, orgId]);
 
   // team name logic
   const teamName = useEasyState('');
@@ -84,14 +94,39 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     }
   };
 
-  useEffect(() => {
+  // save team logic
+  const isSaveLoading = useBoolState();
+  const onSave = (callBack?: AnyFunction) => {
+    depFn(isSaveLoading.true);
+    const repoPayload = {
+      [org.name]: selections.value.map(
+        (repo) =>
+          ({
+            idempotency_key: repo.id,
+            name: repo.name,
+            slug: repo.slug
+          }) as RepoUniqueDetails
+      )
+    };
     dispatch(
-      fetchTeams({
+      createTeam({
         org_id: orgId,
+        team_name: teamName.value,
+        org_repos: repoPayload,
         provider: Integration.GITHUB
       })
-    );
-  }, [dispatch, orgId]);
+    )
+      .then((res) => {
+        callBack?.(res);
+        dispatch(
+          fetchTeams({
+            org_id: orgId,
+            provider: Integration.GITHUB
+          })
+        );
+      })
+      .finally(isSaveLoading.false);
+  };
 
   const contextValue: TeamsCRUDContextType = {
     teamName: teamName.value,
@@ -105,7 +140,9 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     selectedRepos,
     handleRepoSelectionChange,
     teamRepoError: teamRepoError.value,
-    raiseTeamRepoError
+    raiseTeamRepoError,
+    onSave,
+    isSaveLoading: isSaveLoading.value
   };
 
   return (
