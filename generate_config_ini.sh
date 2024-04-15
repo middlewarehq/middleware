@@ -39,4 +39,7 @@ SECRET_PRIVATE_KEY=$private_key
 SECRET_PUBLIC_KEY=$public_key
 EOF
 
+echo "export SECRET_PUBLIC_KEY=$public_key" >> ~/.bashrc
+echo "export SECRET_PRIVATE_KEY=$private_key" >> ~/.bashrc
+
 echo "Keys file created: $target_path/config.ini"
