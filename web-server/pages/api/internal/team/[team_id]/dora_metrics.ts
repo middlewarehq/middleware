@@ -18,7 +18,7 @@ import {
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
 
 import { getAllTeamsReposProdBranchesForOrgAsMap } from './repo_branches';
-import { getTeamPrs } from './insights';
+import { getTeamLeadTimePRs } from './insights';
 
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
@@ -85,8 +85,8 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     leadTimeResponse,
     meanTimeToRestoreResponse,
     changeFailureRateResponse,
-    deploymentFrequencyResponse
-    summaryPrs
+    deploymentFrequencyResponse,
+    leadtimePrs
   ] = await Promise.all([
     fetchLeadTimeStats({
       teamId,
@@ -143,15 +143,12 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      workflowFilter: workflowFilters
-    })
-    getTeamPrs({
-      team_id: teamId,
-      branches,
-      from_date: from_date,
-      to_date: to_date,
-      repo_filters
-    }).then((r) => r.data)
+      workflowFilter: workflowFilters,
+      prFilter: prFilters
+    }),
+    getTeamLeadTimePRs(teamId, from_date, to_date, prFilters).then(
+      (r) => r.data
+    )
   ]);
 
   console.log('🚀 ~ endpoint.handle.GET ~ leadTimeResponse:', leadTimeResponse);
@@ -170,8 +167,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       deploymentFrequencyResponse.deployment_frequency_stats,
     deployment_frequency_trends:
       deploymentFrequencyResponse.deployment_frequency_trends,
-    summary_prs: summaryPrs,
-    reverted_prs: []
+    lead_time_prs: leadtimePrs
   } as TeamDoraMetricsApiResponseType);
 });
 
