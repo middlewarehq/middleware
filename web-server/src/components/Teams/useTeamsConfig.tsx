@@ -139,6 +139,13 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
         })
       )
         .then((res) => {
+          if (res.meta.requestStatus === 'rejected') {
+            enqueueSnackbar('Failed to create team', {
+              variant: 'error',
+              autoHideDuration: 2000
+            });
+            return console.error('Failed to create team', res.meta);
+          }
           callBack?.(res);
           dispatch(
             fetchTeams({
@@ -146,13 +153,6 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
               provider: Integration.GITHUB
             })
           );
-        })
-        .catch((e) => {
-          enqueueSnackbar('Failed to create team', {
-            variant: 'error',
-            autoHideDuration: 2000
-          });
-          console.error('Failed to create team', e);
         })
         .finally(isSaveLoading.false);
     },
