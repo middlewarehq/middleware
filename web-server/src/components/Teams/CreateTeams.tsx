@@ -12,7 +12,7 @@ import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
-import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { useEasyState } from '@/hooks/useEasyState';
 import { updateTeamReposProductionBranches } from '@/slices/team';
 import { useDispatch } from '@/store';
 import { BaseRepo } from '@/types/resources';
@@ -46,20 +46,12 @@ export const CreateTeams = () => {
 };
 
 const TeamName = () => {
-  const teamName = useEasyState('');
-  const teamNameError = useBoolState(false);
-  const handleTeamNameChange = (e: any) => {
-    teamName.set(e.target.value);
-  };
-  const teamNameValue = teamName.value;
-  const showTeamNameError = teamNameError.value;
-  const raiseTeamNameError = () => {
-    if (!teamName.value) {
-      teamNameError.true();
-    } else {
-      teamNameError.false();
-    }
-  };
+  const {
+    teamName,
+    handleTeamNameChange,
+    showTeamNameError,
+    raiseTeamNameError
+  } = useTeamCRUD();
 
   return (
     <FlexBox col gap={2} relative>
@@ -72,7 +64,7 @@ const TeamName = () => {
 
       <FlexBox>
         <TextField
-          value={teamNameValue}
+          value={teamName}
           onChange={handleTeamNameChange}
           placeholder="Enter team name"
           error={showTeamNameError}
