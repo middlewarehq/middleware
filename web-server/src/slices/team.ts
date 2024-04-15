@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import { createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
+import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { DB_OrgRepo } from '@/types/api/org_repo';
 import { BaseTeam, Team } from '@/types/api/teams';
@@ -127,12 +128,14 @@ export const teamSlice = createSlice({
 
 export const fetchTeams = createAsyncThunk(
   'teams/fetchTeams',
-  async (params: { user_id?: ID; include_teams?: ID[]; org_id: ID }) => {
+  async (params: { org_id: ID; provider: Integration }) => {
     return await handleApi<{
       teams: Team[];
       teamReposMap: Record<ID, DB_OrgRepo[]>;
       orgRepos: BaseRepo[];
-    }>(`/resources/orgs/${params.org_id}/teams/v2`, { params });
+    }>(`/resources/orgs/${params.org_id}/teams/v2`, {
+      params
+    });
   }
 );
 

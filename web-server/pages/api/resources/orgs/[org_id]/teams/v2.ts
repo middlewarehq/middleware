@@ -18,7 +18,7 @@ import { ReqOrgRepo } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
 
 const getSchema = yup.object().shape({
-  provider: yup.string().required()
+  provider: yup.string().oneOf(Object.values(Integration)).required()
 });
 
 const postSchema = yup.object().shape({

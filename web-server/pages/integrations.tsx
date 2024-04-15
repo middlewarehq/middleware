@@ -4,6 +4,7 @@ import { Authenticated } from 'src/components/Authenticated';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
+import { ROUTES } from '@/constants/routes';
 import { GithubIntegrationCard } from '@/content/Dashboards/IntegrationCards';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
@@ -57,7 +58,11 @@ const Content = () => {
           <Line fontSize={'16px'} white mt="14px">
             Just add team's name, add repos and you're good to go.
           </Line>
-          <Button variant="contained" sx={{ mt: '24px' }}>
+          <Button
+            variant="contained"
+            sx={{ mt: '24px' }}
+            href={ROUTES.TEAMS.PATH}
+          >
             <FlexBox gap1>
               <Add />
               <Line white>Create Team</Line>
