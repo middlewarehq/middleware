@@ -211,8 +211,6 @@ def get_team_deployment_frequency_trends(
     )
 
     return {
-        "deployment_frequency_trends": {
-            week.isoformat(): {"count": deployment_count}
-            for week, deployment_count in week_to_deployments_count_map.items()
-        }
+        week.isoformat(): {"count": deployment_count}
+        for week, deployment_count in week_to_deployments_count_map.items()
     }
