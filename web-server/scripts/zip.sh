@@ -19,7 +19,6 @@ tar -czf \
   next.config.js \
   .env* \
   public \
-  newrelic.js \
   sentry.* \
   scripts \
   config

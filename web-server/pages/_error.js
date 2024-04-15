@@ -20,13 +20,6 @@ MyError.getInitialProps = async (context) => {
   // getInitialProps has run
   errorInitialProps.hasGetInitialPropsRun = true;
 
-  if (typeof window === 'undefined') {
-    const newrelic = require('newrelic');
-    newrelic.noticeError(err);
-  } else {
-    window.newrelic.noticeError(err);
-  }
-
   // Returning early because we don't want to log 404 errors to Sentry.
   if (res?.statusCode === 404) {
     return errorInitialProps;

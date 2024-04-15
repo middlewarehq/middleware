@@ -1,4 +1,3 @@
-declare module 'newrelic';
 declare module 'react-chartjs-2';
 declare module 'chartjs-plugin-crosshair';
 declare module 'chartjs-plugin-trendline';
