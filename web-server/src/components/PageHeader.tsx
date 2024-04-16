@@ -20,6 +20,7 @@ import { FlexBox, FlexBoxProps } from './FlexBox';
 import { Hotkey } from './Hotkey';
 import { Logo } from './Logo/Logo';
 import { Tabs } from './Tabs';
+import { TeamSelector } from './TeamSelector/TeamSelector';
 import { Line } from './Text';
 
 type SubRoute = {
@@ -104,6 +105,9 @@ export const PageHeader: FC<
           <>
             <Divider />
             <FlexBox display="flex" gap={1} alignCenter mb={-1}>
+              {teamDateSelectorMode && (
+                <TeamSelector mode={teamDateSelectorMode} />
+              )}
               {selectBranch && <BranchSelector />}
               {additionalFilters?.map((filter, i) => (
                 <Fragment key={i}>{filter}</Fragment>
