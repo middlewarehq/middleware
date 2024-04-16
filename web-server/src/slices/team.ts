@@ -252,7 +252,10 @@ export const deleteTeam = createAsyncThunk(
     return await handleApi<BaseTeam>(
       `/resources/orgs/${params.org_id}/teams/v2`,
       {
-        method: 'DELETE'
+        method: 'DELETE',
+        data: {
+          id: params.team_id
+        }
       }
     );
   }
