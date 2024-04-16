@@ -1,14 +1,13 @@
-from dora.store import rollback_on_exc, session
+from dora.store import db
 from dora.store.models import Organization
 from dora.utils.string import uuid4_str
 from dora.utils.time import time_now
 
 
-@rollback_on_exc
 def initialize_database(app):
     with app.app_context():
         default_org = (
-            session.query(Organization)
+            db.session.query(Organization)
             .filter(Organization.name == "default")
             .one_or_none()
         )
@@ -20,8 +19,8 @@ def initialize_database(app):
             domain="default",
             created_at=time_now(),
         )
-        session.add(default_org)
-        session.commit()
+        db.session.add(default_org)
+        db.session.commit()
 
 
 if __name__ == "__main__":
