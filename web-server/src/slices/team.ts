@@ -57,6 +57,18 @@ export const teamSlice = createSlice({
   name: 'team',
   initialState,
   reducers: {
+    setTeams(state: State, action: PayloadAction<State['teams']>): void {
+      state.teams = action.payload;
+    },
+    setTeamReposMaps(
+      state: State,
+      action: PayloadAction<State['teamReposMaps']>
+    ): void {
+      state.teamReposMaps = action.payload;
+    },
+    setOrgRepos(state: State, action: PayloadAction<State['orgRepos']>): void {
+      state.orgRepos = action.payload;
+    },
     setTeamRepos(
       state: State,
       action: PayloadAction<State['teamRepos']>
@@ -229,6 +241,18 @@ export const updateExcludedPrs = createAsyncThunk(
           team_id: params.teamId,
           excluded_prs: params.excludedPrs
         }
+      }
+    );
+  }
+);
+
+export const deleteTeam = createAsyncThunk(
+  'teams/deleteTeam',
+  async (params: { org_id: ID; team_id: ID }) => {
+    return await handleApi<BaseTeam>(
+      `/resources/orgs/${params.org_id}/teams/v2`,
+      {
+        method: 'DELETE'
       }
     );
   }
