@@ -1,9 +1,16 @@
-import { Delete, Edit, MoreVert } from '@mui/icons-material';
-import { Button, Card, Divider, Menu, MenuItem } from '@mui/material';
+import { Add, Delete, Edit, MoreVert } from '@mui/icons-material';
+import {
+  Button,
+  Card,
+  Divider,
+  Menu,
+  MenuItem,
+  TextField
+} from '@mui/material';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { ascend } from 'ramda';
-import { MouseEventHandler, useCallback, useMemo } from 'react';
+import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,12 +31,69 @@ const VISIBLE_REPOS_COUNT = 3;
 
 export const TeamsList = () => {
   const teamsArray = useSelector((state) => state.team.teams);
+  const searchQuery = useEasyState('');
+
+  const teamsArrayFiltered = useMemo(() => {
+    if (!searchQuery.value) {
+      return teamsArray;
+    }
+    return teamsArray.filter((team) =>
+      team.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    );
+  }, [searchQuery.value, teamsArray]);
 
   return (
-    <FlexBox gap={4} grid gridTemplateColumns={'1fr 1fr '} maxWidth={'900px'}>
-      {teamsArray.map((team, index) => (
-        <TeamCard key={index} team={team} />
-      ))}
+    <>
+      <SearchFilter
+        searchQuery={searchQuery.value}
+        onChange={searchQuery.set}
+      />
+      {!teamsArrayFiltered.length && teamsArray.length ? (
+        <FlexBox fullWidth>
+          <Line secondary>No teams found</Line>
+        </FlexBox>
+      ) : null}
+      <FlexBox gap={4} grid gridTemplateColumns={'1fr 1fr '} maxWidth={'900px'}>
+        {teamsArrayFiltered.map((team, index) => (
+          <TeamCard key={index} team={team} />
+        ))}
+      </FlexBox>
+    </>
+  );
+};
+
+const SearchFilter: FC<{
+  searchQuery: string;
+  onChange: (value: string) => void;
+}> = ({ searchQuery, onChange }) => {
+  return (
+    <FlexBox width={'900px'} gap={4} mb={2}>
+      <FlexBox flex1>
+        <TextField
+          value={searchQuery}
+          onChange={(e) => {
+            onChange(e.target.value);
+          }}
+          fullWidth
+          placeholder="Search for teams"
+        />
+      </FlexBox>
+      <FlexBox flex1 alignCenter gap={4}>
+        <FlexBox flex1>
+          <Button sx={{ width: '100%' }} variant="outlined">
+            <FlexBox centered gap1 fullWidth p={2 / 3}>
+              <Add fontSize="small" /> Add new team
+            </FlexBox>
+          </Button>
+        </FlexBox>
+        <FlexBox flex1>
+          <Button sx={{ width: '100%' }} variant="contained">
+            <FlexBox centered fullWidth p={2 / 3}>
+              Continue to Dora {'->'}
+            </FlexBox>
+          </Button>
+        </FlexBox>
+      </FlexBox>
     </FlexBox>
   );
 };
