@@ -1,4 +1,5 @@
 from flask import Flask
+from dora.store import configure_db_with_app
 from env import load_app_env
 
 load_app_env()
@@ -21,6 +22,7 @@ app.register_blueprint(incidents_api)
 app.register_blueprint(deployment_analytics_api)
 app.register_blueprint(integrations_api)
 
+configure_db_with_app(app)
 initialize_database(app)
 
 
