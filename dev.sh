@@ -46,6 +46,25 @@ fi
 #########################################################################
 ############################# Functions #################################
 #########################################################################
+
+
+############################# Color functions ###########################
+function color_red(){
+  tput setaf 1
+}
+
+function color_green(){
+  tput setaf 2
+}
+
+function color_blue(){
+  tput setaf 4
+}
+function color_reset(){
+  tput sgr0
+}
+
+#########################################################################
 #
 function check_docker_daemon() {
     docker info >/dev/null 2>&1
@@ -69,8 +88,25 @@ function attach_to_screen() {
 }
 
 # Create a new screen session and run docker-compose watch
-function start_docker_watch(){
-    screen -S docker-compose-watch -m bash -c "echo -e \"\e[1;32mThe development environment is getting ready. Please be patient.\nUse the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable\n\e[0m\" && sleep 2 && docker-compose watch"
+function start_docker_watch() {
+  screen -S docker-compose-watch -d -m bash -c " \
+    echo -e \"$(color_green)The development environment is getting ready. Please be patient.\n\
+    Use the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable$(color_reset)\n\" \
+    && sleep 2 \
+    && docker-compose watch \
+  "
+}
+
+function start_docker_compose_detached() {
+  screen -S docker-compose-detach -m bash -c " \
+    echo -e \"$(color_green)The development environment is getting ready. Please be patient.\n\
+    Use the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable$(color_reset)\n\" ; \
+    docker-compose up -d; \
+    echo -e \"$(color_blue)\nDocker container started. $(color_reset)\" ; \
+    echo -e \"$(color_blue)\nPress Enter to continue...$(color_reset)\" ; \
+    read -r; \
+    exit 0
+  "
 }
 
 # Function to restart Docker watch
@@ -97,7 +133,7 @@ function open_browser() {
 }
 
 function follow_docker_logs(){
-    screen -S docker-logs -m bash -c "echo -e \"\e[1;32mUse the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable\n\e[0m\" && sleep 1 && docker logs dora-metrics -f"
+  screen -S docker-logs -m bash -c "echo -e \"$(color_green)Use the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable$(color_reset)\n\" && sleep 1 && docker logs dora-metrics -f"
 }
 
 function inspect_inside_container(){
@@ -127,8 +163,8 @@ function start_db_ssh_tunnel() {
     TUNNEL_ENABLED=false
   else
     TUNNEL_ENABLED=true
-    screen -S stage-ssh-tunnel -d -m bash -c "echo -e \"\e[1;32mSSH Tunnel started.\nUse the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable\n\e[0m\" && $ssh_cmd"
-    echo -e "\n\e[32mTunnel Started\n\e[0m"
+    screen -S stage-ssh-tunnel -d -m bash -c "echo -e \"$(color_green)SSH Tunnel started.\nUse the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable$(color_reset)\n\" && $ssh_cmd"
+    echo -e "\n$(color_green)Tunnel Started$(color_reset)\n"
   fi
 }
 
@@ -147,7 +183,7 @@ get_docker_interface_ip() {
 # Function to show the menu
 function show_menu() {
     if [ "${TUNNEL_ENABLED}" = false ]; then
-      echo -e "\n\e[31mSSH tunneling will not be used. Arguments not provided.\e[0m"
+      echo -e "\n$(color_red)SSH tunneling will not be used. Arguments not provided.$(color_reset)"
     fi
 
     echo -e "\nMenu Options:"
@@ -165,6 +201,7 @@ function show_menu() {
 function exit_script() {
     echo -e "\nStopping..."
     screen -S docker-compose-watch -X quit
+    screen -S docker-compose-detach -X quit
     screen -S docker-exec -X quit
     screen -S docker-logs -X quit
     screen -S apiserver-logs -X quit
@@ -190,6 +227,7 @@ start_db_ssh_tunnel
 # Display the access URLs
 show_access_info
 
+start_docker_compose_detached
 start_docker_watch
 
 # Check if the screen session was created successfully
@@ -209,7 +247,7 @@ function tunnelling_menu(){
     show_header
 
     if [ "${TUNNEL_ENABLED}" = false ]; then
-      echo -e "\n\e[31mSSH tunneling will not be used. Arguments not provided.\e[0m"
+      echo -e "\n$(color_red)SSH tunneling will not be used. Arguments not provided.$(color_reset)"
     fi
 
     echo -e "\nTunnelling Options:"
@@ -249,7 +287,7 @@ function follow_logs() {
     if screen -ls | grep -q "$screen_name"; then
         screen -S "$screen_name" -x
     else
-        screen -S "$screen_name" -m bash -c "echo -e \"\e[1;32mUse the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable\n\e[0m\" && sleep 1 && docker exec -it dora-metrics /bin/bash -c \"tail -f $log_file\""
+      screen -S "$screen_name" -m bash -c "echo -e \"$(color_green)Use the following commands -\n <Ctrl - a> + d - Go to main menu\n <Ctrl - a> + ESC - Make screen scrollable$(color_reset)\n\" && sleep 1 && docker exec -it dora-metrics /bin/bash -c \"tail -f $log_file\""
     fi
 }
 
@@ -260,7 +298,7 @@ function logger_menu(){
     show_header
 
     if  "${TUNNEL_ENABLED}" = false ]; then
-      echo -e "\n\e[31mSSH tunneling will not be used. Arguments not provided.\e[0m"
+      echo -e "\n$(color_red)SSH tunneling will not be used. Arguments not provided.$(color_reset)"
     fi
 
     echo -e "\nView logs Options:"

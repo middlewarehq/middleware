@@ -17,9 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   && python3 -m venv /opt/venv \
   && /opt/venv/bin/pip install --upgrade pip \
   && if [ "$ENVIRONMENT" = "dev" ]; then \
-  /opt/venv/bin/pip install -r dev-requirements.txt; \
-  fi \
-  && /opt/venv/bin/pip install -r requirements.txt
+  /opt/venv/bin/pip install -r dev-requirements.txt -r requirements.txt; \
+  fi
 
 # Build the frontend
 FROM node:16-alpine as frontend-build
@@ -54,6 +53,8 @@ COPY ./supervisord.conf /etc/supervisord.conf
 
 RUN chmod +x /app/init_db.sh \
   && apt-get update && apt-get install -y --no-install-recommends \
+  gcc \
+  build-essential \
   libpq-dev \
   cron \
   postgresql \
@@ -68,8 +69,6 @@ RUN chmod +x /app/init_db.sh \
   && chmod +x /usr/local/bin/dbmate \
   && echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf \
   && echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf \
-  && cd /app/frontend/web-server \
-  && yarn install \
   && mkdir -p /var/log/postgres \
   && touch /var/log/postgres/postgres.log \
   && mkdir -p /var/log/init_db \

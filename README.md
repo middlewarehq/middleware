@@ -9,16 +9,15 @@
 # Quick Start
 Open the terminal and run the following command
 ```bash
-docker run -d \
-    -p 8000:8000 \
-    -p 4000:4000 \
-    -v <path_to_postgres_data_directory>:/var/lib/postgresql/data \
-    --name dora-metrics \
-    public.ecr.aws/middlewarehq/dora-metrics:latest
+git clone https://github.com/middlewarehq/dora-metrics
+cd dora-metrics
+./install.sh
 ```
-The frontend is available on your host at http://localhost:4000. 
 
-The backend is available on your host at http://localhost:8000.
+Wait for sometime for the services to be up.\
+\
+The frontend is available on your host at http://localhost:3005. \
+The backend is available on your host at http://localhost:9696.
 
 # Project Setup Guidelines
 ### Using Docker
@@ -58,9 +57,9 @@ The backend is available on your host at http://localhost:8000.
     NEXT_PUBLIC_APP_ENVIRONMENT="development"
     INTERNAL_API_BASE_URL=http://localhost:9696
 
-    # For using db on host machine. Useful when using ssh tunnelling
-    DB_HOST=host.docker.internal
-    DB_PORT=5433
+    # For using db on host machine uncomment the following. Useful when using ssh tunnelling.
+    #DB_HOST=host.docker.internal
+    #DB_PORT=5433
     ```
     Set `ENVIRONMENT=prod` to run it in production setup.\
     Setting `DB_HOST` as `host.docker.internal` will help when you want to connect to a db instance which
@@ -74,6 +73,11 @@ The backend is available on your host at http://localhost:8000.
     Usage: ./dev.sh [-i identity_file] [-l local_port] [-r remote_host] [-p remote_port] [-u ssh_user] [-h ssh_host]
     ```
     ```bash
+    # runs without the ssh tunnel
+    ./dev.sh     
+    ```
+    ```bash
+    # runs with the ssh tunnel
     ./dev.sh  -i /path/to/private_key -l 5433 -r staging_db.rds.amazonaws.com -p 5432 -u ec2-user -h 10.3.17.192
     ```
    
