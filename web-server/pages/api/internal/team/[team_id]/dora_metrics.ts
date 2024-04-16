@@ -151,7 +151,6 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     )
   ]);
 
-  console.log('🚀 ~ endpoint.handle.GET ~ leadTimeResponse:', leadTimeResponse);
   return res.send({
     lead_time_stats: leadTimeResponse.lead_time_stats,
     lead_time_trends: leadTimeResponse.lead_time_trends,
