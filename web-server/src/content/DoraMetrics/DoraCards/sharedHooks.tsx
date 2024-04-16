@@ -216,10 +216,7 @@ export const useAvgWeeklyDeploymentFrequency = () => {
         .avg_daily_deployment_frequency || 0
   );
 
-  const interval = useSelector(
-    (s) =>
-      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current.duration
-  );
+  const interval = 'week';
 
   const metricInterval = useMemo(() => {
     return {

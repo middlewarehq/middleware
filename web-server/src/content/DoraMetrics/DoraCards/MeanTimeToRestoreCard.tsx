@@ -50,10 +50,6 @@ export const MeanTimeToRestoreCard = () => {
     useMeanTimeToRestoreProps();
 
   const { trendsSeriesMap } = useDoraMetricsGraph();
-  console.log(
-    '🚀 ~ MeanTimeToRestoreCard ~ trendsSeriesMap:',
-    head(trendsSeriesMap.meanTimeToRestoreTrends).data
-  );
   const isIncidentProviderIntegrationEnabled = true;
 
   const canShowMTRData =

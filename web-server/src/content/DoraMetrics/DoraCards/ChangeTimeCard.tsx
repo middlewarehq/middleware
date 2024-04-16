@@ -72,14 +72,12 @@ export const ChangeTimeCard = () => {
 
   const {
     reposCountWithWorkflowConfigured,
-    isActiveModeSwitchDisabled,
     isSufficientDataAvailable,
     activeModeProps,
     isAllAssignedReposHaveDeploymentsConfigured,
     allAssignedRepos,
     reposWithNoDeploymentsConfigured,
-    prevChangeTime,
-    toggleActiveModeValue
+    prevChangeTime
   } = usePropsForChangeTimeCard();
 
   const [currentLeadTimeTrendsData, prevLeadTimeTrendsData] = useSelector(
