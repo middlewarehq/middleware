@@ -538,11 +538,7 @@ export type ChangeFailureRateApiResponse = {
 
 export type ChangeFailureRateTrendsApiResponse = Record<
   DateString,
-  {
-    percentage: number;
-    failed_deployments: number;
-    total_deployments: number;
-  }
+  ChangeFailureRateApiResponse
 >;
 
 export type TeamDoraMetricsApiResponseType = {
@@ -579,6 +575,7 @@ export type TeamDoraMetricsApiResponseType = {
     previous: DeploymentFrequencyTrends;
   };
   lead_time_prs: PR[];
+  assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
 };
 
 export enum ActiveBranchMode {
