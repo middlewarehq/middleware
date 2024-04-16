@@ -14,7 +14,7 @@ import { PageLayout } from '@/types/resources';
 
 function Page() {
   const dispatch = useDispatch();
-  const { role, orgId } = useAuth();
+  const { orgId } = useAuth();
 
   useEffect(() => {
     if (!orgId) return;
