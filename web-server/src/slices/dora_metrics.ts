@@ -3,6 +3,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { omit } from 'ramda';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
+import { Row } from '@/constants/db';
 import { StateFetchConfig } from '@/types/redux';
 import {
   Deployment,
@@ -10,10 +11,7 @@ import {
   TeamDeploymentsApiResponse,
   DeploymentWithIncidents,
   IncidentsWithDeploymentResponseType,
-  RepoWithSingleWorkflow,
-  ManagerTeamsMap,
   RepoFilterConfig,
-  TeamDeploymentsConfigured,
   IncidentApiResponseType,
   ChangeTimeModes
 } from '@/types/resources';
@@ -31,10 +29,7 @@ export type State = StateFetchConfig<{
     | 'deploymentsConfiguredForAllRepos'
     | 'deploymentsConfigured'
   >;
-  allReposAssignedToTeam: RepoWithSingleWorkflow[];
-  workflowConfiguredRepos: RepoWithSingleWorkflow[];
-  deploymentsConfigured: TeamDeploymentsConfigured['deployments_configured'];
-  deploymentsConfiguredForAllRepos: TeamDeploymentsConfigured['deployments_configured_for_all_repos'];
+  allReposAssignedToTeam: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
   all_deployments: DeploymentWithIncidents[];
   resolved_incidents: IncidentsWithDeploymentResponseType[];
   team_deployments: TeamDeploymentsApiResponse;
@@ -49,9 +44,6 @@ const initialState: State = {
   activeChangeTimeMode: ChangeTimeModes.CYCLE_TIME,
   metrics_summary: null,
   allReposAssignedToTeam: [],
-  workflowConfiguredRepos: [],
-  deploymentsConfigured: false,
-  deploymentsConfiguredForAllRepos: false,
   all_deployments: [],
   resolved_incidents: [],
   team_deployments: {
@@ -96,11 +88,7 @@ export const doraMetricsSlice = createSlice({
           ],
           action.payload
         );
-        state.allReposAssignedToTeam = action.payload.allReposAssignedToTeam;
-        state.workflowConfiguredRepos = action.payload.workflowConfiguredRepos;
-        state.deploymentsConfigured = action.payload.deploymentsConfigured;
-        state.deploymentsConfiguredForAllRepos =
-          action.payload.deploymentsConfiguredForAllRepos;
+        state.allReposAssignedToTeam = action.payload.assigned_repos;
       }
     );
     addFetchCasesToReducer(
@@ -138,18 +126,20 @@ type DoraMetricsApiParamsType = {
 
 export const fetchTeamDoraMetrics = createAsyncThunk(
   'dora_metrics/fetchTeamDoraMetrics',
-  async (
-    params: DoraMetricsApiParamsType & {
-      org_id: ID;
-      manager_teams_array: ManagerTeamsMap[];
-    }
-  ) => {
+  async (params: {
+    teamId: ID;
+    orgId: ID;
+    fromDate: Date;
+    toDate: Date;
+    branches: string;
+  }) => {
     return await handleApi<TeamDoraMetricsApiResponseType>(
-      `internal/team/${params.team_id}/dora_metrics`,
+      `internal/team/${params.teamId}/dora_metrics`,
       {
         params: {
-          ...params,
-          manager_teams_array: JSON.stringify(params.manager_teams_array)
+          org_id: params.orgId,
+          from_date: params.fromDate,
+          to_date: params.toDate
         }
       }
     );
