@@ -130,36 +130,12 @@ export const TeamPopover: FC<{
             pb={1 / 2}
           >
             <FlexBox textAlign="center" centered fullWidth col gap1>
-              <Button
-                size="small"
-                color="primary"
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflow: 'hidden',
-                  width: '100%'
-                }}
-                onClick={() => setShowAllTeams(!showAllTeams)}
-              >
-                {showAllTeams ? (
-                  <Box>
-                    <Typography variant="subtitle1" fontSize="small">
-                      Currently showing all teams
-                    </Typography>
-                    <Typography variant="body1">
-                      View only your teams
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box>
-                    <Typography variant="subtitle1" fontSize="small">
-                      Currently showing only your teams
-                    </Typography>
-                    <Typography variant="body1">View all teams</Typography>
-                  </Box>
-                )}
-                {loadingTeams && <CustomLoadingButton />}
-              </Button>
+              <Box>
+                <Typography variant="subtitle1" fontSize="small">
+                  Currently showing all teams
+                </Typography>
+              </Box>
+              {loadingTeams && <CustomLoadingButton />}
             </FlexBox>
           </FlexBox>
           <Divider />
