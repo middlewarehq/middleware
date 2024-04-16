@@ -13,6 +13,7 @@ import { ascend } from 'ramda';
 import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
 
 import { Integration } from '@/constants/integrations';
+import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { deleteTeam, fetchTeams } from '@/slices/team';
@@ -97,7 +98,11 @@ const SearchFilter: FC<{
             </Button>
           </FlexBox>
           <FlexBox flex1>
-            <Button sx={{ width: '100%' }} variant="contained">
+            <Button
+              href={ROUTES.DORA_METRICS.PATH}
+              sx={{ width: '100%' }}
+              variant="contained"
+            >
               <FlexBox centered fullWidth p={2 / 3}>
                 Continue to Dora {'->'}
               </FlexBox>
