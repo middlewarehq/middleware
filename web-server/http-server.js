@@ -1,8 +1,6 @@
 // From Grag Farrow's blog
 // https://medium.com/@greg.farrow1/nextjs-https-for-a-local-dev-server-98bb441eabd7
 
-require('@newrelic/next');
-
 const { loadEnvConfig } = require('@next/env');
 const { default: axios } = require('axios');
 const { differenceInMinutes } = require('date-fns');

@@ -1,31 +1,69 @@
-version: '1'
-
 services:
-  db:
-    image: postgres:14.3-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dora
-    ports:
-      - "5436:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    command: ["postgres", "-c", "max_prepared_transactions=0"]
-
-  dbmate:
+  dora-metrics:
+    container_name: dora-metrics
     build:
-      context: ./dbmate-docker/
+      context: ./
       dockerfile: Dockerfile
-    depends_on:
-      - db
-    environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/dora?sslmode=disable
-    volumes:
-      - ./dbmate-docker/db:/db
-    working_dir: /
-    command: bash -c  "dbwait.sh && dbmate up && dbmate dump"
+      args:
+        ENVIRONMENT: ${ENVIRONMENT}
+        POSTGRES_DB_ENABLED: ${POSTGRES_DB_ENABLED:-true}
+        DB_INIT_ENABLED: ${DB_INIT_ENABLED:-true}
+        REDIS_ENABLED: ${REDIS_ENABLED:-true}
+        BACKEND_ENABLED: ${BACKEND_ENABLED:-true}
+        FRONTEND_ENABLED: ${FRONTEND_ENABLED:-true}
+        CRON_ENABLED: ${CRON_ENABLED:-true}
 
-volumes:
-  pgdata: {}
+    env_file:
+      - .env
+
+    ports:
+      - "9696:9696"
+      - "3005:3000"
+      - "5436:5432"
+      - "6380:6379"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    develop:
+      watch:
+        - action: sync
+          path: ./apiserver
+          target: /app/backend/apiserver
+          ignore: 
+            - venv
+            - __pycache__
+            - env.example
+
+        - action: rebuild
+          path: ./apiserver/requirements.txt
+
+        - action: rebuild
+          path: ./apiserver/dev-requirements.txt
+
+        - action: rebuild
+          path: ./supervisord.conf
+
+        - action: rebuild
+          path: ./init_db.sh
+
+        - action: rebuild
+          path: ./.env
+
+        - action: sync+restart
+          path: ./apiserver/.env.local
+          target: /app/backend/apiserver/.env.local
+
+        - action: sync+restart
+          path: ./apiserver/dora/sync_data.py
+          target: /app/backend/apiserver/dora/sync_data.py
+
+        - action: sync
+          path: ./web-server
+          target: /app/backend/web-server
+          ignore: 
+            - ./web-server/.vscode 
+            - ./web-server/node_modules
+
+        - action: rebuild
+          path: ./web-server/package.json

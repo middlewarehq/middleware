@@ -1,5 +1,4 @@
 import createEmotionServer from '@emotion/server/create-instance';
-import newrelic from 'newrelic';
 import Document, { Html, Head, Main, NextScript } from 'next/document';
 import * as React from 'react';
 import createEmotionCache from 'src/createEmotionCache';
@@ -96,18 +95,13 @@ MyDocument.getInitialProps = async (ctx) => {
     />
   ));
 
-  const browserTimingHeader = newrelic.getBrowserTimingHeader({
-    hasToRemoveScriptWrapper: true
-  });
-
   return {
     ...initialProps,
     // Styles fragment is rendered after the app and page rendering finish.
     styles: [
       ...React.Children.toArray(initialProps.styles),
       ...emotionStyleTags
-    ],
-    browserTimingHeader
+    ]
   };
 };
 
