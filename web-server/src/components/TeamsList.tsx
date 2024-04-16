@@ -1,12 +1,17 @@
 import { Delete, Edit, MoreVert } from '@mui/icons-material';
 import { Button, Card, Divider, Menu, MenuItem } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { ascend } from 'ramda';
-import { MouseEventHandler, useMemo } from 'react';
+import { MouseEventHandler, useCallback, useMemo } from 'react';
 
+import { Integration } from '@/constants/integrations';
+import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
-import { useSelector } from '@/store';
+import { deleteTeam, fetchTeams } from '@/slices/team';
+import { useDispatch, useSelector } from '@/store';
 import { Team } from '@/types/api/teams';
+import { depFn } from '@/utils/fn';
 
 import { FlexBox } from './FlexBox';
 import { Line } from './Text';
@@ -119,17 +124,59 @@ const TeamCard: React.FC<TeamCardProps> = ({ team }) => {
 };
 
 const MoreOptions = ({ teamId }: { teamId: ID }) => {
+  const dispatch = useDispatch();
+  const { enqueueSnackbar } = useSnackbar();
+  const { orgId } = useAuth();
   const anchorEl = useEasyState();
+  const loading = useBoolState(false);
+  const cancelMenu = useBoolState(false);
 
   const handleOpenMenu: MouseEventHandler<HTMLDivElement> = (event) => {
     anchorEl.set(event.currentTarget);
   };
 
-  const handleCloseMenu = () => {
-    anchorEl.set(null);
-  };
+  const handleCloseMenu = useCallback(() => {
+    depFn(anchorEl.set, null);
+  }, [anchorEl.set]);
 
-  const cancelMenu = useBoolState(false);
+  const handleTeamDeletion = useCallback(
+    (teamId: ID) => {
+      depFn(loading.true);
+      dispatch(
+        deleteTeam({
+          org_id: orgId,
+          team_id: teamId
+        })
+      )
+        .then((res) => {
+          if (res.meta.requestStatus === 'fulfilled') {
+            enqueueSnackbar('Team deleted successfully', {
+              variant: 'success',
+              autoHideDuration: 2000
+            });
+            dispatch(
+              fetchTeams({ org_id: orgId, provider: Integration.GITHUB })
+            );
+            handleCloseMenu();
+          } else {
+            enqueueSnackbar('Failed to delete team', {
+              variant: 'error',
+              autoHideDuration: 2000
+            });
+            console.error('Failed to delete team', res.meta);
+          }
+        })
+        .finally(loading.false);
+    },
+    [
+      dispatch,
+      enqueueSnackbar,
+      handleCloseMenu,
+      loading.false,
+      loading.true,
+      orgId
+    ]
+  );
 
   return (
     <>
@@ -190,7 +237,7 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
                     variant="contained"
                     onClick={() => {
                       // TODO: IMPLEMENT DELETE TEAM
-                      //   handleTeamDeletion(teamId);
+                      handleTeamDeletion(teamId);
                     }}
                   >
                     Delete
