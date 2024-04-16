@@ -31,7 +31,6 @@ def rollback_on_exc(func):
             LOG.error(f"Error in {func.__name__} - {str(e)}")
             raise
         finally:
-            # session.close()
-            pass
+            session.close()
 
     return wrapper
