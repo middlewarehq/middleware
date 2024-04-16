@@ -8,7 +8,6 @@ import {
   darken,
   List,
   ListItem,
-  Stack,
   useTheme
 } from '@mui/material';
 import Link from 'next/link';
@@ -18,21 +17,20 @@ import { useMemo } from 'react';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
-import { MiniSwitch } from '@/components/Shared';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import { ROUTES } from '@/constants/routes';
 import { isRoleLessThanEM } from '@/constants/useRoute';
-import { getTrendsDataFromArray } from '@/content/Cockpit/codeMetrics/shared';
 import {
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { usePropsForChangeTimeCard } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
+import { useSelector } from '@/store';
 import { ChangeTimeModes } from '@/types/resources';
-import { mergeDateValueTupleArray } from '@/utils/array';
-import { getDurationString } from '@/utils/date';
+import { merge } from '@/utils/datatype';
+import { getDurationString, getSortedDatesAsArrayFromMap } from '@/utils/date';
 
 import { getDoraLink } from '../../PullRequests/DeploymentFrequencyGraph';
 import {
@@ -76,8 +74,6 @@ export const ChangeTimeCard = () => {
     reposCountWithWorkflowConfigured,
     isActiveModeSwitchDisabled,
     isSufficientDataAvailable,
-    activeModePrevTrendsData,
-    activeModeCurrentTrendsData,
     activeModeProps,
     isAllAssignedReposHaveDeploymentsConfigured,
     allAssignedRepos,
@@ -85,6 +81,13 @@ export const ChangeTimeCard = () => {
     prevChangeTime,
     toggleActiveModeValue
   } = usePropsForChangeTimeCard();
+
+  const [currentLeadTimeTrendsData, prevLeadTimeTrendsData] = useSelector(
+    (s) => [
+      s.doraMetrics.metrics_summary?.lead_time_trends.current,
+      s.doraMetrics.metrics_summary?.lead_time_trends.previous
+    ]
+  );
 
   const isCodeProviderIntegrationEnabled = true;
 
@@ -102,27 +105,25 @@ export const ChangeTimeCard = () => {
     <CorelationInsightCardFooter />
   );
 
+  const mergedLeadTimeTrends = merge(
+    currentLeadTimeTrendsData,
+    prevLeadTimeTrendsData
+  );
+
   const series = useMemo(
     () => [
       {
         label: 'Lead Time',
         fill: 'start',
-        data: getTrendsDataFromArray(
-          mergeDateValueTupleArray(
-            activeModePrevTrendsData,
-            activeModeCurrentTrendsData
-          )
-        ).map((point) => point || 0),
+        data: getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map(
+          (key) => mergedLeadTimeTrends[key].lead_time
+        ),
         backgroundColor: activeModeProps.backgroundColor,
         borderColor: alpha(activeModeProps.backgroundColor, 0.5),
         lineTension: 0.2
       }
     ],
-    [
-      activeModeCurrentTrendsData,
-      activeModePrevTrendsData,
-      activeModeProps.backgroundColor
-    ]
+    [activeModeProps.backgroundColor, mergedLeadTimeTrends]
   );
 
   return (
@@ -350,78 +351,6 @@ export const ChangeTimeCard = () => {
                     </Line>{' '}
                     {'->'}
                   </Line>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    sx={{ zIndex: 1 }}
-                  >
-                    <Line
-                      sx={{
-                        color: darken('#FFF', 0.25),
-                        opacity: isActiveModeSwitchDisabled && 0.6
-                      }}
-                    >
-                      Cycle Time
-                    </Line>
-                    <FlexBox
-                      title={
-                        isActiveModeSwitchDisabled && (
-                          <FlexBox alignCenter gap1>
-                            {!reposCountWithWorkflowConfigured ? (
-                              <FlexBox col gap1>
-                                <Line medium>
-                                  No assigned repos have deployment workflow
-                                  configured.
-                                </Line>
-                                {!isEng && (
-                                  <Link
-                                    passHref
-                                    href={ROUTES.INTEGRATIONS.PATH}
-                                  >
-                                    <Button
-                                      size="small"
-                                      endIcon={
-                                        <ArrowForwardRounded fontSize="inherit" />
-                                      }
-                                      variant="outlined"
-                                      sx={{ width: 'fit-content' }}
-                                    >
-                                      Configure deployment workflows here
-                                    </Button>
-                                  </Link>
-                                )}
-                              </FlexBox>
-                            ) : (
-                              <>
-                                <WarningAmberRounded
-                                  sx={{ fontSize: '1.4em' }}
-                                  color="warning"
-                                />
-                                <Line>No Lead Time data available</Line>
-                              </>
-                            )}
-                          </FlexBox>
-                        )
-                      }
-                      darkTip
-                    >
-                      <MiniSwitch
-                        onChange={toggleActiveModeValue}
-                        defaultChecked={!isActiveModeSwitchDisabled}
-                        disabled={isActiveModeSwitchDisabled}
-                      />
-                    </FlexBox>
-
-                    <Line
-                      sx={{
-                        fontWeight: 'bold',
-                        opacity: isActiveModeSwitchDisabled && 0.6
-                      }}
-                    >
-                      Lead Time
-                    </Line>
-                  </Stack>
                 </FlexBox>
               </FlexBox>
             ) : isCodeProviderIntegrationEnabled ? (

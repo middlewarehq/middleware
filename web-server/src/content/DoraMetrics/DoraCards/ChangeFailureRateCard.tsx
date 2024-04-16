@@ -60,9 +60,7 @@ export const ChangeFailureRateCard = () => {
     IntegrationGroup.CODE
   );
 
-  const isIncidentProviderIntegrationEnabled = integrationSet.has(
-    IntegrationGroup.INCIDENT
-  );
+  const isIncidentProviderIntegrationEnabled = true;
 
   const canShowIncidentsData =
     isCodeProviderIntegrationEnabled && isIncidentProviderIntegrationEnabled;

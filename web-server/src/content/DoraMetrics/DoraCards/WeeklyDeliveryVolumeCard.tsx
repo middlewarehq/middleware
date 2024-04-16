@@ -19,6 +19,7 @@ import {
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
+import { merge } from '@/utils/datatype';
 import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
 import { useAvgWeeklyDeploymentFrequency } from './sharedHooks';
@@ -56,15 +57,16 @@ export const WeeklyDeliveryVolumeCard = () => {
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
   const deploymentFrequencyProps = useAvgWeeklyDeploymentFrequency();
-  const deploymentsConfigured = useSelector(
-    (s) => s.doraMetrics.deploymentsConfigured
-  );
+  const deploymentsConfigured = true;
   const isCodeProviderIntegrationEnabled = integrationSet.has(
     IntegrationGroup.CODE
   );
 
-  const weekDeliveryVolumeData = useSelector(
-    (s) => s.doraMetrics.metrics_summary?.deployment_frequency_trends || {}
+  const weekDeliveryVolumeData = useSelector((s) =>
+    merge(
+      s.doraMetrics.metrics_summary?.deployment_frequency_trends.current,
+      s.doraMetrics.metrics_summary?.deployment_frequency_trends.previous
+    )
   );
 
   const totalDeployments = useSelector(
