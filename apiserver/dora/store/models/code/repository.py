@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import Tuple
 
 import pytz
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import String, Boolean, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
-from dora.store import Base
+from dora.store import db
 from dora.store.models.code.enums import (
     CodeProvider,
     BookmarkType,
@@ -14,24 +14,24 @@ from dora.store.models.code.enums import (
 )
 
 
-class OrgRepo(Base):
+class OrgRepo(db.Model):
     __tablename__ = "OrgRepo"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = Column(UUID(as_uuid=True), ForeignKey("Organization.id"))
-    name = Column(String)
-    provider = Column(String)
-    org_name = Column(String)
-    default_branch = Column(String)
-    language = Column(String)
-    contributors = Column(JSONB)
-    idempotency_key = Column(String)
-    slug = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = db.Column(UUID(as_uuid=True), ForeignKey("Organization.id"))
+    name = db.Column(String)
+    provider = db.Column(String)
+    org_name = db.Column(String)
+    default_branch = db.Column(String)
+    language = db.Column(String)
+    contributors = db.Column(JSONB)
+    idempotency_key = db.Column(String)
+    slug = db.Column(String)
+    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    is_active = Column(Boolean, default=True)
+    is_active = db.Column(Boolean, default=True)
 
     @property
     def url(self):
@@ -51,49 +51,51 @@ class OrgRepo(Base):
         return hash(self.id)
 
 
-class TeamRepos(Base):
+class TeamRepos(db.Model):
     __tablename__ = "TeamRepos"
 
-    team_id = Column(UUID(as_uuid=True), ForeignKey("Team.id"), primary_key=True)
-    org_repo_id = Column(UUID(as_uuid=True), ForeignKey("OrgRepo.id"), primary_key=True)
-    prod_branch = Column(String)
-    prod_branches = Column(ARRAY(String))
-    deployment_type = Column(
+    team_id = db.Column(UUID(as_uuid=True), ForeignKey("Team.id"), primary_key=True)
+    org_repo_id = db.Column(
+        UUID(as_uuid=True), ForeignKey("OrgRepo.id"), primary_key=True
+    )
+    prod_branch = db.Column(String)
+    prod_branches = db.Column(ARRAY(String))
+    deployment_type = db.Column(
         ENUM(TeamReposDeploymentType), default=TeamReposDeploymentType.PR_MERGE
     )
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    is_active = db.Column(Boolean, default=True)
+    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
-class RepoSyncLogs(Base):
+class RepoSyncLogs(db.Model):
     __tablename__ = "RepoSyncLogs"
 
-    repo_id = Column(UUID(as_uuid=True), ForeignKey("OrgRepo.id"), primary_key=True)
-    synced_at = Column(DateTime(timezone=True), server_default=func.now())
+    repo_id = db.Column(UUID(as_uuid=True), ForeignKey("OrgRepo.id"), primary_key=True)
+    synced_at = db.Column(DateTime(timezone=True), server_default=func.now())
 
 
-class Bookmark(Base):
+class Bookmark(db.Model):
     __tablename__ = "Bookmark"
 
-    repo_id = Column(UUID(as_uuid=True), primary_key=True)
-    type = Column(ENUM(BookmarkType), primary_key=True)
-    bookmark = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    repo_id = db.Column(UUID(as_uuid=True), primary_key=True)
+    type = db.Column(ENUM(BookmarkType), primary_key=True)
+    bookmark = db.Column(String)
+    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
-class BookmarkMergeToDeployBroker(Base):
+class BookmarkMergeToDeployBroker(db.Model):
     __tablename__ = "BookmarkMergeToDeployBroker"
 
-    repo_id = Column(UUID(as_uuid=True), primary_key=True)
-    bookmark = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    repo_id = db.Column(UUID(as_uuid=True), primary_key=True)
+    bookmark = db.Column(String)
+    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 

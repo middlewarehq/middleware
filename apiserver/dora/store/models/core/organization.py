@@ -1,21 +1,20 @@
 from sqlalchemy import (
-    Column,
     String,
     DateTime,
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 
-from dora.store import Base
+from dora.store import db
 
 
-class Organization(Base):
+class Organization(db.Model):
     __tablename__ = "Organization"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    name = Column(String)
-    created_at = Column(DateTime(timezone=True))
-    domain = Column(String)
-    other_domains = Column(ARRAY(String))
+    id = db.Column(UUID(as_uuid=True), primary_key=True)
+    name = db.Column(String)
+    created_at = db.Column(DateTime(timezone=True))
+    domain = db.Column(String)
+    other_domains = db.Column(ARRAY(String))
 
     def __eq__(self, other):
 

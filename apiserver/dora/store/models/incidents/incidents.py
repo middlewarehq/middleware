@@ -1,5 +1,4 @@
 from sqlalchemy import (
-    Column,
     String,
     DateTime,
     ForeignKey,
@@ -8,28 +7,28 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY, JSONB, ENUM
 
-from dora.store import Base
+from dora.store import db
 from dora.store.models.incidents.enums import IncidentType, IncidentBookmarkType
 
 
-class Incident(Base):
+class Incident(db.Model):
     __tablename__ = "Incident"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    provider = Column(String)
-    key = Column(String)
-    incident_number = Column(Integer)
-    title = Column(String)
-    status = Column(String)
-    creation_date = Column(DateTime(timezone=True))
-    acknowledged_date = Column(DateTime(timezone=True))
-    resolved_date = Column(DateTime(timezone=True))
-    assigned_to = Column(String)
-    assignees = Column(ARRAY(String))
-    incident_type = Column(ENUM(IncidentType), default=IncidentType.INCIDENT)
-    meta = Column(JSONB, default={})
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    id = db.Column(UUID(as_uuid=True), primary_key=True)
+    provider = db.Column(String)
+    key = db.Column(String)
+    incident_number = db.Column(Integer)
+    title = db.Column(String)
+    status = db.Column(String)
+    creation_date = db.Column(DateTime(timezone=True))
+    acknowledged_date = db.Column(DateTime(timezone=True))
+    resolved_date = db.Column(DateTime(timezone=True))
+    assigned_to = db.Column(String)
+    assignees = db.Column(ARRAY(String))
+    incident_type = db.Column(ENUM(IncidentType), default=IncidentType.INCIDENT)
+    meta = db.Column(JSONB, default={})
+    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
@@ -37,28 +36,28 @@ class Incident(Base):
         return hash(self.id)
 
 
-class IncidentOrgIncidentServiceMap(Base):
+class IncidentOrgIncidentServiceMap(db.Model):
     __tablename__ = "IncidentOrgIncidentServiceMap"
 
-    incident_id = Column(
+    incident_id = db.Column(
         UUID(as_uuid=True), ForeignKey("Incident.id"), primary_key=True
     )
-    service_id = Column(
+    service_id = db.Column(
         UUID(as_uuid=True), ForeignKey("OrgIncidentService.id"), primary_key=True
     )
 
 
-class IncidentsBookmark(Base):
+class IncidentsBookmark(db.Model):
     __tablename__ = "IncidentsBookmark"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    provider = Column(String)
-    entity_id = Column(UUID(as_uuid=True))
-    entity_type = Column(
+    id = db.Column(UUID(as_uuid=True), primary_key=True)
+    provider = db.Column(String)
+    entity_id = db.Column(UUID(as_uuid=True))
+    entity_type = db.Column(
         ENUM(IncidentBookmarkType), default=IncidentBookmarkType.SERVICE
     )
-    bookmark = Column(DateTime(timezone=True), server_default=func.now())
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
+    bookmark = db.Column(DateTime(timezone=True), server_default=func.now())
+    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
