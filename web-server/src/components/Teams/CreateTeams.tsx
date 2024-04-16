@@ -119,7 +119,7 @@ const TeamRepos = () => {
   } = useTeamCRUD();
 
   return (
-    <FlexBox col gap={2} relative>
+    <FlexBox col gap={2}>
       <FlexBox col>
         <Line big semibold>
           Add Repositories
@@ -227,7 +227,7 @@ const ActionTray: FC<CRUDCallBacks> = ({
 const DisplayRepos = () => {
   const { selectedRepos } = useTeamCRUD();
   return (
-    <FlexBox gap2 ml={2} height={'49px'}>
+    <FlexBox gap2 ml={2} minHeight={'49px'}>
       {!!selectedRepos.length && <Divider flexItem orientation="vertical" />}
       <FlexBox flexWrap={'wrap'} gap2>
         {selectedRepos.map((repo) => (
