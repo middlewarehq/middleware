@@ -9,12 +9,13 @@ import { Integration } from '@/constants/integrations';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchTeams } from '@/slices/team';
-import { useDispatch } from '@/store';
+import { useDispatch, useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
 
 function Page() {
   const dispatch = useDispatch();
   const { orgId } = useAuth();
+  const teamsList = useSelector((state) => state.team.teams);
 
   useEffect(() => {
     if (!orgId) return;
@@ -37,8 +38,9 @@ function Page() {
       showEvenIfNoTeamSelected
       hideAllSelectors
     >
-      <TeamsList />
-      <CreateTeams />
+      <FlexBox col gap={4}>
+        {teamsList.length ? <TeamsList /> : <CreateTeams />}
+      </FlexBox>
     </PageWrapper>
   );
 }
