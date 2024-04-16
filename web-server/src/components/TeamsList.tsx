@@ -236,7 +236,6 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
                     size="small"
                     variant="contained"
                     onClick={() => {
-                      // TODO: IMPLEMENT DELETE TEAM
                       handleTeamDeletion(teamId);
                     }}
                   >
