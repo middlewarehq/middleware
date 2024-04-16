@@ -5,7 +5,7 @@ SQLAlchemy==1.4.32
 pytz==2022.1
 PyGithub==1.55
 pycryptodome==3.14.1
-aiohttp==3.8.4
+aiohttp==3.9.2
 redis==5.0.3
 python-redis-lock==4.0.0
 psycopg2==2.9.3
