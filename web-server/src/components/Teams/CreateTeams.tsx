@@ -32,10 +32,7 @@ export const TeamsCRUD = () => {
   return (
     <>
       {isPageLoading ? (
-        <FlexBox alignCenter gap2>
-          <CircularProgress size="20px" />
-          <Line>Loading...</Line>
-        </FlexBox>
+        <Loader />
       ) : (
         <FlexBox
           gap={4}
@@ -45,18 +42,33 @@ export const TeamsCRUD = () => {
           p={2}
           maxWidth={'900px'}
         >
-          <FlexBox col>
-            <Line huge semibold>
-              Create a Team
-            </Line>
-            <Line>Create a team to generate metric insights</Line>
-          </FlexBox>
+          <Heading />
           <TeamName />
           <TeamRepos />
           <ActionTray />
         </FlexBox>
       )}
     </>
+  );
+};
+
+const Loader = () => {
+  return (
+    <FlexBox alignCenter gap2>
+      <CircularProgress size="20px" />
+      <Line>Loading...</Line>
+    </FlexBox>
+  );
+};
+
+const Heading = () => {
+  return (
+    <FlexBox col>
+      <Line huge semibold>
+        Create a Team
+      </Line>
+      <Line>Create a team to generate metric insights</Line>
+    </FlexBox>
   );
 };
 
