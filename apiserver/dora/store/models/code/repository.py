@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Tuple
 
 import pytz
-from sqlalchemy import String, Boolean, DateTime, ForeignKey, func
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
 from dora.store import db
@@ -18,20 +18,20 @@ class OrgRepo(db.Model):
     __tablename__ = "OrgRepo"
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    org_id = db.Column(UUID(as_uuid=True), ForeignKey("Organization.id"))
-    name = db.Column(String)
-    provider = db.Column(String)
-    org_name = db.Column(String)
-    default_branch = db.Column(String)
-    language = db.Column(String)
+    org_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Organization.id"))
+    name = db.Column(db.String)
+    provider = db.Column(db.String)
+    org_name = db.Column(db.String)
+    default_branch = db.Column(db.String)
+    language = db.Column(db.String)
     contributors = db.Column(JSONB)
-    idempotency_key = db.Column(String)
-    slug = db.Column(String)
-    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    idempotency_key = db.Column(db.String)
+    slug = db.Column(db.String)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    is_active = db.Column(Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True)
 
     @property
     def url(self):
@@ -54,27 +54,29 @@ class OrgRepo(db.Model):
 class TeamRepos(db.Model):
     __tablename__ = "TeamRepos"
 
-    team_id = db.Column(UUID(as_uuid=True), ForeignKey("Team.id"), primary_key=True)
+    team_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Team.id"), primary_key=True)
     org_repo_id = db.Column(
-        UUID(as_uuid=True), ForeignKey("OrgRepo.id"), primary_key=True
+        UUID(as_uuid=True), db.ForeignKey("OrgRepo.id"), primary_key=True
     )
-    prod_branch = db.Column(String)
-    prod_branches = db.Column(ARRAY(String))
+    prod_branch = db.Column(db.String)
+    prod_branches = db.Column(ARRAY(db.String))
     deployment_type = db.Column(
         ENUM(TeamReposDeploymentType), default=TeamReposDeploymentType.PR_MERGE
     )
-    is_active = db.Column(Boolean, default=True)
-    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
 class RepoSyncLogs(db.Model):
     __tablename__ = "RepoSyncLogs"
 
-    repo_id = db.Column(UUID(as_uuid=True), ForeignKey("OrgRepo.id"), primary_key=True)
-    synced_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    repo_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("OrgRepo.id"), primary_key=True
+    )
+    synced_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
 
 
 class Bookmark(db.Model):
@@ -82,10 +84,10 @@ class Bookmark(db.Model):
 
     repo_id = db.Column(UUID(as_uuid=True), primary_key=True)
     type = db.Column(ENUM(BookmarkType), primary_key=True)
-    bookmark = db.Column(String)
-    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    bookmark = db.Column(db.String)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
@@ -93,10 +95,10 @@ class BookmarkMergeToDeployBroker(db.Model):
     __tablename__ = "BookmarkMergeToDeployBroker"
 
     repo_id = db.Column(UUID(as_uuid=True), primary_key=True)
-    bookmark = db.Column(String)
-    created_at = db.Column(DateTime(timezone=True), server_default=func.now())
+    bookmark = db.Column(db.String)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     @property
