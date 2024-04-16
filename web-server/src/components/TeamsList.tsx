@@ -1,8 +1,8 @@
-import { Delete, MoreVert } from '@mui/icons-material';
-import Edit from '@mui/icons-material/Edit';
+import { Delete, Edit, MoreVert } from '@mui/icons-material';
 import { Button, Card, Divider, Menu, MenuItem } from '@mui/material';
 import pluralize from 'pluralize';
-import { MouseEventHandler } from 'react';
+import { ascend } from 'ramda';
+import { MouseEventHandler, useMemo } from 'react';
 
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { useSelector } from '@/store';
@@ -21,7 +21,7 @@ export const TeamsList = () => {
   const teamsArray = useSelector((state) => state.team.teams);
 
   return (
-    <FlexBox gap={4} grid gridTemplateColumns={'1fr 1fr 1fr'}>
+    <FlexBox gap={4} grid gridTemplateColumns={'1fr 1fr '} maxWidth={'900px'}>
       {teamsArray.map((team, index) => (
         <TeamCard key={index} team={team} />
       ))}
@@ -32,64 +32,86 @@ export const TeamsList = () => {
 const TeamCard: React.FC<TeamCardProps> = ({ team }) => {
   const { name: teamName, id: teamId } = team;
   const teamReposMap = useSelector((state) => state.team.teamReposMaps);
-  const assignedReposToTeam = teamReposMap[teamId] ?? [];
+  const assignedReposToTeam = useMemo(
+    () => [...(teamReposMap[teamId] ?? [])]?.sort(ascend((item) => item.name)),
+    [teamId, teamReposMap]
+  );
   const visibleReposName = assignedReposToTeam.slice(0, VISIBLE_REPOS_COUNT);
 
-  return (
-    <FlexBox component={Card} gap2 p={2} col justifyBetween>
-      <FlexBox col gap2>
-        <FlexBox justifyBetween alignStart>
-          <Line big semibold>
-            {teamName}
-          </Line>
-          <FlexBox pointer>
-            <MoreOptions teamId={team.id} />
-          </FlexBox>
-        </FlexBox>
+  const tooltipRepos = useMemo(
+    () =>
+      assignedReposToTeam
+        .slice(VISIBLE_REPOS_COUNT)
+        .map((item) => item.name)
+        .join(', '),
+    [assignedReposToTeam]
+  );
 
-        <FlexBox gap2 alignCenter>
-          <FlexBox gap1 alignCenter>
-            <Line bigish bold sx={{ whiteSpace: 'nowrap' }}>
-              {assignedReposToTeam.length}{' '}
-              {pluralize('Repo', assignedReposToTeam.length)} Added
+  return (
+    <FlexBox component={Card} p={2} minHeight={'144px'} gap2>
+      <FlexBox fullWidth col gap2 justifyBetween>
+        <FlexBox col gap2>
+          <FlexBox justifyBetween alignStart>
+            <Line big semibold>
+              {teamName}
             </Line>
           </FlexBox>
-          {Boolean(assignedReposToTeam.length) && (
-            <>
-              <Divider orientation="vertical" flexItem />
-              <FlexBox justifyBetween alignCenter fullWidth>
-                <Line secondary>
-                  {visibleReposName.map(
-                    (r, idx) =>
-                      `${r.name} ${
-                        idx === visibleReposName.length - 1 ? '' : ', '
-                      }`
-                  )}
-                  {assignedReposToTeam.length > VISIBLE_REPOS_COUNT && (
-                    <Line info>
-                      +{assignedReposToTeam.length - VISIBLE_REPOS_COUNT} more
-                    </Line>
-                  )}
-                </Line>
-                <FlexBox title={'Edit team'} pointer ml={1 / 2}>
-                  <Edit
-                    fontSize="small"
-                    onClick={() => {
-                      // TODO: IMPLEMENT EDIT TEAM
-                      //   disableCreation();
-                      //   addPage({
-                      //     page: {
-                      //       title: `Editing team: ${team.name}`,
-                      //       ui: 'team_edit',
-                      //       props: { teamId: team.id }
-                      //     }
-                      //   });
-                    }}
-                  />
+
+          <FlexBox gap2 alignCenter minHeight={'64px'}>
+            <FlexBox gap1 alignCenter>
+              <Line bigish bold sx={{ whiteSpace: 'nowrap' }}>
+                {assignedReposToTeam.length}{' '}
+                {pluralize('Repo', assignedReposToTeam.length)} Added
+              </Line>
+            </FlexBox>
+            {Boolean(assignedReposToTeam.length) && (
+              <>
+                <Divider orientation="vertical" flexItem />
+                <FlexBox justifyBetween alignCenter fullWidth>
+                  <Line secondary>
+                    {visibleReposName.map((r) => r.name).join(', ')}{' '}
+                    {assignedReposToTeam.length > VISIBLE_REPOS_COUNT && (
+                      <FlexBox
+                        inline
+                        sx={{
+                          userSelect: 'none'
+                        }}
+                        title={
+                          <FlexBox maxWidth={'250px'}>{tooltipRepos}</FlexBox>
+                        }
+                      >
+                        <Line info>
+                          +{assignedReposToTeam.length - VISIBLE_REPOS_COUNT}{' '}
+                          more
+                        </Line>
+                      </FlexBox>
+                    )}
+                  </Line>
                 </FlexBox>
-              </FlexBox>
-            </>
-          )}
+              </>
+            )}
+          </FlexBox>
+        </FlexBox>
+      </FlexBox>
+      <FlexBox col justifyBetween height={'70px'}>
+        <FlexBox title={'Edit team'} pointer ml={1 / 2}>
+          <Edit
+            fontSize="small"
+            onClick={() => {
+              // TODO: IMPLEMENT EDIT TEAM
+              //   disableCreation();
+              //   addPage({
+              //     page: {
+              //       title: `Editing team: ${team.name}`,
+              //       ui: 'team_edit',
+              //       props: { teamId: team.id }
+              //     }
+              //   });
+            }}
+          />
+        </FlexBox>
+        <FlexBox pointer>
+          <MoreOptions teamId={team.id} />
         </FlexBox>
       </FlexBox>
     </FlexBox>
