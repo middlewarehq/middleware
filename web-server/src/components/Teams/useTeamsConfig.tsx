@@ -1,11 +1,5 @@
 import { useSnackbar } from 'notistack';
-import {
-  createContext,
-  useContext,
-  useEffect,
-  SyntheticEvent,
-  useCallback
-} from 'react';
+import { createContext, useContext, SyntheticEvent, useCallback } from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
@@ -38,6 +32,7 @@ interface TeamsCRUDContextType {
   isSaveLoading: boolean;
   unselectRepo: (id: BaseRepo['id']) => void;
   isPageLoading: boolean;
+  onDiscard: (callBack?: AnyFunction) => void;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -73,10 +68,6 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
       })
     );
   }, [dispatch, orgId]);
-
-  useEffect(() => {
-    fetchTeamsAndRepos();
-  }, [dispatch, fetchTeamsAndRepos, orgId]);
 
   // team name logic
   const teamName = useEasyState('');
@@ -182,6 +173,17 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     ]
   );
 
+  const onDiscard = useCallback(
+    (callBack?: AnyFunction) => {
+      depFn(teamName.set, '');
+      depFn(selections.set, []);
+      depFn(teamRepoError.false);
+      depFn(teamNameError.false);
+      callBack?.();
+    },
+    [selections.set, teamName.set, teamRepoError.false, teamNameError.false]
+  );
+
   const contextValue: TeamsCRUDContextType = {
     teamName: teamName.value,
     showTeamNameError: teamNameError.value,
@@ -198,7 +200,8 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     onSave,
     isSaveLoading: isSaveLoading.value,
     unselectRepo,
-    isPageLoading
+    isPageLoading,
+    onDiscard
   };
 
   return (

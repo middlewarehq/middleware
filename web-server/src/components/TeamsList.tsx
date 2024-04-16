@@ -21,6 +21,7 @@ import { Team } from '@/types/api/teams';
 import { depFn } from '@/utils/fn';
 
 import { FlexBox } from './FlexBox';
+import { CreateTeams } from './Teams/CreateTeams';
 import { Line } from './Text';
 
 type TeamCardProps = {
@@ -66,34 +67,45 @@ const SearchFilter: FC<{
   searchQuery: string;
   onChange: (value: string) => void;
 }> = ({ searchQuery, onChange }) => {
+  const showCreate = useBoolState(false);
+  const showCreateTeam = useCallback(() => {
+    depFn(showCreate.toggle);
+  }, [showCreate.toggle]);
   return (
-    <FlexBox width={'900px'} gap={4} mb={2}>
-      <FlexBox flex1>
-        <TextField
-          value={searchQuery}
-          onChange={(e) => {
-            onChange(e.target.value);
-          }}
-          fullWidth
-          placeholder="Search for teams"
-        />
-      </FlexBox>
-      <FlexBox flex1 alignCenter gap={4}>
+    <FlexBox col gap={4}>
+      <FlexBox width={'900px'} gap={4}>
         <FlexBox flex1>
-          <Button sx={{ width: '100%' }} variant="outlined">
-            <FlexBox centered gap1 fullWidth p={2 / 3}>
-              <Add fontSize="small" /> Add new team
-            </FlexBox>
-          </Button>
+          <TextField
+            value={searchQuery}
+            onChange={(e) => {
+              onChange(e.target.value);
+            }}
+            fullWidth
+            placeholder="Search for teams"
+          />
         </FlexBox>
-        <FlexBox flex1>
-          <Button sx={{ width: '100%' }} variant="contained">
-            <FlexBox centered fullWidth p={2 / 3}>
-              Continue to Dora {'->'}
-            </FlexBox>
-          </Button>
+        <FlexBox flex1 alignCenter gap={4}>
+          <FlexBox flex1>
+            <Button
+              onClick={showCreateTeam}
+              sx={{ width: '100%' }}
+              variant="outlined"
+            >
+              <FlexBox centered gap1 fullWidth p={2 / 3}>
+                <Add fontSize="small" /> Add new team
+              </FlexBox>
+            </Button>
+          </FlexBox>
+          <FlexBox flex1>
+            <Button sx={{ width: '100%' }} variant="contained">
+              <FlexBox centered fullWidth p={2 / 3}>
+                Continue to Dora {'->'}
+              </FlexBox>
+            </Button>
+          </FlexBox>
         </FlexBox>
       </FlexBox>
+      {showCreate.value && <CreateTeams onDiscard={showCreate.false} />}
     </FlexBox>
   );
 };

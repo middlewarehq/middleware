@@ -19,15 +19,20 @@ import { BaseRepo } from '@/types/resources';
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
 
-export const CreateTeams = () => {
+type CRUDCallBacks = {
+  onSave?: AnyFunction;
+  onDiscard?: AnyFunction;
+};
+
+export const CreateTeams: FC<CRUDCallBacks> = ({ onSave, onDiscard }) => {
   return (
     <TeamsCRUDProvider>
-      <TeamsCRUD />
+      <TeamsCRUD onDiscard={onDiscard} onSave={onSave} />
     </TeamsCRUDProvider>
   );
 };
 
-export const TeamsCRUD = () => {
+export const TeamsCRUD: FC<CRUDCallBacks> = ({ onSave, onDiscard }) => {
   const { isPageLoading } = useTeamCRUD();
   return (
     <>
@@ -45,7 +50,7 @@ export const TeamsCRUD = () => {
           <Heading />
           <TeamName />
           <TeamRepos />
-          <ActionTray />
+          <ActionTray onDiscard={onDiscard} onSave={onSave} />
         </FlexBox>
       )}
     </>
@@ -166,12 +171,16 @@ const TeamRepos = () => {
   );
 };
 
-const ActionTray = () => {
-  const { onSave, isSaveLoading, teamName, selectedRepos } = useTeamCRUD();
+const ActionTray: FC<CRUDCallBacks> = ({
+  onSave: onSaveCallBack,
+  onDiscard: onDiscardCallBack
+}) => {
+  const { onSave, isSaveLoading, teamName, selectedRepos, onDiscard } =
+    useTeamCRUD();
   const { enqueueSnackbar } = useSnackbar();
 
   return (
-    <FlexBox>
+    <FlexBox gap2>
       <FlexBox
         onClick={() => {
           if (!teamName) {
@@ -191,7 +200,7 @@ const ActionTray = () => {
         <Button
           disabled={isSaveLoading || !teamName || !selectedRepos.length}
           variant="contained"
-          onClick={() => onSave()}
+          onClick={() => onSave(onSaveCallBack)}
           sx={{
             minWidth: '200px',
             '&.Mui-disabled': {
@@ -202,6 +211,15 @@ const ActionTray = () => {
           {isSaveLoading ? <CircularProgress size={'18px'} /> : 'Save'}
         </Button>
       </FlexBox>
+      <Button
+        variant="outlined"
+        sx={{ minWidth: '200px' }}
+        onClick={() => {
+          onDiscard(onDiscardCallBack);
+        }}
+      >
+        Discard
+      </Button>
     </FlexBox>
   );
 };
