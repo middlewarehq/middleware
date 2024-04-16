@@ -65,14 +65,18 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
   );
-  useEffect(() => {
-    dispatch(
+  const fetchTeamsAndRepos = useCallback(() => {
+    return dispatch(
       fetchTeams({
         org_id: orgId,
         provider: Integration.GITHUB
       })
     );
   }, [dispatch, orgId]);
+
+  useEffect(() => {
+    fetchTeamsAndRepos();
+  }, [dispatch, fetchTeamsAndRepos, orgId]);
 
   // team name logic
   const teamName = useEasyState('');
@@ -160,12 +164,7 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
             variant: 'success',
             autoHideDuration: 2000
           });
-          dispatch(
-            fetchTeams({
-              org_id: orgId,
-              provider: Integration.GITHUB
-            })
-          );
+          fetchTeamsAndRepos();
           callBack?.(res);
         })
         .finally(isSaveLoading.false);
@@ -173,6 +172,7 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     [
       dispatch,
       enqueueSnackbar,
+      fetchTeamsAndRepos,
       isSaveLoading.false,
       isSaveLoading.true,
       org.name,
