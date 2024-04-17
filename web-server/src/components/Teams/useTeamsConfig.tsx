@@ -219,26 +219,29 @@ export const TeamsCRUDProvider: React.FC<{
     ]
   );
 
+  const resetErrors = useCallback(() => {
+    depFn(teamRepoError.false);
+    depFn(teamNameError.false);
+  }, [teamNameError.false, teamRepoError.false]);
+
   const onDiscard = useCallback(
     (callBack?: AnyFunction) => {
+      resetErrors();
       if (!isEditing) {
         depFn(teamName.set, '');
         depFn(selections.set, []);
-        depFn(teamRepoError.false);
-        depFn(teamNameError.false);
         return callBack?.();
       }
       depFn(teamName.set, initState.name);
       depFn(selections.set, initState.repos);
     },
     [
+      resetErrors,
       isEditing,
       teamName.set,
       initState.name,
       initState.repos,
-      selections.set,
-      teamRepoError.false,
-      teamNameError.false
+      selections.set
     ]
   );
 
