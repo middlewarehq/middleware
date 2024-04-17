@@ -1,15 +1,21 @@
 import { Add } from '@mui/icons-material';
 import { Button, Divider } from '@mui/material';
+import { useEffect } from 'react';
 import { Authenticated } from 'src/components/Authenticated';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
+import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
 import { GithubIntegrationCard } from '@/content/Dashboards/IntegrationCards';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
+import { useAuth } from '@/hooks/useAuth';
+import { useBoolState } from '@/hooks/useEasyState';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
-import { useSelector } from '@/store';
+import { fetchTeams } from '@/slices/team';
+import { useDispatch, useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
+import { depFn } from '@/utils/fn';
 
 function Integrations() {
   return (
@@ -39,8 +45,24 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
+  const { orgId } = useAuth();
   const isLinked = useSelector((s) => s.auth.org.integrations.github === true);
-  const teamCount = useSelector((s) => s.app.allTeams.length);
+  const teams = useSelector((s) => s.team.teams);
+  const dispatch = useDispatch();
+  const loading = useBoolState(false);
+
+  useEffect(() => {
+    if (!orgId) return;
+    depFn(loading.true);
+    dispatch(
+      fetchTeams({
+        org_id: orgId,
+        provider: Integration.GITHUB
+      })
+    ).finally(loading.false);
+  }, [dispatch, loading.false, loading.true, orgId]);
+
+  const teamCount = teams.length;
   return (
     <FlexBox col gap2>
       <Line white fontSize={'24px'}>
@@ -50,7 +72,7 @@ const Content = () => {
       <FlexBox>
         <GithubIntegrationCard />
       </FlexBox>
-      {isLinked && !teamCount && (
+      {isLinked && !teamCount && !loading && (
         <FlexBox mt={'56px'} col fit alignStart>
           <Line fontSize={'24px'} semibold white>
             Create team structure to see DORA
