@@ -126,4 +126,9 @@ To set up middleware locally, follow these steps:
 # Contributing guidelines
 To get started contributing to middleware check out our [CONTRIBUTING.md](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md). 
 
-We appreciate your contributions and look forward to working together to make DORA Metrics even better!
+We appreciate your contributions and look forward to working together to make Middleware even better!
+
+# Security guidelines and disclosure
+To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md). 
+
+We look forward to your part in keeping Middleware secure!
