@@ -1,13 +1,12 @@
 import { alpha, Chip } from '@mui/material';
-import { useRouter } from 'next/router';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { FlexBox } from '@/components/FlexBox';
+import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
-import { ROUTES } from '@/constants/routes';
 import {
   CardRoot,
   NoDataImg
@@ -53,10 +52,11 @@ const chartOptions = {
 } as ChartOptions;
 
 export const WeeklyDeliveryVolumeCard = () => {
-  const router = useRouter();
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
   const deploymentFrequencyProps = useAvgWeeklyDeploymentFrequency();
+
+  const { addPage } = useOverlayPage();
   const deploymentsConfigured = true;
   const isCodeProviderIntegrationEnabled = integrationSet.has(
     IntegrationGroup.CODE
@@ -212,16 +212,17 @@ export const WeeklyDeliveryVolumeCard = () => {
                         totalDeployments
                     )}
                     onClick={() => {
-                      if (!deploymentsConfigured) {
-                        return router.push(ROUTES.INTEGRATIONS.PATH);
-                      }
                       if (!deploymentFrequencyProps.count && !totalDeployments)
                         return;
-
                       track('DORA_METRICS_SEE_DETAILS_CLICKED', {
                         viewed: 'DF'
                       });
-                      return console.error('OVERLAY PENDING');
+                      addPage({
+                        page: {
+                          title: 'Deployments insights',
+                          ui: 'deployment_freq'
+                        }
+                      });
                     }}
                     color={deploymentFrequencyProps.color}
                   >

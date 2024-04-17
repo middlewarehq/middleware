@@ -33,10 +33,6 @@ import { merge } from '@/utils/datatype';
 import { getDurationString, getSortedDatesAsArrayFromMap } from '@/utils/date';
 
 import { getDoraLink } from '../../PullRequests/DeploymentFrequencyGraph';
-import {
-  CorelationInsightCardFooter,
-  UnavailableCorrelation
-} from '../CorelationInsightCardFooter';
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
@@ -91,17 +87,6 @@ export const ChangeTimeCard = () => {
 
   const showClassificationBadge =
     isSufficientDataAvailable && isCodeProviderIntegrationEnabled;
-
-  // TODO: Implement this using feature.ts
-  const isCorrelationInsightsEnabled = true;
-
-  const computedFooter = !isCodeProviderIntegrationEnabled ? (
-    <UnavailableCorrelation type="INTEGRATION" />
-  ) : !isSufficientDataAvailable ? (
-    <UnavailableCorrelation type="INSUFFICIENT_DATA" />
-  ) : (
-    <CorelationInsightCardFooter />
-  );
 
   const mergedLeadTimeTrends = merge(
     currentLeadTimeTrendsData,
@@ -269,18 +254,7 @@ export const ChangeTimeCard = () => {
             )}
           </FlexBox>
         </FlexBox>
-        <FlexBox
-          col
-          justifyBetween
-          relative
-          fullWidth
-          sx={{
-            borderBottom:
-              isCorrelationInsightsEnabled &&
-              `1px solid ${theme.colors.secondary.light}`
-          }}
-          flexGrow={1}
-        >
+        <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isSufficientDataAvailable ? (
               <Chart2
@@ -361,8 +335,6 @@ export const ChangeTimeCard = () => {
           </FlexBox>
         </FlexBox>
       </FlexBox>
-
-      {isCorrelationInsightsEnabled && computedFooter}
     </CardRoot>
   );
 };

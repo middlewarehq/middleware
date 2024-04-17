@@ -22,6 +22,7 @@ import { TeamDoraMetricsApiResponseType } from '../types/resources';
 export type State = StateFetchConfig<{
   firstLoadDone: boolean;
   activeChangeTimeMode: ChangeTimeModes;
+  deploymentPrs: PR[];
   metrics_summary: Omit<
     TeamDoraMetricsApiResponseType,
     | 'allReposAssignedToTeam'
@@ -42,6 +43,7 @@ export type State = StateFetchConfig<{
 const initialState: State = {
   firstLoadDone: false,
   activeChangeTimeMode: ChangeTimeModes.CYCLE_TIME,
+  deploymentPrs: [],
   metrics_summary: null,
   allReposAssignedToTeam: [],
   all_deployments: [],
@@ -61,6 +63,10 @@ export const doraMetricsSlice = createSlice({
   name: 'dora_metrics',
   initialState,
   reducers: {
+    resetDeployments(state: State) {
+      state.deploymentPrs = [];
+      state.team_deployments = initialState.team_deployments;
+    },
     toggleActiveModeValue(
       state: State,
       action: PayloadAction<ChangeTimeModes>
@@ -89,6 +95,7 @@ export const doraMetricsSlice = createSlice({
           action.payload
         );
         state.allReposAssignedToTeam = action.payload.assigned_repos;
+        state.summary_prs = action.payload.lead_time_prs;
       }
     );
     addFetchCasesToReducer(
@@ -112,6 +119,12 @@ export const doraMetricsSlice = createSlice({
       fetchTeamDeployments,
       'team_deployments',
       (state, action) => (state.team_deployments = action.payload)
+    );
+    addFetchCasesToReducer(
+      builder,
+      fetchDeploymentPRs,
+      'deploymentPrs',
+      (state, action) => (state.deploymentPrs = action.payload)
     );
   }
 });
@@ -177,5 +190,12 @@ export const fetchTeamDeployments = createAsyncThunk(
       `/internal/team/${params.team_id}/deployment_analytics`,
       { params }
     );
+  }
+);
+
+export const fetchDeploymentPRs = createAsyncThunk(
+  'collab/fetchDeploymentPRs',
+  async (params: { deployment_id: ID }) => {
+    return await handleApi<PR[]>(`/internal/deployments/prs`, { params });
   }
 );
