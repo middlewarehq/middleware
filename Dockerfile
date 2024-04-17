@@ -15,10 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   build-essential \
   && cd ./apiserver \
   && python3 -m venv /opt/venv \
-  && /opt/venv/bin/pip install --upgrade pip \
-  && if [ "$ENVIRONMENT" = "dev" ]; then \
-  /opt/venv/bin/pip install -r dev-requirements.txt -r requirements.txt; \
-  fi
+  && /opt/venv/bin/pip install --upgrade pip
 
 # Build the frontend
 FROM node:16-alpine as frontend-build
