@@ -1,0 +1,45 @@
+name: Build middleware docker image 
+
+on:
+  workflow_dispatch:
+    branches: ["master", "main"]
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: "ap-south-1"
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-1" 
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: list file contents
+        run: ls -Alrt 
+
+      - name: Login to Amazon ECR Public
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Build Docker image
+        run: docker build --tag middleware:latest --platform linux/amd64,linux/arm64 .
+
+      - name: Tag Docker image
+        run: docker tag middleware:latest public.ecr.aws/y4x5l0o7/middleware:latest
+
+      - name: Push Docker image to Amazon ECR
+        run: |
+          docker push public.ecr.aws/y4x5l0o7/middleware:latest
