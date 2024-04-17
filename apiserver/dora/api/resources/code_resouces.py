@@ -61,10 +61,13 @@ def get_non_paginated_pr_response(
                 "number": pr.number,
                 "title": pr.title,
                 "state": pr.state.value,
+                "first_commit_to_open": pr.first_commit_to_open,
+                "merge_to_deploy": pr.merge_to_deploy,
                 "first_response_time": pr.first_response_time,
                 "rework_time": pr.rework_time,
                 "merge_time": pr.merge_time,
                 "cycle_time": pr.cycle_time,
+                "lead_time": pr.lead_time,
                 "author": adapt_user_info(pr.author, username_user_map),
                 "reviewers": [
                     adapt_user_info(r, username_user_map) for r in (pr.reviewers or [])
