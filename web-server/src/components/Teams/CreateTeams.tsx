@@ -19,20 +19,25 @@ import { BaseRepo } from '@/types/resources';
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
 
-type CRUDCallBacks = {
+type CRUDProps = {
   onSave?: AnyFunction;
   onDiscard?: AnyFunction;
+  teamId?: ID;
 };
 
-export const CreateTeams: FC<CRUDCallBacks> = ({ onSave, onDiscard }) => {
+export const CreateEditTeams: FC<CRUDProps> = ({
+  onSave,
+  onDiscard,
+  teamId
+}) => {
   return (
-    <TeamsCRUDProvider>
-      <TeamsCRUD onDiscard={onDiscard} onSave={onSave} />
+    <TeamsCRUDProvider teamId={teamId}>
+      <TeamsCRUD teamId={teamId} onDiscard={onDiscard} onSave={onSave} />
     </TeamsCRUDProvider>
   );
 };
 
-export const TeamsCRUD: FC<CRUDCallBacks> = ({ onSave, onDiscard }) => {
+export const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
   const { isPageLoading } = useTeamCRUD();
   return (
     <>
@@ -45,7 +50,7 @@ export const TeamsCRUD: FC<CRUDCallBacks> = ({ onSave, onDiscard }) => {
           justifyBetween
           component={Card}
           p={2}
-          maxWidth={'900px'}
+          width={'900px'}
         >
           <Heading />
           <TeamName />
@@ -67,12 +72,24 @@ const Loader = () => {
 };
 
 const Heading = () => {
+  const { isEditing, editingTeam } = useTeamCRUD();
+  const heading = isEditing ? 'Edit' : 'Create';
+
   return (
     <FlexBox col>
       <Line huge semibold>
-        Create a Team
+        {heading} a Team
       </Line>
-      <Line>Create a team to generate metric insights</Line>
+      {isEditing ? (
+        <Line>
+          Currently editing{' '}
+          <Line info semibold>
+            {editingTeam.name}
+          </Line>{' '}
+        </Line>
+      ) : (
+        <Line>Create a team to generate metric insights</Line>
+      )}
     </FlexBox>
   );
 };
@@ -171,12 +188,18 @@ const TeamRepos = () => {
   );
 };
 
-const ActionTray: FC<CRUDCallBacks> = ({
+const ActionTray: FC<CRUDProps> = ({
   onSave: onSaveCallBack,
   onDiscard: onDiscardCallBack
 }) => {
-  const { onSave, isSaveLoading, teamName, selectedRepos, onDiscard } =
-    useTeamCRUD();
+  const {
+    onSave,
+    isSaveLoading,
+    teamName,
+    selectedRepos,
+    onDiscard,
+    saveDisabled
+  } = useTeamCRUD();
   const { enqueueSnackbar } = useSnackbar();
 
   return (
@@ -198,7 +221,7 @@ const ActionTray: FC<CRUDCallBacks> = ({
         }}
       >
         <Button
-          disabled={isSaveLoading || !teamName || !selectedRepos.length}
+          disabled={saveDisabled}
           variant="contained"
           onClick={() => onSave(onSaveCallBack)}
           sx={{

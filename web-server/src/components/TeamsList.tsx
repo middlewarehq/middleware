@@ -22,11 +22,13 @@ import { Team } from '@/types/api/teams';
 import { depFn } from '@/utils/fn';
 
 import { FlexBox } from './FlexBox';
-import { CreateTeams } from './Teams/CreateTeams';
+import { useOverlayPage } from './OverlayPageContext';
+import { CreateEditTeams } from './Teams/CreateTeams';
 import { Line } from './Text';
 
 type TeamCardProps = {
   team: Team;
+  onEdit: () => void;
 };
 
 const VISIBLE_REPOS_COUNT = 3;
@@ -44,11 +46,18 @@ export const TeamsList = () => {
     );
   }, [searchQuery.value, teamsArray]);
 
+  const showCreate = useBoolState(false);
+  const showCreateTeam = useCallback(() => {
+    depFn(showCreate.toggle);
+  }, [showCreate.toggle]);
+
   return (
     <>
       <SearchFilter
         searchQuery={searchQuery.value}
         onChange={searchQuery.set}
+        showCreateTeam={showCreateTeam}
+        showCreate={showCreate.value}
       />
       {!teamsArrayFiltered.length && teamsArray.length ? (
         <FlexBox fullWidth>
@@ -57,7 +66,7 @@ export const TeamsList = () => {
       ) : null}
       <FlexBox gap={4} grid gridTemplateColumns={'1fr 1fr '} maxWidth={'900px'}>
         {teamsArrayFiltered.map((team, index) => (
-          <TeamCard key={index} team={team} />
+          <TeamCard onEdit={showCreate.false} key={index} team={team} />
         ))}
       </FlexBox>
     </>
@@ -67,11 +76,9 @@ export const TeamsList = () => {
 const SearchFilter: FC<{
   searchQuery: string;
   onChange: (value: string) => void;
-}> = ({ searchQuery, onChange }) => {
-  const showCreate = useBoolState(false);
-  const showCreateTeam = useCallback(() => {
-    depFn(showCreate.toggle);
-  }, [showCreate.toggle]);
+  showCreateTeam: () => void;
+  showCreate: boolean;
+}> = ({ searchQuery, onChange, showCreateTeam, showCreate }) => {
   return (
     <FlexBox col gap={4}>
       <FlexBox width={'900px'} gap={4}>
@@ -110,12 +117,12 @@ const SearchFilter: FC<{
           </FlexBox>
         </FlexBox>
       </FlexBox>
-      {showCreate.value && <CreateTeams onDiscard={showCreate.false} />}
+      {showCreate && <CreateEditTeams onDiscard={showCreateTeam} />}
     </FlexBox>
   );
 };
 
-const TeamCard: React.FC<TeamCardProps> = ({ team }) => {
+const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
   const { name: teamName, id: teamId } = team;
   const teamReposMap = useSelector((state) => state.team.teamReposMaps);
   const assignedReposToTeam = useMemo(
@@ -180,22 +187,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team }) => {
         </FlexBox>
       </FlexBox>
       <FlexBox col justifyBetween height={'70px'}>
-        <FlexBox title={'Edit team'} pointer ml={1 / 2}>
-          <Edit
-            fontSize="small"
-            onClick={() => {
-              // TODO: IMPLEMENT EDIT TEAM
-              //   disableCreation();
-              //   addPage({
-              //     page: {
-              //       title: `Editing team: ${team.name}`,
-              //       ui: 'team_edit',
-              //       props: { teamId: team.id }
-              //     }
-              //   });
-            }}
-          />
-        </FlexBox>
+        <EditTeam teamId={teamId} onEdit={onEdit} />
         <FlexBox pointer>
           <MoreOptions teamId={team.id} />
         </FlexBox>
@@ -329,5 +321,29 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
         </MenuItem>
       </Menu>
     </>
+  );
+};
+
+const EditTeam = ({ teamId, onEdit }: { teamId: ID; onEdit: () => void }) => {
+  const { addPage, removeAll } = useOverlayPage();
+  return (
+    <FlexBox title={'Edit team'} pointer ml={1 / 2}>
+      <Edit
+        fontSize="small"
+        onClick={() => {
+          onEdit();
+          addPage({
+            page: {
+              title: 'Edit team',
+              ui: 'team_edit',
+              props: {
+                teamId,
+                onDiscard: removeAll
+              }
+            }
+          });
+        }}
+      />
+    </FlexBox>
   );
 };

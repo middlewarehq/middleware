@@ -10,5 +10,10 @@ export const overlaysImportMap = {
     import('@/components/OverlayComponents/Dummy').then((c) => ({
       default: c.Dummy
     }))
+  ),
+  team_edit: lazy(() =>
+    import('@/components/OverlayComponents/TeamEdit').then((c) => ({
+      default: c.TeamEdit
+    }))
   )
 };

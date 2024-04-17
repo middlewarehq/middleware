@@ -1,5 +1,12 @@
 import { useSnackbar } from 'notistack';
-import { createContext, useContext, SyntheticEvent, useCallback } from 'react';
+import { equals } from 'ramda';
+import {
+  createContext,
+  useContext,
+  SyntheticEvent,
+  useCallback,
+  useMemo
+} from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
@@ -33,6 +40,9 @@ interface TeamsCRUDContextType {
   unselectRepo: (id: BaseRepo['id']) => void;
   isPageLoading: boolean;
   onDiscard: (callBack?: AnyFunction) => void;
+  isEditing: boolean;
+  editingTeam: Team | null;
+  saveDisabled: boolean;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -49,7 +59,9 @@ export const useTeamCRUD = () => {
   return context;
 };
 
-export const TeamsCRUDProvider: React.FC = ({ children }) => {
+export const TeamsCRUDProvider: React.FC<{
+  teamId?: ID;
+}> = ({ children, teamId }) => {
   // team slice logic
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
@@ -69,8 +81,42 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     );
   }, [dispatch, orgId]);
 
+  // editing logic
+  const isEditing = Boolean(teamId);
+  const editingTeam = useMemo(
+    () => teams.find((t) => t.id === teamId) || null,
+    [teamId, teams]
+  );
+  const initState = useMemo(() => {
+    if (isEditing) {
+      const selectedTeam = editingTeam;
+      const selectedTeamRepos = teamReposMaps?.[teamId] || [];
+      return {
+        name: selectedTeam.name,
+        repos: selectedTeamRepos.map(
+          (item) =>
+            ({
+              id: item.idempotency_key,
+              name: item.name,
+              slug: item.slug,
+              // rest of the data doesn't matter for now
+              branch: '',
+              desc: '',
+              language: '',
+              parent: '',
+              web_url: ''
+            }) as BaseRepo
+        )
+      };
+    }
+    return {
+      name: '',
+      repos: []
+    };
+  }, [editingTeam, isEditing, teamId, teamReposMaps]);
+
   // team name logic
-  const teamName = useEasyState('');
+  const teamName = useEasyState(initState.name);
   const teamNameError = useBoolState(false);
   const raiseTeamNameError = useCallback(() => {
     if (!teamName.value) {
@@ -89,7 +135,7 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
   );
 
   // team-repo selection logic
-  const selections = useEasyState<BaseRepo[]>([]);
+  const selections = useEasyState<BaseRepo[]>(initState.repos);
   const repoOptions = orgRepos;
   const selectedRepos = selections.value;
   const teamRepoError = useBoolState();
@@ -175,14 +221,46 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
 
   const onDiscard = useCallback(
     (callBack?: AnyFunction) => {
-      depFn(teamName.set, '');
-      depFn(selections.set, []);
-      depFn(teamRepoError.false);
-      depFn(teamNameError.false);
-      callBack?.();
+      if (!isEditing) {
+        depFn(teamName.set, '');
+        depFn(selections.set, []);
+        depFn(teamRepoError.false);
+        depFn(teamNameError.false);
+        return callBack?.();
+      }
+      depFn(teamName.set, initState.name);
+      depFn(selections.set, initState.repos);
     },
-    [selections.set, teamName.set, teamRepoError.false, teamNameError.false]
+    [
+      isEditing,
+      teamName.set,
+      initState.name,
+      initState.repos,
+      selections.set,
+      teamRepoError.false,
+      teamNameError.false
+    ]
   );
+
+  const saveDisabled = useMemo(() => {
+    const baseConditions =
+      !teamName.value || !selections.value.length || isSaveLoading.value;
+    if (isEditing) {
+      return (
+        baseConditions ||
+        (teamName.value === initState.name &&
+          equals(selections.value, initState.repos))
+      );
+    }
+    return baseConditions;
+  }, [
+    initState.name,
+    initState.repos,
+    isEditing,
+    isSaveLoading.value,
+    selections.value,
+    teamName.value
+  ]);
 
   const contextValue: TeamsCRUDContextType = {
     teamName: teamName.value,
@@ -201,7 +279,10 @@ export const TeamsCRUDProvider: React.FC = ({ children }) => {
     isSaveLoading: isSaveLoading.value,
     unselectRepo,
     isPageLoading,
-    onDiscard
+    onDiscard,
+    isEditing,
+    editingTeam,
+    saveDisabled
   };
 
   return (

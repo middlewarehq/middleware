@@ -3,7 +3,7 @@ import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 import { Authenticated } from '@/components/Authenticated';
 import { FlexBox } from '@/components/FlexBox';
-import { CreateTeams } from '@/components/Teams/CreateTeams';
+import { CreateEditTeams } from '@/components/Teams/CreateTeams';
 import { TeamsList } from '@/components/TeamsList';
 import { Integration } from '@/constants/integrations';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
@@ -39,7 +39,7 @@ function Page() {
       hideAllSelectors
     >
       <FlexBox col gap={4}>
-        {teamsList.length ? <TeamsList /> : <CreateTeams />}
+        {teamsList.length ? <TeamsList /> : <CreateEditTeams />}
       </FlexBox>
     </PageWrapper>
   );
