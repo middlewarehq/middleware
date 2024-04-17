@@ -2,7 +2,7 @@ from typing import List
 
 from sqlalchemy import and_
 
-from dora.store import db
+from dora.store import db, rollback_on_exc
 from dora.store.models.incidents import (
     Incident,
     IncidentFilter,
@@ -19,17 +19,26 @@ from dora.utils.time import Interval
 
 
 class IncidentsRepoService:
+    def __init__(self):
+        self._db = db
+
+    @rollback_on_exc
     def get_org_incident_services(self, org_id: str) -> List[OrgIncidentService]:
         return (
-            db.session.query(OrgIncidentService)
+            self._db.session.query(OrgIncidentService)
             .filter(OrgIncidentService.org_id == org_id)
             .all()
         )
 
+    @rollback_on_exc
     def update_org_incident_services(self, incident_services: List[OrgIncidentService]):
-        [db.session.merge(incident_service) for incident_service in incident_services]
-        db.session.commit()
+        [
+            self._db.session.merge(incident_service)
+            for incident_service in incident_services
+        ]
+        self._db.session.commit()
 
+    @rollback_on_exc
     def get_incidents_bookmark(
         self,
         entity_id: str,
@@ -37,7 +46,7 @@ class IncidentsRepoService:
         provider: IncidentProvider,
     ) -> IncidentsBookmark:
         return (
-            db.session.query(IncidentsBookmark)
+            self._db.session.query(IncidentsBookmark)
             .filter(
                 and_(
                     IncidentsBookmark.entity_id == entity_id,
@@ -48,22 +57,25 @@ class IncidentsRepoService:
             .one_or_none()
         )
 
+    @rollback_on_exc
     def save_incidents_bookmark(self, bookmark: IncidentsBookmark):
-        db.session.merge(bookmark)
-        db.session.commit()
+        self._db.session.merge(bookmark)
+        self._db.session.commit()
 
+    @rollback_on_exc
     def save_incidents_data(
         self,
         incidents: List[Incident],
         incident_org_incident_service_map: List[IncidentOrgIncidentServiceMap],
     ):
-        [db.session.merge(incident) for incident in incidents]
+        [self._db.session.merge(incident) for incident in incidents]
         [
-            db.session.merge(incident_service_map)
+            self._db.session.merge(incident_service_map)
             for incident_service_map in incident_org_incident_service_map
         ]
-        db.session.commit()
+        self._db.session.commit()
 
+    @rollback_on_exc
     def get_resolved_team_incidents(
         self, team_id: str, interval: Interval, incident_filter: IncidentFilter = None
     ) -> List[Incident]:
@@ -78,6 +90,7 @@ class IncidentsRepoService:
 
         return query.all()
 
+    @rollback_on_exc
     def get_team_incidents(
         self, team_id: str, interval: Interval, incident_filter: IncidentFilter = None
     ) -> List[Incident]:
@@ -89,11 +102,12 @@ class IncidentsRepoService:
 
         return query.all()
 
+    @rollback_on_exc
     def get_incident_by_key_type_and_provider(
         self, key: str, incident_type: IncidentType, provider: IncidentProvider
     ) -> Incident:
         return (
-            db.session.query(Incident)
+            self._db.session.query(Incident)
             .filter(
                 and_(
                     Incident.key == key,
@@ -108,7 +122,7 @@ class IncidentsRepoService:
         self, team_id: str, incident_filter: IncidentFilter = None
     ):
         query = (
-            db.session.query(Incident)
+            self._db.session.query(Incident)
             .join(
                 IncidentOrgIncidentServiceMap,
                 Incident.id == IncidentOrgIncidentServiceMap.incident_id,
