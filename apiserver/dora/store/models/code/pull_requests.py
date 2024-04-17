@@ -1,10 +1,9 @@
 from datetime import datetime
 
-import pytz
-from sqlalchemy import Column, String, DateTime, ForeignKey, Integer, func
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 
-from dora.store import Base
+from dora.store import db
 from dora.store.models.code.enums import (
     PullRequestEventType,
     PullRequestState,
@@ -12,38 +11,38 @@ from dora.store.models.code.enums import (
 )
 
 
-class PullRequest(Base):
+class PullRequest(db.Model):
     __tablename__ = "PullRequest"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    repo_id = Column(UUID(as_uuid=True), ForeignKey("OrgRepo.id"))
-    title = Column(String)
-    url = Column(String)
-    number = Column(String)
-    author = Column(String)
-    state = Column(ENUM(PullRequestState))
-    requested_reviews = Column(ARRAY(String))
-    base_branch = Column(String)
-    head_branch = Column(String)
-    data = Column(JSONB)
-    created_at = Column(DateTime(timezone=True))
-    updated_at = Column(DateTime(timezone=True))
-    state_changed_at = Column(DateTime(timezone=True))
-    first_response_time = Column(Integer)
-    rework_time = Column(Integer)
-    merge_time = Column(Integer)
-    cycle_time = Column(Integer)
-    reviewers = Column(ARRAY(String))
-    meta = Column(JSONB)
-    provider = Column(String)
-    rework_cycles = Column(Integer, default=0)
-    first_commit_to_open = Column(Integer)
-    merge_to_deploy = Column(Integer)
-    lead_time = Column(Integer)
-    merge_commit_sha = Column(String)
-    created_in_db_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_in_db_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    id = db.Column(UUID(as_uuid=True), primary_key=True)
+    repo_id = db.Column(UUID(as_uuid=True), db.ForeignKey("OrgRepo.id"))
+    title = db.Column(db.String)
+    url = db.Column(db.String)
+    number = db.Column(db.String)
+    author = db.Column(db.String)
+    state = db.Column(ENUM(PullRequestState))
+    requested_reviews = db.Column(ARRAY(db.String))
+    base_branch = db.Column(db.String)
+    head_branch = db.Column(db.String)
+    data = db.Column(JSONB)
+    created_at = db.Column(db.DateTime(timezone=True))
+    updated_at = db.Column(db.DateTime(timezone=True))
+    state_changed_at = db.Column(db.DateTime(timezone=True))
+    first_response_time = db.Column(db.Integer)
+    rework_time = db.Column(db.Integer)
+    merge_time = db.Column(db.Integer)
+    cycle_time = db.Column(db.Integer)
+    reviewers = db.Column(ARRAY(db.String))
+    meta = db.Column(JSONB)
+    provider = db.Column(db.String)
+    rework_cycles = db.Column(db.Integer, default=0)
+    first_commit_to_open = db.Column(db.Integer)
+    merge_to_deploy = db.Column(db.Integer)
+    lead_time = db.Column(db.Integer)
+    merge_commit_sha = db.Column(db.String)
+    created_in_db_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_in_db_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     def __eq__(self, other):
@@ -80,20 +79,20 @@ class PullRequest(Base):
         return self.meta.get("user_profile", {}).get("username", "")
 
 
-class PullRequestEvent(Base):
+class PullRequestEvent(db.Model):
     __tablename__ = "PullRequestEvent"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    pull_request_id = Column(UUID(as_uuid=True), ForeignKey("PullRequest.id"))
-    type = Column(ENUM(PullRequestEventType))
-    data = Column(JSONB)
-    created_at = Column(DateTime(timezone=True))
-    idempotency_key = Column(String)
-    org_repo_id = Column(UUID(as_uuid=True), ForeignKey("OrgRepo.id"))
-    actor_username = Column(String)
-    created_in_db_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_in_db_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    id = db.Column(UUID(as_uuid=True), primary_key=True)
+    pull_request_id = db.Column(UUID(as_uuid=True), db.ForeignKey("PullRequest.id"))
+    type = db.Column(ENUM(PullRequestEventType))
+    data = db.Column(JSONB)
+    created_at = db.Column(db.DateTime(timezone=True))
+    idempotency_key = db.Column(db.String)
+    org_repo_id = db.Column(UUID(as_uuid=True), db.ForeignKey("OrgRepo.id"))
+    actor_username = db.Column(db.String)
+    created_in_db_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_in_db_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     @property
@@ -107,42 +106,42 @@ class PullRequestEvent(Base):
         return ""
 
 
-class PullRequestCommit(Base):
+class PullRequestCommit(db.Model):
     __tablename__ = "PullRequestCommit"
 
-    hash = Column(String, primary_key=True)
-    pull_request_id = Column(UUID(as_uuid=True), ForeignKey("PullRequest.id"))
-    message = Column(String)
-    url = Column(String)
-    data = Column(JSONB)
-    author = Column(String)
-    created_at = Column(DateTime(timezone=True))
-    org_repo_id = Column(UUID(as_uuid=True), ForeignKey("OrgRepo.id"))
-    created_in_db_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_in_db_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    hash = db.Column(db.String, primary_key=True)
+    pull_request_id = db.Column(UUID(as_uuid=True), db.ForeignKey("PullRequest.id"))
+    message = db.Column(db.String)
+    url = db.Column(db.String)
+    data = db.Column(JSONB)
+    author = db.Column(db.String)
+    created_at = db.Column(db.DateTime(timezone=True))
+    org_repo_id = db.Column(UUID(as_uuid=True), db.ForeignKey("OrgRepo.id"))
+    created_in_db_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_in_db_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
-class PullRequestRevertPRMapping(Base):
+class PullRequestRevertPRMapping(db.Model):
     __tablename__ = "PullRequestRevertPRMapping"
 
-    pr_id = Column(
+    pr_id = db.Column(
         UUID(as_uuid=True),
-        ForeignKey("PullRequest.id"),
+        db.ForeignKey("PullRequest.id"),
         primary_key=True,
         nullable=False,
     )
-    actor_type = Column(
+    actor_type = db.Column(
         ENUM(PullRequestRevertPRMappingActorType), primary_key=True, nullable=False
     )
-    actor = Column(UUID(as_uuid=True), ForeignKey("Users.id"))
-    reverted_pr = Column(
-        UUID(as_uuid=True), ForeignKey("PullRequest.id"), nullable=False
+    actor = db.Column(UUID(as_uuid=True), db.ForeignKey("Users.id"))
+    reverted_pr = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("PullRequest.id"), nullable=False
     )
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     def __hash__(self):

@@ -1,47 +1,47 @@
 from sqlalchemy import (
-    Column,
-    String,
-    DateTime,
-    ForeignKey,
     func,
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY, JSONB
 
-from dora.store import Base
+from dora.store import db
 from dora.store.models.integrations import UserIdentityProvider
 
 
-class Integration(Base):
+class Integration(db.Model):
     __tablename__ = "Integration"
 
-    org_id = Column(UUID(as_uuid=True), ForeignKey("Organization.id"), primary_key=True)
-    name = Column(String, primary_key=True)
-    generated_by = Column(UUID(as_uuid=True), ForeignKey("Users.id"), nullable=True)
-    access_token_enc_chunks = Column(ARRAY(String))
-    refresh_token_enc_chunks = Column(ARRAY(String))
-    provider_meta = Column(JSONB)
-    scopes = Column(ARRAY(String))
-    access_token_valid_till = Column(DateTime(timezone=True))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    org_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("Organization.id"), primary_key=True
+    )
+    name = db.Column(db.String, primary_key=True)
+    generated_by = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("Users.id"), nullable=True
+    )
+    access_token_enc_chunks = db.Column(ARRAY(db.String))
+    refresh_token_enc_chunks = db.Column(ARRAY(db.String))
+    provider_meta = db.Column(JSONB)
+    scopes = db.Column(ARRAY(db.String))
+    access_token_valid_till = db.Column(db.DateTime(timezone=True))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
-class UserIdentity(Base):
+class UserIdentity(db.Model):
     __tablename__ = "UserIdentity"
 
-    user_id = Column(UUID(as_uuid=True), primary_key=True)
-    provider = Column(String, primary_key=True)
-    token = Column(String)
-    username = Column(String)
-    refresh_token = Column(String)
-    org_id = Column(UUID(as_uuid=True), ForeignKey("Organization.id"))
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    user_id = db.Column(UUID(as_uuid=True), primary_key=True)
+    provider = db.Column(db.String, primary_key=True)
+    token = db.Column(db.String)
+    username = db.Column(db.String)
+    refresh_token = db.Column(db.String)
+    org_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Organization.id"))
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    meta = Column(JSONB)
+    meta = db.Column(JSONB)
 
     @property
     def avatar_url(self):

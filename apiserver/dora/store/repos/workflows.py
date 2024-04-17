@@ -4,7 +4,7 @@ from typing import List, Tuple
 from sqlalchemy.orm import defer
 from sqlalchemy import and_
 
-from dora.store import session, rollback_on_exc
+from dora.store import db
 from dora.store.models.code.workflows.enums import (
     RepoWorkflowRunsStatus,
     RepoWorkflowType,
@@ -20,13 +20,12 @@ from dora.utils.time import Interval
 
 
 class WorkflowRepoService:
-    @rollback_on_exc
     def get_active_repo_workflows_by_repo_ids_and_providers(
         self, repo_ids: List[str], providers: List[RepoWorkflowProviders]
     ) -> List[RepoWorkflow]:
 
         return (
-            session.query(RepoWorkflow)
+            db.session.query(RepoWorkflow)
             .options(defer(RepoWorkflow.meta))
             .filter(
                 RepoWorkflow.org_repo_id.in_(repo_ids),
@@ -36,12 +35,11 @@ class WorkflowRepoService:
             .all()
         )
 
-    @rollback_on_exc
     def get_repo_workflow_run_by_provider_workflow_run_id(
         self, repo_workflow_id: str, provider_workflow_run_id: str
     ) -> RepoWorkflowRuns:
         return (
-            session.query(RepoWorkflowRuns)
+            db.session.query(RepoWorkflowRuns)
             .filter(
                 RepoWorkflowRuns.repo_workflow_id == repo_workflow_id,
                 RepoWorkflowRuns.provider_workflow_run_id == provider_workflow_run_id,
@@ -49,32 +47,31 @@ class WorkflowRepoService:
             .one_or_none()
         )
 
-    @rollback_on_exc
     def save_repo_workflow_runs(self, repo_workflow_runs: List[RepoWorkflowRuns]):
-        [session.merge(repo_workflow_run) for repo_workflow_run in repo_workflow_runs]
-        session.commit()
+        [
+            db.session.merge(repo_workflow_run)
+            for repo_workflow_run in repo_workflow_runs
+        ]
+        db.session.commit()
 
-    @rollback_on_exc
     def get_repo_workflow_runs_bookmark(
         self, repo_workflow_id: str
     ) -> RepoWorkflowRunsBookmark:
         return (
-            session.query(RepoWorkflowRunsBookmark)
+            db.session.query(RepoWorkflowRunsBookmark)
             .filter(RepoWorkflowRunsBookmark.repo_workflow_id == repo_workflow_id)
             .one_or_none()
         )
 
-    @rollback_on_exc
     def update_repo_workflow_runs_bookmark(self, bookmark: RepoWorkflowRunsBookmark):
-        session.merge(bookmark)
-        session.commit()
+        db.session.merge(bookmark)
+        db.session.commit()
 
-    @rollback_on_exc
     def get_repo_workflow_by_repo_ids(
         self, repo_ids: List[str], type: RepoWorkflowType
     ) -> List[RepoWorkflow]:
         return (
-            session.query(RepoWorkflow)
+            db.session.query(RepoWorkflow)
             .options(defer(RepoWorkflow.meta))
             .filter(
                 and_(
@@ -86,10 +83,9 @@ class WorkflowRepoService:
             .all()
         )
 
-    @rollback_on_exc
     def get_repo_workflows_by_repo_id(self, repo_id: str) -> List[RepoWorkflow]:
         return (
-            session.query(RepoWorkflow)
+            db.session.query(RepoWorkflow)
             .options(defer(RepoWorkflow.meta))
             .filter(
                 RepoWorkflow.org_repo_id == repo_id,
@@ -98,12 +94,11 @@ class WorkflowRepoService:
             .all()
         )
 
-    @rollback_on_exc
     def get_successful_repo_workflows_runs_by_repo_ids(
         self, repo_ids: List[str], interval: Interval, workflow_filter: WorkflowFilter
     ) -> List[Tuple[RepoWorkflow, RepoWorkflowRuns]]:
         query = (
-            session.query(RepoWorkflow, RepoWorkflowRuns)
+            db.session.query(RepoWorkflow, RepoWorkflowRuns)
             .options(defer(RepoWorkflow.meta), defer(RepoWorkflowRuns.meta))
             .join(
                 RepoWorkflowRuns, RepoWorkflow.id == RepoWorkflowRuns.repo_workflow_id
@@ -122,7 +117,6 @@ class WorkflowRepoService:
 
         return query.all()
 
-    @rollback_on_exc
     def get_repos_workflow_runs_by_repo_ids(
         self,
         repo_ids: List[str],
@@ -130,7 +124,7 @@ class WorkflowRepoService:
         workflow_filter: WorkflowFilter = None,
     ) -> List[Tuple[RepoWorkflow, RepoWorkflowRuns]]:
         query = (
-            session.query(RepoWorkflow, RepoWorkflowRuns)
+            db.session.query(RepoWorkflow, RepoWorkflowRuns)
             .options(defer(RepoWorkflow.meta), defer(RepoWorkflowRuns.meta))
             .join(
                 RepoWorkflowRuns, RepoWorkflow.id == RepoWorkflowRuns.repo_workflow_id
@@ -147,24 +141,22 @@ class WorkflowRepoService:
 
         return query.all()
 
-    @rollback_on_exc
     def get_repo_workflow_run_by_id(
         self, repo_workflow_run_id: str
     ) -> Tuple[RepoWorkflow, RepoWorkflowRuns]:
         return (
-            session.query(RepoWorkflow, RepoWorkflowRuns)
+            db.session.query(RepoWorkflow, RepoWorkflowRuns)
             .options(defer(RepoWorkflow.meta), defer(RepoWorkflowRuns.meta))
             .join(RepoWorkflow, RepoWorkflow.id == RepoWorkflowRuns.repo_workflow_id)
             .filter(RepoWorkflowRuns.id == repo_workflow_run_id)
             .one_or_none()
         )
 
-    @rollback_on_exc
     def get_previous_workflow_run(
         self, workflow_run: RepoWorkflowRuns
     ) -> Tuple[RepoWorkflow, RepoWorkflowRuns]:
         return (
-            session.query(RepoWorkflow, RepoWorkflowRuns)
+            db.session.query(RepoWorkflow, RepoWorkflowRuns)
             .options(defer(RepoWorkflow.meta), defer(RepoWorkflowRuns.meta))
             .join(RepoWorkflow, RepoWorkflow.id == RepoWorkflowRuns.repo_workflow_id)
             .filter(
@@ -176,12 +168,11 @@ class WorkflowRepoService:
             .first()
         )
 
-    @rollback_on_exc
     def get_repo_workflow_runs_conducted_after_time(
         self, repo_id: str, from_time: datetime = None, limit_value: int = 500
     ):
         query = (
-            session.query(RepoWorkflowRuns)
+            db.session.query(RepoWorkflowRuns)
             .options(defer(RepoWorkflowRuns.meta))
             .join(RepoWorkflow, RepoWorkflow.id == RepoWorkflowRuns.repo_workflow_id)
             .filter(

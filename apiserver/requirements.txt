@@ -11,3 +11,4 @@ python-redis-lock==4.0.0
 psycopg2==2.9.3
 python-dotenv==1.0.1
 gunicorn==21.0.1
+Flask-SQLAlchemy==3.1.1

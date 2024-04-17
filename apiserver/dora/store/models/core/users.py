@@ -1,26 +1,21 @@
 from sqlalchemy import (
-    Column,
-    String,
-    DateTime,
-    ForeignKey,
     func,
-    Boolean,
 )
 from sqlalchemy.dialects.postgresql import UUID
 
-from dora.store import Base
+from dora.store import db
 
 
-class Users(Base):
+class Users(db.Model):
     __tablename__ = "Users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    org_id = Column(UUID(as_uuid=True), ForeignKey("Organization.id"))
-    name = Column(String)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    id = db.Column(UUID(as_uuid=True), primary_key=True)
+    org_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Organization.id"))
+    name = db.Column(db.String)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    primary_email = Column(String)
-    is_deleted = Column(Boolean, default=False)
-    avatar_url = Column(String)
+    primary_email = db.Column(db.String)
+    is_deleted = db.Column(db.Boolean, default=False)
+    avatar_url = db.Column(db.String)
