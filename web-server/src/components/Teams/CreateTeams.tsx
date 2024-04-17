@@ -23,21 +23,32 @@ type CRUDProps = {
   onSave?: AnyFunction;
   onDiscard?: AnyFunction;
   teamId?: ID;
+  hideCardComponents?: boolean;
 };
 
 export const CreateEditTeams: FC<CRUDProps> = ({
   onSave,
   onDiscard,
-  teamId
+  teamId,
+  hideCardComponents
 }) => {
   return (
     <TeamsCRUDProvider teamId={teamId}>
-      <TeamsCRUD teamId={teamId} onDiscard={onDiscard} onSave={onSave} />
+      <TeamsCRUD
+        hideCardComponents={hideCardComponents}
+        teamId={teamId}
+        onDiscard={onDiscard}
+        onSave={onSave}
+      />
     </TeamsCRUDProvider>
   );
 };
 
-export const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
+const TeamsCRUD: FC<CRUDProps> = ({
+  onSave,
+  onDiscard,
+  hideCardComponents
+}) => {
   const { isPageLoading } = useTeamCRUD();
   return (
     <>
@@ -48,13 +59,13 @@ export const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
           gap={4}
           col
           justifyBetween
-          component={Card}
+          component={!hideCardComponents && Card}
           p={2}
           width={'900px'}
         >
           <Heading />
           <TeamName />
-          <TeamRepos />
+          <TeamRepos hideCardComponents={hideCardComponents} />
           <ActionTray onDiscard={onDiscard} onSave={onSave} />
         </FlexBox>
       )}
@@ -73,12 +84,12 @@ const Loader = () => {
 
 const Heading = () => {
   const { isEditing, editingTeam } = useTeamCRUD();
-  const heading = isEditing ? 'Edit' : 'Create';
+  const heading = isEditing ? 'Edit a team' : 'Create a team';
 
   return (
     <FlexBox col>
       <Line huge semibold>
-        {heading} a Team
+        {heading}
       </Line>
       {isEditing ? (
         <Line>
@@ -126,7 +137,9 @@ const TeamName = () => {
   );
 };
 
-const TeamRepos = () => {
+const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
+  hideCardComponents
+}) => {
   const {
     repoOptions,
     teamRepoError,
@@ -182,7 +195,7 @@ const TeamRepos = () => {
           )}
           renderTags={() => null}
         />
-        <DisplayRepos />
+        <DisplayRepos hideCardComponents={hideCardComponents} />
       </FlexBox>
     </FlexBox>
   );
@@ -247,24 +260,42 @@ const ActionTray: FC<CRUDProps> = ({
   );
 };
 
-const DisplayRepos = () => {
+const DisplayRepos: FC<{ hideCardComponents?: boolean }> = ({
+  hideCardComponents
+}) => {
   const { selectedRepos } = useTeamCRUD();
   return (
-    <FlexBox gap2 ml={2} minHeight={'49px'}>
+    <FlexBox gap2 ml={2} minHeight={hideCardComponents ? '54px' : '49px'}>
       {!!selectedRepos.length && <Divider flexItem orientation="vertical" />}
       <FlexBox flexWrap={'wrap'} gap2>
         {selectedRepos.map((repo) => (
-          <RepoItem repo={repo} key={repo.id} />
+          <RepoItem
+            hideCardComponents={hideCardComponents}
+            repo={repo}
+            key={repo.id}
+          />
         ))}
       </FlexBox>
     </FlexBox>
   );
 };
 
-const RepoItem: FC<{ repo: BaseRepo }> = ({ repo }) => {
+const RepoItem: FC<{ repo: BaseRepo; hideCardComponents?: boolean }> = ({
+  repo,
+  hideCardComponents
+}) => {
   const { unselectRepo } = useTeamCRUD();
   return (
-    <FlexBox height={'49px'} component={Card} gap={2} alignCenter px={2}>
+    <FlexBox
+      height={hideCardComponents ? '54px' : '49px'}
+      component={!hideCardComponents && Card}
+      border={hideCardComponents && '1px solid'}
+      borderColor={hideCardComponents && '#353552'}
+      borderRadius={hideCardComponents && '10px'}
+      gap={2}
+      alignCenter
+      px={2}
+    >
       {repo.name}{' '}
       <FlexBox
         pointer
