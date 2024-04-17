@@ -22,6 +22,7 @@ function Page() {
       }
       pageTitle="DORA metrics"
       isLoading={isLoading}
+      teamDateSelectorMode="single"
     >
       <DoraMetricsBody />
     </PageWrapper>

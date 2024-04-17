@@ -110,6 +110,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
     () => payload?.teams || ([] as Team[]),
     [payload?.teams]
   );
+
   const usersMap = useMemo(
     () => payload?.users || ([] as unknown as FetchTeamsResponse['users']),
     [payload?.users]
@@ -131,9 +132,11 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   const teamsLabel = teams.length
     ? !isSingleMode
       ? `${teams.length} ${pluralize('team', teams.length)} selected`
-      : `${teams[0]?.name} (${teams[0]?.member_ids.length} ${pluralize(
-          'member',
-          teams[0]?.member_ids.length
+      : `${teams[0]?.name} (${
+          teamReposProdBranchMap[teams[0]?.id]?.length || 0
+        } ${pluralize(
+          'repo',
+          teamReposProdBranchMap[teams[0]?.id]?.length || 0
         )})`
     : `Select ${!isSingleMode ? plural('Team') : 'Team'}`;
 

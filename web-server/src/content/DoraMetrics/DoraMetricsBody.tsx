@@ -50,29 +50,26 @@ export const DoraMetricsBody = () => {
       !s.doraMetrics.metrics_summary?.change_failure_rate_stats.current
         .change_failure_rate &&
       !s.doraMetrics.metrics_summary?.mean_time_to_restore_stats.current
-        .time_to_restore_average &&
-      !s.doraMetrics.metrics_summary?.lead_time_stats.current_average &&
+        .incident_count &&
+      !s.doraMetrics.metrics_summary?.lead_time_stats.current.lead_time &&
       !s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
-        .avg_deployment_frequency
+        .avg_daily_deployment_frequency
   );
 
   useEffect(() => {
     if (!singleTeamId) return;
     dispatch(
       fetchTeamDoraMetrics({
-        org_id: orgId,
-        team_id: singleTeamId,
-        from_date: dates.start,
-        to_date: dates.end,
+        orgId,
+        teamId: singleTeamId,
+        fromDate: dates.start,
+        toDate: dates.end,
         branches:
           activeBranchMode === ActiveBranchMode.PROD
             ? null
             : activeBranchMode === ActiveBranchMode.ALL
             ? '^'
-            : branches,
-        manager_teams_array: [
-          { team_ids: [singleTeamId], manager_id: team?.manager_id || null }
-        ]
+            : branches
       })
     );
   }, [

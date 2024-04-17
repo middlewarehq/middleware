@@ -11,9 +11,7 @@ import {
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import { useAuth } from '@/hooks/useAuth';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
-import { IntegrationGroup } from '@/types/resources';
 import { getDurationString } from '@/utils/date';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
@@ -48,13 +46,11 @@ const chartOptions = {
 } as ChartOptions;
 
 export const MeanTimeToRestoreCard = () => {
-  const { integrationSet } = useAuth();
   const { isNoDataAvailable, ...meanTimeToRestoreProps } =
     useMeanTimeToRestoreProps();
+
   const { trendsSeriesMap } = useDoraMetricsGraph();
-  const isIncidentProviderIntegrationEnabled = integrationSet.has(
-    IntegrationGroup.INCIDENT
-  );
+  const isIncidentProviderIntegrationEnabled = true;
 
   const canShowMTRData =
     !isNoDataAvailable && isIncidentProviderIntegrationEnabled;

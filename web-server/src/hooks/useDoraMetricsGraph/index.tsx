@@ -1,10 +1,9 @@
 import { lighten, rgbToHex } from '@mui/material';
 import { useMemo } from 'react';
 
-import { getTrendsDataFromArray } from '@/content/Cockpit/codeMetrics/shared';
 import { useSelector } from '@/store';
 import { brandColors } from '@/theme/schemes/theme';
-import { mergeDateValueTupleArray } from '@/utils/array';
+import { merge } from '@/utils/datatype';
 import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
 export const useDoraMetricsGraph = () => {
@@ -12,86 +11,83 @@ export const useDoraMetricsGraph = () => {
     (s) => s.doraMetrics.metrics_summary?.lead_time_trends
   );
 
-  const meanTimeToRestoreTrends = useSelector(
-    (s) => s.doraMetrics.metrics_summary?.mean_time_to_restore_trends
-  );
-  const changeFailureRateTrends = useSelector(
-    (s) => s.doraMetrics.metrics_summary?.change_failure_rate_trends
-  );
+  const meanTimeToRestoreTrends = useSelector((s) => ({
+    ...s.doraMetrics.metrics_summary?.mean_time_to_restore_trends.current,
+    ...s.doraMetrics.metrics_summary?.mean_time_to_restore_trends.previous
+  }));
+
+  const changeFailureRateTrends = useSelector((s) => ({
+    ...s.doraMetrics.metrics_summary?.change_failure_rate_trends.current,
+    ...s.doraMetrics.metrics_summary?.change_failure_rate_trends.previous
+  }));
 
   const activeTrends = leadTimeTrends;
+  const mergedLeadTimeTrends = merge(
+    leadTimeTrends?.current,
+    leadTimeTrends?.previous
+  );
 
   if (!activeTrends) return { trendsSeriesMap: null, yAxisLabels: [] };
 
   const yAxisLabels = useMemo(() => {
-    const sprintLabels =
-      mergeDateValueTupleArray(
-        activeTrends.previous?.breakdown.first_response_time,
-        activeTrends.current?.breakdown.first_response_time
-      ).map((s) => s[0]) || [];
-    return sprintLabels;
+    return getSortedDatesAsArrayFromMap({
+      ...activeTrends.previous,
+      ...activeTrends.current
+    });
   }, [activeTrends]);
 
   const firstCommitToOpenTrendsData = useMemo(
     () =>
-      getTrendsDataFromArray(
-        mergeDateValueTupleArray(
-          leadTimeTrends.previous?.breakdown.first_commit_to_open,
-          leadTimeTrends.current?.breakdown.first_commit_to_open
-        )
-      ),
-    [leadTimeTrends]
+      getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map((key) => ({
+        x: key,
+        y: mergedLeadTimeTrends[key].first_commit_to_open ?? 0
+      })),
+    [mergedLeadTimeTrends]
   );
 
   const firstResponseTimeTrendsData = useMemo(
     () =>
-      getTrendsDataFromArray(
-        mergeDateValueTupleArray(
-          activeTrends.previous?.breakdown.first_response_time,
-          activeTrends.current?.breakdown.first_response_time
-        )
-      ),
-    [activeTrends]
+      getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map((key) => ({
+        x: key,
+        y: mergedLeadTimeTrends[key].first_response_time ?? 0
+      })),
+    [mergedLeadTimeTrends]
   );
 
   const reworkTimeTrendsData = useMemo(
     () =>
-      getTrendsDataFromArray(
-        mergeDateValueTupleArray(
-          activeTrends.previous?.breakdown.rework_time,
-          activeTrends.current?.breakdown.rework_time
-        )
-      ),
-    [activeTrends]
+      getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map((key) => ({
+        x: key,
+        y: mergedLeadTimeTrends[key].rework_time ?? 0
+      })),
+    [mergedLeadTimeTrends]
   );
 
   const mergeTimeTrendsData = useMemo(
     () =>
-      getTrendsDataFromArray(
-        mergeDateValueTupleArray(
-          activeTrends.previous?.breakdown.merge_time,
-          activeTrends.current?.breakdown.merge_time
-        )
-      ),
-    [activeTrends]
+      getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map((key) => ({
+        x: key,
+        y: mergedLeadTimeTrends[key].merge_time ?? 0
+      })),
+    [mergedLeadTimeTrends]
   );
 
   const deployTimeTrendsData = useMemo(
     () =>
-      getTrendsDataFromArray(
-        mergeDateValueTupleArray(
-          leadTimeTrends.previous?.breakdown.merge_time,
-          leadTimeTrends.current?.breakdown.merge_time
-        )
-      ),
-    [leadTimeTrends]
+      getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map((key) => ({
+        x: key,
+        y: mergedLeadTimeTrends[key].merge_to_deploy ?? 0
+      })),
+    [mergedLeadTimeTrends]
   );
 
   const changeFailureRateTrendsData = useMemo(
     () =>
       getSortedDatesAsArrayFromMap(changeFailureRateTrends).map((key) => ({
         x: key,
-        y: Number(changeFailureRateTrends[key].percentage.toFixed(2) ?? 0)
+        y: Number(
+          changeFailureRateTrends[key].change_failure_rate?.toFixed(2) ?? 0
+        )
       })),
     [changeFailureRateTrends]
   );
@@ -100,7 +96,7 @@ export const useDoraMetricsGraph = () => {
     () =>
       getSortedDatesAsArrayFromMap(meanTimeToRestoreTrends).map((key) => ({
         x: key,
-        y: meanTimeToRestoreTrends[key] ?? 0
+        y: meanTimeToRestoreTrends[key].mean_time_to_recovery ?? 0
       })),
     [meanTimeToRestoreTrends]
   );
@@ -147,28 +143,17 @@ export const useDoraMetricsGraph = () => {
           y: point || 0
         }))
       },
-      totalCycleTimeTrends: {
-        id: `Total Cycle Time`,
-        color: rgbToHex(lighten(brandColors.ticketState.todo, 0.5)),
-        data: firstResponseTimeTrendsData.map((point, index) => ({
-          x: yAxisLabels[index],
-          y:
-            (point || 0) +
-            (reworkTimeTrendsData[index] || 0) +
-            (mergeTimeTrendsData[index] || 0)
-        }))
-      },
       totalLeadTimeTrends: {
         id: `Total Lead Time`,
         color: rgbToHex(lighten(brandColors.ticketState.todo, 0.5)),
         data: firstCommitToOpenTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
           y:
-            (point || 0) +
-            (firstResponseTimeTrendsData[index] || 0) +
-            (reworkTimeTrendsData[index] || 0) +
-            (mergeTimeTrendsData[index] || 0) +
-            (deployTimeTrendsData[index] || 0)
+            (point?.y || 0) +
+            (firstResponseTimeTrendsData[index]?.y || 0) +
+            (reworkTimeTrendsData[index]?.y || 0) +
+            (mergeTimeTrendsData[index]?.y || 0) +
+            (deployTimeTrendsData[index]?.y || 0)
         }))
       },
       meanTimeToRestoreTrends: [

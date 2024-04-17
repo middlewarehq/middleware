@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 
+import { Row } from '@/constants/db';
 import {
   ChangeTimeThresholds,
   updatedDeploymentFrequencyThresholds
@@ -20,18 +21,18 @@ export const useMeanTimeToRestoreProps = () => {
   const meanTimeToRestore = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.mean_time_to_restore_stats.current
-        .time_to_restore_average
+        .mean_time_to_recovery
   );
 
   const currAvgTimeToRestore = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.mean_time_to_restore_stats.current
-        .time_to_restore_average || 0
+        .mean_time_to_recovery || 0
   );
   const prevAvgTimeToRestore = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.mean_time_to_restore_stats.previous
-        .time_to_restore_average || 0
+        .mean_time_to_recovery || 0
   );
 
   const incidents = useSelector(
@@ -78,7 +79,7 @@ export const useMeanTimeToRestoreProps = () => {
 
 export const useLeadTimeProps = () => {
   const leadTime = useSelector(
-    (s) => s.doraMetrics.metrics_summary?.lead_time_stats.current_average
+    (s) => s.doraMetrics.metrics_summary?.lead_time_stats.current.lead_time
   );
 
   return useMemo(() => {
@@ -107,9 +108,7 @@ export const useLeadTimeProps = () => {
 export const useDoraStats = () => {
   const { integrationSet } = useAuth();
   const leadTimeProps = useLeadTimeProps();
-  const depsConfigured = useSelector(
-    (s) => s.doraMetrics.deploymentsConfigured
-  );
+  const depsConfigured = true;
   const { count: df } = useAvgWeeklyDeploymentFrequency();
   const { count: cfr } = useChangeFailureRateProps();
   const { count: mttr, isNoDataAvailable } = useMeanTimeToRestoreProps();
@@ -136,12 +135,10 @@ export const usePropsForChangeTimeCard = () => {
   const allAssignedRepos = useSelector(
     (s) => s.doraMetrics.allReposAssignedToTeam
   );
-  const reposWithWorkflowConfigured = useSelector(
-    (s) => s.doraMetrics.workflowConfiguredRepos
-  );
 
   const prevLeadTime = useSelector(
-    (s) => s.doraMetrics.metrics_summary?.lead_time_stats.previous_average || 0
+    (s) =>
+      s.doraMetrics.metrics_summary?.lead_time_stats.previous.lead_time || 0
   );
 
   const [currLeadTimeTrendsData, prevLeadTimeTrendsData] = useSelector((s) => [
@@ -171,26 +168,17 @@ export const usePropsForChangeTimeCard = () => {
 
   const activeModeCurrentTrendsData = currLeadTimeTrendsData;
 
-  const isAllAssignedReposHaveDeploymentsConfigured = useSelector(
-    (s) =>
-      s.doraMetrics.allReposAssignedToTeam.length ===
-      s.doraMetrics.workflowConfiguredRepos.length
-  );
+  const isAllAssignedReposHaveDeploymentsConfigured = true;
 
-  const reposWithNoDeploymentsConfigured = useMemo(() => {
-    const workflowConfiguredRepoIdsSet = new Set(
-      reposWithWorkflowConfigured.map((r) => r.id)
-    );
-    return allAssignedRepos.filter(
-      (r) => !workflowConfiguredRepoIdsSet.has(r.id)
-    );
-  }, [allAssignedRepos, reposWithWorkflowConfigured]);
+  const reposWithNoDeploymentsConfigured = [] as (Row<'TeamRepos'> &
+    Row<'OrgRepo'>)[];
 
   const isShowingLeadTime = true;
   const isShowingCycleTime = false;
 
   const reposCountWithWorkflowConfigured =
-    allAssignedRepos.length - reposWithNoDeploymentsConfigured.length;
+    Number(allAssignedRepos?.length) -
+    Number(reposWithNoDeploymentsConfigured?.length);
 
   const isActiveModeSwitchDisabled = false;
 
@@ -220,18 +208,15 @@ export const useAvgWeeklyDeploymentFrequency = () => {
   let avgDeploymentFrequency = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
-        .avg_deployment_frequency || 0
+        .avg_daily_deployment_frequency || 0
   );
   let prevAvgDeploymentFrequency = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.deployment_frequency_stats.previous
-        .avg_deployment_frequency || 0
+        .avg_daily_deployment_frequency || 0
   );
 
-  const interval = useSelector(
-    (s) =>
-      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current.duration
-  );
+  const interval = 'week';
 
   const metricInterval = useMemo(() => {
     return {
