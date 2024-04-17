@@ -1,4 +1,5 @@
 import { Row } from '@/constants/db';
+import { brandColors } from '@/theme/schemes/theme';
 import { BaseUser } from '@/types/resources';
 
 export type UserProfile = User;
@@ -26,3 +27,15 @@ export const getBaseUserFromRowUser = (user: Row<'Users'>): BaseUser => ({
   name: user.name,
   avatar_url: null
 });
+
+export const getColorByStatus = (status: 'MERGED' | 'CLOSED' | 'OPEN') => {
+  switch (status) {
+    case 'OPEN':
+      return brandColors.pr.open;
+    case 'CLOSED':
+      return brandColors.pr.close;
+    case 'MERGED':
+    default:
+      return brandColors.pr.merge;
+  }
+};

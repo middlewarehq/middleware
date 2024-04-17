@@ -971,3 +971,26 @@ export type DoraPropsType = {
   backgroundColor: string;
   interval: string;
 };
+
+export type LeadTimeSummaryApiResponseType = {
+  data: {
+    status_counts: UserStat;
+    pipeline_duration: LeadTimePipelineDuration;
+  };
+  repos_included: RepoWithSingleWorkflow[];
+  all_team_repos: RepoWithSingleWorkflow[];
+};
+
+export type CycleTimeSummaryApiResponseType = {
+  status_counts: UserStat;
+  pipeline_duration: LeadTimePipelineDuration;
+  cycle_time_stats: Record<string, number>;
+  prev_cycle_time_stats: Record<string, number>;
+};
+
+export interface UserStat {
+  OPEN: number;
+  CLOSED: number;
+  MERGED: number;
+  REVIEWED: number;
+}

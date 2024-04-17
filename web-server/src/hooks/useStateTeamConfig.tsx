@@ -15,6 +15,7 @@ import {
   QuickRangeOptions,
   DateRangeLogic
 } from '@/components/DateRangePicker/utils';
+import { Line } from '@/components/Text';
 import { appSlice, SerializableDateRange } from '@/slices/app';
 import { useDispatch, useSelector } from '@/store';
 import { ActiveBranchMode } from '@/types/resources';
@@ -191,4 +192,21 @@ export const useStateSingleTeamMembers = (includeManager: boolean = false) => {
 
     return [...mgr, ...others].filter(Boolean);
   }, [includeManager, team?.manager_id, team?.member_ids, usersMap]);
+};
+
+export const useCurrentDateRangeReactNode = () => {
+  const { start, end, partiallyUnselected } = useStateDateConfig();
+  return !partiallyUnselected ? (
+    <Line>
+      <Line color="info" medium>
+        {format(start, 'do MMM')}
+      </Line>{' '}
+      to{' '}
+      <Line color="info" medium>
+        {format(end, 'do MMM')}
+      </Line>
+    </Line>
+  ) : (
+    <Line>Select Date Range</Line>
+  );
 };

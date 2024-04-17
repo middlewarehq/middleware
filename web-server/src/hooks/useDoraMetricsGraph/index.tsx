@@ -108,7 +108,7 @@ export const useDoraMetricsGraph = () => {
         color: rgbToHex(lighten(brandColors.ticketState.todo, 0.5)),
         data: firstCommitToOpenTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
-          y: point || 0
+          y: point.y || 0
         }))
       },
       firstResponseTimeTrends: {
@@ -116,7 +116,7 @@ export const useDoraMetricsGraph = () => {
         color: rgbToHex(lighten(brandColors.pr.firstResponseTime, 0.5)),
         data: firstResponseTimeTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
-          y: point || 0
+          y: point.y || 0
         }))
       },
       reworkTimeTrends: {
@@ -124,7 +124,7 @@ export const useDoraMetricsGraph = () => {
         color: rgbToHex(lighten(brandColors.pr.reworkTime, 0.5)),
         data: reworkTimeTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
-          y: point || 0
+          y: point.y || 0
         }))
       },
       mergeTimeTrends: {
@@ -132,7 +132,7 @@ export const useDoraMetricsGraph = () => {
         color: rgbToHex(lighten(brandColors.pr.mergeTime, 0.5)),
         data: mergeTimeTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
-          y: point || 0
+          y: point.y || 0
         }))
       },
       deployTimeTrends: {
@@ -140,7 +140,7 @@ export const useDoraMetricsGraph = () => {
         color: rgbToHex(lighten(brandColors.ticketState.done, 0.5)),
         data: deployTimeTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
-          y: point || 0
+          y: point.y || 0
         }))
       },
       totalLeadTimeTrends: {
