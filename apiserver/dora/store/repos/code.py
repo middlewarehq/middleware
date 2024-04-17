@@ -5,7 +5,7 @@ from typing import Optional, List
 from sqlalchemy import or_
 from sqlalchemy.orm import defer
 
-from dora.store import db
+from dora.store import db, rollback_on_exc
 from dora.store.models.code import (
     PullRequest,
     PullRequestEvent,
@@ -22,47 +22,56 @@ from dora.utils.time import Interval
 
 
 class CodeRepoService:
+    def __init__(self):
+        self._db = db
+
+    @rollback_on_exc
     def get_active_org_repos(self, org_id: str) -> List[OrgRepo]:
         return (
-            db.session.query(OrgRepo)
+            self._db.session.query(OrgRepo)
             .filter(OrgRepo.org_id == org_id, OrgRepo.is_active.is_(True))
             .all()
         )
 
+    @rollback_on_exc
     def update_org_repos(self, org_repos: List[OrgRepo]):
-        [db.session.merge(org_repo) for org_repo in org_repos]
-        db.session.commit()
+        [self._db.session.merge(org_repo) for org_repo in org_repos]
+        self._db.session.commit()
 
+    @rollback_on_exc
     def save_pull_requests_data(
         self,
         pull_requests: List[PullRequest],
         pull_request_commits: List[PullRequestCommit],
         pull_request_events: List[PullRequestEvent],
     ):
-        [db.session.merge(pull_request) for pull_request in pull_requests]
+        [self._db.session.merge(pull_request) for pull_request in pull_requests]
         [
-            db.session.merge(pull_request_commit)
+            self._db.session.merge(pull_request_commit)
             for pull_request_commit in pull_request_commits
         ]
         [
-            db.session.merge(pull_request_event)
+            self._db.session.merge(pull_request_event)
             for pull_request_event in pull_request_events
         ]
-        db.session.commit()
+        self._db.session.commit()
 
+    @rollback_on_exc
     def update_prs(self, prs: List[PullRequest]):
-        [db.session.merge(pr) for pr in prs]
-        db.session.commit()
+        [self._db.session.merge(pr) for pr in prs]
+        self._db.session.commit()
 
+    @rollback_on_exc
     def save_revert_pr_mappings(
         self, revert_pr_mappings: List[PullRequestRevertPRMapping]
     ):
-        [db.session.merge(revert_pr_map) for revert_pr_map in revert_pr_mappings]
-        db.session.commit()
+        [self._db.session.merge(revert_pr_map) for revert_pr_map in revert_pr_mappings]
+        self._db.session.commit()
 
+    @rollback_on_exc
     def get_org_repo_bookmark(self, org_repo: OrgRepo, bookmark_type):
         return (
-            db.session.query(Bookmark)
+            self._db.session.query(Bookmark)
             .filter(
                 and_(
                     Bookmark.repo_id == org_repo.id,
@@ -72,16 +81,21 @@ class CodeRepoService:
             .one_or_none()
         )
 
+    @rollback_on_exc
     def update_org_repo_bookmark(self, bookmark: Bookmark):
-        db.session.merge(bookmark)
-        db.session.commit()
+        self._db.session.merge(bookmark)
+        self._db.session.commit()
 
+    @rollback_on_exc
     def get_repo_by_id(self, repo_id: str) -> Optional[OrgRepo]:
-        return db.session.query(OrgRepo).filter(OrgRepo.id == repo_id).one_or_none()
+        return (
+            self._db.session.query(OrgRepo).filter(OrgRepo.id == repo_id).one_or_none()
+        )
 
+    @rollback_on_exc
     def get_repo_pr_by_number(self, repo_id: str, pr_number) -> Optional[PullRequest]:
         return (
-            db.session.query(PullRequest)
+            self._db.session.query(PullRequest)
             .options(defer(PullRequest.data))
             .filter(
                 and_(
@@ -91,31 +105,34 @@ class CodeRepoService:
             .one_or_none()
         )
 
+    @rollback_on_exc
     def get_pr_events(self, pr_model: PullRequest):
         if not pr_model:
             return []
 
         pr_events = (
-            db.session.query(PullRequestEvent)
+            self._db.session.query(PullRequestEvent)
             .options(defer(PullRequestEvent.data))
             .filter(PullRequestEvent.pull_request_id == pr_model.id)
             .all()
         )
         return pr_events
 
+    @rollback_on_exc
     def get_prs_by_ids(self, pr_ids: List[str]):
         query = (
-            db.session.query(PullRequest)
+            self._db.session.query(PullRequest)
             .options(defer(PullRequest.data))
             .filter(PullRequest.id.in_(pr_ids))
         )
         return query.all()
 
+    @rollback_on_exc
     def get_prs_by_head_branch_match_strings(
         self, repo_ids: List[str], match_strings: List[str]
     ) -> List[PullRequest]:
         query = (
-            db.session.query(PullRequest)
+            self._db.session.query(PullRequest)
             .options(defer(PullRequest.data))
             .filter(
                 and_(
@@ -133,11 +150,12 @@ class CodeRepoService:
 
         return query.all()
 
+    @rollback_on_exc
     def get_reverted_prs_by_numbers(
         self, repo_ids: List[str], numbers: List[str]
     ) -> List[PullRequest]:
         query = (
-            db.session.query(PullRequest)
+            self._db.session.query(PullRequest)
             .options(defer(PullRequest.data))
             .filter(
                 and_(
@@ -150,27 +168,31 @@ class CodeRepoService:
 
         return query.all()
 
+    @rollback_on_exc
     def get_active_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
         return (
-            db.session.query(TeamRepos)
+            self._db.session.query(TeamRepos)
             .filter(TeamRepos.team_id == team_id, TeamRepos.is_active.is_(True))
             .all()
         )
 
+    @rollback_on_exc
     def get_active_team_repos_by_team_ids(self, team_ids: List[str]) -> List[TeamRepos]:
         return (
-            db.session.query(TeamRepos)
+            self._db.session.query(TeamRepos)
             .filter(TeamRepos.team_id.in_(team_ids), TeamRepos.is_active.is_(True))
             .all()
         )
 
+    @rollback_on_exc
     def get_active_org_repos_by_ids(self, repo_ids: List[str]) -> List[OrgRepo]:
         return (
-            db.session.query(OrgRepo)
+            self._db.session.query(OrgRepo)
             .filter(OrgRepo.id.in_(repo_ids), OrgRepo.is_active.is_(True))
             .all()
         )
 
+    @rollback_on_exc
     def get_prs_merged_in_interval(
         self,
         repo_ids: List[str],
@@ -179,7 +201,7 @@ class CodeRepoService:
         base_branches: List[str] = None,
         has_non_null_mtd=False,
     ) -> List[PullRequest]:
-        query = db.session.query(PullRequest).options(defer(PullRequest.data))
+        query = self._db.session.query(PullRequest).options(defer(PullRequest.data))
 
         query = self._filter_prs_by_repo_ids(query, repo_ids)
         query = self._filter_prs_merged_in_interval(query, interval)
@@ -194,17 +216,19 @@ class CodeRepoService:
 
         return query.all()
 
+    @rollback_on_exc
     def get_pull_request_by_id(self, pr_id: str) -> PullRequest:
         return (
-            db.session.query(PullRequest)
+            self._db.session.query(PullRequest)
             .options(defer(PullRequest.data))
             .filter(PullRequest.id == pr_id)
             .one_or_none()
         )
 
+    @rollback_on_exc
     def get_previous_pull_request(self, pull_request: PullRequest) -> PullRequest:
         return (
-            db.session.query(PullRequest)
+            self._db.session.query(PullRequest)
             .options(defer(PullRequest.data))
             .filter(
                 PullRequest.repo_id == pull_request.repo_id,
@@ -216,15 +240,17 @@ class CodeRepoService:
             .first()
         )
 
+    @rollback_on_exc
     def get_repos_by_ids(self, ids: List[str]) -> List[OrgRepo]:
         if not ids:
             return []
 
-        return db.session.query(OrgRepo).filter(OrgRepo.id.in_(ids)).all()
+        return self._db.session.query(OrgRepo).filter(OrgRepo.id.in_(ids)).all()
 
+    @rollback_on_exc
     def get_team_repos(self, team_id) -> List[OrgRepo]:
         team_repos = (
-            db.session.query(TeamRepos)
+            self._db.session.query(TeamRepos)
             .filter(and_(TeamRepos.team_id == team_id, TeamRepos.is_active == True))
             .all()
         )
@@ -234,26 +260,29 @@ class CodeRepoService:
         team_repo_ids = [tr.org_repo_id for tr in team_repos]
         return self.get_repos_by_ids(team_repo_ids)
 
+    @rollback_on_exc
     def get_merge_to_deploy_broker_bookmark(
         self, repo_id: str
     ) -> BookmarkMergeToDeployBroker:
         return (
-            db.session.query(BookmarkMergeToDeployBroker)
+            self._db.session.query(BookmarkMergeToDeployBroker)
             .filter(BookmarkMergeToDeployBroker.repo_id == repo_id)
             .one_or_none()
         )
 
+    @rollback_on_exc
     def update_merge_to_deploy_broker_bookmark(
         self, bookmark: BookmarkMergeToDeployBroker
     ):
-        db.session.merge(bookmark)
-        db.session.commit()
+        self._db.session.merge(bookmark)
+        self._db.session.commit()
 
+    @rollback_on_exc
     def get_prs_in_repo_merged_before_given_date_with_merge_to_deploy_as_null(
         self, repo_id: str, to_time: datetime
     ):
         return (
-            db.session.query(PullRequest)
+            self._db.session.query(PullRequest)
             .options(defer(PullRequest.data))
             .filter(
                 PullRequest.repo_id == repo_id,
@@ -264,11 +293,12 @@ class CodeRepoService:
             .all()
         )
 
+    @rollback_on_exc
     def get_repo_revert_prs_mappings_updated_in_interval(
         self, repo_id, from_time, to_time
     ) -> List[PullRequestRevertPRMapping]:
         query = (
-            db.session.query(PullRequestRevertPRMapping)
+            self._db.session.query(PullRequestRevertPRMapping)
             .join(PullRequest, PullRequest.id == PullRequestRevertPRMapping.pr_id)
             .filter(
                 PullRequest.repo_id == repo_id,
