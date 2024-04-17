@@ -325,7 +325,7 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
 };
 
 const EditTeam = ({ teamId, onEdit }: { teamId: ID; onEdit: () => void }) => {
-  const { addPage, removeAll } = useOverlayPage();
+  const { addPage } = useOverlayPage();
   return (
     <FlexBox title={'Edit team'} pointer ml={1 / 2}>
       <Edit
@@ -338,7 +338,6 @@ const EditTeam = ({ teamId, onEdit }: { teamId: ID; onEdit: () => void }) => {
               ui: 'team_edit',
               props: {
                 teamId,
-                onDiscard: removeAll,
                 hideCardComponents: true
               }
             }
