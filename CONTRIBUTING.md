@@ -1,12 +1,12 @@
 # Contributing Guidelines
 
-Thank you for considering contributing to DORA Metrics! We welcome contributions from everyone.
+Thank you for considering contributing to **Middleware**! We welcome contributions from everyone.
 
 ## Issues
 
-Before submitting a pull request, please check the [issue tracker](https://github.com/middlewarehq/dora-metrics/issues?q=is%3Aissue+is%3Aopen+) to see if there are any existing issues or feature requests that you can help with. If you find an issue you'd like to work on, please leave a comment to let others know you're working on it to avoid duplicate efforts.
+Before submitting a pull request, please check the [issue tracker](https://github.com/middlewarehq/middleware/issues?q=is%3Aissue+is%3Aopen+) to see if there are any existing issues or feature requests that you can help with. If you find an issue you'd like to work on, please leave a comment to let others know you're working on it to avoid duplicate efforts.
 
-If you encounter a bug or have a feature request that's not already listed, please [create a new issue](https://github.com/middlewarehq/dora-metrics/issues/new/choose) and provide as much detail as possible.
+If you encounter a bug or have a feature request that's not already listed, please [create a new issue](https://github.com/middlewarehq/middleware/issues/new/choose) and provide as much detail as possible.
 
 ## Pull Requests
 
