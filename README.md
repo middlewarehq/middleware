@@ -1,5 +1,5 @@
-# dora-metrics
-**dora-metrics** is an open-source tool designed to help engineering leaders measure and analyze the productivity of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. They are:
+# Middleware - Open Source
+**Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. They are:
 
 - **Deployment Frequency**: The frequency of code deployments to production or an operational environment.
 - **Lead Time for Changes**: The time it takes for a commit to make it into production.
