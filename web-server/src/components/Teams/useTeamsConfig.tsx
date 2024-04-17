@@ -5,14 +5,15 @@ import {
   useContext,
   SyntheticEvent,
   useCallback,
-  useMemo
+  useMemo,
+  useEffect
 } from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
-import { fetchTeams, createTeam } from '@/slices/team';
+import { fetchTeams, createTeam, updateTeam } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Team } from '@/types/api/teams';
@@ -81,42 +82,8 @@ export const TeamsCRUDProvider: React.FC<{
     );
   }, [dispatch, orgId]);
 
-  // editing logic
-  const isEditing = Boolean(teamId);
-  const editingTeam = useMemo(
-    () => teams.find((t) => t.id === teamId) || null,
-    [teamId, teams]
-  );
-  const initState = useMemo(() => {
-    if (isEditing) {
-      const selectedTeam = editingTeam;
-      const selectedTeamRepos = teamReposMaps?.[teamId] || [];
-      return {
-        name: selectedTeam.name,
-        repos: selectedTeamRepos.map(
-          (item) =>
-            ({
-              id: item.idempotency_key,
-              name: item.name,
-              slug: item.slug,
-              // rest of the data doesn't matter for now
-              branch: '',
-              desc: '',
-              language: '',
-              parent: '',
-              web_url: ''
-            }) as BaseRepo
-        )
-      };
-    }
-    return {
-      name: '',
-      repos: []
-    };
-  }, [editingTeam, isEditing, teamId, teamReposMaps]);
-
   // team name logic
-  const teamName = useEasyState(initState.name);
+  const teamName = useEasyState('');
   const teamNameError = useBoolState(false);
   const raiseTeamNameError = useCallback(() => {
     if (!teamName.value) {
@@ -135,7 +102,7 @@ export const TeamsCRUDProvider: React.FC<{
   );
 
   // team-repo selection logic
-  const selections = useEasyState<BaseRepo[]>(initState.repos);
+  const selections = useEasyState<BaseRepo[]>([]);
   const repoOptions = orgRepos;
   const selectedRepos = selections.value;
   const teamRepoError = useBoolState();
@@ -166,13 +133,55 @@ export const TeamsCRUDProvider: React.FC<{
     [selections.set, selections.value, teamRepoError.true]
   );
 
+  // editing logic
+  const isEditing = Boolean(teamId);
+  const editingTeam = useMemo(
+    () => teams.find((t) => t.id === teamId) || null,
+    [teamId, teams]
+  );
+  const initState = useMemo(() => {
+    if (isEditing) {
+      const selectedTeam = editingTeam;
+      const selectedTeamRepos: string[] =
+        teamReposMaps?.[teamId]?.map((item) => item.idempotency_key) || [];
+      return {
+        name: selectedTeam?.name || '',
+        repos:
+          orgRepos?.filter((r) => selectedTeamRepos.includes(String(r.id))) ||
+          []
+      };
+    }
+    return {
+      name: '',
+      repos: []
+    };
+  }, [editingTeam, isEditing, orgRepos, teamId, teamReposMaps]);
+
+  useEffect(() => {
+    if (isEditing) {
+      depFn(teamName.set, initState.name);
+      depFn(selections.set, initState.repos);
+    }
+  }, [
+    editingTeam,
+    initState,
+    initState.name,
+    initState.repos,
+    isEditing,
+    orgRepos,
+    selections.set,
+    teamId,
+    teamName.set,
+    teamReposMaps
+  ]);
+
   // save team logic
   const isSaveLoading = useBoolState();
-  const onSave = useCallback(
-    (callBack?: AnyFunction) => {
+  const teamCreation = useCallback(
+    async (callBack?: AnyFunction) => {
       depFn(isSaveLoading.true);
       const repoPayload = {
-        [org.name]: selections.value.map(
+        [org?.name]: selections.value.map(
           (repo) =>
             ({
               idempotency_key: repo.id,
@@ -181,7 +190,7 @@ export const TeamsCRUDProvider: React.FC<{
             }) as RepoUniqueDetails
         )
       };
-      dispatch(
+      return dispatch(
         createTeam({
           org_id: orgId,
           team_name: teamName.value,
@@ -212,11 +221,74 @@ export const TeamsCRUDProvider: React.FC<{
       fetchTeamsAndRepos,
       isSaveLoading.false,
       isSaveLoading.true,
-      org.name,
+      org?.name,
       orgId,
       selections.value,
       teamName.value
     ]
+  );
+
+  const teamUpdation = useCallback(
+    async (callBack?: AnyFunction) => {
+      depFn(isSaveLoading.true);
+      const repoPayload = {
+        [org?.name]: selections.value.map(
+          (repo) =>
+            ({
+              idempotency_key: repo.id,
+              name: repo.name,
+              slug: repo.slug
+            }) as RepoUniqueDetails
+        )
+      };
+      return dispatch(
+        updateTeam({
+          team_id: teamId,
+          org_id: orgId,
+          team_name: teamName.value,
+          org_repos: repoPayload,
+          provider: Integration.GITHUB
+        })
+      )
+        .then((res) => {
+          if (res.meta.requestStatus === 'rejected') {
+            enqueueSnackbar('Failed to update team', {
+              variant: 'error',
+              autoHideDuration: 2000
+            });
+            return console.error('Failed to update team', res.meta);
+          }
+          enqueueSnackbar('Team updated successfully, refreshing...', {
+            variant: 'success',
+            autoHideDuration: 2000
+          });
+          fetchTeamsAndRepos();
+          callBack?.(res);
+        })
+        .finally(isSaveLoading.false);
+    },
+    [
+      dispatch,
+      enqueueSnackbar,
+      fetchTeamsAndRepos,
+      isSaveLoading.false,
+      isSaveLoading.true,
+      org?.name,
+      orgId,
+      selections.value,
+      teamId,
+      teamName.value
+    ]
+  );
+
+  const onSave = useCallback(
+    async (callBack?: AnyFunction) => {
+      if (isEditing) {
+        return await teamUpdation(callBack);
+      }
+      return await teamCreation(callBack);
+    },
+    [isEditing, teamCreation, teamUpdation]
   );
 
   const resetErrors = useCallback(() => {
@@ -234,6 +306,7 @@ export const TeamsCRUDProvider: React.FC<{
       }
       depFn(teamName.set, initState.name);
       depFn(selections.set, initState.repos);
+      return callBack?.();
     },
     [
       resetErrors,
