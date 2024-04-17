@@ -172,6 +172,28 @@ export const createTeam = createAsyncThunk(
   }
 );
 
+export const updateTeam = createAsyncThunk(
+  'teams/updateTeam',
+  async (params: {
+    team_id: ID;
+    team_name: string;
+    org_id: ID;
+    org_repos: Record<string, RepoUniqueDetails[]>;
+    provider: Integration;
+  }) => {
+    const { team_id, team_name, org_id, org_repos, provider } = params;
+    return await handleApi<BaseTeam>(`/resources/orgs/${org_id}/teams/v2`, {
+      method: 'PATCH',
+      data: {
+        name: team_name,
+        org_repos: org_repos,
+        provider: provider,
+        id: team_id
+      }
+    });
+  }
+);
+
 export const fetchTeamReposProductionBranches = createAsyncThunk(
   'teams/teamReposProductionBranches',
   async (params: { team_id: ID }) => {
