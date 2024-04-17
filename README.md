@@ -9,8 +9,8 @@
 # Quick Start
 Open the terminal and run the following command
 ```bash
-git clone https://github.com/middlewarehq/dora-metrics
-cd dora-metrics
+git clone https://github.com/middlewarehq/middleware
+cd middleware
 ./install.sh
 ```
 
@@ -23,12 +23,12 @@ The backend is available on your host at http://localhost:9696.
 ### Using Docker
 1. **Clone the Repository**: 
    ```bash
-   git clone https://github.com/middlewarehq/dora-metrics
+   git clone https://github.com/middlewarehq/middleware
    ```
 
 2. **Navigate to the Project Directory**:
    ```bash
-   cd dora-metrics
+   cd middleware
    ```
 
 3. **Set Environment variables**\
@@ -82,16 +82,16 @@ The backend is available on your host at http://localhost:9696.
     ```
    
 ### Manual Setup
-To set up dora-metrics locally, follow these steps:
+To set up middleware locally, follow these steps:
 
 1. **Clone the Repository**: 
    ```bash
-   git clone https://github.com/your-username/dora-metrics.git
+   git clone https://github.com/middlewarehq/middleware.git
    ```
 
 2. **Navigate to the Project Directory**:
    ```bash
-   cd dora-metrics
+   cd middleware
    ```
 
 3. **Install Dependencies**:
@@ -124,6 +124,6 @@ To set up dora-metrics locally, follow these steps:
    Once the project is running, access the application through your web browser at `http://localhost:8000`.
 
 # Contributing guidelines
-To get started contributing to dora-metrics check out our [CONTRIBUTING.md](https://github.com/middlewarehq/dora-metrics/blob/main/CONTRIBUTING.md). 
+To get started contributing to middleware check out our [CONTRIBUTING.md](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md). 
 
 We appreciate your contributions and look forward to working together to make DORA Metrics even better!
