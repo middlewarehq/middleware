@@ -338,7 +338,8 @@ const EditTeam = ({ teamId, onEdit }: { teamId: ID; onEdit: () => void }) => {
               ui: 'team_edit',
               props: {
                 teamId,
-                onDiscard: removeAll
+                onDiscard: removeAll,
+                hideCardComponents: true
               }
             }
           });
