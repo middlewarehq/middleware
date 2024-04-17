@@ -11,6 +11,7 @@ import LoginCenter from '@/assets/login-presentation.svg';
 import { FlexBox } from '@/components/FlexBox';
 import { Logo } from '@/components/Logo/Logo';
 import { Line } from '@/components/Text';
+import { ROUTES } from '@/constants/routes';
 
 function Page() {
   return (
@@ -110,7 +111,9 @@ const OnboardingContent = () => {
                   </FlexBox>
                 ))}
               </FlexBox>
-              <Button variant="contained">Continue</Button>
+              <Button href={ROUTES.INTEGRATIONS.PATH} variant="contained">
+                Continue
+              </Button>
             </FlexBox>
           </FlexBox>
         </Container>
