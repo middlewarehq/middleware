@@ -2,7 +2,7 @@ from typing import Optional, List
 
 from sqlalchemy import and_
 
-from dora.store import db
+from dora.store import db, rollback_on_exc
 from dora.store.models import (
     Settings,
     SettingType,
@@ -13,11 +13,15 @@ from dora.utils.time import time_now
 
 
 class SettingsRepoService:
+    def __init__(self):
+        self._db = db
+
+    @rollback_on_exc
     def get_setting(
         self, entity_id: str, entity_type: EntityType, setting_type: SettingType
     ) -> Optional[Settings]:
         return (
-            db.session.query(Settings)
+            self._db.session.query(Settings)
             .filter(
                 and_(
                     Settings.setting_type == setting_type,
@@ -29,14 +33,16 @@ class SettingsRepoService:
             .one_or_none()
         )
 
+    @rollback_on_exc
     def create_settings(self, settings: List[Settings]) -> List[Settings]:
-        [db.session.merge(setting) for setting in settings]
-        db.session.commit()
+        [self._db.session.merge(setting) for setting in settings]
+        self._db.session.commit()
         return settings
 
+    @rollback_on_exc
     def save_setting(self, setting: Settings) -> Optional[Settings]:
-        db.session.merge(setting)
-        db.session.commit()
+        self._db.session.merge(setting)
+        self._db.session.commit()
 
         return self.get_setting(
             entity_id=setting.entity_id,
@@ -44,6 +50,7 @@ class SettingsRepoService:
             setting_type=setting.setting_type,
         )
 
+    @rollback_on_exc
     def delete_setting(
         self,
         entity_id: str,
@@ -58,10 +65,11 @@ class SettingsRepoService:
         setting.is_deleted = True
         setting.updated_by = deleted_by.id
         setting.updated_at = time_now()
-        db.session.merge(setting)
-        db.session.commit()
+        self._db.session.merge(setting)
+        self._db.session.commit()
         return setting
 
+    @rollback_on_exc
     def get_settings(
         self,
         entity_id: str,
@@ -69,7 +77,7 @@ class SettingsRepoService:
         setting_types: List[SettingType],
     ) -> Optional[Settings]:
         return (
-            db.session.query(Settings)
+            self._db.session.query(Settings)
             .filter(
                 and_(
                     Settings.setting_type.in_(setting_types),
