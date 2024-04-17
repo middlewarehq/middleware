@@ -19,7 +19,7 @@ import { BaseRepo } from '@/types/resources';
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
 
-type CRUDProps = {
+export type CRUDProps = {
   onSave?: AnyFunction;
   onDiscard?: AnyFunction;
   teamId?: ID;
@@ -288,10 +288,10 @@ const RepoItem: FC<{ repo: BaseRepo; hideCardComponents?: boolean }> = ({
   return (
     <FlexBox
       height={hideCardComponents ? '54px' : '49px'}
-      component={!hideCardComponents && Card}
       border={hideCardComponents && '1px solid'}
       borderColor={hideCardComponents && '#353552'}
-      borderRadius={hideCardComponents && '10px'}
+      borderRadius={'10px'}
+      component={!hideCardComponents && Card}
       gap={2}
       alignCenter
       px={2}
