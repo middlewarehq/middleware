@@ -56,6 +56,41 @@ def test__to_pr_events_given_a_list_of_only_new_events_returns_a_list_of_pr_even
         assert compare_objects_as_dicts(event, expected_event, ["id"]) is True
 
 
+def test__to_pr_events_given_a_list_of_new_events_and_old_events_returns_a_list_of_pr_events():
+    pr_model = get_pull_request()
+    event1 = get_github_pull_request_review()
+    event2 = get_github_pull_request_review()
+    events = [event1, event2]
+
+    old_event = get_pull_request_event(
+        pull_request_id=str(pr_model.id),
+        org_repo_id=pr_model.repo_id,
+        data=event1.raw_data,
+        created_at=event1.submitted_at,
+        type="REVIEW",
+        idempotency_key=event1.id,
+        reviewer=event1.user_login,
+    )
+
+    pr_events = GithubETLHandler._to_pr_events(events, pr_model, [old_event])
+
+    expected_pr_events = [
+        old_event,
+        get_pull_request_event(
+            pull_request_id=str(pr_model.id),
+            org_repo_id=pr_model.repo_id,
+            data=event2.raw_data,
+            created_at=event2.submitted_at,
+            type="REVIEW",
+            idempotency_key=event2.id,
+            reviewer=event2.user_login,
+        ),
+    ]
+
+    for event, expected_event in zip(pr_events, expected_pr_events):
+        assert compare_objects_as_dicts(event, expected_event, ["id"]) is True
+
+
 def test__to_pr_commits_given_an_empty_list_of_commits_returns_an_empty_list():
     pr_model = get_pull_request()
     github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
