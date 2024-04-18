@@ -86,7 +86,8 @@ export const AllIncidentsBody = () => {
         from_date: dates.start,
         to_date: dates.end,
         branches,
-        repo_filters: singleTeamProdBranchesConfig
+        repo_filters: singleTeamProdBranchesConfig,
+        org_id: orgId
       })
     );
   }, [
@@ -94,6 +95,7 @@ export const AllIncidentsBody = () => {
     dates.end,
     dates.start,
     dispatch,
+    orgId,
     singleTeamId,
     singleTeamProdBranchesConfig
   ]);
