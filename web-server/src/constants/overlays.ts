@@ -20,5 +20,15 @@ export const overlaysImportMap = {
     import('@/content/PullRequests/DeploymentInsightsOverlay').then((c) => ({
       default: c.DeploymentInsightsOverlay
     }))
+  ),
+  change_failure_rate: lazy(() =>
+    import('@/components/OverlayComponents/ChangeFailureRate').then((c) => ({
+      default: c.ChangeFailureRate
+    }))
+  ),
+  all_incidents: lazy(() =>
+    import('@/content/DoraMetrics/Incidents').then((c) => ({
+      default: c.AllIncidentsBody
+    }))
   )
 };

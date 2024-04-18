@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { FlexBox } from '@/components/FlexBox';
+import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
@@ -102,6 +103,8 @@ export const ChangeFailureRateCard = () => {
     changeFailureRateProps.avgWeeklyDeploymentFrequency &&
       (changeFailureRateProps.count || prevChangeFailureRate)
   );
+
+  const { addPage } = useOverlayPage();
   return (
     <CardRoot>
       <FlexBox col gap1 flexGrow={1} minHeight={'15em'}>
@@ -207,7 +210,12 @@ export const ChangeFailureRateCard = () => {
                       track('DORA_METRICS_SEE_DETAILS_CLICKED', {
                         viewed: 'CFR'
                       });
-                      return console.error('OVERLAY PENDING');
+                      addPage({
+                        page: {
+                          title: 'Deployments with incidents',
+                          ui: 'all_incidents'
+                        }
+                      });
                     }}
                     color={changeFailureRateProps.color}
                   >
