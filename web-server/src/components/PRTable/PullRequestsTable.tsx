@@ -35,9 +35,6 @@ import { PullRequestTableColumnSelector } from '@/components/PRTable/PullRequest
 import { DarkTooltip, LightTooltip } from '@/components/Shared';
 import { Line } from '@/components/Text';
 import { SearchInput } from '@/components/TicketsTableAddons/SearchInput';
-import { Integration } from '@/constants/integrations';
-import { ROUTES } from '@/constants/routes';
-import { useAuth } from '@/hooks/useAuth';
 import { EasyState, useEasyState } from '@/hooks/useEasyState';
 import { useTableSort } from '@/hooks/useTableSort';
 import { DEFAULT_PR_TABLE_COLUMN_STATE_MAP } from '@/slices/app';
@@ -65,8 +62,6 @@ export const PullRequestsTable: FC<
   } & Omit<PullRequestsTableHeadProps, 'conf' | 'updateSortConf' | 'count'>
 > = ({ propPrs, selectionMenu, selectedPrIds, isPrSelectionEnabled }) => {
   const theme = useTheme();
-  const { integrationSet } = useAuth();
-  const hasBitbucket = integrationSet.has(Integration.BITBUCKET);
   const prTableColumnConfig = useSelector(
     (s) => s.app.prTableColumnsConfig || DEFAULT_PR_TABLE_COLUMN_STATE_MAP
   );
@@ -113,7 +108,6 @@ export const PullRequestsTable: FC<
     }
   }, [page, pageCount]);
 
-  const { orgId } = useAuth();
   const enableCsv = true;
 
   return (
@@ -306,12 +300,7 @@ export const PullRequestsTable: FC<
                         arrow
                         title={
                           <Box>
-                            <Box>
-                              {hasBitbucket
-                                ? pr.author.linked_user?.name ||
-                                  pr.author.username
-                                : `@${pr.author.username}`}
-                            </Box>
+                            <Box>{`@${pr.author.username}`}</Box>
                             {!pr.author.linked_user && (
                               <Box fontStyle="italic" color="secondary.dark">
                                 User not added to Middleware
@@ -327,18 +316,8 @@ export const PullRequestsTable: FC<
                           width="100%"
                         >
                           <Box
-                            component={hasBitbucket ? 'div' : Link}
-                            href={
-                              pr.author.linked_user?.id
-                                ? `${
-                                    ROUTES.COLLABORATE.INSIGHTS.USER.add(
-                                      pr.author.linked_user.id
-                                    ).PATH
-                                  }`
-                                : hasBitbucket
-                                ? undefined
-                                : getGHAvatar(pr.author.username)
-                            }
+                            component={Link}
+                            href={getGHAvatar(pr.author.username)}
                             target="_blank"
                             fontWeight={500}
                             display="flex"
@@ -355,11 +334,7 @@ export const PullRequestsTable: FC<
                                   boxShadow: `0 0 0 2px ${theme.colors.info.main}`
                                 }
                               )}
-                              src={
-                                hasBitbucket
-                                  ? undefined
-                                  : getGHAvatar(pr.author.username)
-                              }
+                              src={getGHAvatar(pr.author.username)}
                             />
                           </Box>
                         </Box>
@@ -494,8 +469,6 @@ const PrChangesTooltip: FC<{ pr: PR }> = ({ pr }) => {
 
 const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
   const theme = useTheme();
-  const { user } = useAuth();
-  const hasBitbucket = user?.integrations?.bitbucket;
   return (
     <FlexBox
       alignCenter
@@ -509,11 +482,7 @@ const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
         <FlexBox
           title={
             <Box>
-              <Box>
-                {hasBitbucket
-                  ? reviewer.linked_user?.name || reviewer.username
-                  : `@${reviewer.username}`}
-              </Box>
+              <Box>{`@${reviewer.username}`}</Box>
               {!reviewer.linked_user && (
                 <Box fontStyle="italic" color="secondary.dark">
                   User not added to Middleware
@@ -522,17 +491,8 @@ const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
             </Box>
           }
           key={reviewer.username}
-          component={hasBitbucket ? 'div' : Link}
-          href={
-            reviewer.linked_user?.id
-              ? `${
-                  ROUTES.COLLABORATE.INSIGHTS.USER.add(reviewer.linked_user.id)
-                    .PATH
-                }`
-              : hasBitbucket
-              ? undefined
-              : getGHAvatar(reviewer.username)
-          }
+          component={Link}
+          href={getGHAvatar(reviewer.username)}
           target="_blank"
           fontWeight={500}
           display="flex"
@@ -546,7 +506,7 @@ const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
                 boxShadow: `0 0 0 2px ${theme.colors.info.main}`
               }
             )}
-            src={hasBitbucket ? undefined : getGHAvatar(reviewer.username)}
+            src={getGHAvatar(reviewer.username)}
           />
         </FlexBox>
       ))}
