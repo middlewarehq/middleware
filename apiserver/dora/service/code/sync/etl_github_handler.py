@@ -319,11 +319,12 @@ class GithubETLHandler(CodeProviderETLHandler):
 
         {
         'sha': '123456789098765',
-        'commit': {'author': {'name': 'abc', 'email': 'abc@midd.com', 'date': '2022-06-29T10:53:15Z'},
-        'committer': {'name': 'abc', 'email': 'abc@midd.com', 'date': '2022-06-29T10:53:15Z'},
-        'message': '[abc 315] avoid mapping edit state',
-        'html_url': 'https://github.com/abc',
-        'author': {'login': 'abc', 'id': 95607047, 'node_id': 'abc', 'avatar_url': ''},
+        'commit': {
+            'author': {'name': 'abc', 'email': 'abc@midd.com', 'date': '2022-06-29T10:53:15Z'},
+            'committer': {'name': 'abc', 'email': 'abc@midd.com', 'date': '2022-06-29T10:53:15Z'},
+            'message': '[abc 315] avoid mapping edit state',
+            'html_url': 'https://github.com/abc',
+            'author': {'login': 'abc', 'id': 95607047, 'node_id': 'abc', 'avatar_url': ''},
         }
         """
         pr_commits: List[PullRequestCommit] = []
@@ -349,9 +350,8 @@ class GithubETLHandler(CodeProviderETLHandler):
 
     @staticmethod
     def _dt_from_github_dt_string(dt_string: str) -> datetime:
-        return datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%SZ").astimezone(
-            tz=pytz.UTC
-        )
+        dt_without_timezone = datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%SZ")
+        return dt_without_timezone.replace(tzinfo=pytz.UTC)
 
 
 def get_github_etl_handler(org_id: str) -> GithubETLHandler:
