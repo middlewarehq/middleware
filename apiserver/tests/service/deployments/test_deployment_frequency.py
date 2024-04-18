@@ -131,3 +131,51 @@ def test_deployment_frequency_for_deployments_across_months():
         ],
         Interval(from_time, to_time),
     ) == get_deployment_frequency_metrics(13, 0, 1, 4)
+
+
+def test_weekly_deployment_frequency_trends_for_no_deployments():
+
+    from_time = first_week_2024 + timedelta(days=1)
+    to_time = third_week_2024 + timedelta(days=2)
+
+    deployment_analytics_service = DeploymentAnalyticsService(None, None)
+
+    assert deployment_analytics_service._get_weekly_deployment_frequency_trends(
+        [], Interval(from_time, to_time)
+    ) == {first_week_2024: 0, second_week_2024: 0, third_week_2024: 0}
+
+
+def test_weekly_deployment_frequency_trends_for_deployments():
+
+    from_time = first_week_2024 + timedelta(days=1)
+    to_time = fourth_week_2024 + timedelta(days=1)
+
+    # Week 1
+
+    deployment_1 = get_deployment(conducted_at=from_time + timedelta(hours=12))
+    deployment_2 = get_deployment(conducted_at=from_time + timedelta(hours=24))
+
+    # Week 3
+    deployment_3 = get_deployment(conducted_at=fourth_week_2024 - timedelta(days=4))
+    deployment_4 = get_deployment(conducted_at=fourth_week_2024 - timedelta(days=2))
+    deployment_5 = get_deployment(conducted_at=fourth_week_2024 - timedelta(hours=6))
+    deployment_6 = get_deployment(conducted_at=fourth_week_2024 - timedelta(minutes=30))
+
+    deployment_analytics_service = DeploymentAnalyticsService(None, None)
+
+    assert deployment_analytics_service._get_weekly_deployment_frequency_trends(
+        [
+            deployment_1,
+            deployment_2,
+            deployment_3,
+            deployment_4,
+            deployment_5,
+            deployment_6,
+        ],
+        Interval(from_time, to_time),
+    ) == {
+        first_week_2024: 2,
+        second_week_2024: 0,
+        third_week_2024: 4,
+        fourth_week_2024: 0,
+    }
