@@ -14,7 +14,7 @@ import {
   DeploymentWithIncidents,
   IncidentApiResponseType
 } from '@/types/resources';
-import { getWeekStartAndEndInterval, isoDateString } from '@/utils/date';
+import { getWeekStartAndEndInterval } from '@/utils/date';
 
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
@@ -39,20 +39,10 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     from_date: rawFromDate,
     to_date: rawToDate,
     branches,
-    repo_filters,
     org_id
   } = req.payload;
   const from_date = startOfDay(new Date(rawFromDate));
   const to_date = endOfDay(new Date(rawToDate));
-
-  const params = await updatePrFilterParams(
-    team_id,
-    {
-      from_time: isoDateString(new Date(from_date)),
-      to_time: isoDateString(new Date(to_date))
-    },
-    { branches, repo_filters }
-  );
 
   const teamProdBranchesMap =
     await getAllTeamsReposProdBranchesForOrgAsMap(org_id);
