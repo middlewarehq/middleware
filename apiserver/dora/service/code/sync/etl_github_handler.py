@@ -318,13 +318,13 @@ class GithubETLHandler(CodeProviderETLHandler):
         Sample commit
 
         {
-        'sha': '123456789098765',
-        'commit': {
-            'author': {'name': 'abc', 'email': 'abc@midd.com', 'date': '2022-06-29T10:53:15Z'},
-            'committer': {'name': 'abc', 'email': 'abc@midd.com', 'date': '2022-06-29T10:53:15Z'},
-            'message': '[abc 315] avoid mapping edit state',
-            'html_url': 'https://github.com/abc',
+            'sha': '123456789098765',
+            'commit': {
+                'committer': {'name': 'abc', 'email': 'abc@midd.com', 'date': '2022-06-29T10:53:15Z'},
+                'message': '[abc 315] avoid mapping edit state',
+            }
             'author': {'login': 'abc', 'id': 95607047, 'node_id': 'abc', 'avatar_url': ''},
+            'html_url': 'https://github.com/123456789098765',
         }
         """
         pr_commits: List[PullRequestCommit] = []
