@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { FlexBox } from '@/components/FlexBox';
+import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
@@ -74,6 +75,8 @@ export const MeanTimeToRestoreCard = () => {
       meanTimeToRestoreProps.backgroundColor
     ]
   );
+
+  const { addPage } = useOverlayPage();
 
   return (
     <CardRoot>
@@ -172,7 +175,12 @@ export const MeanTimeToRestoreCard = () => {
                     track('DORA_METRICS_SEE_DETAILS_CLICKED', {
                       viewed: 'MTR'
                     });
-                    return console.error('OVERLAY PENDING');
+                    addPage({
+                      page: {
+                        title: 'Resolved Incidents',
+                        ui: 'resolved_incidents'
+                      }
+                    });
                   }}
                   color={meanTimeToRestoreProps.color}
                 >
