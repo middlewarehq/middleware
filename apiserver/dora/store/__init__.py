@@ -20,7 +20,7 @@ def configure_db_with_app(app):
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_DATABASE_URI"] = connection_uri
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_size": 20, "max_overflow": 5}
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_size": 10, "max_overflow": 5}
     db.init_app(app)
 
 

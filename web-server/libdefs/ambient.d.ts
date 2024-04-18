@@ -14,7 +14,7 @@ declare type Org = {
   created_at: Date;
   name: string;
   domain: string;
-  onboarding_steps: OnboardingStep[];
+  onboarding_state: OnboardingStep[];
   integrations: Partial<IntegrationsMap>;
 };
 
@@ -48,7 +48,7 @@ declare type IdentityMap = Record<
   { username: string; meta?: { avatar_url?: string } }
 >;
 
-declare type IntegrationsMap = Record<'github', true>;
+declare type IntegrationsMap = Record<'github' | 'gitlab' | 'bitbucket', true>;
 
 declare type User = {
   id: string;
