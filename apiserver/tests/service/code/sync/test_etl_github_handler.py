@@ -3,6 +3,7 @@ from datetime import datetime
 import pytz
 
 from dora.service.code.sync.etl_github_handler import GithubETLHandler
+from dora.store.models.code import PullRequestState
 from dora.utils.string import uuid4_str
 from tests.factories.models import (
     get_pull_request,
@@ -12,10 +13,183 @@ from tests.factories.models import (
 from tests.factories.models.exapi.github import (
     get_github_commit_dict,
     get_github_pull_request_review,
+    get_github_pull_request,
 )
 from tests.utilities import compare_objects_as_dicts
 
 ORG_ID = uuid4_str()
+
+
+def test__to_pr_model_given_a_github_pr_returns_new_pr_model():
+    repo_id = uuid4_str()
+    number = 123
+    user_login = "abc"
+    merged_at = datetime(2022, 6, 29, 10, 53, 15, tzinfo=pytz.UTC)
+    head_branch = "feature"
+    base_branch = "main"
+    title = "random_title"
+    review_comments = 3
+    merge_commit_sha = "123456789098765"
+
+    github_pull_request = get_github_pull_request(
+        number=number,
+        merged_at=merged_at,
+        head_ref=head_branch,
+        base_ref=base_branch,
+        user_login=user_login,
+        merge_commit_sha=merge_commit_sha,
+        commits=3,
+        additions=10,
+        deletions=5,
+        changed_files=2,
+    )
+
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    pr_model = github_etl_handler._to_pr_model(
+        pr=github_pull_request,
+        pr_model=None,
+        repo_id=repo_id,
+        review_comments=review_comments,
+    )
+
+    expected_pr_model = get_pull_request(
+        repo_id=repo_id,
+        number=str(number),
+        author=str(user_login),
+        state=PullRequestState.MERGED,
+        title=title,
+        head_branch=head_branch,
+        base_branch=base_branch,
+        provider="github",
+        requested_reviews=[],
+        data=github_pull_request.raw_data,
+        state_changed_at=merged_at,
+        meta={
+            "code_stats": {
+                "commits": 3,
+                "additions": 10,
+                "deletions": 5,
+                "changed_files": 2,
+                "comments": review_comments,
+            },
+            "user_profile": {
+                "username": user_login,
+            },
+        },
+        reviewers=[],
+        merge_commit_sha=merge_commit_sha,
+    )
+    # Ignoring the following fields as they are generated as side effects and are not part of the actual data
+    # reviewers, rework_time, first_commit_to_open, first_response_time, lead_time, merge_time, merge_to_deploy, cycle_time
+    assert (
+        compare_objects_as_dicts(
+            pr_model,
+            expected_pr_model,
+            [
+                "id",
+                "created_at",
+                "updated_at",
+                "reviewers",
+                "rework_time",
+                "first_commit_to_open",
+                "first_response_time",
+                "lead_time",
+                "merge_time",
+                "merge_to_deploy",
+                "cycle_time",
+            ],
+        )
+        is True
+    )
+
+
+def test__to_pr_model_given_a_github_pr_and_db_pr_returns_updated_pr_model():
+    repo_id = uuid4_str()
+    number = 123
+    user_login = "abc"
+    merged_at = datetime(2022, 6, 29, 10, 53, 15, tzinfo=pytz.UTC)
+    head_branch = "feature"
+    base_branch = "main"
+    title = "random_title"
+    review_comments = 3
+    merge_commit_sha = "123456789098765"
+
+    github_pull_request = get_github_pull_request(
+        number=number,
+        merged_at=merged_at,
+        head_ref=head_branch,
+        base_ref=base_branch,
+        user_login=user_login,
+        merge_commit_sha=merge_commit_sha,
+        commits=3,
+        additions=10,
+        deletions=5,
+        changed_files=2,
+    )
+
+    given_pr_model = get_pull_request(
+        repo_id=repo_id,
+        number=str(number),
+        provider="github",
+    )
+
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    pr_model = github_etl_handler._to_pr_model(
+        pr=github_pull_request,
+        pr_model=given_pr_model,
+        repo_id=repo_id,
+        review_comments=review_comments,
+    )
+
+    expected_pr_model = get_pull_request(
+        id=given_pr_model.id,
+        repo_id=repo_id,
+        number=str(number),
+        author=str(user_login),
+        state=PullRequestState.MERGED,
+        title=title,
+        head_branch=head_branch,
+        base_branch=base_branch,
+        provider="github",
+        requested_reviews=[],
+        data=github_pull_request.raw_data,
+        state_changed_at=merged_at,
+        meta={
+            "code_stats": {
+                "commits": 3,
+                "additions": 10,
+                "deletions": 5,
+                "changed_files": 2,
+                "comments": review_comments,
+            },
+            "user_profile": {
+                "username": user_login,
+            },
+        },
+        reviewers=[],
+        merge_commit_sha=merge_commit_sha,
+    )
+    # Ignoring the following fields as they are generated as side effects and are not part of the actual data
+    # reviewers, rework_time, first_commit_to_open, first_response_time, lead_time, merge_time, merge_to_deploy, cycle_time
+    assert (
+        compare_objects_as_dicts(
+            pr_model,
+            expected_pr_model,
+            [
+                "created_at",
+                "updated_at",
+                "reviewers",
+                "rework_time",
+                "first_commit_to_open",
+                "first_response_time",
+                "lead_time",
+                "merge_time",
+                "merge_to_deploy",
+                "cycle_time",
+            ],
+        )
+        is True
+    )
 
 
 def test__to_pr_events_given_an_empty_list_of_events_returns_an_empty_list():

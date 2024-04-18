@@ -43,6 +43,8 @@ def get_pull_request(
     cycle_time=None,
     merge_to_deploy=None,
     lead_time=None,
+    url=None,
+    merge_commit_sha=None,
 ):
     return PullRequest(
         id=id or uuid4(),
@@ -66,8 +68,12 @@ def get_pull_request(
         cycle_time=cycle_time,
         merge_to_deploy=merge_to_deploy,
         lead_time=lead_time,
-        reviewers=reviewers or ["randomuser1", "randomuser2"],
+        reviewers=reviewers
+        if reviewers is not None
+        else ["randomuser1", "randomuser2"],
         meta=meta or {},
+        url=url,
+        merge_commit_sha=merge_commit_sha,
     )
 
 
