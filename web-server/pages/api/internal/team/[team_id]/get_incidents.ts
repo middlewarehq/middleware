@@ -2,9 +2,7 @@ import { endOfDay, startOfDay } from 'date-fns';
 import { isNil, reject } from 'ramda';
 import * as yup from 'yup';
 
-import { getTeamPrs } from '@/api/internal/team/[team_id]/insights';
 import { getAllTeamsReposProdBranchesForOrgAsMap } from '@/api/internal/team/[team_id]/repo_branches';
-import { getTeamRevertedPrs } from '@/api/internal/team/[team_id]/revert_prs';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
 import {
@@ -71,30 +69,17 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     pr_filter
   }));
 
-  const [deploymentsWithIncident, summaryPrs, revertedPrs] = await Promise.all([
-    getTeamIncidentsWithDeployment({ team_id, from_date, to_date, pr_filter }),
-    getTeamPrs({
-      team_id,
-      branches,
-      from_date: from_date,
-      to_date: to_date,
-      repo_filters
-    })
-      .then((r) => r.data)
-      .catch(() => {
-        // TODO: remove mocks from here
-        return mockDeploymentsWithIncidents.summary_prs;
-      }),
-    getTeamRevertedPrs({ ...params, team_id }).catch(() => {
-      // TODO: remove mocks from here
-      return mockDeploymentsWithIncidents.revert_prs;
-    })
-  ]);
+  const deploymentsWithIncident = await getTeamIncidentsWithDeployment({
+    team_id,
+    from_date,
+    to_date,
+    pr_filter
+  });
 
   return res.send({
     deployments_with_incidents: deploymentsWithIncident,
-    summary_prs: summaryPrs,
-    revert_prs: revertedPrs
+    summary_prs: [],
+    revert_prs: []
   } as IncidentApiResponseType);
 });
 
