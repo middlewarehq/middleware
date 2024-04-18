@@ -27,12 +27,10 @@ export const useDoraMetricsGraph = () => {
     leadTimeTrends?.previous
   );
 
-  if (!activeTrends) return { trendsSeriesMap: null, yAxisLabels: [] };
-
   const yAxisLabels = useMemo(() => {
     return getSortedDatesAsArrayFromMap({
-      ...activeTrends.previous,
-      ...activeTrends.current
+      ...(activeTrends?.previous || {}),
+      ...(activeTrends?.current || {})
     });
   }, [activeTrends]);
 
@@ -182,6 +180,8 @@ export const useDoraMetricsGraph = () => {
       yAxisLabels
     ]
   );
+
+  if (!activeTrends) return { trendsSeriesMap: null, yAxisLabels: [] };
 
   return {
     trendsSeriesMap,
