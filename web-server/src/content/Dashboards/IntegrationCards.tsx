@@ -94,22 +94,27 @@ export const GithubIntegrationCard = () => {
                   link.github();
                   return;
                 }
-                localLoading.true();
-                await unlink
-                  .github()
-                  .then(() => {
-                    enqueueSnackbar('Github unlinked successfully', {
-                      variant: 'success'
-                    });
-                  })
-                  .then(async () => dispatch(fetchCurrentOrg()))
-                  .catch((e) => {
-                    console.error('Failed to unlink Github', e);
-                    enqueueSnackbar('Failed to unlink Github', {
-                      variant: 'error'
-                    });
-                  })
-                  .finally(localLoading.false);
+                const shouldExecute = window.confirm(
+                  'Are you sure you want to unlink?'
+                );
+                if (shouldExecute) {
+                  localLoading.true();
+                  await unlink
+                    .github()
+                    .then(() => {
+                      enqueueSnackbar('Github unlinked successfully', {
+                        variant: 'success'
+                      });
+                    })
+                    .then(async () => dispatch(fetchCurrentOrg()))
+                    .catch((e) => {
+                      console.error('Failed to unlink Github', e);
+                      enqueueSnackbar('Failed to unlink Github', {
+                        variant: 'error'
+                      });
+                    })
+                    .finally(localLoading.false);
+                }
               }}
               label={!isLinked ? 'Link' : 'Unlink'}
               bgOpacity={!isLinked ? 0.45 : 0.25}
