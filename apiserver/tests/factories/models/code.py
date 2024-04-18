@@ -80,6 +80,7 @@ def get_pull_request_event(
     created_at=None,
     idempotency_key=None,
     org_repo_id=None,
+    data=None,
 ):
     return PullRequestEvent(
         id=id or uuid4(),
@@ -89,7 +90,9 @@ def get_pull_request_event(
             "user": {"login": reviewer or "User"},
             "state": state or "APPROVED",
             "author_association": "NONE",
-        },
+        }
+        if not data
+        else data,
         created_at=created_at or time_now(),
         idempotency_key=idempotency_key or str(randint(10, 100)),
         org_repo_id=org_repo_id or uuid4(),
