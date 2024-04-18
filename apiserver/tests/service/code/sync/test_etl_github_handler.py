@@ -25,38 +25,34 @@ def test__to_pr_commits_given_a_list_of_commits_returns_a_list_of_pr_commits():
     author1 = "author_abc"
     created_at1 = "2022-06-29T10:53:15Z"
     commit1 = get_github_commit_dict(
-            sha=sha1,
-            author_login=author1,
-            created_at=created_at1,
-            url=common_url,
-            message=common_message,
-        )
+        sha=sha1,
+        author_login=author1,
+        created_at=created_at1,
+        url=common_url,
+        message=common_message,
+    )
     sha2 = "987654321234567"
     author2 = "author_xyz"
     created_at2 = "2022-06-29T12:53:15Z"
     commit2 = get_github_commit_dict(
-            sha=sha2,
-            author_login=author2,
-            created_at=created_at2,
-            url=common_url,
-            message=common_message,
-        )
+        sha=sha2,
+        author_login=author2,
+        created_at=created_at2,
+        url=common_url,
+        message=common_message,
+    )
     sha3 = "543216789098765"
     author3 = "author_abc"
     created_at3 = "2022-06-29T15:53:15Z"
     commit3 = get_github_commit_dict(
-            sha=sha3,
-            author_login=author3,
-            created_at=created_at3,
-            url=common_url,
-            message=common_message,
-        )
+        sha=sha3,
+        author_login=author3,
+        created_at=created_at3,
+        url=common_url,
+        message=common_message,
+    )
 
-    commits = [
-        commit1,
-        commit2,
-        commit3
-    ]
+    commits = [commit1, commit2, commit3]
     github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
     pr_commits = github_etl_handler._to_pr_commits(commits, pr_model)
 
@@ -90,7 +86,7 @@ def test__to_pr_commits_given_a_list_of_commits_returns_a_list_of_pr_commits():
             message=common_message,
             created_at=datetime(2022, 6, 29, 15, 53, 15, tzinfo=pytz.UTC),
             data=commit3,
-        )
+        ),
     ]
 
     for commit, expected_commit in zip(pr_commits, expected_pr_commits):
