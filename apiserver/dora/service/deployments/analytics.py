@@ -238,6 +238,14 @@ class DeploymentAnalyticsService:
         self, successful_deployments: List[Deployment], interval: Interval
     ) -> Dict[datetime, int]:
 
+        successful_deployments = list(
+            filter(
+                lambda x: x.conducted_at >= interval.from_time
+                and x.conducted_at <= interval.to_time,
+                successful_deployments,
+            )
+        )
+
         team_weekly_deployments = generate_expanded_buckets(
             successful_deployments, interval, "conducted_at", "weekly"
         )
