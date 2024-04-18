@@ -20,15 +20,32 @@ const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.GET(nullSchema, async (req, res) => {
   const { org_id } = req.payload;
-  const results = await db(Table.UIPreferences)
-    .select(Columns[Table.UIPreferences].data)
-    .where(Columns[Table.UIPreferences].entity_id, org_id);
-  return res.send(results[0]?.data ?? { onboarding_state: [] });
+  return res.send(await getOnBoardingState(org_id));
 });
 
 endpoint.handle.PUT(putSchema, async (req, res) => {
   const { org_id, onboarding_state } = req.payload;
 
+  return res.send(
+    await updateOnBoardingState(org_id, onboarding_state as OnboardingSteps[])
+  );
+});
+
+export default endpoint.serve();
+
+export const getOnBoardingState = async (
+  org_id: string
+): Promise<{ onboarding_state: OnboardingSteps[] }> => {
+  const results = await db(Table.UIPreferences)
+    .select(Columns[Table.UIPreferences].data)
+    .where(Columns[Table.UIPreferences].entity_id, org_id);
+  return results[0]?.data ?? { onboarding_state: [] };
+};
+
+export const updateOnBoardingState = async (
+  org_id: ID,
+  onboarding_state: OnboardingSteps[]
+): Promise<{ onboarding_state: OnboardingSteps[] }> => {
   const results = await db(Table.UIPreferences)
     .insert({
       entity_type: 'ORG',
@@ -46,8 +63,5 @@ endpoint.handle.PUT(putSchema, async (req, res) => {
     ])
     .merge()
     .returning('*');
-
-  return res.send(results[0]?.data ?? { onboarding_state: [] });
-});
-
-export default endpoint.serve();
+  return results[0]?.data ?? { onboarding_state: [] };
+};
