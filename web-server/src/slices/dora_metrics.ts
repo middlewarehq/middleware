@@ -130,7 +130,7 @@ export const doraMetricsSlice = createSlice({
 });
 
 type DoraMetricsApiParamsType = {
-  team_id: string;
+  team_id: ID;
   from_date: Date;
   to_date: Date;
   branches?: string;
@@ -161,7 +161,7 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
 
 export const fetchAllDeploymentsWithIncidents = createAsyncThunk(
   'dora_metrics/fetchAllIncidents',
-  async (params: DoraMetricsApiParamsType) => {
+  async (params: DoraMetricsApiParamsType & { org_id: ID }) => {
     return await handleApi<IncidentApiResponseType>(
       `internal/team/${params.team_id}/get_incidents`,
       {
