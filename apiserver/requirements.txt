@@ -1,7 +1,7 @@
 Flask==3.0.2
 voluptuous==0.12.2
 stringcase==1.2.0
-SQLAlchemy==1.4.32
+SQLAlchemy==2.0.29
 pytz==2022.1
 PyGithub==1.55
 pycryptodome==3.14.1
