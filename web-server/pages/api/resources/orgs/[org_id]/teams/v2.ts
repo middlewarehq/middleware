@@ -86,10 +86,11 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 
   const [teams, orgRepos] = await Promise.all([
     getQuery,
-    (
-      await getAllOrgRepos(org_id, provider as CodeSourceProvidersIntegration)
-    ).flat()
+    getAllOrgRepos(org_id, provider as CodeSourceProvidersIntegration).then(
+      (res) => res.flat()
+    )
   ]);
+
   const repos = (
     await Promise.all(teams.map((team) => getTeamRepos(team.id)))
   ).flat();
