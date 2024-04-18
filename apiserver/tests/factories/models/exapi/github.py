@@ -1,3 +1,4 @@
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
@@ -52,3 +53,83 @@ def get_github_pull_request_review(
 ) -> GithubPullRequestReview:
 
     return GithubPullRequestReview(review_id, submitted_at, user_login)
+
+
+Branch = namedtuple("Branch", ["ref"])
+User = namedtuple("User", ["login"])
+
+
+@dataclass
+class GithubPullRequest:
+    number: int
+    merged_at: datetime
+    closed_at: datetime
+    title: str
+    html_url: str
+    created_at: datetime
+    updated_at: datetime
+    base: Branch
+    head: Branch
+    user: User
+    commits: int
+    additions: int
+    deletions: int
+    changed_files: int
+    merge_commit_sha: str
+
+    @property
+    def raw_data(self):
+        return {
+            "number": self.number,
+            "merged_at": self.merged_at,
+            "closed_at": self.closed_at,
+            "title": self.title,
+            "html_url": self.html_url,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "base": {"ref": self.base.ref},
+            "head": {"ref": self.head.ref},
+            "user": {"login": self.user.login},
+            "commits": self.commits,
+            "additions": self.additions,
+            "deletions": self.deletions,
+            "changed_files": self.changed_files,
+            "requested_reviewers": [],
+            "merge_commit_sha": self.merge_commit_sha,
+        }
+
+
+def get_github_pull_request(
+    number: int = 1,
+    merged_at: datetime = None,
+    closed_at: datetime = None,
+    title: str = "random_title",
+    html_url: str = None,
+    created_at: datetime = time_now(),
+    updated_at: datetime = time_now(),
+    base_ref: str = "main",
+    head_ref: str = "feature",
+    user_login: str = "abc",
+    commits: int = 1,
+    additions: int = 1,
+    deletions: int = 1,
+    changed_files: int = 1,
+    merge_commit_sha: str = "123456",
+) -> GithubPullRequest:
+    return GithubPullRequest(
+        number,
+        merged_at,
+        closed_at,
+        title,
+        html_url,
+        created_at,
+        updated_at,
+        Branch(base_ref),
+        Branch(head_ref),
+        User(user_login),
+        commits,
+        additions,
+        deletions,
+        changed_files,
+        merge_commit_sha,
+    )

@@ -270,10 +270,9 @@ class GithubETLHandler(CodeProviderETLHandler):
         return merge_commit_sha
 
     @staticmethod
-    def _get_state(pr: PullRequest) -> PullRequestState:
+    def _get_state(pr: GithubPullRequest) -> PullRequestState:
         if pr.merged_at:
             return PullRequestState.MERGED
-
         if pr.closed_at:
             return PullRequestState.CLOSED
 
