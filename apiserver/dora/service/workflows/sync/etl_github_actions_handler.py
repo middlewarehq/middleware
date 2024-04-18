@@ -168,9 +168,8 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
 
     @staticmethod
     def _get_datetime_from_gh_datetime(datetime_str: str) -> datetime:
-        return datetime.strptime(datetime_str, ISO_8601_DATE_FORMAT).astimezone(
-            tz=pytz.UTC
-        )
+        dt_without_timezone = datetime.strptime(datetime_str, ISO_8601_DATE_FORMAT)
+        return dt_without_timezone.replace(tzinfo=pytz.UTC)
 
 
 def get_github_actions_etl_handler(org_id):
