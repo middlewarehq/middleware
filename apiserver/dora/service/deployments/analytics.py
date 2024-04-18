@@ -97,39 +97,8 @@ class DeploymentAnalyticsService:
             )
         )
 
-        team_daily_deployments = generate_expanded_buckets(
-            team_successful_deployments, interval, "conducted_at", "daily"
-        )
-        team_weekly_deployments = generate_expanded_buckets(
-            team_successful_deployments, interval, "conducted_at", "weekly"
-        )
-        team_monthly_deployments = generate_expanded_buckets(
-            team_successful_deployments, interval, "conducted_at", "monthly"
-        )
-
-        daily_deployment_frequency = (
-            self._get_deployment_frequency_from_date_to_deployment_map(
-                team_daily_deployments
-            )
-        )
-
-        weekly_deployment_frequency = (
-            self._get_deployment_frequency_from_date_to_deployment_map(
-                team_weekly_deployments
-            )
-        )
-
-        monthly_deployment_frequency = (
-            self._get_deployment_frequency_from_date_to_deployment_map(
-                team_monthly_deployments
-            )
-        )
-
-        return DeploymentFrequencyMetrics(
-            len(team_successful_deployments),
-            daily_deployment_frequency,
-            weekly_deployment_frequency,
-            monthly_deployment_frequency,
+        return self._get_deployment_frequency_metrics(
+            team_successful_deployments, interval
         )
 
     def get_weekly_deployment_frequency_trends(
@@ -217,6 +186,55 @@ class DeploymentAnalyticsService:
         ] = get_key_to_count_map_from_key_to_list_map(date_to_deployment_map)
 
         return get_average_of_dict_values(date_to_deployment_count_map)
+
+    def _get_deployment_frequency_metrics(
+        self, successful_deployments: List[Deployment], interval: Interval
+    ) -> DeploymentFrequencyMetrics:
+
+        team_daily_deployments = generate_expanded_buckets(
+            successful_deployments, interval, "conducted_at", "daily"
+        )
+        team_weekly_deployments = generate_expanded_buckets(
+            successful_deployments, interval, "conducted_at", "weekly"
+        )
+        team_monthly_deployments = generate_expanded_buckets(
+            successful_deployments, interval, "conducted_at", "monthly"
+        )
+
+        daily_deployment_frequency = (
+            self._get_deployment_frequency_from_date_to_deployment_map(
+                team_daily_deployments
+            )
+        )
+
+        weekly_deployment_frequency = (
+            self._get_deployment_frequency_from_date_to_deployment_map(
+                team_weekly_deployments
+            )
+        )
+
+        monthly_deployment_frequency = (
+            self._get_deployment_frequency_from_date_to_deployment_map(
+                team_monthly_deployments
+            )
+        )
+
+        return DeploymentFrequencyMetrics(
+            len(successful_deployments),
+            daily_deployment_frequency,
+            weekly_deployment_frequency,
+            monthly_deployment_frequency,
+        )
+
+    def _get_weekly_deployment_frequency_trends(
+        self, successful_deployments: List[Deployment], interval: Interval
+    ) -> Dict[datetime, int]:
+
+        team_weekly_deployments = generate_expanded_buckets(
+            successful_deployments, interval, "conducted_at", "weekly"
+        )
+
+        return get_key_to_count_map_from_key_to_list_map(team_weekly_deployments)
 
 
 def get_deployment_analytics_service() -> DeploymentAnalyticsService:
