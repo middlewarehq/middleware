@@ -1,9 +1,4 @@
-import {
-  AccessTimeRounded,
-  CheckCircleOutlineRounded,
-  HowToRegRounded,
-  WarningAmberRounded
-} from '@mui/icons-material';
+import { AccessTimeRounded } from '@mui/icons-material';
 import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
 import { Box, Card, Chip, Divider, Link, Paper, useTheme } from '@mui/material';
 import { format } from 'date-fns';
@@ -34,15 +29,13 @@ import {
 } from '@/hooks/useStateTeamConfig';
 import { fetchAllDeploymentsWithIncidents } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
-import {
-  PrUser,
-  DeploymentWithIncidents,
-  IncidentStatus
-} from '@/types/resources';
+import { PrUser, DeploymentWithIncidents } from '@/types/resources';
 import { getDurationString } from '@/utils/date';
 import { formatAsPercent } from '@/utils/stringFormatting';
 import { OPEN_IN_NEW_TAB_PROPS } from '@/utils/url';
 import { getGHAvatar } from '@/utils/user';
+
+import { IncidentItemIcon } from './IncidentsMenuItem';
 
 import { SubHeader } from '../../components/WrapperComponents';
 
@@ -86,6 +79,7 @@ export const AllIncidentsBody = () => {
 
   const fetchAllIncidentDetails = useCallback(() => {
     if (!singleTeamId || !dates.start || !dates.end) return;
+
     dispatch(
       fetchAllDeploymentsWithIncidents({
         team_id: singleTeamId,
@@ -500,12 +494,4 @@ const IncidentUserAvatar: FC<{
       </FlexBox>
     </LightTooltip>
   );
-};
-
-const IncidentItemIcon = ({ status }: { status: string }) => {
-  if (status === IncidentStatus.TRIGGERED)
-    return <WarningAmberRounded color="warning" fontSize="inherit" />;
-  if (status === IncidentStatus.ACKNOWLEDGED)
-    return <HowToRegRounded color="primary" fontSize="inherit" />;
-  return <CheckCircleOutlineRounded color="success" fontSize="inherit" />;
 };
