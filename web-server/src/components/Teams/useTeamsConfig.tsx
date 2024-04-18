@@ -69,7 +69,7 @@ export const TeamsCRUDProvider: React.FC<{
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
   const orgRepos = useSelector((s) => s.team.orgRepos);
-  const { orgId, org } = useAuth();
+  const { orgId } = useAuth();
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
   );
@@ -180,16 +180,8 @@ export const TeamsCRUDProvider: React.FC<{
   const teamCreation = useCallback(
     async (callBack?: AnyFunction) => {
       depFn(isSaveLoading.true);
-      const repoPayload = {
-        [org?.name]: selections.value.map(
-          (repo) =>
-            ({
-              idempotency_key: repo.id,
-              name: repo.name,
-              slug: repo.slug
-            }) as RepoUniqueDetails
-        )
-      };
+      const repoPayload = repoToPayload(selections.value);
+
       return dispatch(
         createTeam({
           org_id: orgId,
@@ -221,7 +213,6 @@ export const TeamsCRUDProvider: React.FC<{
       fetchTeamsAndRepos,
       isSaveLoading.false,
       isSaveLoading.true,
-      org?.name,
       orgId,
       selections.value,
       teamName.value
@@ -231,16 +222,8 @@ export const TeamsCRUDProvider: React.FC<{
   const teamUpdation = useCallback(
     async (callBack?: AnyFunction) => {
       depFn(isSaveLoading.true);
-      const repoPayload = {
-        [org?.name]: selections.value.map(
-          (repo) =>
-            ({
-              idempotency_key: repo.id,
-              name: repo.name,
-              slug: repo.slug
-            }) as RepoUniqueDetails
-        )
-      };
+      const repoPayload = repoToPayload(selections.value);
+
       return dispatch(
         updateTeam({
           team_id: teamId,
@@ -273,7 +256,6 @@ export const TeamsCRUDProvider: React.FC<{
       fetchTeamsAndRepos,
       isSaveLoading.false,
       isSaveLoading.true,
-      org?.name,
       orgId,
       selections.value,
       teamId,
@@ -366,4 +348,24 @@ export const TeamsCRUDProvider: React.FC<{
       {children}
     </TeamsCRUDContext.Provider>
   );
+};
+
+const repoToPayload = (repos: BaseRepo[]) => {
+  const repoPayload = {} as Record<string, RepoUniqueDetails[]>;
+  repos.forEach((repo) => {
+    const orgRepo = {
+      idempotency_key: repo.id,
+      name: repo.name,
+      slug: repo.slug
+    } as RepoUniqueDetails;
+    const orgName = repo.parent;
+
+    if (repoPayload[orgName]) {
+      repoPayload[orgName].push(orgRepo);
+    } else {
+      repoPayload[orgName] = [orgRepo];
+    }
+  });
+
+  return repoPayload;
 };
