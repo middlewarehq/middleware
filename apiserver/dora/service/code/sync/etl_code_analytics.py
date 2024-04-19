@@ -19,6 +19,9 @@ class CodeETLAnalyticsService:
         pr_events: List[PullRequestEvent],
         pr_commits: List[PullRequestCommit],
     ) -> PullRequest:
+        if pr.state == PullRequestState.OPEN:
+            return pr
+
         pr_performance = self.get_pr_performance(pr, pr_events)
 
         pr.first_response_time = (
