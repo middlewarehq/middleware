@@ -65,9 +65,19 @@ const Content = () => {
   const teamCount = teams.length;
   return (
     <FlexBox col gap2>
-      <Line white fontSize={'24px'}>
-        Integrate your Github to fetch DORA for your team
-      </Line>
+      <FlexBox justifyBetween>
+        <Line white fontSize={'24px'}>
+          Integrate your Github to fetch DORA for your team
+        </Line>
+        {Boolean(teamCount) && (
+          <Button href={ROUTES.DORA_METRICS.PATH} variant="contained">
+            <FlexBox centered fullWidth p={2 / 3}>
+              Continue to Dora {'->'}
+            </FlexBox>
+          </Button>
+        )}
+      </FlexBox>
+
       <Divider sx={{ mb: '20px' }} />
       <FlexBox>
         <GithubIntegrationCard />
