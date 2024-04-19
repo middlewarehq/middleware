@@ -87,23 +87,36 @@ export const DoraMetricsBody = () => {
 
   const stats = useDoraStats();
 
+  const { isFreshOrg } = useFreshOrgCalculator();
+
   if (!firstLoadDone) return <MiniLoader label={getRandomLoadMsg()} />;
 
   if (isTeamInsightsEmpty)
-    return (
-      <EmptyState
-        type="NO_DATA_IN_DORA_METRICS"
-        title="Dora's not exploring today"
-        desc="We couldn't find any data to present. Perhaps you need to configure team repos."
-      >
-        <Link passHref href={ROUTES.TEAMS.PATH}>
-          <Button variant="contained" size="small">
-            Check Team Repos
-          </Button>
-        </Link>
-        <FixedContentRefreshLoader show={isLoading} />
-      </EmptyState>
-    );
+    if (isFreshOrg)
+      return (
+        <EmptyState
+          type="SYNC_IN_PROGRESS"
+          title="Sync in progress"
+          desc="Your data is syncing. Please reload in a few minutes."
+        >
+          <FixedContentRefreshLoader show={isLoading} />
+        </EmptyState>
+      );
+    else
+      return (
+        <EmptyState
+          type="NO_DATA_IN_DORA_METRICS"
+          title="Dora's not exploring today"
+          desc="We couldn't find any data to present. Perhaps you need to configure team repos."
+        >
+          <Link passHref href={ROUTES.TEAMS.PATH}>
+            <Button variant="contained" size="small">
+              Check Team Repos
+            </Button>
+          </Link>
+          <FixedContentRefreshLoader show={isLoading} />
+        </EmptyState>
+      );
 
   return (
     <FlexBox col gap2>
@@ -143,4 +156,23 @@ export const DoraMetricsBody = () => {
       </FlexBox>
     </FlexBox>
   );
+};
+
+const FRESH_ORG_THRESHOLD = 5; // in minutes
+
+export const useFreshOrgCalculator = () => {
+  const result = { isFreshOrg: false };
+  const { org } = useAuth();
+  const createdAt = org?.created_at;
+  if (!createdAt) return result;
+  result.isFreshOrg = calculateIsFreshOrg(createdAt);
+  return result;
+};
+
+export const calculateIsFreshOrg = (createdAt: string | Date): boolean => {
+  const now = Date.now();
+  const date = new Date(createdAt);
+  const timeDiffMs = now - date.getTime();
+
+  return timeDiffMs <= FRESH_ORG_THRESHOLD * 60 * 1000;
 };
