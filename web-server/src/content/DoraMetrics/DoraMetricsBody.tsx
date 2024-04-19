@@ -79,9 +79,6 @@ export const DoraMetricsBody = () => {
     dispatch,
     orgId,
     singleTeamId,
-    memberFilter,
-    singleTeamProdBranchesConfig,
-    team?.manager_id,
     activeBranchMode
   ]);
 
