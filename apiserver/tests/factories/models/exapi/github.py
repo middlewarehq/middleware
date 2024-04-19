@@ -133,3 +133,27 @@ def get_github_pull_request(
         changed_files,
         merge_commit_sha,
     )
+
+
+def get_github_workflow_run_dict(
+    run_id: str = "123456",
+    actor_login: str = "abc",
+    head_branch: str = "feature",
+    status: str = "completed",
+    conclusion: str = "success",
+    run_started_at: str = "2022-06-29T10:53:15Z",
+    created_at: str = "2022-06-29T10:53:15Z",
+    updated_at: str = "2022-06-29T10:53:15Z",
+    html_url: str = "",
+) -> Dict:
+    return {
+        "id": run_id,
+        "actor": {"login": actor_login},
+        "head_branch": head_branch,
+        "status": status,
+        "conclusion": conclusion,
+        "run_started_at": run_started_at,
+        "created_at": created_at,
+        "updated_at": updated_at,
+        "html_url": html_url,
+    }
