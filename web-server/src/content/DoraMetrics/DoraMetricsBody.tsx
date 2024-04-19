@@ -31,13 +31,7 @@ import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 export const DoraMetricsBody = () => {
   const dispatch = useDispatch();
   const { orgId } = useAuth();
-  const {
-    team,
-    singleTeamId,
-    dates,
-    memberFilter,
-    singleTeamProdBranchesConfig
-  } = useSingleTeamConfig();
+  const { singleTeamId, dates } = useSingleTeamConfig();
   const branches = useStateBranchConfig();
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.metrics_summary === FetchState.REQUEST
