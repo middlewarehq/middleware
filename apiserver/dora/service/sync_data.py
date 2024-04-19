@@ -21,7 +21,7 @@ def trigger_data_sync():
     for sync_func in sync_sequence:
         try:
             sync_func(org_id)
-            LOG.error(f"Data sync for {sync_func.__name__} completed successfully")
+            LOG.info(f"Data sync for {sync_func.__name__} completed successfully")
         except Exception as e:
             LOG.error(
                 f"Error syncing {sync_func.__name__} data for org {org_id}: {str(e)}"

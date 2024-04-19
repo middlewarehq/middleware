@@ -149,7 +149,6 @@ class GithubETLHandler(CodeProviderETLHandler):
             pr_commits += pr_commit_models
             prs_added.add(github_pr.number)
 
-        sorted(pull_requests, key=lambda x: x.state_changed_at)
         return pull_requests, pr_commits, pr_events
 
     def process_pr(
