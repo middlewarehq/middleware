@@ -10,10 +10,11 @@ import {
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { ascend } from 'ramda';
-import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
+import { FC, MouseEventHandler, useCallback, useEffect, useMemo } from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
+import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { deleteTeam, fetchTeams } from '@/slices/team';
@@ -47,16 +48,32 @@ export const TeamsList = () => {
   }, [searchQuery.value, teamsArray]);
 
   const showCreate = useBoolState(false);
-  const showCreateTeam = useCallback(() => {
+  const handleShowCreateTeam = useCallback(() => {
     depFn(showCreate.toggle);
   }, [showCreate.toggle]);
+
+  const isLoadingTeams = useSelector(
+    (state) =>
+      state.team?.requests?.teams === FetchState.REQUEST ||
+      state.team?.requests?.orgRepos === FetchState.REQUEST
+  );
+  const animateFlicker = useBoolState(false);
+
+  useEffect(() => {
+    if (isLoadingTeams) {
+      const flickerInterval = setInterval(() => {
+        depFn(animateFlicker.toggle);
+      }, 500);
+      return () => clearInterval(flickerInterval);
+    }
+  }, [animateFlicker.toggle, isLoadingTeams]);
 
   return (
     <>
       <SearchFilter
         searchQuery={searchQuery.value}
         onChange={searchQuery.set}
-        showCreateTeam={showCreateTeam}
+        handleShowCreateTeam={handleShowCreateTeam}
         showCreate={showCreate.value}
       />
       {!teamsArrayFiltered.length && teamsArray.length ? (
@@ -64,10 +81,29 @@ export const TeamsList = () => {
           <Line secondary>No teams found</Line>
         </FlexBox>
       ) : null}
-      <FlexBox gap={4} grid gridTemplateColumns={'1fr 1fr '} maxWidth={'900px'}>
+      <FlexBox
+        gap={4}
+        grid
+        gridTemplateColumns={'1fr 1fr '}
+        maxWidth={'900px'}
+        relative
+        sx={{
+          opacity: isLoadingTeams ? (animateFlicker.value ? 0.2 : 0.5) : 1,
+          transition: 'opacity 0.5s linear'
+        }}
+      >
         {teamsArrayFiltered.map((team, index) => (
           <TeamCard onEdit={showCreate.false} key={index} team={team} />
         ))}
+        {isLoadingTeams && (
+          <FlexBox
+            fullWidth
+            height={'100%'}
+            sx={{ position: 'absolute' }}
+            top={0}
+            left={0}
+          />
+        )}
       </FlexBox>
     </>
   );
@@ -76,9 +112,9 @@ export const TeamsList = () => {
 const SearchFilter: FC<{
   searchQuery: string;
   onChange: (value: string) => void;
-  showCreateTeam: () => void;
+  handleShowCreateTeam: () => void;
   showCreate: boolean;
-}> = ({ searchQuery, onChange, showCreateTeam, showCreate }) => {
+}> = ({ searchQuery, onChange, handleShowCreateTeam, showCreate }) => {
   return (
     <FlexBox col gap={4}>
       <FlexBox width={'900px'} gap={4}>
@@ -95,7 +131,7 @@ const SearchFilter: FC<{
         <FlexBox flex1 alignCenter gap={4}>
           <FlexBox flex1>
             <Button
-              onClick={showCreateTeam}
+              onClick={handleShowCreateTeam}
               sx={{ width: '100%' }}
               variant="outlined"
             >
@@ -117,7 +153,7 @@ const SearchFilter: FC<{
           </FlexBox>
         </FlexBox>
       </FlexBox>
-      {showCreate && <CreateEditTeams onDiscard={showCreateTeam} />}
+      {showCreate && <CreateEditTeams onDiscard={handleShowCreateTeam} />}
     </FlexBox>
   );
 };
