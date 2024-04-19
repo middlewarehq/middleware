@@ -55,8 +55,8 @@ services:
           target: /app/backend/apiserver/.env.local
 
         - action: sync+restart
-          path: ./apiserver/dora/sync_data.py
-          target: /app/backend/apiserver/dora/sync_data.py
+          path: ./apiserver/dora/service/sync_data.py
+          target: /app/backend/apiserver/dora/service/sync_data.py
 
         - action: sync
           path: ./web-server
