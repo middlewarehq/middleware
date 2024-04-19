@@ -2,6 +2,7 @@ from random import randint
 from uuid import uuid4
 from dora.service.deployments.models.models import (
     Deployment,
+    DeploymentFrequencyMetrics,
     DeploymentStatus,
     DeploymentType,
 )
@@ -182,4 +183,19 @@ def get_deployment(
         status=status or DeploymentStatus.SUCCESS,
         html_url=html_url or "",
         meta=meta or {},
+    )
+
+
+def get_deployment_frequency_metrics(
+    total_deployments=0,
+    daily_deployment_frequency=0,
+    avg_weekly_deployment_frequency=0,
+    avg_monthly_deployment_frequency=0,
+) -> DeploymentFrequencyMetrics:
+
+    return DeploymentFrequencyMetrics(
+        total_deployments=total_deployments or 0,
+        daily_deployment_frequency=daily_deployment_frequency or 0,
+        avg_weekly_deployment_frequency=avg_weekly_deployment_frequency or 0,
+        avg_monthly_deployment_frequency=avg_monthly_deployment_frequency or 0,
     )
