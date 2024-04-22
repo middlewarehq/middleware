@@ -61,6 +61,17 @@ class QueryValidator:
             raise NotFound(f"User {user_id} not found")
         return user
 
+    def users_validator(self, user_ids: List[str]) -> List[Users]:
+        users: List[Users] = self.repo_service.get_users(user_ids)
+
+        if len(users) != len(user_ids):
+            query_user_ids = set(user_ids)
+            found_user_ids = set(map(lambda x: str(x.id), users))
+            missing_user_ids = query_user_ids - found_user_ids
+            raise NotFound(f"User(s) not found: {missing_user_ids}")
+
+        return users
+
 
 def get_query_validator():
     return QueryValidator(CoreRepoService())
