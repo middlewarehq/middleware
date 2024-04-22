@@ -961,6 +961,8 @@ export type ReqRepo = {
   slug: string;
 };
 
+export type ReqRepoWithProvider = ReqRepo & { provider: Integration };
+
 export type DoraPropsType = {
   count: number;
   bg: string;
