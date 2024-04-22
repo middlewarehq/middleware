@@ -18,6 +18,7 @@ export interface AuthContextValue extends AuthState {
   orgId: string | null;
   role: UserRole;
   integrations: User['integrations'];
+  onboardingState: OnboardingStep[];
   integrationSet: Set<IntegrationGroup>;
 }
 
@@ -26,6 +27,7 @@ export const AuthContext = createContext<AuthContextValue>({
   orgId: null,
   role: UserRole.MOM,
   integrations: {},
+  onboardingState: [],
   integrationSet: new Set()
 });
 
@@ -114,7 +116,8 @@ export const AuthProvider: FC = (props) => {
         orgId: state.org?.id,
         role,
         integrations,
-        integrationSet
+        integrationSet,
+        onboardingState: state.org?.onboarding_state || []
       }}
     >
       {children}
