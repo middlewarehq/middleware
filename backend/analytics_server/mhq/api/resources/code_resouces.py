@@ -1,7 +1,7 @@
 from typing import Dict, List
 from mhq.service.code.models.lead_time import LeadTimeMetrics
 from mhq.api.resources.core_resources import adapt_user_info
-from mhq.store.models.code import PullRequest
+from mhq.store.models.code import PullRequest, OrgRepo
 from mhq.store.models.core import Users
 
 
@@ -104,4 +104,22 @@ def adapt_lead_time_metrics(lead_time_metric: LeadTimeMetrics) -> Dict[str, any]
         "merge_time": lead_time_metric.merge_time,
         "merge_to_deploy": lead_time_metric.merge_to_deploy,
         "pr_count": lead_time_metric.pr_count,
+    }
+
+
+def adapt_org_repo(org_repo: OrgRepo) -> Dict[str, any]:
+    return {
+        "id": str(org_repo.id),
+        "org_id": str(org_repo.org_id),
+        "name": org_repo.name,
+        "org_name": org_repo.org_name,
+        "provider": org_repo.provider,
+        "is_active": org_repo.is_active,
+        "default_branch": org_repo.default_branch,
+        "language": org_repo.language,
+        "contributors": org_repo.contributors,
+        "idempotency_key": org_repo.idempotency_key,
+        "slug": org_repo.slug,
+        "created_at": org_repo.created_at.isoformat(),
+        "updated_at": org_repo.updated_at.isoformat(),
     }
