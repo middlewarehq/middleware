@@ -20,7 +20,7 @@ from mhq.api.resources.code_resouces import (
     get_non_paginated_pr_response,
 )
 from mhq.store.models.code.pull_requests import PullRequest
-from mhq.service.pr_analytics import get_pr_analytics_service
+from mhq.service.code.pr_analytics import get_pr_analytics_service
 from mhq.service.settings.models import ExcludedPRsSetting
 
 from mhq.utils.time import Interval
