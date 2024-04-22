@@ -1,8 +1,8 @@
 from datetime import timedelta
 
-from dora.service.deployments.deployment_pr_mapper import DeploymentPRMapperService
-from dora.store.models.code import PullRequestState
-from dora.utils.time import time_now
+from mhq.service.deployments.deployment_pr_mapper import DeploymentPRMapperService
+from mhq.store.models.code import PullRequestState
+from mhq.utils.time import time_now
 from tests.factories.models.code import get_pull_request, get_repo_workflow_run
 
 

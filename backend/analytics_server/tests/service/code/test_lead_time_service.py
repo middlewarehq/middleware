@@ -1,7 +1,7 @@
-from dora.utils.string import uuid4_str
+from mhq.utils.string import uuid4_str
 from tests.utilities import compare_objects_as_dicts
-from dora.service.code.lead_time import LeadTimeService
-from dora.service.code.models.lead_time import LeadTimeMetrics
+from mhq.service.code.lead_time import LeadTimeService
+from mhq.service.code.models.lead_time import LeadTimeMetrics
 
 
 class FakeCodeRepoService:

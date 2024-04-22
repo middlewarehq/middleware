@@ -1,8 +1,8 @@
 from datetime import timedelta
 
-from dora.service.code.sync.etl_code_analytics import CodeETLAnalyticsService
-from dora.store.models.code import PullRequestState, PullRequestEventState
-from dora.utils.time import time_now
+from mhq.service.code.sync.etl_code_analytics import CodeETLAnalyticsService
+from mhq.store.models.code import PullRequestState, PullRequestEventState
+from mhq.utils.time import time_now
 from tests.factories.models.code import (
     get_pull_request,
     get_pull_request_event,

@@ -1,8 +1,8 @@
-from dora.exapi.models.git_incidents import RevertPRMap
-from dora.service.incidents.sync.etl_git_incidents_handler import GitIncidentsETLHandler
-from dora.store.models.incidents import IncidentType, IncidentStatus
-from dora.utils.string import uuid4_str
-from dora.utils.time import time_now
+from mhq.exapi.models.git_incidents import RevertPRMap
+from mhq.service.incidents.sync.etl_git_incidents_handler import GitIncidentsETLHandler
+from mhq.store.models.incidents import IncidentType, IncidentStatus
+from mhq.utils.string import uuid4_str
+from mhq.utils.time import time_now
 from tests.factories.models import get_incident
 from tests.factories.models.code import get_pull_request
 from tests.factories.models.incidents import (

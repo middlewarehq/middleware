@@ -6,7 +6,7 @@ from typing import Dict, List, Any
 import pytest
 import pytz
 
-from dora.utils.time import (
+from mhq.utils.time import (
     Interval,
     generate_expanded_buckets,
     get_given_weeks_monday,

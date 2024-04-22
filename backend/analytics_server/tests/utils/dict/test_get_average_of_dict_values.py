@@ -1,4 +1,4 @@
-from dora.utils.dict import get_average_of_dict_values
+from mhq.utils.dict import get_average_of_dict_values
 
 
 def test_empty_dict_returns_zero():

@@ -2,16 +2,16 @@ from datetime import datetime
 from typing import List, Set
 
 from voluptuous import default_factory
-from dora.service.deployments.models.models import Deployment
-from dora.service.incidents.models.mean_time_to_recovery import ChangeFailureRateMetrics
+from mhq.service.deployments.models.models import Deployment
+from mhq.service.incidents.models.mean_time_to_recovery import ChangeFailureRateMetrics
 
-from dora.store.models.incidents import IncidentType, OrgIncidentService
-from dora.store.models.incidents.incidents import (
+from mhq.store.models.incidents import IncidentType, OrgIncidentService
+from mhq.store.models.incidents.incidents import (
     Incident,
     IncidentOrgIncidentServiceMap,
 )
-from dora.utils.string import uuid4_str
-from dora.utils.time import time_now
+from mhq.utils.string import uuid4_str
+from mhq.utils.time import time_now
 
 
 def get_incident(
