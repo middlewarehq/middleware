@@ -16,7 +16,7 @@ def configure_db_with_app(app):
     DB_NAME = getenv("DB_NAME")
     ENVIRONMENT = getenv("ENVIRONMENT", "local")
 
-    connection_uri = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?application_name=dora--{ENVIRONMENT}"
+    connection_uri = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}?application_name=mhq--{ENVIRONMENT}"
 
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_DATABASE_URI"] = connection_uri
