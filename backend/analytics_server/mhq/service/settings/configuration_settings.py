@@ -105,40 +105,6 @@ class SettingsService:
 
         return self._adapt_config_setting_from_db_setting(setting)
 
-    def get_or_set_settings_for_multiple_entity_ids(
-        self,
-        setting_type: SettingType,
-        entity_type: EntityType,
-        entity_ids: List[str],
-        setter: Users = None,
-    ) -> List[ConfigurationSettings]:
-
-        settings = self._settings_repo.get_settings_for_multiple_entity_ids(
-            entity_ids, entity_type, setting_type
-        )
-
-        current_entity_ids = set([str(setting.entity_id) for setting in settings])
-        missing_entity_ids = set(entity_ids).difference(current_entity_ids)
-        if missing_entity_ids:
-            data = get_default_setting_data(setting_type)
-            settings_to_create = [
-                Settings(
-                    entity_id=entity_id,
-                    entity_type=entity_type,
-                    setting_type=setting_type,
-                    updated_by=setter.id if setter else None,
-                    data=data,
-                    created_at=time_now(),
-                    updated_at=time_now(),
-                    is_deleted=False,
-                )
-                for entity_id in missing_entity_ids
-            ]
-            new_settings = self._settings_repo.create_settings(settings_to_create)
-            settings.extend(new_settings)
-
-        return list(map(self._adapt_config_setting_from_db_setting, settings))
-
     def _adapt_specific_incident_setting_from_json(
         self, data: Dict[str, any]
     ) -> IncidentSettings:

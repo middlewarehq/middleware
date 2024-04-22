@@ -11,7 +11,7 @@ from mhq.service.deployments.deployments_factory_service import (
     DeploymentsFactoryService,
 )
 from mhq.service.deployments.factory import get_deployments_factory
-from mhq.service.pr_analytics import get_pr_analytics_service
+from mhq.service.code.pr_analytics import get_pr_analytics_service
 from mhq.service.code.pr_filter import apply_pr_filter
 
 from mhq.api.request_utils import coerce_workflow_filter, queryschema
