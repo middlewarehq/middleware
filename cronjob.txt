@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
 
 # Every minute 
-*/30 * * * * PYTHONPATH=/app/backend/apiserver/ /opt/venv/bin/python3 /app/backend/apiserver/dora/sync_data.py >> /var/log/cron/cron.log 2>&1
+*/30 * * * * PYTHONPATH=/app/backend/apiserver/ /opt/venv/bin/python3 /app/backend/apiserver/dora/service/sync_data.py >> /var/log/cron/cron.log 2>&1
 

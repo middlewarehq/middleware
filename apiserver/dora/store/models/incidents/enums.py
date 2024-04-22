@@ -28,6 +28,7 @@ class IncidentStatus(Enum):
 class IncidentType(Enum):
     INCIDENT = "INCIDENT"
     REVERT_PR = "REVERT_PR"
+    ALERT = "ALERT"
 
 
 class IncidentBookmarkType(Enum):

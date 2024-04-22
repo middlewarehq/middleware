@@ -17,7 +17,7 @@ import { Columns, Table } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
-import { OnboardingSteps, ReqOrgRepo } from '@/types/resources';
+import { ReqOrgRepo } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
 
 const getSchema = yup.object().shape({
@@ -123,7 +123,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     getOnBoardingState(org_id)
   ]);
   const updatedOnboardingState = Array.from(
-    new Set(onboardingState.onboarding_state).add(OnboardingSteps.TEAM_CREATED)
+    new Set(onboardingState.onboarding_state).add(OnboardingStep.TEAM_CREATED)
   );
   const [teamRepos] = await Promise.all([
     addReposToTeam(

@@ -29,7 +29,7 @@ from dora.store.models.code import (
 )
 from dora.store.repos.code import CodeRepoService
 from dora.store.repos.core import CoreRepoService
-from dora.utils.time import time_now
+from dora.utils.time import time_now, ISO_8601_DATE_FORMAT
 
 PR_PROCESSING_CHUNK_SIZE = 100
 
@@ -149,7 +149,6 @@ class GithubETLHandler(CodeProviderETLHandler):
             pr_commits += pr_commit_models
             prs_added.add(github_pr.number)
 
-        sorted(pull_requests, key=lambda x: x.state_changed_at)
         return pull_requests, pr_commits, pr_events
 
     def process_pr(
@@ -349,7 +348,7 @@ class GithubETLHandler(CodeProviderETLHandler):
 
     @staticmethod
     def _dt_from_github_dt_string(dt_string: str) -> datetime:
-        dt_without_timezone = datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%SZ")
+        dt_without_timezone = datetime.strptime(dt_string, ISO_8601_DATE_FORMAT)
         return dt_without_timezone.replace(tzinfo=pytz.UTC)
 
 
