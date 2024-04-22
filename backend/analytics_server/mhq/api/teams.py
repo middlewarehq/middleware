@@ -1,6 +1,8 @@
 from flask import Blueprint
 from typing import List
 from voluptuous import Required, Schema, Optional
+from mhq.api.resources.code_resouces import adapt_org_repo
+from mhq.service.code.repository_service import get_repository_service
 from mhq.api.resources.core_resources import adapt_team
 from mhq.store.models.core.teams import Team
 from mhq.service.core.teams import get_team_service
@@ -77,3 +79,14 @@ def delete_team(team_id: str):
     team = team_service.delete_team(team_id)
 
     return adapt_team(team)
+
+
+@app.route("/teams/<team_id>/repos", methods={"GET"})
+def fetch_team_repos(team_id: str):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    team_repos = get_repository_service().get_team_repos(team)
+
+    return [adapt_org_repo(repo) for repo in team_repos]
