@@ -1,4 +1,5 @@
-from flask import Blueprint
+from flask import Blueprint, jsonify
+from github import GithubException
 from voluptuous import Schema, Optional, Coerce, Range, All, Required
 
 from mhq.api.request_utils import queryschema
@@ -22,10 +23,9 @@ def get_github_orgs(org_id: str):
     )
     try:
         orgs = external_integrations_service.get_github_organizations()
-    except Exception as e:
-        return e, STATUS_TOO_MANY_REQUESTS
+    except GithubException as e:
+        return jsonify(e.data), e.status
     org_data_map = github_org_data_multi_thread_worker(orgs)
-
     return {
         "orgs": [
             {
@@ -65,8 +65,8 @@ def get_repos(org_id: str, org_login: str, page_size: int, page: int):
         return external_integrations_service.get_github_org_repos(
             org_login, page_size, page - 1
         )
-    except Exception as e:
-        return e, STATUS_TOO_MANY_REQUESTS
+    except GithubException as e:
+        return jsonify(e.data), e.status
 
 
 @app.route(
@@ -80,10 +80,12 @@ def get_prs_for_repo(org_id: str, gh_org_name: str, gh_org_repo_name: str):
     external_integrations_service = get_external_integrations_service(
         org_id, UserIdentityProvider.GITHUB
     )
-
-    workflows_list = external_integrations_service.get_repo_workflows(
-        gh_org_name, gh_org_repo_name
-    )
+    try:
+        workflows_list = external_integrations_service.get_repo_workflows(
+            gh_org_name, gh_org_repo_name
+        )
+    except GithubException as e:
+        return jsonify(e.data), e.status
 
     return [
         {
