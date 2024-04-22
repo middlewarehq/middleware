@@ -37,7 +37,9 @@ class ExternalIntegrationsService:
     def get_repo_workflows(self, gh_org_name: str, gh_org_repo_name: str):
         github_api_service = GithubApiService(self.access_token)
         try:
-            workflows = github_api_service.get_repo_workflows(gh_org_name, gh_org_repo_name)
+            workflows = github_api_service.get_repo_workflows(
+                gh_org_name, gh_org_repo_name
+            )
             workflows_list = []
             for page in range(0, workflows.totalCount // PAGE_SIZE + 1, 1):
                 workflows = workflows.get_page(page)
@@ -47,7 +49,6 @@ class ExternalIntegrationsService:
             return workflows_list
         except GithubException as e:
             raise e
-
 
 
 def get_external_integrations_service(
