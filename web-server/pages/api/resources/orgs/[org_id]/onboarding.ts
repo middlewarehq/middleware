@@ -2,6 +2,7 @@ import * as yup from 'yup';
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { Columns, Table } from '@/constants/db';
+import { OnboardingStep } from '@/types/resources';
 import { db } from '@/utils/db';
 
 const putSchema = yup.object().shape({

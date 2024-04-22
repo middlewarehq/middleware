@@ -994,3 +994,9 @@ export interface UserStat {
   MERGED: number;
   REVIEWED: number;
 }
+
+export enum OnboardingStep {
+  'WELCOME_SCREEN' = 'WELCOME_SCREEN',
+  'CODE_PROVIDER_INTEGRATED' = 'CODE_PROVIDER_INTEGRATED',
+  'TEAM_CREATED' = 'TEAM_CREATED'
+}
