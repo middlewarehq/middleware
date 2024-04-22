@@ -2,8 +2,8 @@ import pytz
 from datetime import datetime
 from datetime import timedelta
 from tests.factories.models.incidents import get_change_failure_rate_metrics
-from dora.service.incidents.incidents import get_incident_service
-from dora.utils.time import Interval, time_now
+from mhq.service.incidents.incidents import get_incident_service
+from mhq.utils.time import Interval, time_now
 
 from tests.factories.models import get_incident, get_deployment
 

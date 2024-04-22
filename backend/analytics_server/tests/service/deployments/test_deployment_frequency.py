@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
 import pytz
-from dora.service.deployments.analytics import DeploymentAnalyticsService
-from dora.utils.time import Interval
+from mhq.service.deployments.analytics import DeploymentAnalyticsService
+from mhq.utils.time import Interval
 from tests.factories.models.code import get_deployment, get_deployment_frequency_metrics
 
 first_week_2024 = datetime(2024, 1, 1, 0, 0, 0, tzinfo=pytz.UTC)

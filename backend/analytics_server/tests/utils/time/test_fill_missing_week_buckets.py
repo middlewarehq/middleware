@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytz
 
-from dora.utils.time import Interval, fill_missing_week_buckets
+from mhq.utils.time import Interval, fill_missing_week_buckets
 
 
 last_week_2022 = datetime(2022, 12, 26, 0, 0, 0, tzinfo=pytz.UTC)

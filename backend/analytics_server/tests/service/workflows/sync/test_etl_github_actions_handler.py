@@ -1,8 +1,8 @@
-from dora.service.workflows.sync.etl_github_actions_handler import (
+from mhq.service.workflows.sync.etl_github_actions_handler import (
     GithubActionsETLHandler,
 )
-from dora.store.models.code import RepoWorkflowRunsStatus
-from dora.utils.string import uuid4_str
+from mhq.store.models.code import RepoWorkflowRunsStatus
+from mhq.utils.string import uuid4_str
 from tests.factories.models import get_repo_workflow_run
 from tests.factories.models.exapi.github import get_github_workflow_run_dict
 from tests.utilities import compare_objects_as_dicts

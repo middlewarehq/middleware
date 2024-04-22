@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
 
-from dora.utils.time import time_now
+from mhq.utils.time import time_now
 
 
 def get_github_commit_dict(

@@ -1,14 +1,14 @@
 from random import randint
 from uuid import uuid4
-from dora.service.deployments.models.models import (
+from mhq.service.deployments.models.models import (
     Deployment,
     DeploymentFrequencyMetrics,
     DeploymentStatus,
     DeploymentType,
 )
-from dora.utils.string import uuid4_str
+from mhq.utils.string import uuid4_str
 
-from dora.store.models.code import (
+from mhq.store.models.code import (
     PullRequestCommit,
     PullRequestEvent,
     PullRequestEventType,
@@ -17,7 +17,7 @@ from dora.store.models.code import (
     RepoWorkflowRuns,
     RepoWorkflowRunsStatus,
 )
-from dora.utils.time import time_now
+from mhq.utils.time import time_now
 
 
 def get_pull_request(

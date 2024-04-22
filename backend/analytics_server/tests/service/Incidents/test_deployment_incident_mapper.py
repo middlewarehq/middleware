@@ -1,6 +1,6 @@
 from datetime import timedelta
-from dora.service.incidents.incidents import get_incident_service
-from dora.utils.time import time_now
+from mhq.service.incidents.incidents import get_incident_service
+from mhq.utils.time import time_now
 
 from tests.factories.models import get_incident, get_deployment
 

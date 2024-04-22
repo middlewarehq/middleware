@@ -1,4 +1,4 @@
-from dora.utils.dict import get_key_to_count_map_from_key_to_list_map
+from mhq.utils.dict import get_key_to_count_map_from_key_to_list_map
 
 
 def test_empty_dict_return_empty_dict():

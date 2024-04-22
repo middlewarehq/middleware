@@ -2,9 +2,9 @@ from datetime import datetime
 
 import pytz
 
-from dora.service.code.sync.etl_github_handler import GithubETLHandler
-from dora.store.models.code import PullRequestState
-from dora.utils.string import uuid4_str
+from mhq.service.code.sync.etl_github_handler import GithubETLHandler
+from mhq.store.models.code import PullRequestState
+from mhq.utils.string import uuid4_str
 from tests.factories.models import (
     get_pull_request,
     get_pull_request_commit,
