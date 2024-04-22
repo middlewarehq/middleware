@@ -1,10 +1,12 @@
+from os import getenv
+
 from flask import Flask
 
-from mhq.store import configure_db_with_app
 from env import load_app_env
 
 load_app_env()
 
+from mhq.store import configure_db_with_app
 from mhq.api.hello import app as core_api
 from mhq.api.settings import app as settings_api
 from mhq.api.pull_requests import app as pull_requests_api
@@ -12,9 +14,10 @@ from mhq.api.incidents import app as incidents_api
 from mhq.api.integrations import app as integrations_api
 from mhq.api.deployment_analytics import app as deployment_analytics_api
 from mhq.api.teams import app as teams_api
-from mhq.api.sync import app as sync_api
 
 from mhq.store.initialise_db import initialize_database
+
+ANALYTICS_SERVER_PORT = getenv("ANALYTICS_SERVER_PORT")
 
 app = Flask(__name__)
 
@@ -25,10 +28,9 @@ app.register_blueprint(incidents_api)
 app.register_blueprint(deployment_analytics_api)
 app.register_blueprint(integrations_api)
 app.register_blueprint(teams_api)
-app.register_blueprint(sync_api)
 
 configure_db_with_app(app)
 initialize_database(app)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=ANALYTICS_SERVER_PORT)
