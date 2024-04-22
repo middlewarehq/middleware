@@ -20,7 +20,7 @@ class Team(db.Model):
     updated_at = db.Column(
         db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
-    is_deleted = db.Column(db.Boolean)
+    is_deleted = db.Column(db.Boolean, default=False)
 
     def __hash__(self):
         return hash(self.id)
