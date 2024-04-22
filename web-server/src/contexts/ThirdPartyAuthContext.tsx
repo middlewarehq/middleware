@@ -11,7 +11,7 @@ import {
   initialState as initialAuthState
 } from '@/slices/auth';
 import { useDispatch, useSelector } from '@/store';
-import { UserRole, IntegrationGroup } from '@/types/resources';
+import { UserRole, IntegrationGroup, OnboardingStep } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
 export interface AuthContextValue extends AuthState {

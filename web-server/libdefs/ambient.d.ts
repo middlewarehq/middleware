@@ -14,15 +14,9 @@ declare type Org = {
   created_at: Date;
   name: string;
   domain: string;
-  onboarding_state: OnboardingStep[];
+  onboarding_state: string[];
   integrations: Partial<IntegrationsMap>;
 };
-
-declare enum OnboardingStep {
-  'WELCOME_SCREEN' = 'WELCOME_SCREEN',
-  'CODE_PROVIDER_INTEGRATED' = 'CODE_PROVIDER_INTEGRATED',
-  'TEAM_CREATED' = 'TEAM_CREATED'
-}
 
 declare type ONBOARDING_STEP =
   | 'WELCOME_INTRODUCTION_STEP'

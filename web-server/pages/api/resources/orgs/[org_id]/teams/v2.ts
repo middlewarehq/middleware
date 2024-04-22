@@ -17,7 +17,7 @@ import { Columns, Table } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
-import { ReqOrgRepo } from '@/types/resources';
+import { OnboardingStep, ReqOrgRepo } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
 
 const getSchema = yup.object().shape({

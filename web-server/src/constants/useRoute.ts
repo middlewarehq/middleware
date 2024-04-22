@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
-import { UserRole } from '@/types/resources';
+import { OnboardingStep, UserRole } from '@/types/resources';
 
 import { ROUTES } from './routes';
 
