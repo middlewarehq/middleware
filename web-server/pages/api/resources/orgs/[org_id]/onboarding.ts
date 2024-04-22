@@ -2,13 +2,12 @@ import * as yup from 'yup';
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { Columns, Table } from '@/constants/db';
-import { OnboardingSteps } from '@/types/resources';
 import { db } from '@/utils/db';
 
 const putSchema = yup.object().shape({
   onboarding_state: yup
     .array()
-    .of(yup.string().oneOf(Object.values(OnboardingSteps)).required())
+    .of(yup.string().oneOf(Object.values(OnboardingStep)).required())
     .required()
 });
 
@@ -27,7 +26,7 @@ endpoint.handle.PUT(putSchema, async (req, res) => {
   const { org_id, onboarding_state } = req.payload;
 
   return res.send(
-    await updateOnBoardingState(org_id, onboarding_state as OnboardingSteps[])
+    await updateOnBoardingState(org_id, onboarding_state as OnboardingStep[])
   );
 });
 
@@ -35,7 +34,7 @@ export default endpoint.serve();
 
 export const getOnBoardingState = async (
   org_id: string
-): Promise<{ onboarding_state: OnboardingSteps[] }> => {
+): Promise<{ onboarding_state: OnboardingStep[] }> => {
   const results = await db(Table.UIPreferences)
     .select(Columns[Table.UIPreferences].data)
     .where(Columns[Table.UIPreferences].entity_id, org_id);
@@ -44,8 +43,8 @@ export const getOnBoardingState = async (
 
 export const updateOnBoardingState = async (
   org_id: ID,
-  onboarding_state: OnboardingSteps[]
-): Promise<{ onboarding_state: OnboardingSteps[] }> => {
+  onboarding_state: OnboardingStep[]
+): Promise<{ onboarding_state: OnboardingStep[] }> => {
   const results = await db(Table.UIPreferences)
     .insert({
       entity_type: 'ORG',
