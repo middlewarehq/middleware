@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
-import { OnboardingSteps, UserRole } from '@/types/resources';
+import { UserRole } from '@/types/resources';
 
 import { ROUTES } from './routes';
 
@@ -15,12 +15,10 @@ export const useRedirectWithSession = () => {
   const router = useRouter();
   const { org, orgId, onboardingState } = useAuth();
 
-  const isOrgWelcomed = onboardingState.includes(
-    OnboardingSteps.WELCOME_SCREEN
-  );
+  const isOrgWelcomed = onboardingState.includes(OnboardingStep.WELCOME_SCREEN);
 
   const anyTeamEverExisted = onboardingState.includes(
-    OnboardingSteps.TEAM_CREATED
+    OnboardingStep.TEAM_CREATED
   );
 
   const isOneCodeProviderIntegrated =
