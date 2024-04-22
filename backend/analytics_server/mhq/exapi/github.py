@@ -5,7 +5,7 @@ from typing import Optional, Dict, Tuple, List
 
 import requests
 from github import Github, UnknownObjectException
-from github.GithubException import RateLimitExceededException
+from github.GithubException import GithubException
 from github.Organization import Organization as GithubOrganization
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
@@ -41,14 +41,17 @@ class GithubApiService:
         :raises HTTPError: If the request fails and status code is not 200
         """
         url = f"{self.base_url}/user"
-        response = requests.get(url, headers=self.headers)
+        try:
+            response = requests.get(url, headers=self.headers)
+        except GithubException as e:
+            raise Exception(f"Error in PAT validation, Error: {e.data}")
         return response.status_code == 200
 
     def get_org_list(self) -> [GithubOrganization]:
         try:
             orgs = list(self._g.get_user().get_orgs())
-        except RateLimitExceededException:
-            raise GithubRateLimitExceeded("GITHUB_API_LIMIT_EXCEEDED")
+        except GithubException as e:
+            raise e
 
         return orgs
 
@@ -67,16 +70,16 @@ class GithubApiService:
     ) -> [Dict]:
         try:
             repos = self.get_repos(org_login, per_page, page)
-        except RateLimitExceededException:
-            raise GithubRateLimitExceeded("GITHUB_API_LIMIT_EXCEEDED")
+        except GithubException as e:
+            raise e
 
         return [repo.__dict__["_rawData"] for repo in repos]
 
     def get_repo(self, org_login: str, repo_name: str) -> Optional[GithubRepository]:
         try:
             return self._g.get_repo(f"{org_login}/{repo_name}")
-        except UnknownObjectException:
-            return None
+        except GithubException as e:
+            raise e
 
     def get_repo_contributors(self, github_repo: GithubRepository) -> [Tuple[str, int]]:
         contributors = list(github_repo.get_contributors())

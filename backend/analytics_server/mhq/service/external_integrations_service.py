@@ -1,6 +1,7 @@
+from github import GithubException
 from github.Organization import Organization as GithubOrganization
 
-from mhq.exapi.github import GithubApiService, GithubRateLimitExceeded
+from mhq.exapi.github import GithubApiService
 from mhq.store.models import UserIdentityProvider
 from mhq.store.repos.core import CoreRepoService
 
@@ -22,27 +23,31 @@ class ExternalIntegrationsService:
         github_api_service = GithubApiService(self.access_token)
         try:
             orgs: [GithubOrganization] = github_api_service.get_org_list()
-        except GithubRateLimitExceeded as e:
-            raise Exception(e)
+        except GithubException as e:
+            raise e
         return orgs
 
     def get_github_org_repos(self, org_login: str, page_size: int, page: int):
         github_api_service = GithubApiService(self.access_token)
         try:
             return github_api_service.get_repos_raw(org_login, page_size, page)
-        except Exception as e:
-            raise Exception(e)
+        except GithubException as e:
+            raise e
 
     def get_repo_workflows(self, gh_org_name: str, gh_org_repo_name: str):
         github_api_service = GithubApiService(self.access_token)
-        workflows = github_api_service.get_repo_workflows(gh_org_name, gh_org_repo_name)
-        workflows_list = []
-        for page in range(0, workflows.totalCount // PAGE_SIZE + 1, 1):
-            workflows = workflows.get_page(page)
-            if not workflows:
-                break
-            workflows_list += workflows
-        return workflows_list
+        try:
+            workflows = github_api_service.get_repo_workflows(gh_org_name, gh_org_repo_name)
+            workflows_list = []
+            for page in range(0, workflows.totalCount // PAGE_SIZE + 1, 1):
+                workflows = workflows.get_page(page)
+                if not workflows:
+                    break
+                workflows_list += workflows
+            return workflows_list
+        except GithubException as e:
+            raise e
+
 
 
 def get_external_integrations_service(
