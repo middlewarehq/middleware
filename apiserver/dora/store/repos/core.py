@@ -52,8 +52,36 @@ class CoreRepoService:
         return self._db.session.query(Team).filter(Team.id == team_id).one_or_none()
 
     @rollback_on_exc
+    def create_team(self, org_id: str, name: str, member_ids: List[str]) -> Team:
+        team = Team(
+            name=name,
+            org_id=org_id,
+            member_ids=member_ids or [],
+            is_deleted=False,
+        )
+        self._db.session.add(team)
+        self._db.session.commit()
+
+        return self.get_team(team.id)
+
+    @rollback_on_exc
+    def update_team(self, team: Team) -> Team:
+        self._db.session.merge(team)
+        self._db.session.commit()
+
+        return self.get_team(team.id)
+
+    @rollback_on_exc
     def get_user(self, user_id) -> Optional[Users]:
         return self._db.session.query(Users).filter(Users.id == user_id).one_or_none()
+
+    @rollback_on_exc
+    def get_users(self, user_ids: List[str]) -> List[Users]:
+        return (
+            self._db.session.query(Users)
+            .filter(and_(Users.id.in_(user_ids), Users.is_deleted == False))
+            .all()
+        )
 
     @rollback_on_exc
     def get_org_integrations_for_names(self, org_id: str, provider_names: List[str]):
