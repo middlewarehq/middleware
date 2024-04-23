@@ -153,7 +153,12 @@ const SearchFilter: FC<{
           </FlexBox>
         </FlexBox>
       </FlexBox>
-      {showCreate && <CreateEditTeams onDiscard={handleShowCreateTeam} />}
+      {showCreate && (
+        <CreateEditTeams
+          onDiscard={handleShowCreateTeam}
+          onSave={handleShowCreateTeam}
+        />
+      )}
     </FlexBox>
   );
 };

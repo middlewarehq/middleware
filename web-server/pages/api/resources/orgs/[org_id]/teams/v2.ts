@@ -12,9 +12,8 @@ import {
 } from '@/api/resources/orgs/[org_id]/onboarding';
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { handleRequest } from '@/api-helpers/axios';
-import { handleApi } from '@/api-helpers/axios-api-instance';
 import { Endpoint } from '@/api-helpers/global';
-import { Columns, Table, Row } from '@/constants/db';
+import { Row } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
@@ -113,16 +112,15 @@ endpoint.handle.POST(postSchema, async (req, res) => {
 
   const { org_repos, org_id, provider, name } = req.payload;
   const orgReposList: ReqRepoWithProvider[] = [];
-  forEachObjIndexed(
-    (repos, org) =>
+  forEachObjIndexed((repos, org) => {
+    repos.forEach((repo) => {
       orgReposList.push({
-        ...repos,
+        ...repo,
         org,
         provider
-      } as any as ReqRepoWithProvider),
-    org_repos
-  );
-
+      } as any as ReqRepoWithProvider);
+    });
+  }, org_repos);
   const [team, onboardingState] = await Promise.all([
     createTeam(org_id, name, []),
     getOnBoardingState(org_id)
@@ -132,7 +130,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     new Set(onboardingState.onboarding_state).add(OnboardingStep.TEAM_CREATED)
   );
   const [teamRepos] = await Promise.all([
-    handleApi<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
+    handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
       `/teams/${team.id}/repos`,
       {
         method: 'PUT',
@@ -154,26 +152,25 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
 
   const { id, name, org_repos, provider } = req.payload;
   const orgReposList: ReqRepoWithProvider[] = [];
-  forEachObjIndexed(
-    (repos, org) =>
+  forEachObjIndexed((repos, org) => {
+    repos.forEach((repo) => {
       orgReposList.push({
-        ...repos,
+        ...repo,
         org,
         provider
-      } as any as ReqRepoWithProvider),
-    org_repos
-  );
+      } as any as ReqRepoWithProvider);
+    });
+  }, org_repos);
 
   const [team, teamRepos] = await Promise.all([
     updateTeam(id, name, []),
-    handleApi<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(`/teams/${id}/repos`, {
+    handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(`/teams/${id}/repos`, {
       method: 'PUT',
       data: {
         repos: orgReposList
       }
     }).then((repos) => repos.map((r) => ({ ...r, team_id: id })))
   ]);
-
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
 
@@ -200,7 +197,7 @@ const updateTeam = async (
   member_ids: string[]
 ): Promise<BaseTeam> => {
   return handleRequest<BaseTeam>(`/team/${team_id}`, {
-    method: 'PUT',
+    method: 'PATCH',
     data: {
       name: team_name,
       member_ids
@@ -213,46 +210,13 @@ const createTeam = async (
   team_name: string,
   member_ids: string[]
 ): Promise<BaseTeam> => {
-  return handleRequest<BaseTeam>(`/org/${org_id}/teams`, {
+  return handleRequest<BaseTeam>(`/org/${org_id}/team`, {
     method: 'POST',
     data: {
       name: team_name,
       member_ids
     }
   });
-};
-
-const addReposToTeam = async (team_id: ID, repo_ids: ID[]) => {
-  try {
-    await db(Table.TeamRepos)
-      .update({
-        [Columns[Table.TeamRepos].is_active]: false,
-        updated_at: new Date()
-      })
-      .where('team_id', team_id);
-  } catch (err) {}
-
-  try {
-    const payload = repo_ids.map((repo_id) => ({
-      [Columns[Table.TeamRepos].team_id]: team_id,
-      [Columns[Table.TeamRepos].org_repo_id]: repo_id,
-      [Columns[Table.TeamRepos].is_active]: true
-    }));
-    const data =
-      payload.length &&
-      (await db('TeamRepos')
-        .insert(
-          repo_ids.map((repo_id) => ({
-            [Columns[Table.TeamRepos].team_id]: team_id,
-            [Columns[Table.TeamRepos].org_repo_id]: repo_id,
-            [Columns[Table.TeamRepos].is_active]: true
-          }))
-        )
-        .onConflict(['team_id', 'org_repo_id'])
-        .merge()
-        .returning('*'));
-    return data;
-  } catch (err) {}
 };
 
 export const getAllOrgRepos = async (

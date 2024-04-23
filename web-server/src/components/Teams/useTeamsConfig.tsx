@@ -353,11 +353,12 @@ export const TeamsCRUDProvider: React.FC<{
 const repoToPayload = (repos: BaseRepo[]) => {
   const repoPayload = {} as Record<string, RepoUniqueDetails[]>;
   repos.forEach((repo) => {
-    const orgRepo = {
-      idempotency_key: repo.id,
+    const orgRepo: RepoUniqueDetails = {
+      idempotency_key: String(repo.id),
       name: repo.name,
-      slug: repo.slug
-    } as RepoUniqueDetails;
+      slug: repo.slug,
+      default_branch: repo.branch
+    };
     const orgName = repo.parent;
 
     if (repoPayload[orgName]) {

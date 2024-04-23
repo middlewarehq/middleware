@@ -447,7 +447,7 @@ export type RepoWithSingleWorkflow = {
 
 export type RepoUniqueDetails = Pick<
   RepoWithSingleWorkflow,
-  'name' | 'idempotency_key' | 'slug'
+  'name' | 'slug' | 'default_branch' | 'idempotency_key'
 >;
 
 export type RepoWithMultipleWorkflows = Omit<
