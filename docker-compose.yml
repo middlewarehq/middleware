@@ -1,6 +1,6 @@
 services:
   dora-metrics:
-    container_name: dora-metrics
+    container_name: middleware
     build:
       context: ./
       dockerfile: Dockerfile

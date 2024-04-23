@@ -5,3 +5,14 @@
 ./*/env.example
 ./*/.vscode
 ./*/node_modules
+.gitignore
+./CONTRIBUTING.md
+./docker-compose.yml
+./*/docker-compose.yml
+./Dockerfile
+./Dockerfile.dev
+./LICENSE
+./README.md
+./*/README.*
+./dev.sh
+./setup_utils/install.sh

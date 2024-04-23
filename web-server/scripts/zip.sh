@@ -1,4 +1,4 @@
-#! /bin/bash
+#! /bin/sh
 set -e
 
 DIR=$(dirname $0)
@@ -17,11 +17,8 @@ tar -czf \
   http-server.js \
   .next \
   next.config.js \
-  .env* \
   public \
-  sentry.* \
   scripts \
-  config
 
   
 echo "Completed artifact creation"

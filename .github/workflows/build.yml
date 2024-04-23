@@ -33,7 +33,17 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
-
+            
+      - name: Set up Docker
+        uses: crazy-max/ghaction-setup-docker@v3
+        with:
+          daemon-config: |
+            {
+              "debug": true,
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
       - name: Build Docker image
         run: docker build --tag middleware:latest --platform linux/amd64,linux/arm64 .
 
