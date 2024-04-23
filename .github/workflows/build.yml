@@ -24,6 +24,8 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
 
       - name: list file contents
         run: ls -Alrt 
