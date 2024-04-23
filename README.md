@@ -9,9 +9,11 @@
 # Quick Start
 Open the terminal and run the following command
 ```bash
-git clone https://github.com/middlewarehq/middleware
-cd middleware
-./install.sh
+docker run \
+    --name middleware \
+    -p 3000:3000 \
+    -p 9696:9696 \
+    public.ecr.aws/y4x5l0o7/middleware:latest
 ```
 
 Wait for sometime for the services to be up.\
