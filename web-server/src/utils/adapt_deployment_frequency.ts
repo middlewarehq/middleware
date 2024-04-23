@@ -37,25 +37,30 @@ export const getBadgeDetails = (
   avg_deployment_frequency: number;
   duration: 'day' | 'week' | 'month';
 } => {
+  const {
+    avg_daily_deployment_frequency = 0,
+    avg_weekly_deployment_frequency = 0,
+    avg_monthly_deployment_frequency = 0
+  } = data || {};
   if (duration) {
     return {
-      avg_deployment_frequency: data[badgeDetailsToKey[duration]],
+      avg_deployment_frequency: data?.[badgeDetailsToKey[duration]] || 0,
       duration
     };
   }
-  if (data.avg_daily_deployment_frequency >= 1)
+  if (avg_daily_deployment_frequency >= 1)
     return {
-      avg_deployment_frequency: data.avg_daily_deployment_frequency,
+      avg_deployment_frequency: avg_daily_deployment_frequency,
       duration: 'day'
     };
-  else if (data.avg_weekly_deployment_frequency >= 1)
+  else if (avg_weekly_deployment_frequency >= 1)
     return {
-      avg_deployment_frequency: data.avg_weekly_deployment_frequency,
+      avg_deployment_frequency: avg_weekly_deployment_frequency,
       duration: 'week'
     };
   else
     return {
-      avg_deployment_frequency: data.avg_monthly_deployment_frequency,
+      avg_deployment_frequency: avg_monthly_deployment_frequency,
       duration: 'month'
     };
 };
