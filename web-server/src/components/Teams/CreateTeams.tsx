@@ -187,6 +187,7 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
                 }}
               >
                 <Line sx={{ maxWidth: '200px', overflow: 'hidden' }}>
+                  {option.parent ? option.parent + '/' : ''}
                   {option.name}
                 </Line>
                 {selected ? <Close fontSize="small" /> : null}
