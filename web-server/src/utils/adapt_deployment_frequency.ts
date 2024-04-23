@@ -24,12 +24,25 @@ const adaptTeamAnalytics = (
   }));
 };
 
-const getBadgeDetails = (
-  data: Partial<UpdatedDeploymentFrequencyAnalyticsResponseV2>
+const badgeDetailsToKey = {
+  day: 'avg_daily_deployment_frequency',
+  week: 'avg_weekly_deployment_frequency',
+  month: 'avg_monthly_deployment_frequency'
+} as const;
+
+export const getBadgeDetails = (
+  data: Partial<UpdatedDeploymentFrequencyAnalyticsResponseV2>,
+  duration?: 'day' | 'week' | 'month'
 ): {
   avg_deployment_frequency: number;
   duration: 'day' | 'week' | 'month';
 } => {
+  if (duration) {
+    return {
+      avg_deployment_frequency: data[badgeDetailsToKey[duration]],
+      duration
+    };
+  }
   if (data.avg_daily_deployment_frequency >= 1)
     return {
       avg_deployment_frequency: data.avg_daily_deployment_frequency,
