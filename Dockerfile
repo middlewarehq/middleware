@@ -13,7 +13,7 @@ FROM python:3.9.19-alpine3.19 as backend-build
 ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app/
-COPY ./apiserver /app/apiserver
+COPY ./backend /app/backend
 RUN apk update && \
     apk add --no-cache \
         git \
@@ -21,7 +21,7 @@ RUN apk update && \
         gcc \
         musl-dev \
         python3-dev \
-    && cd ./apiserver \
+    && cd ./backend/analytics_server/ \
     && python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip \
     && /opt/venv/bin/pip install -r requirements.txt
