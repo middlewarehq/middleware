@@ -110,7 +110,7 @@ class LeadTimeService:
 
     def _get_team_repos_lead_time_metrics(
         self,
-        team_repos: TeamRepos,
+        team_repos: List[TeamRepos],
         interval: Interval,
         pr_filter: Dict[str, PRFilter] = None,
     ) -> List[LeadTimeMetrics]:
@@ -156,7 +156,7 @@ class LeadTimeService:
         team_repos: List[TeamRepos],
         interval: Interval,
         pr_filter: PRFilter = None,
-    ) -> Dict[TeamRepos, List[LeadTimeMetrics]]:
+    ) -> List[LeadTimeMetrics]:
 
         prs = self._get_lead_time_prs_for_repos_using_pr_deployments(
             team_repos, interval, pr_filter
@@ -206,6 +206,9 @@ class LeadTimeService:
         prs = self._code_repo_service.get_prs_merged_in_interval(
             repo_ids, interval, pr_filter
         )
+
+        for pr in prs:
+            pr.merge_to_deploy = 0
 
         return prs
 
