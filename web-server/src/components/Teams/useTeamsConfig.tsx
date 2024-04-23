@@ -103,7 +103,7 @@ export const TeamsCRUDProvider: React.FC<{
 
   // team-repo selection logic
   const selections = useEasyState<BaseRepo[]>([]);
-  const repoOptions = orgRepos;
+  const repoOptions = orgRepos || [];
   const selectedRepos = selections.value;
   const teamRepoError = useBoolState();
   const raiseTeamRepoError = useCallback(() => {
