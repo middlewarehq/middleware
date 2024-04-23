@@ -26,15 +26,3 @@ def trigger_data_sync(org_id: str):
             )
             continue
     LOG.info(f"Data sync for org {org_id} completed successfully")
-
-
-if __name__ == "__main__":
-    default_org = get_query_validator().get_default_org()
-    if not default_org:
-        raise Exception("Default org not found")
-    org_id = str(default_org.id)
-    with get_redis_lock_service().acquire_lock("{org}:" + f"{str(org_id)}:data_sync"):
-        try:
-            trigger_data_sync(org_id)
-        except Exception as e:
-            LOG.error(f"Error syncing data for org {org_id}: {str(e)}")
