@@ -90,7 +90,7 @@ class RepositoryService:
                         id=uuid4_str(),
                         org_id=org_id,
                         name=raw_org_repo.name,
-                        provider=raw_org_repo.provider,
+                        provider=raw_org_repo.provider.value,
                         org_name=raw_org_repo.org_name,
                         idempotency_key=raw_org_repo.idempotency_key,
                         slug=raw_org_repo.slug,
