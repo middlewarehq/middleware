@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo 'MHQ_EXTRACT_BACKEND_DEPENDENCIES'
 if [ -f /opt/venv.tar.gz ]; then
@@ -11,14 +11,24 @@ fi
 
 echo 'MHQ_EXTRACT_FRONTEND'
 if [ -f /app/web-server.tar.gz ]; then
-    mkdir -p /app/frontend/web-server
-    tar xzf /app/web-server.tar.gz -C /app/frontend/web-server --strip-components=2
+    mkdir -p /app/web-server
+    tar xzf /app/web-server.tar.gz -C /app/web-server --strip-components=2
     rm -rf /app/web-server.tar.gz
 else
     echo "Tar file /app/web-server.tar.gz does not exist. Skipping extraction."
 fi
 
-pg_ctl stop -D /var/lib/postgres/data;
-
 echo 'MHQ_STARTING SUPERVISOR'
-/usr/bin/supervisord -c /etc/supervisord.conf
+
+if [ "$ENVIRONMENT" != "dev" ]; then
+    cd /app/web-server
+    yarn build
+fi
+
+if [ "$ENVIRONMENT" = "dev" ]; then
+    SUPERVISOR_CONF="/etc/supervisord-dev.conf"
+else
+    SUPERVISOR_CONF="/etc/supervisord.conf"
+fi
+
+/usr/bin/supervisord -c "$SUPERVISOR_CONF"

@@ -1,5 +1,5 @@
-#!/bin/sh
-
+#!/bin/bash
+target_path=../backend/analytics_server/mhq/config/
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     key="$1"
