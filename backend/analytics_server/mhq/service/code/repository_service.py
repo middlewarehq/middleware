@@ -7,7 +7,7 @@ from mhq.utils.string import uuid4_str
 from mhq.service.code.models.org_repo import RawOrgRepo
 from mhq.store.models.code import OrgRepo
 from mhq.store.models.core import Team
-from mhq.store.repos.code import CodeRepoService
+from mhq.store.repos.code import CodeRepoService, TeamRepos
 
 
 class RepositoryService:
@@ -99,6 +99,25 @@ class RepositoryService:
                 )
 
         return self._code_repo_service.update_org_repos(updated_org_repos)
+
+    def patch_team_repos_mapping(self, team: Team, team_repos: List[TeamRepos]):
+
+        existing_team_repos = self.get_team_repos(team)
+
+        existing_team_repo_ids = set([str(repo.id) for repo in existing_team_repos])
+
+        team_repo_ids = set([str(repo.org_repo_id) for repo in team_repos])
+
+        team_repos_mappings_not_in_db = list(
+            team_repo_ids.difference(existing_team_repo_ids)
+        )
+
+        if team_repos_mappings_not_in_db:
+            raise Exception(
+                f"Team Repo Mappings does not exist for team: {str(team.id)} and repos {team_repos_mappings_not_in_db}"
+            )
+
+        return self._code_repo_service.patch_team_repos_mapping(team, team_repos)
 
     def _update_team_incident_services(self, team: Team, org_repos: List[OrgRepo]):
 
