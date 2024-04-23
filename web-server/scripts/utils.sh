@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 set -e
 
 function catch_force_exit() {

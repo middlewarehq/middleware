@@ -1,9 +1,9 @@
 services:
-  dora-metrics:
-    container_name: middleware
+  middleware-dev:
+    container_name: middleware-dev
     build:
       context: ./
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
       args:
         ENVIRONMENT: ${ENVIRONMENT}
         POSTGRES_DB_ENABLED: ${POSTGRES_DB_ENABLED:-true}
@@ -18,9 +18,10 @@ services:
 
     ports:
       - "9696:9696"
-      - "3005:3000"
-      - "5436:5432"
-      - "6380:6379"
+      - "9697:9697"
+      - "3005:3333"
+      - "5436:5434"
+      - "6379:6379"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"

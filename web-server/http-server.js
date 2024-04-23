@@ -48,7 +48,7 @@ app
       } catch (e) {
         handleErrors(e);
       }
-    }).listen(3000, (err) => {
+    }).listen(port, (err) => {
       if (err) throw err;
       console.info(`> Server started on http://localhost:${port}`);
     });

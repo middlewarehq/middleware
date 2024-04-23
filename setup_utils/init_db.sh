@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 set -u
@@ -35,5 +35,3 @@ fi
 DB_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB?sslmode=disable"
 
 /usr/local/bin/dbmate -u "$DB_URL" up
-
-exit 0
