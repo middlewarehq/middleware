@@ -76,6 +76,17 @@ class CodeRepoService:
         self._db.session.commit()
 
     @rollback_on_exc
+    def patch_team_repos_mapping(
+        self, team: Team, team_repos: List[TeamRepos]
+    ) -> List[TeamRepos]:
+        [self._db.session.merge(team_repo) for team_repo in team_repos]
+        self._db.session.commit()
+        team_repo_ids = [str(team_repo.org_repo_id) for team_repo in team_repos]
+        return self._db.session.query(TeamRepos).filter(
+            TeamRepos.team_id == team.id, TeamRepos.org_repo_id.in_(team_repo_ids)
+        )
+
+    @rollback_on_exc
     def get_org_repos_used_across_teams(self, org_id: str) -> List[OrgRepo]:
         """
         Returns a list of all active org repos which are also used in teams.
