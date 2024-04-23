@@ -4,6 +4,7 @@ from typing import Optional, List
 
 from sqlalchemy import or_
 from sqlalchemy.orm import defer
+from mhq.store.models.core import Team
 
 from mhq.store import db, rollback_on_exc
 from mhq.store.models.code import (
@@ -37,6 +38,61 @@ class CodeRepoService:
     def update_org_repos(self, org_repos: List[OrgRepo]):
         [self._db.session.merge(org_repo) for org_repo in org_repos]
         self._db.session.commit()
+        return self.get_repos_by_ids([str(repo.id) for repo in org_repos])
+
+    @rollback_on_exc
+    def update_team_repos(self, team: Team, org_repos: List[OrgRepo]):
+
+        existing_team_repos = self._db.session.query(TeamRepos).filter(
+            TeamRepos.team_id == team.id
+        )
+
+        for team_repo in existing_team_repos:
+            team_repo.is_active = False
+
+        repo_id_to_team_repos_map = {
+            str(team_repo.org_repo_id): team_repo for team_repo in existing_team_repos
+        }
+
+        updated_team_repos = []
+        for repo in org_repos:
+            team_repo = repo_id_to_team_repos_map.get(str(repo.id))
+            if team_repo:
+                team_repo.is_active = True
+            else:
+                team_repo = TeamRepos(
+                    team_id=team.id,
+                    org_repo_id=str(repo.id),
+                    prod_branches=["^" + repo.default_branch + "$"]
+                    if repo.default_branch
+                    else None,
+                )
+
+            updated_team_repos.append(team_repo)
+
+        for team_repo in updated_team_repos:
+            self._db.session.merge(team_repo)
+
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def get_org_repos_used_across_teams(self, org_id: str) -> List[OrgRepo]:
+        """
+        Returns a list of all active org repos which are also used in teams.
+        """
+
+        return (
+            self._db.session.query(OrgRepo)
+            .join(TeamRepos, TeamRepos.org_repo_id == OrgRepo.id)
+            .join(Team, TeamRepos.team_id == Team.id)
+            .filter(
+                OrgRepo.org_id == org_id,
+                OrgRepo.is_active.is_(True),
+                TeamRepos.is_active.is_(True),
+                Team.is_deleted.is_(False),
+            )
+            .all()
+        )
 
     @rollback_on_exc
     def save_pull_requests_data(
@@ -246,6 +302,17 @@ class CodeRepoService:
             return []
 
         return self._db.session.query(OrgRepo).filter(OrgRepo.id.in_(ids)).all()
+
+    @rollback_on_exc
+    def get_repos_by_idempotency_keys(
+        self, idempotency_keys: List[str]
+    ) -> List[OrgRepo]:
+
+        return (
+            self._db.session.query(OrgRepo)
+            .filter(OrgRepo.idempotency_key.in_(idempotency_keys))
+            .all()
+        )
 
     @rollback_on_exc
     def get_team_repos(self, team_id) -> List[OrgRepo]:

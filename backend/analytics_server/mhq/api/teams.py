@@ -1,13 +1,14 @@
 from flask import Blueprint
-from typing import List
-from voluptuous import Required, Schema, Optional
+from typing import Any, Dict, List
+from voluptuous import Required, Schema, Optional, All, Coerce
+from mhq.service.code.models.org_repo import RawOrgRepo
 from mhq.api.resources.code_resouces import adapt_org_repo
 from mhq.service.code.repository_service import get_repository_service
 from mhq.api.resources.core_resources import adapt_team
 from mhq.store.models.core.teams import Team
 from mhq.service.core.teams import get_team_service
 
-from mhq.api.request_utils import dataschema
+from mhq.api.request_utils import coerce_org_repos, dataschema
 from mhq.service.query_validator import get_query_validator
 
 app = Blueprint("teams", __name__)
@@ -88,5 +89,23 @@ def fetch_team_repos(team_id: str):
     team: Team = query_validator.team_validator(team_id)
 
     team_repos = get_repository_service().get_team_repos(team)
+
+    return [adapt_org_repo(repo) for repo in team_repos]
+
+
+@app.route("/teams/<team_id>/repos", methods={"PUT"})
+@dataschema(
+    Schema(
+        {
+            Required("repos"): All(list, Coerce(coerce_org_repos)),
+        }
+    ),
+)
+def update_team_repos(team_id: str, repos: List[RawOrgRepo]):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    team_repos = get_repository_service().update_team_repos(team, repos)
 
     return [adapt_org_repo(repo) for repo in team_repos]

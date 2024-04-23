@@ -1,11 +1,13 @@
 from functools import wraps
+from typing import Any, Dict, List
 from uuid import UUID
 
 from flask import request
 from stringcase import snakecase
 from voluptuous import Invalid
 from werkzeug.exceptions import BadRequest
-from mhq.store.models.code.workflows import WorkflowFilter
+from mhq.service.code.models.org_repo import RawOrgRepo
+from mhq.store.models.code import WorkflowFilter, CodeProvider
 
 from mhq.service.workflows.workflow_filter import get_workflow_filter_processor
 
@@ -75,3 +77,18 @@ def coerce_workflow_filter(filter_data: str) -> WorkflowFilter:
     return workflow_filter_processor.create_workflow_filter_from_json_string(
         filter_data
     )
+
+
+def coerce_org_repo(repo: Dict[str, str]) -> RawOrgRepo:
+    return RawOrgRepo(
+        provider=CodeProvider(repo.get("provider")),
+        name=repo.get("name"),
+        org_name=repo.get("org"),
+        slug=repo.get("slug"),
+        idempotency_key=repo.get("idempotency_key"),
+        default_branch=repo.get("default_branch"),
+    )
+
+
+def coerce_org_repos(repos: List[Dict[str, str]]) -> List[RawOrgRepo]:
+    return [coerce_org_repo(repo) for repo in repos]
