@@ -6,6 +6,7 @@ import {
   getProviderOrgs,
   getRepos
 } from '@/api/internal/[org_id]/git_provider_org';
+import { syncReposForOrg } from '@/api/internal/[org_id]/sync_repos';
 import {
   getOnBoardingState,
   updateOnBoardingState
@@ -139,7 +140,8 @@ endpoint.handle.POST(postSchema, async (req, res) => {
         }
       }
     ).then((repos) => repos.map((r) => ({ ...r, team_id: team.id }))),
-    updateOnBoardingState(org_id, updatedOnboardingState)
+    updateOnBoardingState(org_id, updatedOnboardingState),
+    syncReposForOrg(org_id)
   ]);
 
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
@@ -150,7 +152,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { id, name, org_repos, provider } = req.payload;
+  const { org_id, id, name, org_repos, provider } = req.payload;
   const orgReposList: ReqRepoWithProvider[] = [];
   forEachObjIndexed((repos, org) => {
     repos.forEach((repo) => {
@@ -169,7 +171,8 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
       data: {
         repos: orgReposList
       }
-    }).then((repos) => repos.map((r) => ({ ...r, team_id: id })))
+    }).then((repos) => repos.map((r) => ({ ...r, team_id: id }))),
+    syncReposForOrg(org_id)
   ]);
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
