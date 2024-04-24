@@ -20,9 +20,4 @@ fi
 
 echo 'MHQ_STARTING SUPERVISOR'
 
-if [ "$ENVIRONMENT" != "dev" ]; then
-    cd /app/web-server
-    yarn build
-fi
-
 /usr/bin/supervisord -c "/etc/supervisord.conf"
