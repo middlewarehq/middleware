@@ -6,44 +6,19 @@ ARG BACKEND_ENABLED=true
 ARG FRONTEND_ENABLED=true
 ARG CRON_ENABLED=true
 
-# Build the backend
-FROM python:3.9-slim as backend-build
+# Final image
+FROM middleware/prebuilt-base:latest
 
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
 
-WORKDIR /app/
-COPY ./backend /app/backend
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        gcc \
-        libpq-dev \
-        build-essential \
-    && cd ./backend/ \
-    && python3 -m venv /opt/venv \
-    && /opt/venv/bin/pip install --upgrade pip \
-    && /opt/venv/bin/pip install -r requirements.txt -r dev-requirements.txt
-
-# Final image
-FROM python:3.9-slim
-
 WORKDIR /app
-COPY --from=backend-build /opt/venv /opt/venv
-
 COPY . /app/
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        gcc \
-        build-essential \
-        libpq-dev \
-        cron \
-        postgresql \
-        postgresql-contrib \
-        redis-server \
-        supervisor \
-        curl \
-    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
-    && apt-get install -y nodejs \
+RUN cd ./backend/ \
+    && python3 -m venv /opt/venv \
+    && /opt/venv/bin/pip install --upgrade pip \
+    && /opt/venv/bin/pip install -r requirements.txt -r dev-requirements.txt \
     && mkdir -p /etc/cron.d && mv /app/setup_utils/cronjob.txt /etc/cron.d/cronjob \
     && chmod +x /app/setup_utils/start.sh /app/setup_utils/init_db.sh /app/setup_utils/generate_config_ini.sh \
     && mv ./setup_utils/supervisord-dev.conf /etc/supervisord.conf \
@@ -51,8 +26,6 @@ RUN apt-get update && \
     && echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf \
     && echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf \
     && npm install --global yarn --force \
-    && curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-amd64 \
-    && chmod +x /usr/local/bin/dbmate \
     && mkdir -p /var/log/postgres \
     && touch /var/log/postgres/postgres.log \
     && mkdir -p /var/log/init_db \
@@ -77,8 +50,6 @@ RUN apt-get update && \
     && tar cfz /opt/venv.tar.gz /opt/venv/ \
     && rm -rf /opt/venv && mkdir -p /opt/venv \
     && yarn cache clean \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 ENV POSTGRES_DB_ENABLED=true
 ENV DB_INIT_ENABLED=true
