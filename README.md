@@ -2,11 +2,11 @@
 
 ![Product Demo](media_files/product_demo_1.gif)
 
-![Stargazers](https://img.shields.io/github/stars/middlewarehq/unwrapped?style=social) 
-![Forks](https://img.shields.io/github/forks/middlewarehq/unwrapped?style=social) 
-![Contributors](https://img.shields.io/github/contributors/middlewarehq/unwrapped?color=dark-green) 
-![Issues](https://img.shields.io/github/issues/middlewarehq/unwrapped) 
-![License](https://img.shields.io/github/license/middlewarehq/unwrapped) 
+![Stargazers](https://img.shields.io/github/stars/middlewarehq/middleware?style=social) 
+![Forks](https://img.shields.io/github/forks/middlewarehq/middleware?style=social) 
+![Contributors](https://img.shields.io/github/contributors/middlewarehq/middleware?color=dark-green) 
+![Issues](https://img.shields.io/github/issues/middlewarehq/middleware) 
+![License](https://img.shields.io/github/license/middlewarehq/middleware) 
 
 **Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. They are:
 
