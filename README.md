@@ -1,4 +1,7 @@
-# Middleware - Open Source
+# Middleware
+
+![Product Demo](media_files/product_demo_1.gif)
+
 **Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. They are:
 
 - **Deployment Frequency**: The frequency of code deployments to production or an operational environment.
@@ -8,14 +11,26 @@
 
 
 **Table of Contents**
-- [Middleware - Open Source](#middleware---open-source)
+- [Middleware - Open Source](#middleware)
   - [Quick Start](#quick-start)
   - [Project Setup Guidelines](#project-setup-guidelines)
     - [Using Docker](#using-docker)
     - [Manual Setup](#manual-setup)
   - [Contributing guidelines](#contributing-guidelines)
   - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
+  - [Features](#features)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Examples](#examples)
+  - [Contributing](#contributing)
+  - [License](#license)
 
+## Features
+- Integration with various CI/CD tools
+- Automated collection and analysis of DORA metrics
+- Visualization of key performance indicators
+- Customizable reports and dashboards
+- Integration with popular project management platforms
 
 ## Quick Start
 Open the terminal and run the following command
@@ -141,7 +156,7 @@ To set up middleware locally, follow these steps:
    * The sync server can be accessed at http://localhost:6000.
 
 
-## Contributing guidelines
+## Contributing
 To get started contributing to middleware check out our [CONTRIBUTING.md](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md). 
 
 We appreciate your contributions and look forward to working together to make Middleware even better!
@@ -150,3 +165,29 @@ We appreciate your contributions and look forward to working together to make Mi
 To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md). 
 
 We look forward to your part in keeping Middleware secure!
+
+## Usage
+- Instructions for using the DORA metrics analyzer
+- How to configure data sources and metrics collection
+- Generating and interpreting reports
+- Tips for optimizing DevOps performance based on insights
+
+## Examples
+- Sample reports and dashboards showcasing DORA metrics
+- Real-world use cases and success stories
+- Screenshots of the analyzer in action
+
+## License
+- Information about the project's license (e.g., MIT, Apache 2.0)
+- Link to the full license text
+- Any additional terms or conditions related to licensing
+
+## License
+- Information about the project's license (e.g., MIT, Apache 2.0)
+- Link to the full license text
+- Any additional terms or conditions related to licensing
+
+![Product Screenshot](link_to_screenshot)
+
+
+
