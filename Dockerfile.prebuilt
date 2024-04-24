@@ -1,0 +1,19 @@
+FROM python:3.9-slim as oss-base
+
+# Install necessary packages for building the backend
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        build-essential \
+        libpq-dev \
+        cron \
+        postgresql \
+        postgresql-contrib \
+        redis-server \
+        supervisor \
+        curl \
+    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs \
+    && curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-amd64 \
+    && chmod +x /usr/local/bin/dbmate \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*

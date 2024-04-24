@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 FROM python:3.9-slim
 
 ENV DB_HOST=localhost
-ENV DB_NAME=dora-oss
+ENV DB_NAME=mhq-oss
 ENV DB_PASS=postgres
 ENV DB_PORT=5434
 ENV DB_USER=postgres

@@ -6,26 +6,10 @@ ARG BACKEND_ENABLED=true
 ARG FRONTEND_ENABLED=true
 ARG CRON_ENABLED=true
 
-# Build the backend
-FROM python:3.9-slim as backend-build
-
-# Prevents Python from writing pyc files.
-ENV PYTHONDONTWRITEBYTECODE=1
-
-WORKDIR /app/
-COPY ./backend /app/backend
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev build-essential
-
-WORKDIR /app/backend
-RUN python3 -m venv /opt/venv
-RUN /opt/venv/bin/pip install --upgrade pip
-RUN /opt/venv/bin/pip install -r requirements.txt -r dev-requirements.txt
-
-# Final image
-FROM python:3.9-slim
+FROM middlewareeng/oss-base:latest
 
 ENV DB_HOST=localhost
-ENV DB_NAME=dora-oss
+ENV DB_NAME=mhq-oss
 ENV DB_PASS=postgres
 ENV DB_PORT=5434
 ENV DB_USER=postgres
@@ -41,33 +25,22 @@ ENV NEXT_PUBLIC_APP_ENVIRONMENT="prod"
 ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:/usr/local/bin:$PATH"
 
 WORKDIR /app
-COPY --from=backend-build /opt/venv /opt/venv
-
 COPY . /app/
 
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends \
-        gcc \
-        build-essential \
-        libpq-dev \
-        cron \
-        postgresql \
-        postgresql-contrib \
-        redis-server \
-        supervisor \
-        curl
-RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
-RUN apt-get install -y nodejs
+WORKDIR /app/backend
+RUN python3 -m venv /opt/venv
+RUN /opt/venv/bin/pip install --upgrade pip
+RUN /opt/venv/bin/pip install -r requirements.txt -r dev-requirements.txt
+
+WORKDIR /app
 RUN mkdir -p /etc/cron.d && mv /app/setup_utils/cronjob.txt /etc/cron.d/cronjob
 RUN chmod +x /app/setup_utils/start.sh /app/setup_utils/init_db.sh /app/setup_utils/generate_config_ini.sh
-RUN mv ./setup_utils/supervisord-dev.conf /etc/supervisord.conf
+RUN mv /app/setup_utils/supervisord-dev.conf /etc/supervisord.conf
 RUN mv /app/database-docker/db/ /app/ && rm -rf /app/database-docker/
 RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf
 RUN echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf
 RUN sed -i "s/^port = .*/port = ${DB_PORT}/" /etc/postgresql/15/main/postgresql.conf
 RUN npm install --global yarn --force
-RUN curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-amd64
-RUN chmod +x /usr/local/bin/dbmate
 RUN mkdir -p /var/log/postgres
 RUN touch /var/log/postgres/postgres.log
 RUN mkdir -p /var/log/init_db
@@ -94,8 +67,5 @@ ENV BACKEND_ENABLED=true
 ENV FRONTEND_ENABLED=true
 ENV CRON_ENABLED=true
 ENV ENVIRONMENT=dev
-
-
-EXPOSE 3333 
 
 CMD ["/bin/bash", "-c", "/app/setup_utils/start.sh"]
