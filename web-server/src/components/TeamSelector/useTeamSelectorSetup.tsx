@@ -10,7 +10,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAxios } from '@/hooks/useAxios';
 import { useStateTeamConfig } from '@/hooks/useStateTeamConfig';
 import { appSlice } from '@/slices/app';
-import { resourcesSlice } from '@/slices/resources';
 import { teamSlice } from '@/slices/team';
 import { useSelector } from '@/store';
 import { Team } from '@/types/api/teams';
@@ -65,6 +64,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   const updateUsers = useCallback(
     (res: AxiosResponse<FetchTeamsResponse>) => {
       dispatch(teamSlice.actions.setTeams(res.data.teams));
+      dispatch(teamSlice.actions.setTeamReposMaps(res.data.teamReposMap));
       dispatch(
         appSlice.actions.setTeamProdBranchMap(res.data.teamReposProdBranchMap)
       );
@@ -102,19 +102,12 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
       onSuccess: updateUsers
     });
 
-  useEffect(() => {
-    dispatch(resourcesSlice.actions.updateFetchState({ users: fetch_state }));
-  }, [dispatch, fetch_state]);
-
   const apiTeams = useMemo(
     () => payload?.teams || ([] as Team[]),
     [payload?.teams]
   );
 
-  const usersMap = useMemo(
-    () => payload?.users || ([] as unknown as FetchTeamsResponse['users']),
-    [payload?.users]
-  );
+  const usersMap = {};
 
   useEffect(() => {
     if (!orgId) return;

@@ -6,7 +6,6 @@ import {
   startOfWeek
 } from 'date-fns';
 import { daysInWeek } from 'date-fns/constants';
-import { ascend, compose, partition, prop, sort, toLower } from 'ramda';
 import { useCallback, useMemo } from 'react';
 
 import { DateRange, DateRangeMap } from '@/components/DateRangePicker';
@@ -166,32 +165,6 @@ export const useStateBranchConfig = () => {
   const branchNames = useSelector((s) => s.app.branchNames);
   if (branchMode === ActiveBranchMode.ALL) return null;
   return branchNames;
-};
-
-export const useStateSingleTeamMembers = (includeManager: boolean = false) => {
-  const { team } = useSingleTeamConfig();
-
-  const usersMap = useSelector((s) => s.resources.users);
-
-  return useMemo(() => {
-    const ids = [
-      ...(team?.member_ids || []),
-      includeManager ? team?.manager_id : null
-    ].filter(Boolean);
-
-    let users = ids
-      .filter((id) => Boolean(usersMap[id]))
-      .map((id) => ({
-        ...usersMap[id],
-        isManager: id === team?.manager_id
-      }));
-
-    users = sort(ascend(compose(toLower, prop('name'))), users) as typeof users;
-
-    const [mgr, others] = partition((user) => user.isManager, users);
-
-    return [...mgr, ...others].filter(Boolean);
-  }, [includeManager, team?.manager_id, team?.member_ids, usersMap]);
 };
 
 export const useCurrentDateRangeReactNode = () => {
