@@ -25,10 +25,4 @@ if [ "$ENVIRONMENT" != "dev" ]; then
     yarn build
 fi
 
-if [ "$ENVIRONMENT" = "dev" ]; then
-    SUPERVISOR_CONF="/etc/supervisord-dev.conf"
-else
-    SUPERVISOR_CONF="/etc/supervisord.conf"
-fi
-
-/usr/bin/supervisord -c "$SUPERVISOR_CONF"
+/usr/bin/supervisord -c "/etc/supervisord.conf"
