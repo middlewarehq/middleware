@@ -26,6 +26,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Final image
 FROM python:3.9-slim
 
+ENV DB_HOST=localhost
+ENV DB_NAME=dora-oss
+ENV DB_PASS=postgres
+ENV DB_PORT=5434
+ENV DB_USER=postgres
+ENV REDIS_HOST=localhost
+ENV REDIS_PORT=6379
+ENV PORT=3333
+ENV SYNC_SERVER_PORT=9696
+ENV ANALYTICS_SERVER_PORT=9697
+ENV NEXT_PUBLIC_APP_ENVIRONMENT="staging"
+ENV INTERNAL_API_BASE_URL=http://localhost:9696
+ENV INTERNAL_SYNC_API_BASE_URL=http://localhost:9697
+ENV NEXT_PUBLIC_APP_ENVIRONMENT="prod"
+ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:/usr/local/bin:$PATH"
+
 WORKDIR /app
 COPY --from=backend-build /opt/venv /opt/venv
 
@@ -50,6 +66,7 @@ RUN apt-get update && \
     && mv /app/database-docker/db/ /app/ && rm -rf /app/database-docker/ \
     && echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf \
     && echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf \
+    && sed -i "s/^port = .*/port = ${DB_PORT}/" /etc/postgresql/15/main/postgresql.conf \
     && npm install --global yarn --force \
     && curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-amd64 \
     && chmod +x /usr/local/bin/dbmate \
@@ -79,21 +96,6 @@ ENV FRONTEND_ENABLED=true
 ENV CRON_ENABLED=true
 ENV ENVIRONMENT=dev
 
-ENV DB_HOST=localhost
-ENV DB_NAME=dora-oss
-ENV DB_PASS=postgres
-ENV DB_PORT=5434
-ENV DB_USER=postgres
-ENV REDIS_HOST=localhost
-ENV REDIS_PORT=6379
-ENV PORT=3333
-ENV SYNC_SERVER_PORT=9696
-ENV ANALYTICS_SERVER_PORT=9697
-ENV NEXT_PUBLIC_APP_ENVIRONMENT="staging"
-ENV INTERNAL_API_BASE_URL=http://localhost:9696
-ENV INTERNAL_SYNC_API_BASE_URL=http://localhost:9697
-ENV NEXT_PUBLIC_APP_ENVIRONMENT="prod"
-ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:/usr/local/bin:$PATH"
 
 EXPOSE 3333 
 
