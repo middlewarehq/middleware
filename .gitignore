@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+./*/config.ini
+./backend/analytics_server/mhq/config/config.ini
+
 # Distribution / packaging
 .Python
 build/
@@ -191,6 +194,3 @@ tsconfig.tsbuildinfo
 
 # Sentry
 .sentryclirc
-
-# config files
-./apiserver/dora/config/config.ini

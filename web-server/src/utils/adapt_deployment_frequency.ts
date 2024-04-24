@@ -24,25 +24,43 @@ const adaptTeamAnalytics = (
   }));
 };
 
-const getBadgeDetails = (
-  data: Partial<UpdatedDeploymentFrequencyAnalyticsResponseV2>
+const badgeDetailsToKey = {
+  day: 'avg_daily_deployment_frequency',
+  week: 'avg_weekly_deployment_frequency',
+  month: 'avg_monthly_deployment_frequency'
+} as const;
+
+export const getBadgeDetails = (
+  data: Partial<UpdatedDeploymentFrequencyAnalyticsResponseV2>,
+  duration?: 'day' | 'week' | 'month'
 ): {
   avg_deployment_frequency: number;
   duration: 'day' | 'week' | 'month';
 } => {
-  if (data.avg_daily_deployment_frequency >= 1)
+  const {
+    avg_daily_deployment_frequency = 0,
+    avg_weekly_deployment_frequency = 0,
+    avg_monthly_deployment_frequency = 0
+  } = data || {};
+  if (duration) {
     return {
-      avg_deployment_frequency: data.avg_daily_deployment_frequency,
+      avg_deployment_frequency: data?.[badgeDetailsToKey[duration]] || 0,
+      duration
+    };
+  }
+  if (avg_daily_deployment_frequency >= 1)
+    return {
+      avg_deployment_frequency: avg_daily_deployment_frequency,
       duration: 'day'
     };
-  else if (data.avg_weekly_deployment_frequency >= 1)
+  else if (avg_weekly_deployment_frequency >= 1)
     return {
-      avg_deployment_frequency: data.avg_weekly_deployment_frequency,
+      avg_deployment_frequency: avg_weekly_deployment_frequency,
       duration: 'week'
     };
   else
     return {
-      avg_deployment_frequency: data.avg_monthly_deployment_frequency,
+      avg_deployment_frequency: avg_monthly_deployment_frequency,
       duration: 'month'
     };
 };

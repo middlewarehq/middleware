@@ -3,6 +3,7 @@ import { PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import { FetchState } from '@/constants/ui-states';
+import { OnboardingStep } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
 export interface State {
@@ -46,6 +47,19 @@ export const authSlice = createSlice({
         state.org = action.payload;
       }
     );
+    addFetchCasesToReducer(
+      builder,
+      updateOnboardingState,
+      'org',
+      (
+        state,
+        action: PayloadAction<{ onboarding_state: OnboardingStep[] }>
+      ) => {
+        if (state.org) {
+          state.org.onboarding_state = action.payload.onboarding_state;
+        }
+      }
+    );
   }
 });
 
@@ -54,5 +68,20 @@ export const fetchCurrentOrg = createAsyncThunk(
   async () => {
     const session = await handleApi<{ org: Org }>('/auth/session');
     return session.org;
+  }
+);
+
+export const updateOnboardingState = createAsyncThunk(
+  'auth/updateOnboardingState',
+  async (params: { org_id: ID; onboardingState: OnboardingStep[] }) => {
+    return handleApi<{ onboarding_state: OnboardingStep[] }>(
+      `/resources/orgs/${params.org_id}/onboarding`,
+      {
+        method: 'PUT',
+        data: {
+          onboarding_state: params.onboardingState
+        }
+      }
+    );
   }
 );

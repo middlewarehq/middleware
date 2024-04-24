@@ -48,7 +48,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     await getAllTeamsReposProdBranchesForOrgAsMap(org_id);
   const teamRepoFiltersMap =
     repoFiltersFromTeamProdBranches(teamProdBranchesMap);
-  const pr_filter = await updatePrFilterParams(
+  const prFilter = await updatePrFilterParams(
     team_id,
     {},
     {
@@ -63,7 +63,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     team_id,
     from_date,
     to_date,
-    pr_filter
+    pr_filter: prFilter.pr_filter
   });
 
   return res.send({

@@ -1,0 +1,12 @@
+{
+  "workbench.editor.labelFormat": "short",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "tsEssentialPlugins.autoImport.changeSorting": {
+    "createContext": ["react"]
+  },
+  "tsEssentialPlugins.patchOutline": true,
+  "editor.linkedEditing": true,
+  "tsEssentialPlugins.enableMethodSnippets": false,
+}

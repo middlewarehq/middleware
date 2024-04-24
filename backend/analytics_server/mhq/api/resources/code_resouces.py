@@ -1,7 +1,7 @@
 from typing import Dict, List
 from mhq.service.code.models.lead_time import LeadTimeMetrics
 from mhq.api.resources.core_resources import adapt_user_info
-from mhq.store.models.code import PullRequest, OrgRepo
+from mhq.store.models.code import PullRequest, OrgRepo, TeamRepos
 from mhq.store.models.core import Users
 
 
@@ -123,3 +123,18 @@ def adapt_org_repo(org_repo: OrgRepo) -> Dict[str, any]:
         "created_at": org_repo.created_at.isoformat(),
         "updated_at": org_repo.updated_at.isoformat(),
     }
+
+
+def adapt_team_repos(team_repos: List[TeamRepos]) -> List[Dict[str, any]]:
+    return [
+        {
+            "team_id": str(team_repo.team_id),
+            "org_repo_id": str(team_repo.org_repo_id),
+            "prod_branch": team_repo.prod_branch,
+            "prod_branches": team_repo.prod_branches,
+            "is_active": team_repo.is_active,
+            "created_at": team_repo.created_at.isoformat(),
+            "updated_at": team_repo.updated_at.isoformat(),
+        }
+        for team_repo in team_repos
+    ]

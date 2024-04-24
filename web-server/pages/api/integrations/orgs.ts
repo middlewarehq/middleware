@@ -206,7 +206,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
       .onConflict(['org_repo_id', 'provider_workflow_id'])
       .merge();
   }
-  syncReposForOrg(org_id);
+  syncReposForOrg();
 
   res.send(await getSelectedReposForOrg(org_id, provider as Integration));
 });
@@ -224,79 +224,3 @@ const dbRepoComparator = (tableRepo: DB_OrgRepo) => (reqRepo: ReqRepo) =>
   reqRepo.idempotency_key === tableRepo.idempotency_key;
 const dbRepoFilter = (reqRepos: ReqRepo[]) => (tableRepo: DB_OrgRepo) =>
   reqRepos.some(dbRepoComparator(tableRepo));
-
-export const enableOrgReposIfNotEnabled = async (
-  org_id: ID,
-  provider: Integration,
-  orgReposList: ReqOrgRepo[]
-) => {
-  const flatReposList: ReqRepo[] = orgReposList.flatMap(({ org, repos }) =>
-    repos.map((repo) => ({ org, ...repo }))
-  );
-
-  /**
-   * Reasoning:
-   * 1. Update: Deactivate all org_repos
-   * 2. Update: Reactivate any existing org repos (can't upsert)
-   * 3. Insert: Add any new selected repos
-   */
-
-  let repos: Row<'OrgRepo'>[] = [];
-  // 1. Update: Deactivate all org_repos
-  try {
-    repos = await db(Table.OrgRepo)
-      .update({ is_active: false, updated_at: new Date() })
-      .where({ org_id, provider })
-      .returning('*');
-  } catch (err) {
-    // Empty update throws, so do nothing
-    // logger.warn('NO_REPOS_UPDATED | MODE:IS_ACTIVE_FALSE', err);
-  }
-
-  // Among the repos passed to request payload, determine which ones
-  // were already present in the DB [selectedRepos] and those
-  // that aren't [remainingRepos]
-  const [selectedRepos, remainingRepos] = partition(
-    (flatRepo) => repos.some(reqRepoComparator(flatRepo)),
-    flatReposList
-  );
-
-  let filteredReposRows: Row<'OrgRepo'>[] = [];
-  let remainingReposRows: Row<'OrgRepo'>[] = [];
-
-  // 2. Update: Reactivate any existing org repos (can't upsert)
-  try {
-    const filteredRepos = repos.filter(dbRepoFilter(selectedRepos));
-
-    if (filteredRepos.length)
-      filteredReposRows = await db(Table.OrgRepo)
-        .update({ is_active: true, updated_at: new Date() })
-        .and.whereIn(
-          'id',
-          repos.filter(dbRepoFilter(selectedRepos)).map((repo) => repo.id)
-        )
-        .returning('*');
-  } catch (err) {
-    // Empty update throws, so do nothing
-    // logger.warn('NO_REPOS_UPDATED | MODE:IS_ACTIVE_TRUE', err);
-  }
-
-  // 3. Update: Add any new selected repos
-  if (remainingRepos.length) {
-    remainingReposRows = await db(Table.OrgRepo)
-      .insert(
-        remainingRepos.map((repo) => ({
-          org_id,
-          name: repo.name,
-          slug: repo.slug,
-          idempotency_key: repo.idempotency_key,
-          provider,
-          org_name: repo.org
-        }))
-      )
-      .returning('*');
-  }
-
-  syncReposForOrg(org_id);
-  return [...filteredReposRows, ...remainingReposRows];
-};

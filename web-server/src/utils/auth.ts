@@ -33,3 +33,22 @@ export async function checkGitHubValidity(
     return false;
   }
 }
+
+const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
+export const getMissingPATScopes = async (pat: string) => {
+  try {
+    const response = await axios.get('https://api.github.com', {
+      headers: {
+        Authorization: `token ${pat}`
+      }
+    });
+
+    const scopesString = response.headers['x-oauth-scopes'];
+    if (!scopesString) return PAT_SCOPES;
+
+    const userScopes = scopesString.split(',').map((scope) => scope.trim());
+    return PAT_SCOPES.filter((scope) => !userScopes.includes(scope));
+  } catch (error) {
+    throw new Error('Failed to get missing PAT scopes', error);
+  }
+};

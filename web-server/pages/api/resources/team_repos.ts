@@ -27,14 +27,9 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 });
 
 export const getTeamRepos = (team_id: ID) =>
-  (team_id
-    ? db('TeamRepos')
-        .select('*', 'OrgRepo.* as org_repo')
-        .leftJoin('OrgRepo', 'OrgRepo.id', 'TeamRepos.org_repo_id')
-        .where('TeamRepos.is_active', true)
-        .andWhere('TeamRepos.team_id', team_id)
-        .orderBy('name', 'asc')
-    : []) as any as Promise<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>;
+  handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
+    `/teams/${team_id}/repos`
+  ).then((repos) => repos.map((r) => ({ ...r, team_id: team_id })));
 
 endpoint.handle.PATCH(patchSchema, async (req, res) => {
   if (req.meta?.features?.use_mock_data) {

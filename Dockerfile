@@ -7,61 +7,65 @@ ARG FRONTEND_ENABLED=true
 ARG CRON_ENABLED=true
 
 # Build the backend
-FROM python:3.9.19-alpine3.19 as backend-build
+FROM python:3.9-slim as backend-build
 
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app/
 COPY ./backend /app/backend
-RUN apk update && \
-    apk add --no-cache \
-        git \
-        postgresql-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc \
-        musl-dev \
-        python3-dev \
-    && cd ./backend/analytics_server/ \
+        libpq-dev \
+        build-essential \
+    && cd ./backend/ \
     && python3 -m venv /opt/venv \
     && /opt/venv/bin/pip install --upgrade pip \
     && /opt/venv/bin/pip install -r requirements.txt
 
-FROM node:16.20.2-alpine3.18 as node
-
 # Final image
-FROM postgres:alpine3.19
+FROM python:3.9-slim
+
+ENV DB_HOST=localhost
+ENV DB_NAME=mhq-oss
+ENV DB_PASS=postgres
+ENV DB_PORT=5434
+ENV DB_USER=postgres
+ENV REDIS_HOST=localhost
+ENV REDIS_PORT=6379
+ENV PORT=3333
+ENV SYNC_SERVER_PORT=9696
+ENV ANALYTICS_SERVER_PORT=9697
+ENV NEXT_PUBLIC_APP_ENVIRONMENT="staging"
+ENV INTERNAL_API_BASE_URL=http://localhost:9696
+ENV INTERNAL_SYNC_API_BASE_URL=http://localhost:9697
+ENV NEXT_PUBLIC_APP_ENVIRONMENT="prod"
 
 WORKDIR /app
 COPY --from=backend-build /opt/venv /opt/venv
-COPY --from=backend-build /usr/local/bin/ /usr/local/bin/
-COPY --from=backend-build /usr/local/lib/ /usr/local/lib/
-COPY --from=backend-build /usr/local/include /usr/local/include
-
-COPY --from=node /usr/lib /usr/lib
-COPY --from=node /usr/local/lib /usr/local/lib
-COPY --from=node /usr/local/include /usr/local/include
-COPY --from=node /usr/local/bin /usr/local/bin
 
 COPY . /app/
 
-RUN apk add --no-cache \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
         gcc \
-        build-base \
-        libpq \
-        postgresql-dev \
-        postgresql-client \
+        build-essential \
+        libpq-dev \
+        cron \
+        postgresql \
         postgresql-contrib \
-        redis \
+        redis-server \
         supervisor \
         curl \
+    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs \
     && mkdir -p /etc/cron.d && mv /app/setup_utils/cronjob.txt /etc/cron.d/cronjob \
     && chmod +x /app/setup_utils/start.sh /app/setup_utils/init_db.sh /app/setup_utils/generate_config_ini.sh \
-    && mv ./setup_utils/supervisord.conf /etc/supervisord.conf \
+    && mv /app/setup_utils/supervisord.conf /etc/supervisord.conf \
     && mv /app/database-docker/db/ /app/ && rm -rf /app/database-docker/ \
-    && su - postgres -c "initdb -D /var/lib/postgresql/data" \
-    && su - postgres -c "echo \"host all  all    0.0.0.0/0  md5\" >> /var/lib/postgresql/data/pg_hba.conf" \
-    && su - postgres -c "echo \"listen_addresses='*'\" >> /var/lib/postgresql/data/postgresql.conf" \
-    && su - postgres -c "rm -f /var/lib/postgresql/data/postmaster.pid" \
+    && echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf \
+    && echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf \
+    && sed -i "s/^port = .*/port = ${DB_PORT}/" /etc/postgresql/15/main/postgresql.conf \
     && npm install --global yarn --force \
     && curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-amd64 \
     && chmod +x /usr/local/bin/dbmate \
@@ -79,7 +83,7 @@ RUN apk add --no-cache \
     && touch /var/log/cron/cron.log \
     && chmod 0644 /etc/cron.d/cronjob \
     && crontab /etc/cron.d/cronjob \
-    && /app/setup_utils/generate_config_ini.sh -t /app/apiserver/dora/config \
+    && /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config \
     && cd /app/web-server \
     && yarn && yarn build \
     && rm -rf ./artifacts \
@@ -89,27 +93,18 @@ RUN apk add --no-cache \
     && tar cfz /opt/venv.tar.gz /opt/venv/ \
     && rm -rf /opt/venv && mkdir -p /opt/venv \
     && yarn cache clean \
-    && rm -rf /var/cache/apk/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-ENV POSTGRES_DB_ENABLED=$POSTGRES_DB_ENABLED
-ENV DB_INIT_ENABLED=$DB_INIT_ENABLED
-ENV REDIS_ENABLED=$REDIS_ENABLED
-ENV BACKEND_ENABLED=$BACKEND_ENABLED
-ENV FRONTEND_ENABLED=$FRONTEND_ENABLED
-ENV CRON_ENABLED=$CRON_ENABLED
-ENV DB_HOST=localhost
-ENV DB_NAME=dora-oss
-ENV DB_PASS=postgres
-ENV DB_PORT=5432
-ENV DB_USER=postgres
-ENV REDIS_HOST=localhost
-ENV REDIS_PORT=6379
-ENV PORT=3000
-ENV NEXT_PUBLIC_APP_ENVIRONMENT="staging"
-ENV INTERNAL_API_BASE_URL=http://localhost:9696
-ENV NEXT_PUBLIC_APP_ENVIRONMENT="prod"
-ENV PATH="/opt/venv/bin:$PATH"
+ENV POSTGRES_DB_ENABLED=true
+ENV DB_INIT_ENABLED=true
+ENV REDIS_ENABLED=true
+ENV BACKEND_ENABLED=true
+ENV FRONTEND_ENABLED=true
+ENV CRON_ENABLED=true
 
-EXPOSE 5432 6379 9696 3000
+ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:/usr/local/bin:$PATH"
 
-CMD ["/bin/sh", "-c", "/app/setup_utils/start.sh"]
+EXPOSE 3333 
+
+CMD ["/bin/bash", "-c", "/app/setup_utils/start.sh"]

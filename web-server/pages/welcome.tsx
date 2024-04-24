@@ -1,5 +1,6 @@
 import { Button, Card, Box, styled, Container } from '@mui/material';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { ReactNode } from 'react';
 
 import background from '@/assets/background.png';
@@ -12,6 +13,10 @@ import { FlexBox } from '@/components/FlexBox';
 import { Logo } from '@/components/Logo/Logo';
 import { Line } from '@/components/Text';
 import { ROUTES } from '@/constants/routes';
+import { useAuth } from '@/hooks/useAuth';
+import { updateOnboardingState } from '@/slices/auth';
+import { useDispatch } from '@/store';
+import { OnboardingStep } from '@/types/resources';
 
 function Page() {
   return (
@@ -60,6 +65,10 @@ const containerStyles = {
 };
 
 const OnboardingContent = () => {
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const { onboardingState, orgId } = useAuth();
+
   return (
     <Content>
       <MainContent>
@@ -111,7 +120,24 @@ const OnboardingContent = () => {
                   </FlexBox>
                 ))}
               </FlexBox>
-              <Button href={ROUTES.INTEGRATIONS.PATH} variant="contained">
+              <Button
+                variant="contained"
+                onClick={() => {
+                  dispatch(
+                    updateOnboardingState({
+                      org_id: orgId,
+                      onboardingState: Array.from(
+                        new Set([
+                          ...onboardingState,
+                          OnboardingStep.WELCOME_SCREEN
+                        ])
+                      )
+                    })
+                  ).then(() => {
+                    router.push(ROUTES.INTEGRATIONS.PATH);
+                  });
+                }}
+              >
                 Continue
               </Button>
             </FlexBox>

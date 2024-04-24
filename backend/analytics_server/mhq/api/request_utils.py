@@ -1,11 +1,16 @@
 from functools import wraps
+from typing import Any, Dict, List
 from uuid import UUID
+from datetime import datetime
 
 from flask import request
 from stringcase import snakecase
 from voluptuous import Invalid
 from werkzeug.exceptions import BadRequest
-from mhq.store.models.code.workflows import WorkflowFilter
+from mhq.utils.time import time_now
+from mhq.store.models.code.repository import TeamRepos
+from mhq.service.code.models.org_repo import RawOrgRepo
+from mhq.store.models.code import WorkflowFilter, CodeProvider
 
 from mhq.service.workflows.workflow_filter import get_workflow_filter_processor
 
@@ -75,3 +80,35 @@ def coerce_workflow_filter(filter_data: str) -> WorkflowFilter:
     return workflow_filter_processor.create_workflow_filter_from_json_string(
         filter_data
     )
+
+
+def coerce_org_repo(repo: Dict[str, str]) -> RawOrgRepo:
+    return RawOrgRepo(
+        provider=CodeProvider(repo.get("provider")),
+        name=repo.get("name"),
+        org_name=repo.get("org"),
+        slug=repo.get("slug"),
+        idempotency_key=repo.get("idempotency_key"),
+        default_branch=repo.get("default_branch"),
+    )
+
+
+def coerce_org_repos(repos: List[Dict[str, str]]) -> List[RawOrgRepo]:
+    return [coerce_org_repo(repo) for repo in repos]
+
+
+def coerce_team_repo(team_repo: Dict[str, str]) -> TeamRepos:
+
+    assert uuid_validator(team_repo.get("org_repo_id"))
+
+    return TeamRepos(
+        team_id=team_repo["team_id"],
+        org_repo_id=team_repo["org_repo_id"],
+        prod_branch=team_repo.get("prod_branch"),
+        prod_branches=team_repo.get("prod_branches"),
+        is_active=team_repo.get("is_active", True),
+    )
+
+
+def coerce_team_repos(repos: List[Dict[str, str]]) -> List[TeamRepos]:
+    return [coerce_team_repo(repo) for repo in repos]

@@ -4,6 +4,7 @@ import { ReactChild, ReactFragment, ReactPortal } from 'react';
 
 import { Row } from '@/constants/db';
 import { CIProvider, Integration } from '@/constants/integrations';
+import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Team } from '@/types/api/teams';
 
 export type DeepPartial<T> = {
@@ -447,7 +448,7 @@ export type RepoWithSingleWorkflow = {
 
 export type RepoUniqueDetails = Pick<
   RepoWithSingleWorkflow,
-  'name' | 'idempotency_key' | 'slug'
+  'name' | 'slug' | 'default_branch' | 'idempotency_key'
 >;
 
 export type RepoWithMultipleWorkflows = Omit<
@@ -611,8 +612,8 @@ export enum TeamSettings {
 
 export type FetchTeamsResponse = {
   teams: Team[];
-  users: Record<ID, BaseUser>;
   teamReposProdBranchMap: Record<ID, TeamRepoBranchDetails[]>;
+  teamReposMap: Record<ID, DB_OrgRepo[]>;
 };
 
 export type FetchTeamSettingsAPIResponse<T extends {} = {}> = {
@@ -960,6 +961,8 @@ export type ReqRepo = {
   name: string;
   slug: string;
 };
+
+export type ReqRepoWithProvider = ReqRepo & { provider: Integration };
 
 export type DoraPropsType = {
   count: number;

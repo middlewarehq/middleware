@@ -7,6 +7,7 @@ import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
+import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/IntegrationCards';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
@@ -18,6 +19,10 @@ import { PageLayout } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
 function Integrations() {
+  const isLoading = useSelector(
+    (s) => s.team.requests?.teams === FetchState.REQUEST
+  );
+
   return (
     <>
       <PageWrapper
@@ -29,6 +34,7 @@ function Integrations() {
         hideAllSelectors
         pageTitle="Integrations"
         showEvenIfNoTeamSelected={true}
+        isLoading={isLoading}
       >
         <Content />
       </PageWrapper>
@@ -51,6 +57,9 @@ const Content = () => {
   const dispatch = useDispatch();
   const loading = useBoolState(false);
 
+  const teamCount = teams.length;
+  const showCreationCTA = isLinked && !teamCount && !loading.value;
+
   useEffect(() => {
     if (!orgId) return;
     depFn(loading.true);
@@ -62,14 +71,13 @@ const Content = () => {
     ).finally(loading.false);
   }, [dispatch, loading.false, loading.true, orgId]);
 
-  const teamCount = teams.length;
   return (
     <FlexBox col gap2>
       <FlexBox justifyBetween>
         <Line white fontSize={'24px'}>
           Integrate your Github to fetch DORA for your team
         </Line>
-        {Boolean(teamCount) && (
+        {Boolean(teamCount) && Boolean(isLinked) && (
           <Button href={ROUTES.DORA_METRICS.PATH} variant="contained">
             <FlexBox centered fullWidth p={2 / 3}>
               Continue to Dora {'->'}
@@ -82,7 +90,7 @@ const Content = () => {
       <FlexBox>
         <GithubIntegrationCard />
       </FlexBox>
-      {isLinked && !teamCount && !loading && (
+      {showCreationCTA && (
         <FlexBox mt={'56px'} col fit alignStart>
           <Line fontSize={'24px'} semibold white>
             Create team structure to see DORA

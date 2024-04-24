@@ -1,17 +1,16 @@
+import { groupBy, prop } from 'ramda';
 import * as yup from 'yup';
 
 import {
   getAllTeamsReposProdBranchesForOrg,
   transformTeamRepoBranchesToMap
 } from '@/api/internal/team/[team_id]/repo_branches';
+import { getTeamRepos } from '@/api/resources/team_repos';
 import { Endpoint } from '@/api-helpers/global';
 import { getTeamMembersFilterSettingForOrg } from '@/api-helpers/team';
-import { getMiniUsersByOrgId } from '@/api-helpers/user';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { FetchTeamsResponse } from '@/types/resources';
 import { db } from '@/utils/db';
-import groupBy from '@/utils/objectArray';
-
 const getSchema = yup.object().shape({
   user_id: yup.string().uuid().nullable().optional(),
   include_teams: yup.array().of(yup.string().uuid()).nullable().optional()
@@ -54,9 +53,9 @@ export const getOrgTeams = async (
     {} as Record<ID, boolean>
   );
 
-  const [users_map, teamsReposProductionBranchDetails] = await Promise.all([
-    getMiniUsersByOrgId(org_id).then(groupBy),
-    getAllTeamsReposProdBranchesForOrg(org_id)
+  const [teamsReposProductionBranchDetails, repos] = await Promise.all([
+    getAllTeamsReposProdBranchesForOrg(org_id),
+    Promise.all(teamRows.map((team) => getTeamRepos(team.id)))
   ]);
 
   const teamManagers = {} as Record<ID, any>;
@@ -74,12 +73,15 @@ export const getOrgTeams = async (
         t.manager_id === user_id ||
         t.member_ids.includes(user_id)
     );
-
   const teamReposProdBranchMap = transformTeamRepoBranchesToMap(
     teamsReposProductionBranchDetails
   );
 
-  return { teams, users: users_map, teamReposProdBranchMap };
+  return {
+    teams,
+    teamReposProdBranchMap,
+    teamReposMap: groupBy(prop('team_id'), repos.flat())
+  };
 };
 
 export default endpoint.serve();

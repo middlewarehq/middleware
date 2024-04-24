@@ -1,6 +1,8 @@
 from typing import List
 
 from sqlalchemy import and_
+from mhq.store.models.core.teams import Team
+from mhq.store.models.incidents.enums import IncidentSource
 
 from mhq.store import db, rollback_on_exc
 from mhq.store.models.incidents import (
@@ -23,10 +25,30 @@ class IncidentsRepoService:
         self._db = db
 
     @rollback_on_exc
-    def get_org_incident_services(self, org_id: str) -> List[OrgIncidentService]:
+    def get_org_incident_services(
+        self, org_id: str, source_type: IncidentSource = None, keys: List[str] = None
+    ) -> List[OrgIncidentService]:
+
+        query = self._db.session.query(OrgIncidentService).filter(
+            OrgIncidentService.org_id == org_id
+        )
+
+        if source_type:
+            query = query.filter(OrgIncidentService.source_type == source_type)
+
+        if keys:
+            query = query.filter(OrgIncidentService.key.in_(keys))
+
+        return query.all()
+
+    @rollback_on_exc
+    def get_org_incident_services_by_ids(
+        self, ids: List[str]
+    ) -> List[OrgIncidentService]:
+
         return (
             self._db.session.query(OrgIncidentService)
-            .filter(OrgIncidentService.org_id == org_id)
+            .filter(OrgIncidentService.id.in_(ids))
             .all()
         )
 
@@ -36,6 +58,30 @@ class IncidentsRepoService:
             self._db.session.merge(incident_service)
             for incident_service in incident_services
         ]
+        self._db.session.commit()
+        return self.get_org_incident_services_by_ids(
+            [incident_service.id for incident_service in incident_services]
+        )
+
+    @rollback_on_exc
+    def get_team_incident_services(self, team: Team) -> List[TeamIncidentService]:
+
+        return (
+            self._db.session.query(TeamIncidentService)
+            .filter(and_(TeamIncidentService.team_id == team.id))
+            .all()
+        )
+
+    @rollback_on_exc
+    def add_team_incident_services(self, services: List[TeamIncidentService]):
+        for service in services:
+            self._db.session.merge(service)
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def delete_team_incident_services(self, services: List[TeamIncidentService]):
+        for service in services:
+            self._db.session.delete(service)
         self._db.session.commit()
 
     @rollback_on_exc

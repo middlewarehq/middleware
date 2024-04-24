@@ -1,0 +1,4 @@
+# .estlintignore file
+dist
+build
+node_modules/

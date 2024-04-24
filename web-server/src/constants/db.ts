@@ -28,7 +28,6 @@ enum TableT {
   OneOnOneConfig,
   PinnedUsers,
   OrgPOCs,
-  OrgTree,
   OrgProject,
   Review,
   Response,
@@ -287,15 +286,6 @@ export const Columns = {
     enum Columns {
       org_id,
       poc_user_ids,
-      created_at,
-      updated_at
-    }
-    return Columns;
-  }),
-  [Table.OrgTree]: objectEnumFromFn(() => {
-    enum Columns {
-      org_id,
-      relations,
       created_at,
       updated_at
     }
