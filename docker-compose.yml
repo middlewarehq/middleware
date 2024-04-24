@@ -19,8 +19,8 @@ services:
     ports:
       - "9696:9696"
       - "9697:9697"
-      - "3005:3333"
-      - "5436:5434"
+      - "3333:3333"
+      - "5434:5434"
       - "6379:6379"
 
     extra_hosts:
@@ -29,39 +29,35 @@ services:
     develop:
       watch:
         - action: sync
-          path: ./apiserver
-          target: /app/backend/apiserver
+          path: ./backend/analytics_server
+          target: /app/backend/analytics_server
           ignore: 
             - venv
             - __pycache__
             - env.example
 
         - action: rebuild
-          path: ./apiserver/requirements.txt
+          path: ./backend/requirements.txt
 
         - action: rebuild
-          path: ./apiserver/dev-requirements.txt
+          path: ./backend/dev-requirements.txt
 
         - action: rebuild
-          path: ./supervisord.conf
+          path: ./setup_util/supervisord.conf
 
         - action: rebuild
-          path: ./init_db.sh
+          path: ./setup_utils/init_db.sh
 
         - action: rebuild
           path: ./.env
 
         - action: sync+restart
-          path: ./apiserver/.env.local
-          target: /app/backend/apiserver/.env.local
-
-        - action: sync+restart
-          path: ./apiserver/dora/service/sync_data.py
-          target: /app/backend/apiserver/dora/service/sync_data.py
+          path: ./backend/analytics_server/.env.local
+          target: /app/backend/analytics_server/.env.local
 
         - action: sync
           path: ./web-server
-          target: /app/backend/web-server
+          target: /app/web-server
           ignore: 
             - ./web-server/.vscode 
             - ./web-server/node_modules
