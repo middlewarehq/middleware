@@ -2,9 +2,9 @@ import {
   CheckCircleOutlineRounded,
   RadioButtonUnchecked,
   RadioButtonChecked,
-  EditRounded,
   SearchRounded,
-  ClearRounded
+  ClearRounded,
+  Edit
 } from '@mui/icons-material';
 import {
   alpha,
@@ -52,6 +52,8 @@ import { depFn } from '@/utils/fn';
 
 import { defaultPopoverProps } from './defaultPopoverProps';
 
+import { useOverlayPage } from '../OverlayPageContext';
+
 export const TeamPopover: FC<{
   teamElRef: MutableRefObject<any>;
   teamsPop: BoolState;
@@ -80,7 +82,7 @@ export const TeamPopover: FC<{
 }) => {
   const theme = useTheme();
   const { team } = useSingleTeamConfig();
-
+  const { addPage } = useOverlayPage();
   const updatingTeamMemberFilter = useBoolState();
 
   const isRoleEng = false;
@@ -268,25 +270,25 @@ export const TeamPopover: FC<{
                                 {!isRoleEng && (
                                   <FlexBox
                                     alignCenter
-                                    onClick={(e) => e.stopPropagation()}
                                     title={`Edit team: ${apiTeam.name}`}
                                     tooltipPlacement="right"
                                   >
-                                    <Link
-                                      href={
-                                        ROUTES.TEAMS.ROUTE.add(apiTeam.id).PATH
-                                      }
-                                      passHref
-                                    >
-                                      <EditRounded
-                                        fontSize="inherit"
-                                        sx={{
-                                          ':hover': {
-                                            color: theme.colors.primary.main
+                                    <Edit
+                                      fontSize="small"
+                                      onClick={() => {
+                                        addPage({
+                                          page: {
+                                            title: 'Edit team',
+                                            ui: 'team_edit',
+                                            props: {
+                                              teamId: apiTeam.id,
+                                              hideCardComponents: true
+                                            }
                                           }
-                                        }}
-                                      />
-                                    </Link>
+                                        });
+                                        teamsPop.false();
+                                      }}
+                                    />
                                   </FlexBox>
                                 )}
                               </FlexBox>

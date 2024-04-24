@@ -11,6 +11,7 @@ import { useAxios } from '@/hooks/useAxios';
 import { useStateTeamConfig } from '@/hooks/useStateTeamConfig';
 import { appSlice } from '@/slices/app';
 import { resourcesSlice } from '@/slices/resources';
+import { teamSlice } from '@/slices/team';
 import { useSelector } from '@/store';
 import { Team } from '@/types/api/teams';
 import {
@@ -18,7 +19,6 @@ import {
   FetchTeamsResponse,
   TeamSelectorModes
 } from '@/types/resources';
-import { groupObj } from '@/utils/objectArray';
 
 type UseTeamSelectorSetupArgs = { mode: TeamSelectorModes };
 /**
@@ -64,7 +64,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
 
   const updateUsers = useCallback(
     (res: AxiosResponse<FetchTeamsResponse>) => {
-      dispatch(resourcesSlice.actions.updateTeams(groupObj(res.data.teams)));
+      dispatch(teamSlice.actions.setTeams(res.data.teams));
       dispatch(
         appSlice.actions.setTeamProdBranchMap(res.data.teamReposProdBranchMap)
       );
