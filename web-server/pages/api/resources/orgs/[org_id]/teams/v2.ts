@@ -151,7 +151,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { org_id, id, name, org_repos, provider } = req.payload;
+  const { id, name, org_repos, provider } = req.payload;
   const orgReposList: ReqRepoWithProvider[] = [];
   forEachObjIndexed((repos, org) => {
     repos.forEach((repo) => {
