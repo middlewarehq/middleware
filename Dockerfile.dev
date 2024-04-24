@@ -85,7 +85,7 @@ RUN crontab /etc/cron.d/cronjob
 RUN /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
 
 WORKDIR /app/web-server
-RUN yarn install
+RUN yarn install --verbose
 
 ENV POSTGRES_DB_ENABLED=true
 ENV DB_INIT_ENABLED=true
