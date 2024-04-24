@@ -1,8 +1,16 @@
-import chalk from 'chalk';
 import { Box, Newline, Static, Text, useApp, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import { splitEvery } from 'ramda';
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
+
+import { ChildProcessWithoutNullStreams } from 'child_process';
 
 import {
   AppStates,
@@ -31,6 +39,8 @@ const CliUi = () => {
   const { exit } = useApp();
 
   const lineLimit = getLineLimit();
+
+  const processRef = useRef<ChildProcessWithoutNullStreams | null>();
 
   const runCommandOpts = useMemo<Parameters<typeof runCommand>['2']>(
     () => ({
@@ -84,15 +94,13 @@ const CliUi = () => {
     }
 
     if (input === 'x') {
+      if (!processRef.current) return;
+
       setAppState(AppStates.TEARDOWN);
-      runCommand('docker-compose', ['down'], runCommandOpts)
-        .promise.catch((err) => {
-          addLog(chalk.red(`Error logs: ${err.message}`));
-        })
-        .finally(() => {
-          setAppState(AppStates.TERMINATED);
-          setTimeout(() => exit(), 500);
-        });
+      processRef.current.kill();
+      processRef.current.stdout.destroy();
+      processRef.current.stderr.destroy();
+      exit();
     }
   });
 
@@ -101,20 +109,25 @@ const CliUi = () => {
       runCommand('docker-compose', ['down'], runCommandOpts);
     };
 
-    runCommand('docker-compose', ['watch'], runCommandOpts).process?.stdout.on(
-      'data',
-      (data) => {
-        let watch_logs = String(data);
-        if (watch_logs.includes(READY_MESSAGES[LogSource.DockerWatch])) {
-          addLog('\n🚀 Container ready 🚀\n');
-          setAppState(AppStates.DOCKER_READY);
-        }
-      }
-    );
+    const process = runCommand(
+      'docker-compose',
+      ['watch'],
+      runCommandOpts
+    ).process;
 
-    process.on('exit', listener);
+    processRef.current = process;
+
+    process?.stdout.on('data', (data) => {
+      let watch_logs = String(data);
+      if (watch_logs.includes(READY_MESSAGES[LogSource.DockerWatch])) {
+        addLog('\n🚀 Container ready 🚀\n');
+        setAppState(AppStates.DOCKER_READY);
+      }
+    });
+
+    globalThis.process.on('exit', listener);
     return () => {
-      process.off('exit', listener);
+      globalThis.process.off('exit', listener);
     };
   }, [addLog, runCommandOpts, setAppState]);
 
@@ -140,7 +153,7 @@ const CliUi = () => {
               case AppStates.INIT:
                 return (
                   <Text color="blue">
-                    Status: Preparing docker container...{' '}
+                    Status: Preparing docker container... [Press X to abort]{' '}
                     <Text bold color="yellow">
                       <Spinner type="material" />
                     </Text>

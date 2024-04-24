@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { equals, isNil, map, prop, reject, uniq } from 'ramda';
+import { equals, isNil, reject, uniq } from 'ramda';
 
 import {
   TeamSettings,
@@ -8,7 +8,6 @@ import {
   TeamRepoBranchDetails
 } from '@/types/resources';
 import { db, dbRaw, getFirstRow } from '@/utils/db';
-import { unid } from '@/utils/unistring';
 
 export class TeamApi {
   private static url = '/api/resources/teams';
@@ -40,81 +39,12 @@ export const getTeamMembersFilterSettingForOrg = (orgId: ID) =>
     TeamDataFilterDBRecord[]
   >;
 
-export const getTeamMemberFilters = async (teamId: ID) => {
-  const [isTeamMemberFilterEnabled, team] = await Promise.all([
-    db('Settings')
-      .select(
-        dbRaw.raw(
-          '("Settings"."data" ->> \'should_apply_team_members_filter\')::BOOLEAN as member_filter_enabled'
-        )
-      )
-      .where('Settings.entity_id', '=', teamId)
-      .andWhere(
-        'Settings.setting_type',
-        '=',
-        TeamSettings.TEAM_MEMBER_METRICS_FILTER_SETTING
-      )
-      .then(getFirstRow)
-      .then((row) => Boolean(row?.member_filter_enabled)) as Promise<boolean>,
-    db('Team')
-      .select(['member_ids', 'org_id'])
-      .where('id', teamId)
-      .then(getFirstRow) as Promise<{ member_ids: ID[]; org_id: ID }>
-  ]);
-
-  const { org_id, member_ids } = team;
-
-  const tree = await db('OrgTree')
-    .select('relations')
-    .where('org_id', org_id)
-    .then(getFirstRow)
-    .then((row) => row.relations);
-
-  const mgr = getManagerFromOrgTree(unid.t(teamId), tree);
-
-  const all_team_members = [mgr, ...member_ids].filter(Boolean);
-
-  const identities = await db('UserIdentity')
-    .distinct('username')
-    .where('user_id', 'IN', all_team_members)
-    .then(map(prop('username')));
-
-  return isTeamMemberFilterEnabled ? identities : null;
-};
-
-type UserRelationship = [ID, 'SOLID' | 'DOTTED'];
-
-interface Hierarchy {
-  [userId: string]: UserRelationship[];
-}
-
-function getManagerFromOrgTree(
-  teamId: string,
-  hierarchy: Hierarchy
-): string | null {
-  for (const userId in hierarchy) {
-    const userRelationships = hierarchy[userId];
-    for (const rel of userRelationships) {
-      const [nodeId, type] = rel;
-      if (type === 'DOTTED') continue;
-
-      if (nodeId === teamId) {
-        return unid.id(userId);
-      }
-    }
-  }
-  return null; // Team ID not found in the hierarchy
-}
-
 export const updatePrFilterParams = async <T extends {} = {}>(
-  teamId: ID,
+  _teamId: ID,
   params: T,
   filters?: Partial<{ branches: string; repo_filters: RepoFilterConfig }>
 ) => {
-  const authors = await getTeamMemberFilters(teamId);
-
   const updatedParams = {
-    authors,
     base_branches: filters?.branches?.split(','),
     repo_filters: filters?.repo_filters
   };
@@ -150,12 +80,9 @@ export const updateTicketFilterParams = async <T extends {} = {}>(
   teamId: ID,
   params: T
 ) => {
-  const [excluded_ticket_types, assignees] = await Promise.all([
-    getExcludedTicketTypesSetting(teamId),
-    getTeamMemberFilters(teamId)
-  ]);
+  const excluded_ticket_types = await getExcludedTicketTypesSetting(teamId);
 
-  const updatedParams = { excluded_ticket_types, assignees };
+  const updatedParams = { excluded_ticket_types };
   const reducedParams = reject(isNil, updatedParams);
   const ticket_filter = equals({}, reducedParams) ? null : reducedParams;
 

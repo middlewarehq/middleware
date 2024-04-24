@@ -35,9 +35,7 @@ export const loggerInterceptor: (
     const isBff = source === 'bff';
     const urlWithoutBase = req.url.startsWith('/') ? req.url : `/${req.url}`;
     const url = new URL(
-      isBff
-        ? req.baseURL.slice(0, -1) + urlWithoutBase
-        : req.baseURL + urlWithoutBase,
+      req.baseURL + urlWithoutBase,
       isBff ? undefined : `${window.location.protocol}//${window.location.host}`
     );
 

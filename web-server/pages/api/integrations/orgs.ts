@@ -206,7 +206,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
       .onConflict(['org_repo_id', 'provider_workflow_id'])
       .merge();
   }
-  syncReposForOrg(org_id);
+  syncReposForOrg();
 
   res.send(await getSelectedReposForOrg(org_id, provider as Integration));
 });

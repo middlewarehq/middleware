@@ -104,7 +104,7 @@ export const useLogs = (
         'docker',
         [
           'exec',
-          'dora-metrics',
+          'middleware-dev',
           '/bin/bash',
           '-c',
           `tail -f /var/log/${logFile}.log`
