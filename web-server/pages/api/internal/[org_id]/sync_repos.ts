@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-import { handleRequest } from '@/api-helpers/axios';
+import { handleSyncServerRequest } from '@/api-helpers/axios';
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 
 const pathSchema = yup.object().shape({
@@ -18,9 +18,6 @@ endpoint.handle.POST(nullSchema, async (req, res) => {
 });
 
 export const syncReposForOrg = (org_id: ID) =>
-  Promise.all([
-    handleRequest(`/orgs/${org_id}/sync_repos`, { method: 'POST' }),
-    handleRequest(`/orgs/${org_id}/sync_workflows`, { method: 'POST' })
-  ]);
+  handleSyncServerRequest(`/orgs/${org_id}/sync`, { method: 'POST' });
 
 export default endpoint.serve();

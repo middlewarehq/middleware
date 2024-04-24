@@ -79,8 +79,8 @@ export const ResolvedIncidentsBody = () => {
 
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isTrendsSeriesDataAvailable = head(
-    trendsSeriesMap.meanTimeToRestoreTrends
-  ).data.length;
+    trendsSeriesMap?.meanTimeToRestoreTrends || []
+  )?.data?.length;
 
   if (isLoading || !team) return <MiniLoader label="Fetching incidents ..." />;
   if (!incidents.length)

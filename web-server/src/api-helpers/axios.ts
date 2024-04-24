@@ -6,6 +6,10 @@ export const internal = axios.create({
   baseURL: process.env.INTERNAL_API_BASE_URL
 });
 
+export const internalSyncServer = axios.create({
+  baseURL: process.env.INTERNAL_SYNC_API_BASE_URL
+});
+
 axiosRetry(internal, {
   retries: 2,
   retryCondition(error) {
@@ -76,3 +80,15 @@ export const handleThen = (r: AxiosResponse) => r.data;
 export const handleCatch = (r: { response: AxiosResponse }) => {
   throw r.response;
 };
+
+export const handleSyncServerRequest = <T = any>(
+  url: string,
+  params: AxiosRequestConfig<any> = { method: 'get' }
+): Promise<T> =>
+  internalSyncServer({
+    url,
+    ...params,
+    headers: { 'Content-Type': 'application/json' }
+  })
+    .then(handleThen)
+    .catch(handleCatch);

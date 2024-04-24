@@ -1,7 +1,6 @@
 import { groupBy, prop, mapObjIndexed, forEachObjIndexed } from 'ramda';
 import * as yup from 'yup';
 
-import { enableOrgReposIfNotEnabled } from '@/api/integrations/orgs';
 import {
   CodeSourceProvidersIntegration,
   getProviderOrgs,
@@ -12,12 +11,13 @@ import {
   updateOnBoardingState
 } from '@/api/resources/orgs/[org_id]/onboarding';
 import { getTeamRepos } from '@/api/resources/team_repos';
+import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
-import { Columns, Table } from '@/constants/db';
+import { Row } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
-import { OnboardingStep, ReqOrgRepo } from '@/types/resources';
+import { OnboardingStep, ReqRepoWithProvider } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
 
 const getSchema = yup.object().shape({
@@ -111,29 +111,38 @@ endpoint.handle.POST(postSchema, async (req, res) => {
   }
 
   const { org_repos, org_id, provider, name } = req.payload;
-  const orgReposList: ReqOrgRepo[] = [];
-  forEachObjIndexed(
-    (repos, org) => orgReposList.push({ org, repos }),
-    org_repos
-  );
-
-  const [team, repos, onboardingState] = await Promise.all([
+  const orgReposList: ReqRepoWithProvider[] = [];
+  forEachObjIndexed((repos, org) => {
+    repos.forEach((repo) => {
+      orgReposList.push({
+        ...repo,
+        org,
+        provider
+      } as any as ReqRepoWithProvider);
+    });
+  }, org_repos);
+  const [team, onboardingState] = await Promise.all([
     createTeam(org_id, name, []),
-    enableOrgReposIfNotEnabled(org_id, provider as Integration, orgReposList),
     getOnBoardingState(org_id)
   ]);
+
   const updatedOnboardingState = Array.from(
     new Set(onboardingState.onboarding_state).add(OnboardingStep.TEAM_CREATED)
   );
   const [teamRepos] = await Promise.all([
-    addReposToTeam(
-      team.id,
-      repos.map((r) => r.id)
-    ),
+    handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
+      `/teams/${team.id}/repos`,
+      {
+        method: 'PUT',
+        data: {
+          repos: orgReposList
+        }
+      }
+    ).then((repos) => repos.map((r) => ({ ...r, team_id: team.id }))),
     updateOnBoardingState(org_id, updatedOnboardingState)
   ]);
 
-  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos), repos });
+  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
 
 endpoint.handle.PATCH(patchSchema, async (req, res) => {
@@ -141,33 +150,27 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { org_id, id, name, org_repos, provider } = req.payload;
-  const orgReposList: ReqOrgRepo[] = [];
-  forEachObjIndexed(
-    (repos, org) => orgReposList.push({ org, repos }),
-    org_repos
-  );
+  const { id, name, org_repos, provider } = req.payload;
+  const orgReposList: ReqRepoWithProvider[] = [];
+  forEachObjIndexed((repos, org) => {
+    repos.forEach((repo) => {
+      orgReposList.push({
+        ...repo,
+        org,
+        provider
+      } as any as ReqRepoWithProvider);
+    });
+  }, org_repos);
 
-  const upsertPayload: Record<string, any> = {
-    id,
-    org_id,
-    updated_at: new Date(),
-    manager_id: null
-  };
-
-  if (name) {
-    upsertPayload.name = name;
-  }
-
-  const [team, repos] = await Promise.all([
+  const [team, teamRepos] = await Promise.all([
     updateTeam(id, name, []),
-    enableOrgReposIfNotEnabled(org_id, provider as Integration, orgReposList)
+    handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(`/teams/${id}/repos`, {
+      method: 'PUT',
+      data: {
+        repos: orgReposList
+      }
+    }).then((repos) => repos.map((r) => ({ ...r, team_id: id })))
   ]);
-  const teamRepos = await addReposToTeam(
-    id,
-    repos.map((r) => r.id)
-  );
-
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
 
@@ -193,18 +196,13 @@ const updateTeam = async (
   team_name: string,
   member_ids: string[]
 ): Promise<BaseTeam> => {
-  return db('Team')
-    .insert({
-      id: team_id,
+  return handleRequest<BaseTeam>(`/team/${team_id}`, {
+    method: 'PATCH',
+    data: {
       name: team_name,
-      member_ids: member_ids,
-      is_deleted: false,
-      updated_at: new Date()
-    })
-    .onConflict('id')
-    .merge()
-    .returning('*')
-    .then(getFirstRow);
+      member_ids
+    }
+  });
 };
 
 const createTeam = async (
@@ -212,48 +210,13 @@ const createTeam = async (
   team_name: string,
   member_ids: string[]
 ): Promise<BaseTeam> => {
-  return db(Table.Team)
-    .insert({
-      org_id,
+  return handleRequest<BaseTeam>(`/org/${org_id}/team`, {
+    method: 'POST',
+    data: {
       name: team_name,
-      member_ids: member_ids,
-      is_deleted: false
-    })
-    .returning('*')
-    .then(getFirstRow);
-};
-
-const addReposToTeam = async (team_id: ID, repo_ids: ID[]) => {
-  try {
-    await db(Table.TeamRepos)
-      .update({
-        [Columns[Table.TeamRepos].is_active]: false,
-        updated_at: new Date()
-      })
-      .where('team_id', team_id);
-  } catch (err) {}
-
-  try {
-    const payload = repo_ids.map((repo_id) => ({
-      [Columns[Table.TeamRepos].team_id]: team_id,
-      [Columns[Table.TeamRepos].org_repo_id]: repo_id,
-      [Columns[Table.TeamRepos].is_active]: true
-    }));
-    const data =
-      payload.length &&
-      (await db('TeamRepos')
-        .insert(
-          repo_ids.map((repo_id) => ({
-            [Columns[Table.TeamRepos].team_id]: team_id,
-            [Columns[Table.TeamRepos].org_repo_id]: repo_id,
-            [Columns[Table.TeamRepos].is_active]: true
-          }))
-        )
-        .onConflict(['team_id', 'org_repo_id'])
-        .merge()
-        .returning('*'));
-    return data;
-  } catch (err) {}
+      member_ids
+    }
+  });
 };
 
 export const getAllOrgRepos = async (

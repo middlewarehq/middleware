@@ -65,6 +65,7 @@ declare namespace NodeJS {
     NEXT_PUBLIC_BUILD_TIME: string;
     NEXT_PUBLIC_APP_ENVIRONMENT: 'production' | 'development';
     INTERNAL_API_BASE_URL: string;
+    INTERNAL_SYNC_API_BASE_URL: string;
     SECRET_PUBLIC_KEY: string;
     SECRET_PRIVATE_KEY: string;
     DB_HOST: string;

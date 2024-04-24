@@ -1,5 +1,4 @@
 import { AxiosError } from 'axios';
-import { getTeamRepos } from 'pages/api/resources/team_repos';
 import * as yup from 'yup';
 
 import { internal } from '@/api-helpers/axios';
@@ -42,8 +41,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   const response = await getRepos(
     org_id,
     provider as CodeSourceProvidersIntegration,
-    org_name,
-    team_id
+    org_name
   );
   return res.status(200).send(response);
 });
@@ -72,25 +70,9 @@ export const getProviderOrgs = (
 export const getRepos = async (
   org_id: ID,
   provider: CodeSourceProvidersIntegration,
-  org_name: string,
-  team_id?: ID
+  org_name: string
 ) => {
-  let [repos, teamRepos] = await Promise.all([
-    batchPaginatedListsRequest(
-      `/orgs/${org_id}/integrations/${provider}/${providerOrgBrandingMap[provider]}/${org_name}/repos`
-    ).then((rs) => rs.map(getBaseRepoFromUnionRepo)),
-    getTeamRepos(team_id)
-  ]);
-
-  const teamReposSet = new Set(
-    teamRepos.map((tr) => `${tr.org_name}/${tr.name}`)
-  );
-
-  if (team_id) {
-    repos = repos.filter((repo) =>
-      teamReposSet.has(`${repo.parent}/${repo.name}`)
-    );
-  }
-
-  return repos;
+  return await batchPaginatedListsRequest(
+    `/orgs/${org_id}/integrations/${provider}/${providerOrgBrandingMap[provider]}/${org_name}/repos`
+  ).then((rs) => rs.map(getBaseRepoFromUnionRepo));
 };

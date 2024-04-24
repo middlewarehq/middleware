@@ -447,7 +447,7 @@ export type RepoWithSingleWorkflow = {
 
 export type RepoUniqueDetails = Pick<
   RepoWithSingleWorkflow,
-  'name' | 'idempotency_key' | 'slug'
+  'name' | 'slug' | 'default_branch' | 'idempotency_key'
 >;
 
 export type RepoWithMultipleWorkflows = Omit<
@@ -960,6 +960,8 @@ export type ReqRepo = {
   name: string;
   slug: string;
 };
+
+export type ReqRepoWithProvider = ReqRepo & { provider: Integration };
 
 export type DoraPropsType = {
   count: number;
