@@ -130,19 +130,18 @@ endpoint.handle.POST(postSchema, async (req, res) => {
   const updatedOnboardingState = Array.from(
     new Set(onboardingState.onboarding_state).add(OnboardingStep.TEAM_CREATED)
   );
-  const [teamRepos] = await Promise.all([
-    handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
-      `/teams/${team.id}/repos`,
-      {
-        method: 'PUT',
-        data: {
-          repos: orgReposList
-        }
+  const teamRepos = await handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
+    `/teams/${team.id}/repos`,
+    {
+      method: 'PUT',
+      data: {
+        repos: orgReposList
       }
-    ).then((repos) => repos.map((r) => ({ ...r, team_id: team.id }))),
-    updateOnBoardingState(org_id, updatedOnboardingState),
-    syncReposForOrg(org_id)
-  ]);
+    }
+  ).then((repos) => repos.map((r) => ({ ...r, team_id: team.id })));
+
+  updateOnBoardingState(org_id, updatedOnboardingState);
+  syncReposForOrg();
 
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
@@ -172,7 +171,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
         repos: orgReposList
       }
     }).then((repos) => repos.map((r) => ({ ...r, team_id: id }))),
-    syncReposForOrg(org_id)
+    syncReposForOrg()
   ]);
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });

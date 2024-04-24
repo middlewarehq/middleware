@@ -14,10 +14,10 @@ endpoint.handle.POST(nullSchema, async (req, res) => {
     return res.send({});
   }
 
-  res.send(await syncReposForOrg(req.payload.org_id));
+  res.send(await syncReposForOrg());
 });
 
-export const syncReposForOrg = (org_id: ID) =>
-  handleSyncServerRequest(`/orgs/${org_id}/sync`, { method: 'POST' });
+export const syncReposForOrg = () =>
+  handleSyncServerRequest(`/sync`, { method: 'POST' });
 
 export default endpoint.serve();

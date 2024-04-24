@@ -54,8 +54,8 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   const teamRepoFiltersMap =
     repoFiltersFromTeamProdBranches(teamProdBranchesMap);
 
-  const from_date = startOfDay(new Date(rawFromDate));
-  const to_date = endOfDay(new Date(rawToDate));
+  const from_date = isoDateString(startOfDay(new Date(rawFromDate)));
+  const to_date = isoDateString(endOfDay(new Date(rawToDate)));
 
   const [prFilters, workflowFilters] = await Promise.all([
     updatePrFilterParams(
