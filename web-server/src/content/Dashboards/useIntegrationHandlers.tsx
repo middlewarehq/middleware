@@ -15,7 +15,8 @@ import { fetchCurrentOrg } from '@/slices/auth';
 import {
   unlinkProvider,
   checkGitHubValidity,
-  linkProvider
+  linkProvider,
+  getMissingPATScopes
 } from '@/utils/auth';
 import { depFn } from '@/utils/fn';
 
@@ -70,7 +71,7 @@ const ConfigureGithubModalBody: FC<{
 
   return (
     <FlexBox gap2>
-      <FlexBox gap={2} minWidth={'400px'} col>
+      <FlexBox gap={2} minWidth={'400px'} maxHeight={'255px'} col>
         <FlexBox>Enter you Github token below.</FlexBox>
         <FlexBox fullWidth minHeight={'80px'} col>
           <TextField
@@ -87,7 +88,7 @@ const ConfigureGithubModalBody: FC<{
           </Line>
         </FlexBox>
 
-        <FlexBox gap={4} alignCenter justifyBetween>
+        <FlexBox justifyBetween alignCenter mt={'auto'}>
           <FlexBox col sx={{ opacity: 0.8 }}>
             <Line>Learn more about Github</Line>
             <Line>
@@ -114,29 +115,44 @@ const ConfigureGithubModalBody: FC<{
                 isLoading.true();
                 checkGitHubValidity(token.value)
                   .then(async (isValid) => {
-                    if (isValid) {
-                      await linkProvider(token.value, orgId, Integration.GITHUB)
-                        .then(() => {
-                          dispatch(fetchCurrentOrg());
-                          enqueueSnackbar('Github linked successfully', {
-                            variant: 'success',
-                            autoHideDuration: 2000
-                          });
-                          onClose();
-                        })
-                        .catch((e) => {
-                          setError(
-                            'Failed to link token, please try again later'
-                          );
-                          console.error('Failed to link token', e);
-                        });
-                    } else {
-                      throw new Error('Invalid token');
+                    if (!isValid) throw new Error('Invalid token');
+                  })
+                  .then(async () => {
+                    try {
+                      const res = await getMissingPATScopes(token.value);
+                      if (res.length) {
+                        throw new Error(
+                          `Token is missing scopes: ${res.join(', ')}`
+                        );
+                      }
+                    } catch (e) {
+                      // @ts-ignore
+                      throw new Error(e?.message, e);
                     }
                   })
-                  .catch(() => {
-                    setError('Invalid token, please check and try again');
-                    console.error('Invalid token');
+                  .then(async () => {
+                    try {
+                      return await linkProvider(
+                        token.value,
+                        orgId,
+                        Integration.GITHUB
+                      );
+                    } catch (e) {
+                      throw new Error('Failed to link Github: ', e);
+                    }
+                  })
+                  .then(() => {
+                    dispatch(fetchCurrentOrg());
+                    enqueueSnackbar('Github linked successfully', {
+                      variant: 'success',
+                      autoHideDuration: 2000
+                    });
+                    onClose();
+                  })
+                  .catch((e) => {
+                    setError(e);
+                    console.error('Error while linking token: ', e.message);
+                    setError(e.message);
                   })
                   .finally(() => {
                     isLoading.false();

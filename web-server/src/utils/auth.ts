@@ -34,7 +34,7 @@ export async function checkGitHubValidity(
   }
 }
 
-const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow', 'xzczcx'];
+const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
 export const getMissingPATScopes = async (pat: string) => {
   try {
     const response = await axios.get('https://api.github.com', {
@@ -49,6 +49,6 @@ export const getMissingPATScopes = async (pat: string) => {
     const userScopes = scopesString.split(',').map((scope) => scope.trim());
     return PAT_SCOPES.filter((scope) => !userScopes.includes(scope));
   } catch (error) {
-    return PAT_SCOPES;
+    throw new Error('Failed to get missing PAT scopes', error);
   }
 };
