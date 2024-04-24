@@ -194,6 +194,3 @@ tsconfig.tsbuildinfo
 
 # Sentry
 .sentryclirc
-
-# config files
-./apiserver/dora/config/config.ini
