@@ -49,7 +49,7 @@ RUN cd ./backend/ \
     && rm -rf ./web-server && mkdir -p /app/web-server \
     && tar cfz /opt/venv.tar.gz /opt/venv/ \
     && rm -rf /opt/venv && mkdir -p /opt/venv \
-    && yarn cache clean \
+    && yarn cache clean
 
 ENV POSTGRES_DB_ENABLED=true
 ENV DB_INIT_ENABLED=true
