@@ -21,7 +21,7 @@ services:
       - "9697:9697"
       - "3333:3333"
       - "5434:5434"
-      - "6379:6379"
+      - "6385:6379"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
