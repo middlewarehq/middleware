@@ -7,7 +7,7 @@ ARG FRONTEND_ENABLED=true
 ARG CRON_ENABLED=true
 
 # Final image
-FROM middleware/prebuilt-base:latest
+FROM middlewareeng/oss-base:latest
 
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1

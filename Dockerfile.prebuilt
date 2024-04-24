@@ -1,4 +1,4 @@
-FROM python:3.9-slim as prebuilt-base
+FROM python:3.9-slim as oss-base
 
 # Install necessary packages for building the backend
 RUN apt-get update && apt-get install -y --no-install-recommends \
