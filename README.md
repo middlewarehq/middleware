@@ -12,13 +12,13 @@
 
 **Table of Contents**
 - [Middleware - Open Source](#middleware)
+  - [Features](#features)
   - [Quick Start](#quick-start)
   - [Project Setup Guidelines](#project-setup-guidelines)
     - [Using Docker](#using-docker)
     - [Manual Setup](#manual-setup)
   - [Contributing guidelines](#contributing-guidelines)
   - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
-  - [Features](#features)
   - [Installation](#installation)
   - [Usage](#usage)
   - [Examples](#examples)
