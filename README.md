@@ -178,14 +178,8 @@ We look forward to your part in keeping Middleware secure!
 - Screenshots of the analyzer in action
 
 ## License
-- Information about the project's license (e.g., MIT, Apache 2.0)
-- Link to the full license text
-- Any additional terms or conditions related to licensing
-
-## License
-- Information about the project's license (e.g., MIT, Apache 2.0)
-- Link to the full license text
-- Any additional terms or conditions related to licensing
+ 
+ This project is licensed under the [Apache 2.0](LICENSE) License - see the LICENSE.md file for details.
 
 ![Product Screenshot](link_to_screenshot)
 
