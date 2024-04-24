@@ -76,6 +76,28 @@ const CliUi = () => {
     [addLog, lineLimit]
   );
 
+  const handleExit = useCallback(() => {
+    setAppState(AppStates.TEARDOWN);
+    setTimeout(() => {
+      if (!processRef.current) return;
+
+      processRef.current.kill();
+      processRef.current.stdout.destroy();
+      processRef.current.stderr.destroy();
+
+      runCommand('docker-compose', ['down'], runCommandOpts).promise.finally(
+        () => {
+          setAppState(AppStates.TERMINATED);
+        }
+      );
+    }, 200);
+  }, [runCommandOpts, setAppState]);
+
+  useEffect(() => {
+    if (appState !== AppStates.TERMINATED) return;
+    exit();
+  }, [appState, exit]);
+
   useInput((input) => {
     if (appState === AppStates.DOCKER_READY) {
       if (input === 'q') {
@@ -94,42 +116,45 @@ const CliUi = () => {
     }
 
     if (input === 'x') {
-      if (!processRef.current) return;
-
-      setAppState(AppStates.TEARDOWN);
-      processRef.current.kill();
-      processRef.current.stdout.destroy();
-      processRef.current.stderr.destroy();
-      exit();
+      handleExit();
     }
   });
 
   useEffect(() => {
-    const listener = () => {
-      runCommand('docker-compose', ['down'], runCommandOpts);
-    };
-
-    const process = runCommand(
+    const { process, promise } = runCommand(
       'docker-compose',
       ['watch'],
       runCommandOpts
-    ).process;
+    );
+
+    promise.catch(() => {
+      handleExit();
+      addLog('"docker watch" exited');
+    });
 
     processRef.current = process;
 
-    process?.stdout.on('data', (data) => {
+    const lineListener = (data: Buffer) => {
       let watch_logs = String(data);
-      if (watch_logs.includes(READY_MESSAGES[LogSource.DockerWatch])) {
+
+      if (
+        READY_MESSAGES[LogSource.DockerWatch].some((rdyMsg) =>
+          watch_logs.includes(rdyMsg)
+        )
+      ) {
         addLog('\n🚀 Container ready 🚀\n');
         setAppState(AppStates.DOCKER_READY);
       }
-    });
-
-    globalThis.process.on('exit', listener);
-    return () => {
-      globalThis.process.off('exit', listener);
     };
-  }, [addLog, runCommandOpts, setAppState]);
+
+    process?.stdout.on('data', lineListener);
+    process?.stderr.on('data', lineListener);
+
+    globalThis.process.on('exit', handleExit);
+    return () => {
+      globalThis.process.off('exit', handleExit);
+    };
+  }, [addLog, exit, handleExit, runCommandOpts, setAppState]);
 
   return (
     <>
@@ -152,12 +177,17 @@ const CliUi = () => {
             switch (appState) {
               case AppStates.INIT:
                 return (
-                  <Text color="blue">
-                    Status: Preparing docker container... [Press X to abort]{' '}
-                    <Text bold color="yellow">
-                      <Spinner type="material" />
+                  <Box flexDirection="column">
+                    <Text color="blue">
+                      Status: Preparing docker container... [Press X to abort]{' '}
+                      <Text bold color="yellow">
+                        <Spinner type="material" />
+                      </Text>
                     </Text>
-                  </Text>
+                    <Text dimColor>
+                      Depending on your network, it may take 3-8 minutes.
+                    </Text>
+                  </Box>
                 );
               case AppStates.DOCKER_READY:
                 return (
@@ -292,10 +322,10 @@ const CliUi = () => {
             <Text bold underline color="#7e57c2">
               Access Info
             </Text>
-            <Text bold>http://localhost:3005</Text>
+            <Text bold>http://localhost:3333</Text>
             <Text bold>http://localhost:9696</Text>
             <Text bold>http://localhost:6380</Text>
-            <Text bold>http://localhost:5436</Text>
+            <Text bold>http://localhost:5434</Text>
             <Text bold color="grey">
               --
             </Text>

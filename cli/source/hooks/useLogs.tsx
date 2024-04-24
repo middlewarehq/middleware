@@ -70,30 +70,29 @@ export const useLogs = (
     [addLogs, color, prefix]
   );
 
-  const runCommandOpts = useMemo(
-    () => ({
-      onData: (line: string) => {
+  const runCommandOpts = useMemo(() => {
+    const handleLines = (line: string, type: 'data' | 'error' = 'data') => {
+      const checkLogEquality = () => {
         // @ts-ignore
-        if (line.includes(READY_MESSAGES[logSource]))
-          updateReadyServices(logSource);
-        line
-          .split('\n')
-          .flatMap((l) => splitEvery(lineLimit, l))
-          .map((l) => updateLogs(l));
-      },
-      onErr: (line: string) => {
-        // @ts-ignore
-        if (line.includes(READY_MESSAGES[logSource]))
-          updateReadyServices(logSource);
+        const msgs = READY_MESSAGES[logSource];
 
-        line
-          .split('\n')
-          .flatMap((l) => splitEvery(lineLimit, l))
-          .map((l) => updateLogs(l, 'error'));
-      }
-    }),
-    [logSource, updateReadyServices, lineLimit, updateLogs]
-  );
+        if (Array.isArray(msgs)) return msgs.some((msg) => line.includes(msg));
+        return line.includes(msgs);
+      };
+
+      if (checkLogEquality()) updateReadyServices(logSource);
+
+      line
+        .split('\n')
+        .flatMap((l) => splitEvery(lineLimit, l))
+        .map((l) => updateLogs(l, type));
+    };
+
+    return {
+      onData: (line: string) => handleLines(line),
+      onErr: (line: string) => handleLines(line, 'error')
+    };
+  }, [logSource, updateReadyServices, lineLimit, updateLogs]);
   useEffect(() => {
     if (appState !== AppStates.DOCKER_READY || started) return;
 

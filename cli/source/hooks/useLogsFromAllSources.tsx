@@ -12,25 +12,40 @@ import {
   keysForLogSource
 } from '../constants.js';
 
+const HIST_LIMIT = 5000;
+
 export const useLogsFromAllSources = () => {
   const { appState, logsStream, setLogsStream, logSource, addLog } =
     useAppContext();
 
   const [allLogs, setAllLogs] = useState<LogEntry[]>([]);
   const addLogs = useCallback(
-    (entry: LogEntry) => {
+    (entry: LogEntry, src: LogSource) => {
       setAllLogs((logs) => logs.concat(entry));
-      addLog(entry.line);
+
+      if (src === logSource) addLog(entry.line);
     },
-    [addLog]
+    [addLog, logSource]
   );
 
-  const webLogs = useLogs(LogSource.WebServer, addLogs);
-  const apiLogs = useLogs(LogSource.ApiServer, addLogs);
-  const redisLogs = useLogs(LogSource.Redis, addLogs);
-  const initDbLogs = useLogs(LogSource.InitDb, addLogs);
-  const pgLogs = useLogs(LogSource.Postgres, addLogs);
-  const cronLogs = useLogs(LogSource.Cron, addLogs);
+  const webLogs = useLogs(LogSource.WebServer, (entry) =>
+    addLogs(entry, LogSource.WebServer)
+  );
+  const apiLogs = useLogs(LogSource.ApiServer, (entry) =>
+    addLogs(entry, LogSource.ApiServer)
+  );
+  const redisLogs = useLogs(LogSource.Redis, (entry) =>
+    addLogs(entry, LogSource.Redis)
+  );
+  const initDbLogs = useLogs(LogSource.InitDb, (entry) =>
+    addLogs(entry, LogSource.InitDb)
+  );
+  const pgLogs = useLogs(LogSource.Postgres, (entry) =>
+    addLogs(entry, LogSource.Postgres)
+  );
+  const cronLogs = useLogs(LogSource.Cron, (entry) =>
+    addLogs(entry, LogSource.Cron)
+  );
 
   const prevLogSource = usePrevious(logSource);
 
@@ -42,26 +57,26 @@ export const useLogsFromAllSources = () => {
 
     switch (logSource) {
       case LogSource.WebServer:
-        newLogs.push(...webLogs.slice(-10000).map((log) => log.line));
+        newLogs.push(...webLogs.slice(-HIST_LIMIT).map((log) => log.line));
         break;
       case LogSource.ApiServer:
-        newLogs.push(...apiLogs.slice(-10000).map((log) => log.line));
+        newLogs.push(...apiLogs.slice(-HIST_LIMIT).map((log) => log.line));
         break;
       case LogSource.Postgres:
-        newLogs.push(...pgLogs.slice(-10000).map((log) => log.line));
+        newLogs.push(...pgLogs.slice(-HIST_LIMIT).map((log) => log.line));
         break;
       case LogSource.InitDb:
-        newLogs.push(...initDbLogs.slice(-10000).map((log) => log.line));
+        newLogs.push(...initDbLogs.slice(-HIST_LIMIT).map((log) => log.line));
         break;
       case LogSource.Redis:
-        newLogs.push(...redisLogs.slice(-10000).map((log) => log.line));
+        newLogs.push(...redisLogs.slice(-HIST_LIMIT).map((log) => log.line));
         break;
       case LogSource.Cron:
-        newLogs.push(...cronLogs.slice(-10000).map((log) => log.line));
+        newLogs.push(...cronLogs.slice(-HIST_LIMIT).map((log) => log.line));
         break;
       case LogSource.All:
       default:
-        newLogs.push(...allLogs.slice(-10000).map((log) => log.line));
+        newLogs.push(...allLogs.slice(-HIST_LIMIT).map((log) => log.line));
         break;
     }
 

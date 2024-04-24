@@ -40,9 +40,12 @@ export const keysForLogSource = Object.entries(LogSource).reduce(
 
 export const READY_MESSAGES = {
   [LogSource.ApiServer]: `Listening at: http://0.0.0.0`,
-  [LogSource.WebServer]: `Server started on http://localhost`,
+  [LogSource.WebServer]: [
+    `Server started on http://localhost`,
+    `http://localhost:`
+  ],
   [LogSource.Postgres]: `database system is ready to accept connections`,
   [LogSource.Redis]: `Ready to accept connections`,
-  [LogSource.InitDb]: `exit 0`,
-  [LogSource.DockerWatch]: `watch enabled`
+  [LogSource.InitDb]: [`exit 0`, `Writing: ./db/schema.sql`],
+  [LogSource.DockerWatch]: [`Watch configuration for service`, `watch enabled`]
 };
