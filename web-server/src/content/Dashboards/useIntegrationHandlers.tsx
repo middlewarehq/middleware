@@ -190,12 +190,13 @@ const TokenPermissions = () => {
 
   const styles: SxProps[] = useMemo(() => {
     const baseStyles = {
-      border: `2px solid ${alpha('rgb(256,0,0)', 0.6)}`,
+      border: `2px solid ${alpha('rgb(256,0,0)', 0.4)}`,
       transition: 'all 0.8s ease',
       borderRadius: '12px',
       opacity: expand.value ? 0 : 1,
-      width: '770px',
+      width: '240px',
       position: 'absolute',
+      maxWidth: 'calc(100% - 48px)',
       left: '24px'
     };
 
@@ -221,12 +222,13 @@ const TokenPermissions = () => {
 
   const expandedStyles = useMemo(() => {
     const baseStyles = {
-      border: `2px solid ${alpha('rgb(256,0,0)', 0.6)}`,
+      border: `2px solid ${alpha('rgb(256,0,0)', 0.4)}`,
       transition: 'all 0.8s ease',
       borderRadius: '12px',
       opacity: !expand.value ? 0 : 1,
-      width: '770px',
+      width: '240px',
       position: 'absolute',
+      maxWidth: 'calc(100% - 48px)',
       left: '24px'
     };
 
@@ -253,7 +255,7 @@ const TokenPermissions = () => {
   }, [expand.value]);
 
   return (
-    <FlexBox col gap1>
+    <FlexBox col gap1 maxWidth={'100%'} overflow={'auto'}>
       <div
         onMouseEnter={expand.true}
         onMouseLeave={expand.false}
@@ -262,7 +264,8 @@ const TokenPermissions = () => {
           borderRadius: '12px',
           height: expand.value ? '1257px' : '240px',
           transition: 'all 0.8s ease',
-          position: 'relative'
+          position: 'relative',
+          maxWidth: '100%'
         }}
       >
         <Image
