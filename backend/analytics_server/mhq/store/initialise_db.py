@@ -23,4 +23,3 @@ def initialize_database(app):
             )
             db.session.add(default_org)
             db.session.commit()
-
