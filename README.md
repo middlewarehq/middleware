@@ -177,6 +177,8 @@ To set up middleware locally, follow these steps:
 
 ## Contributing
 
+![contributor Metrics](https://open-source-assets.middlewarehq.com/svgs/middlewarehq-middleware-contributor-metrics-dark-widget-premium.svg)
+
 To get started contributing to middleware check out our [CONTRIBUTING.md](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md).
 
 We appreciate your contributions and look forward to working together to make Middleware even better!
