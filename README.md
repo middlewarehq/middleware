@@ -52,15 +52,15 @@
   - [Contributing](#contributing)
   - [License](#license)
 
-## Features
-![Product Demo](media_files/product_demo_1.gif)
+## 🚀 Features
+
 - Integration with various CI/CD tools
 - Automated collection and analysis of DORA metrics
 - Visualization of key performance indicators
 - Customizable reports and dashboards
 - Integration with popular project management platforms
 
-## Quick Start
+## ✨ Quick Start
 
 Open the terminal and run the following command
 
@@ -84,9 +84,9 @@ docker stop middleware
 ```
 
 
-## Run Locally
+## 👩‍💻 Run Locally
 
-### Using Docker 🐳
+### 🐳 Using Docker
 
 1. **Clone the Repository**:
 
@@ -118,7 +118,7 @@ docker stop middleware
     - The redis server can be accessed at host:localhost, port:6385.
 
 
-### Manual Setup
+### 💻 Manual Setup
 
 To set up middleware locally, follow these steps:
 
@@ -173,7 +173,19 @@ To set up middleware locally, follow these steps:
    - The analytics server is available at http://localhost:5000.
    - The sync server can be accessed at http://localhost:6000.
 
-## Contributing
+
+## 📈 Usage
+
+![Product Demo](media_files/product_demo_1.gif)
+
+- Setup the project by following the [steps mentioned above](#quick-start).
+- Generate and Add your PAT token from code provider.
+- Create a team and select repositories for the team.
+- See Dora Metrics for your team.
+- Update settings related to incident filters, excluded pull requests, prod branches etc to get more accurate data.
+
+
+## ❤️ Contributing
 
 ![contributor Metrics](https://open-source-assets.middlewarehq.com/svgs/middlewarehq-middleware-contributor-metrics-dark-widget-premium.svg)
 
@@ -187,9 +199,25 @@ To get started contributing to middleware check out our [SECURITY.md](https://gi
 
 We look forward to your part in keeping Middleware secure!
 
+
+## Examples 
+
+- Sample reports and dashboards showcasing DORA metrics
+- Real-world use cases and success stories
+- Screenshots of the analyzer in action
+
+## ⛓️ Security guidelines and disclosure
+
+To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
+
+We look forward to your part in keeping Middleware secure!
+
+
 ## License
+
  
  This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/middleware/blob/main/LICENSE) License - see the LICENSE.md file for details.
 
 
-![Product Screenshot](link_to_screenshot)
+
+![Banner](media_files/banner.png)
