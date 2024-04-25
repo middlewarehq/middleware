@@ -29,6 +29,7 @@ from mhq.store.models.code import (
 )
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.core import CoreRepoService
+from mhq.utils.log import LOG
 from mhq.utils.time import time_now, ISO_8601_DATE_FORMAT
 
 PR_PROCESSING_CHUNK_SIZE = 100
@@ -359,7 +360,7 @@ def get_github_etl_handler(org_id: str) -> GithubETLHandler:
             org_id, UserIdentityProvider.GITHUB
         )
         if not access_token:
-            raise Exception(
+            LOG.error(
                 f"Access token not found for org {org_id} and provider {UserIdentityProvider.GITHUB.value}"
             )
         return access_token

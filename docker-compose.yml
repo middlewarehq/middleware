@@ -42,8 +42,9 @@ services:
         - action: rebuild
           path: ./backend/dev-requirements.txt
 
-        - action: rebuild
+        - action: sync+restart
           path: ./setup_util/supervisord.conf
+          target: /etc/supervisord.conf
 
         - action: rebuild
           path: ./setup_utils/init_db.sh

@@ -68,12 +68,21 @@ Open the terminal and run the following command
 docker run \
     --name middleware \
     -p 3000:3333 \
-    public.ecr.aws/y4x5l0o7/middleware:latest
+    -d \
+    middlewareeng/middleware:latest
+    
 ```
 
 Wait for sometime for the services to be up.
 
-The App shall be available on your host at http://localhost:3333.
+The app shall be available on your host at http://localhost:3333.
+
+In case you want to stop the container, run the following command:
+
+```bash
+docker stop middleware
+```
+
 
 ## 👩‍💻 Run Locally
 
@@ -91,56 +100,23 @@ The App shall be available on your host at http://localhost:3333.
    cd middleware
    ```
 
-3. **Set Environment variables ⚙️**\
-   Make `.env` file in the project root directory and put environment variables for frontend and backend in it.\
-   You can also specify which individual services to enable if you don't want to start all the services.
-
-   ```
-   # .env file
-
-   DB_HOST=localhost
-   DB_NAME=dora
-   DB_PASS=postgres
-   DB_PORT=5432
-   DB_USER=postgres
-   REDIS_HOST=localhost
-   REDIS_PORT=6379
-   ENVIRONMENT=dev
-
-   # Enable/Disable individual services
-   POSTGRES_DB_ENABLED=true
-   DB_INIT_ENABLED=true
-   REDIS_ENABLED=true
-   BACKEND_ENABLED=true
-   FRONTEND_ENABLED=true
-   CRON_ENABLED=true
-
-   NEXT_PUBLIC_APP_ENVIRONMENT="development"
-   INTERNAL_API_BASE_URL=http://localhost:9696
-
-   # For using db on host machine uncomment the following. Useful when using ssh tunnelling.
-   #DB_HOST=host.docker.internal
-   #DB_PORT=5433
-   ```
-
-   Set `ENVIRONMENT=prod` to run it in production setup.\
-   Setting `DB_HOST` as `host.docker.internal` will help when you want to connect to a db instance which
-   is running on your host machine. Also update `DB_PORT` accordingly.
-
-4. **Run `dev.sh` script in the project root 🪄**\
+3. **Run `dev.sh` script in the project root 🪄**\
     `./dev.sh` can be run with either no arguments or all arguments need to provided for creating the ssh tunnel.\
     The usage is as follows:
-   ```bash
-   Usage: ./dev.sh [-i identity_file] [-l local_port] [-r remote_host] [-p remote_port] [-u ssh_user] [-h ssh_host]
-   ```
    ```bash
    # runs without the ssh tunnel
    ./dev.sh
    ```
-   ```bash
-   # runs with the ssh tunnel
-   ./dev.sh  -i /path/to/private_key -l 5433 -r mhq_db.rds.amazonaws.com -p 5432 -u ec2-user -h 255.96.240.666
-   ```
+   You may update the env.example and set `ENVIRONMENT=prod` to run it in production setup.\
+   Further if any changes are required to be made to ports, you may update the `docker-compose.yml` file, accordingly.
+4. **Access the Application**:
+   Once the project is running, access the application through your web browser at http://localhost:3333.
+   Further, other services can be accessed at:
+    - The analytics server is available at http://localhost:9696.
+    - The sync server can be accessed at http://localhost:9697.
+    - The postgres database can be accessed at host:localhost, port:5434, username: postgres, password: postgres, db name: mhq-oss.
+    - The redis server can be accessed at host:localhost, port:6385.
+
 
 ### 💻 Manual Setup
 
@@ -192,7 +168,8 @@ To set up middleware locally, follow these steps:
      ```
 
 6. **Access the Application**:
-   Once the project is running, access the application through your web browser at http://localhost:8000. Additionally:
+   Once the project is running, access the application through your web browser at http://localhost:8000. \
+   Additionally:
    - The analytics server is available at http://localhost:5000.
    - The sync server can be accessed at http://localhost:6000.
 
@@ -236,10 +213,11 @@ To get started contributing to middleware check out our [SECURITY.md](https://gi
 We look forward to your part in keeping Middleware secure!
 
 
-## License 
+## License
+
  
  This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/middleware/blob/main/LICENSE) License - see the LICENSE.md file for details.
 
 
 
-![Product Screenshot](link_to_screenshot)
+![Banner](media_files/banner.png)
