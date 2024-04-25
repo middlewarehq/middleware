@@ -1,4 +1,4 @@
-ARG ENVIRONMENT=prod
+ARG ENVIRONMENT=dev
 ARG POSTGRES_DB_ENABLED=true
 ARG DB_INIT_ENABLED=true
 ARG REDIS_ENABLED=true
@@ -35,7 +35,7 @@ RUN /opt/venv/bin/pip install -r requirements.txt -r dev-requirements.txt
 WORKDIR /app
 RUN mkdir -p /etc/cron.d && mv /app/setup_utils/cronjob.txt /etc/cron.d/cronjob
 RUN chmod +x /app/setup_utils/start.sh /app/setup_utils/init_db.sh /app/setup_utils/generate_config_ini.sh
-RUN mv /app/setup_utils/supervisord-dev.conf /etc/supervisord.conf
+RUN mv /app/setup_utils/supervisord.conf /etc/supervisord.conf
 RUN mv /app/database-docker/db/ /app/ && rm -rf /app/database-docker/
 RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf
 RUN echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf
@@ -58,7 +58,8 @@ RUN crontab /etc/cron.d/cronjob
 RUN /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
 
 WORKDIR /app/web-server
-RUN yarn install --verbose
+RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn install --verbose
+
 
 ENV POSTGRES_DB_ENABLED=true
 ENV DB_INIT_ENABLED=true
