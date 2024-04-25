@@ -50,7 +50,7 @@ class IncidentsETLHandler:
 
     def _sync_service_incidents(self, service: OrgIncidentService):
         try:
-            bookmark = self.__get_incidents_bookmark(service)
+            bookmark: IncidentsBookmark = self.__get_incidents_bookmark(service)
             (
                 incidents,
                 incident_org_incident_service_map,
@@ -59,6 +59,7 @@ class IncidentsETLHandler:
             self.incident_repo_service.save_incidents_data(
                 incidents, incident_org_incident_service_map
             )
+            bookmark.updated_at = time_now()
             self.incident_repo_service.save_incidents_bookmark(bookmark)
 
         except Exception as e:
@@ -67,7 +68,7 @@ class IncidentsETLHandler:
 
     def __get_incidents_bookmark(
         self, service: OrgIncidentService, default_sync_days: int = 31
-    ):
+    ) -> IncidentsBookmark:
         bookmark = self.incident_repo_service.get_incidents_bookmark(
             str(service.id), IncidentBookmarkType.SERVICE, self.provider
         )

@@ -90,6 +90,7 @@ class WorkflowETLHandler:
                 org_repo, repo_workflow, bookmark
             )
             self.workflow_repo_service.save_repo_workflow_runs(repo_workflow_runs)
+            bookmark.updated_at = time_now()
             self.workflow_repo_service.update_repo_workflow_runs_bookmark(bookmark)
         except Exception as e:
             LOG.error(
