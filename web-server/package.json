@@ -53,6 +53,7 @@
     "notistack": "^3.0.1",
     "nprogress": "0.2.0",
     "pluralize": "^8.0.0",
+    "pg": "^8.9.0",
     "ramda": "^0.28.0",
     "react": "^18.2.0",
     "react-clamp-lines": "^3.0.2",
