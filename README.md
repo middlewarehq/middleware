@@ -1,13 +1,34 @@
-# Middleware
+<br /><br />
+<p align="center">
+<a href="https://www.middlewarehq.com/">
+  <img src="https://middlewarehq-images.s3.ap-south-1.amazonaws.com/logo.png" alt="Middleware Logo" style="max-width: 400px">
+</a>
+</p>
+
+<p align="center"><b>Open-source engineering management that unlocks developer potential.</b></p>
+
+<p align="center">
+<a href="https://github.com/middlewarehq/middleware/actions/workflows/build.yml">
+    <img alt="continuous integration" src="https://img.shields.io/github/actions/workflow/status/middlewarehq/middleware/build.yml?branch=main&label=build&style=for-the-badge">
+</a>
+<a href="https://github.com/middlewarehq/middleware/graphs/commit-activity">
+    <img alt="Commit activity per month" src="https://img.shields.io/github/commit-activity/m/middlewarehq/middleware?style=for-the-badge" />
+</a>
+<a href="https://github.com/middlewarehq/middleware/graphs/contributors">
+    <img alt="contributors" src="https://img.shields.io/github/contributors-anon/middlewarehq/middleware?color=yellow&style=for-the-badge" />
+  </a>
+<br/>
+<a href="https://opensource.org/licenses/Apache-2.0">
+    <img src="https://img.shields.io/badge/apache%202.0-purple.svg?style=for-the-badge&label=license" alt="license" />
+</a>
+<img src="https://img.shields.io/github/stars/middlewarehq/middleware?style=for-the-badge" alt="Stars" />
+
+</p>
+
 
 ![Product Demo](media_files/product_demo_1.gif)
 
-![Stargazers](https://img.shields.io/github/stars/middlewarehq/middleware?style=social) 
-![Forks](https://img.shields.io/github/forks/middlewarehq/middleware?style=social) 
-![Contributors](https://img.shields.io/github/contributors/middlewarehq/middleware?color=dark-green) 
-![Issues](https://img.shields.io/github/issues/middlewarehq/middleware) 
-![License](https://img.shields.io/github/license/middlewarehq/middleware) 
-
+## Introduction
 **Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. They are:
 
 - **Deployment Frequency**: The frequency of code deployments to production or an operational environment.
@@ -17,7 +38,7 @@
 
 **Table of Contents**
 
-- [Middleware - Open Source](#middleware)
+- [Middleware - Open Source](#introduction)
   - [Features](#features)
   - [Quick Start](#quick-start)
   - [Project Setup Guidelines](#project-setup-guidelines)
