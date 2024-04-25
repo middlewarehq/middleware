@@ -11,8 +11,9 @@
 ./*/docker-compose.yml
 ./Dockerfile
 ./Dockerfile.dev
+./Dockerfile.prebuilt
 ./LICENSE
 ./README.md
 ./*/README.*
 ./dev.sh
-./setup_utils/install.sh
+./cli

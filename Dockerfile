@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Final image
 FROM python:3.9-slim
 
+ENV ENVIRONMENT=prod
 ENV DB_HOST=localhost
 ENV DB_NAME=mhq-oss
 ENV DB_PASS=postgres

@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
 
-# Every minute 
-* * * * * curl -X POST http://localhost:9697/sync >> /var/log/cron/cron.log 2>&1
+# Every 30 minutes, run the sync script
+*/30 * * * * curl -X POST http://localhost:9697/sync >> /var/log/cron/cron.log 2>&1
