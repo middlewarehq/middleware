@@ -138,7 +138,7 @@ To set up middleware locally, follow these steps:
 
    - For backend:
      ```bash
-     pip install -r requirements.txt
+     pip install -r requirements.txt -r dev-requirements.txt
      ```
    - For frontend:
      ```bash
