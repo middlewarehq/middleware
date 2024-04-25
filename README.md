@@ -1,7 +1,7 @@
 <br /><br />
 <p align="center">
 <a href="https://www.middlewarehq.com/">
-  <img src="media_files/logo.png" alt="Middleware Logo" style="max-width: 400px">
+  <img src="media_files/logo.png" alt="Middleware Logo" width=300px>
 </a>
 </p>
 
