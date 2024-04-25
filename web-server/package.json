@@ -48,7 +48,7 @@
     "js-cookie": "^3.0.1",
     "knex": "^2.4.2",
     "next": "13.5.6",
-    "next-auth": "^4.10.3",
+    "next-auth": "^4.24.5",
     "next-images": "1.8.4",
     "notistack": "^3.0.1",
     "nprogress": "0.2.0",
