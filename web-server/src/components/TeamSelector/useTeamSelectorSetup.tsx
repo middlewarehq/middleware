@@ -68,6 +68,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
       dispatch(
         appSlice.actions.setTeamProdBranchMap(res.data.teamReposProdBranchMap)
       );
+      dispatch(teamSlice.actions.setOrgRepos(res.data.orgRepos));
       const teams = res.data.teams.filter((t) => t.id);
 
       const singleT = teams.find((team) => singleTeamId === team.id);

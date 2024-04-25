@@ -5,9 +5,11 @@ import {
   getAllTeamsReposProdBranchesForOrg,
   transformTeamRepoBranchesToMap
 } from '@/api/internal/team/[team_id]/repo_branches';
+import { getAllOrgRepos } from '@/api/resources/orgs/[org_id]/teams/v2';
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { Endpoint } from '@/api-helpers/global';
 import { getTeamMembersFilterSettingForOrg } from '@/api-helpers/team';
+import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { FetchTeamsResponse } from '@/types/resources';
 import { db } from '@/utils/db';
@@ -53,10 +55,12 @@ export const getOrgTeams = async (
     {} as Record<ID, boolean>
   );
 
-  const [teamsReposProductionBranchDetails, repos] = await Promise.all([
-    getAllTeamsReposProdBranchesForOrg(org_id),
-    Promise.all(teamRows.map((team) => getTeamRepos(team.id)))
-  ]);
+  const [teamsReposProductionBranchDetails, repos, orgRepos] =
+    await Promise.all([
+      getAllTeamsReposProdBranchesForOrg(org_id),
+      Promise.all(teamRows.map((team) => getTeamRepos(team.id))),
+      getAllOrgRepos(org_id, Integration.GITHUB).then((res) => res.flat())
+    ]);
 
   const teamManagers = {} as Record<ID, any>;
 
@@ -79,6 +83,7 @@ export const getOrgTeams = async (
 
   return {
     teams,
+    orgRepos,
     teamReposProdBranchMap,
     teamReposMap: groupBy(prop('team_id'), repos.flat())
   };

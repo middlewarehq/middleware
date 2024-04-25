@@ -614,6 +614,7 @@ export type FetchTeamsResponse = {
   teams: Team[];
   teamReposProdBranchMap: Record<ID, TeamRepoBranchDetails[]>;
   teamReposMap: Record<ID, DB_OrgRepo[]>;
+  orgRepos: BaseRepo[];
 };
 
 export type FetchTeamSettingsAPIResponse<T extends {} = {}> = {
