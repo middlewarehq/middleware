@@ -13,6 +13,7 @@ from mhq.store.models.code import (
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.workflows import WorkflowRepoService
 from mhq.utils.lock import RedisLockService, get_redis_lock_service
+from mhq.utils.time import time_now
 
 DEPLOYMENTS_TO_PROCESS = 500
 
@@ -84,6 +85,7 @@ class MergeToDeployCacheHandler:
                 )
                 conducted_at: datetime = repo_workflow_run.conducted_at
                 broker_bookmark.bookmark = conducted_at.isoformat()
+                broker_bookmark.updated_at = time_now()
                 self.code_repo_service.update_merge_to_deploy_broker_bookmark(
                     broker_bookmark
                 )

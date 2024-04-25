@@ -15,6 +15,7 @@ from mhq.service.merge_to_deploy_broker import (
 from mhq.store.models.code import OrgRepo, BookmarkType, Bookmark, PullRequest
 from mhq.store.repos.code import CodeRepoService
 from mhq.utils.log import LOG
+from mhq.utils.time import time_now
 
 
 class CodeETLHandler:
@@ -68,6 +69,7 @@ class CodeETLHandler:
             bookmark.bookmark = (
                 pull_requests[-1].state_changed_at.astimezone(tz=pytz.UTC).isoformat()
             )
+            bookmark.updated_at = time_now()
             self.code_repo_service.update_org_repo_bookmark(bookmark)
             self.mtd_broker.pushback_merge_to_deploy_bookmark(
                 str(org_repo.id), pull_requests
