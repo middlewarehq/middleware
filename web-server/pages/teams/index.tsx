@@ -6,6 +6,7 @@ import { FlexBox } from '@/components/FlexBox';
 import { CreateEditTeams } from '@/components/Teams/CreateTeams';
 import { TeamsList } from '@/components/TeamsList';
 import { Integration } from '@/constants/integrations';
+import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchTeams } from '@/slices/team';
@@ -13,6 +14,7 @@ import { useDispatch, useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
 
 function Page() {
+  useRedirectWithSession();
   const dispatch = useDispatch();
   const { orgId } = useAuth();
   const teamsList = useSelector((state) => state.team.teams);
