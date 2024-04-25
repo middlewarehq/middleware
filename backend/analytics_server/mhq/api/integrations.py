@@ -18,9 +18,12 @@ def get_github_orgs(org_id: str):
     query_validator = get_query_validator()
     query_validator.org_validator(org_id)
 
-    external_integrations_service = get_external_integrations_service(
-        org_id, UserIdentityProvider.GITHUB
-    )
+    try:
+        external_integrations_service = get_external_integrations_service(
+            org_id, UserIdentityProvider.GITHUB
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     try:
         orgs = external_integrations_service.get_github_organizations()
     except GithubException as e:
@@ -55,9 +58,12 @@ def get_repos(org_id: str, org_login: str, page_size: int, page: int):
     query_validator = get_query_validator()
     query_validator.org_validator(org_id)
 
-    external_integrations_service = get_external_integrations_service(
-        org_id, UserIdentityProvider.GITHUB
-    )
+    try:
+        external_integrations_service = get_external_integrations_service(
+            org_id, UserIdentityProvider.GITHUB
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     # GitHub pages start from 0 and Bitbucket pages start from 1.
     # Need to be consistent, hence making standard as page starting from 1
     # and passing a decremented value to GitHub
@@ -77,9 +83,12 @@ def get_prs_for_repo(org_id: str, gh_org_name: str, gh_org_repo_name: str):
     query_validator = get_query_validator()
     query_validator.org_validator(org_id)
 
-    external_integrations_service = get_external_integrations_service(
-        org_id, UserIdentityProvider.GITHUB
-    )
+    try:
+        external_integrations_service = get_external_integrations_service(
+            org_id, UserIdentityProvider.GITHUB
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     try:
         workflows_list = external_integrations_service.get_repo_workflows(
             gh_org_name, gh_org_repo_name

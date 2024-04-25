@@ -179,7 +179,7 @@ def get_github_actions_etl_handler(org_id):
             org_id, UserIdentityProvider.GITHUB
         )
         if not access_token:
-            raise Exception(
+            LOG.error(
                 f"Access token not found for org {org_id} and provider {UserIdentityProvider.GITHUB.value}"
             )
         return access_token
