@@ -3,7 +3,10 @@ from typing import List, Set
 
 from voluptuous import default_factory
 from mhq.service.deployments.models.models import Deployment
-from mhq.service.incidents.models.mean_time_to_recovery import ChangeFailureRateMetrics, MeanTimeToRecoveryMetrics
+from mhq.service.incidents.models.mean_time_to_recovery import (
+    ChangeFailureRateMetrics,
+    MeanTimeToRecoveryMetrics,
+)
 
 from mhq.store.models.incidents import IncidentType, OrgIncidentService
 from mhq.store.models.incidents.incidents import (
@@ -92,12 +95,8 @@ def get_change_failure_rate_metrics(
 ):
     return ChangeFailureRateMetrics(failed_deployments, total_deployments)
 
+
 def get_mean_time_to_recovery_metrics(
-    mean_time_to_recovery: int = None,
-    incident_count: int = None
-    )->MeanTimeToRecoveryMetrics:
-    return MeanTimeToRecoveryMetrics(
-        mean_time_to_recovery,
-        incident_count
-    )
-    
+    mean_time_to_recovery: int = None, incident_count: int = None
+) -> MeanTimeToRecoveryMetrics:
+    return MeanTimeToRecoveryMetrics(mean_time_to_recovery, incident_count)
