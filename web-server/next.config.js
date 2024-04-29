@@ -49,6 +49,7 @@ const genericPlugins = [
 ];
 
 const staticOverrides = {
+  staticPageGenerationTimeout: 2000,
   images: {
     disableStaticImages: true
   },
