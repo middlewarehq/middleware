@@ -86,7 +86,7 @@ RUN apt-get update && \
     && crontab /etc/cron.d/cronjob \
     && /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config \
     && cd /app/web-server \
-    && npm install --network-timeout 1000000 --force && npm run build \
+    && npm install --force && npm run build \
     && rm -rf ./artifacts \
     && cd /app/ \
     && tar cfz web-server.tar.gz ./web-server \
