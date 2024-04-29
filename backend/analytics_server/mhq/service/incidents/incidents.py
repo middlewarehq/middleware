@@ -113,24 +113,9 @@ class IncidentService:
 
         resolved_team_incidents = self.get_resolved_team_incidents(team_id, interval)
 
-        weekly_resolved_team_incidents: Dict[
-            datetime, List[Incident]
-        ] = generate_expanded_buckets(
-            resolved_team_incidents, interval, "resolved_date", "weekly"
+        return self._get_incidents_mean_time_to_recovery_trends(
+            resolved_team_incidents, interval
         )
-
-        weekly_mean_time_to_recovery: Dict[datetime, MeanTimeToRecoveryMetrics] = {}
-
-        for week, incidents in weekly_resolved_team_incidents.items():
-
-            if incidents:
-                weekly_mean_time_to_recovery[
-                    week
-                ] = self._get_incidents_mean_time_to_recovery(incidents)
-            else:
-                weekly_mean_time_to_recovery[week] = MeanTimeToRecoveryMetrics()
-
-        return weekly_mean_time_to_recovery
 
     def calculate_change_failure_deployments(
         self, deployment_incidents_map: Dict[Deployment, List[Incident]]
@@ -207,6 +192,29 @@ class IncidentService:
         )
 
         return MeanTimeToRecoveryMetrics(mean_time_to_recovery, incident_count)
+
+    def _get_incidents_mean_time_to_recovery_trends(
+        self, resolved_incidents: List[Incident], interval: Interval
+    ) -> Dict[datetime, MeanTimeToRecoveryMetrics]:
+
+        weekly_resolved_team_incidents: Dict[
+            datetime, List[Incident]
+        ] = generate_expanded_buckets(
+            resolved_incidents, interval, "resolved_date", "weekly"
+        )
+
+        weekly_mean_time_to_recovery: Dict[datetime, MeanTimeToRecoveryMetrics] = {}
+
+        for week, incidents in weekly_resolved_team_incidents.items():
+
+            if incidents:
+                weekly_mean_time_to_recovery[
+                    week
+                ] = self._get_incidents_mean_time_to_recovery(incidents)
+            else:
+                weekly_mean_time_to_recovery[week] = MeanTimeToRecoveryMetrics()
+
+        return weekly_mean_time_to_recovery
 
 
 def get_incident_service():
