@@ -101,21 +101,21 @@ docker stop middleware
    ```
 
 3. **Run `dev.sh` script in the project root 🪄**\
-    `./dev.sh` can be run with either no arguments or all arguments need to provided for creating the ssh tunnel.\
+    `./dev.sh` creates a `.env` file with required development environments and run container with `docker compose watch`.\
     The usage is as follows:
    ```bash
    # runs without the ssh tunnel
    ./dev.sh
    ```
-   You may update the env.example and set `ENVIRONMENT=prod` to run it in production setup.\
+   You may update the `env.example` and set `ENVIRONMENT=prod` to run it in production setup.\
    Further if any changes are required to be made to ports, you may update the `docker-compose.yml` file, accordingly.
 4. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333.
    Further, other services can be accessed at:
     - The analytics server is available at http://localhost:9696.
     - The sync server can be accessed at http://localhost:9697.
-    - The postgres database can be accessed at host:localhost, port:5434, username: postgres, password: postgres, db name: mhq-oss.
-    - The redis server can be accessed at host:localhost, port:6385.
+    - The postgres database can be accessed at host: `localhost`, port: `5434`, username: `postgres`, password: `postgres`, db name: `mhq-oss`.
+    - The redis server can be accessed at host: `localhost`, port: `6385`.
 
 
 ### 💻 Manual Setup
