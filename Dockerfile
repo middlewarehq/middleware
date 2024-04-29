@@ -86,14 +86,14 @@ RUN apt-get update && \
     && crontab /etc/cron.d/cronjob \
     && /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config \
     && cd /app/web-server \
-    && yarn install --network-timeout 1000000 && yarn build \
+    && npm install --network-timeout 1000000 && npm run build \
     && rm -rf ./artifacts \
     && cd /app/ \
     && tar cfz web-server.tar.gz ./web-server \
     && rm -rf ./web-server && mkdir -p /app/web-server \
     && tar cfz /opt/venv.tar.gz /opt/venv/ \
     && rm -rf /opt/venv && mkdir -p /opt/venv \
-    && yarn cache clean \
+    && npm cache clean --force\
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
