@@ -78,6 +78,3 @@ def test_get_change_failure_rate_for_one_incidents_bw_two_deployments():
     print(mean_time_to_recovery_trends)
         
     assert mean_time_to_recovery_trends == { first_week_2024: get_mean_time_to_recovery_metrics(200, 3),second_week_2024: get_mean_time_to_recovery_metrics(None, 0),third_week_2024: get_mean_time_to_recovery_metrics(100, 4), fourth_week_2024: get_mean_time_to_recovery_metrics(None, 0)}
-
-
-    

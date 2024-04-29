@@ -100,3 +100,4 @@ def get_mean_time_to_recovery_metrics(
         mean_time_to_recovery,
         incident_count
     )
+    
