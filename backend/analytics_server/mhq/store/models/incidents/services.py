@@ -35,7 +35,6 @@ class OrgIncidentService(db.Model):
 class TeamIncidentService(db.Model):
     __tablename__ = "TeamIncidentService"
 
-    id = db.Column(UUID(as_uuid=True), primary_key=True)
     team_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Team.id"))
     service_id = db.Column(UUID(as_uuid=True), db.ForeignKey("OrgIncidentService.id"))
     OrgIncidentService = relationship("OrgIncidentService", lazy="joined")
