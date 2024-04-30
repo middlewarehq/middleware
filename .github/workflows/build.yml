@@ -9,35 +9,39 @@ jobs:
 
   build-and-push:
     name: Build and Push Docker Image
-    runs-on: self-hosted-arm-64
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        platform: [linux/arm64]
-    
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: self-hosted-arm-64
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
-        
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: middlewareeng/middleware
-          
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
