@@ -84,7 +84,6 @@ RUN apt-get update && \
     && touch /var/log/cron/cron.log \
     && chmod 0644 /etc/cron.d/cronjob \
     && crontab /etc/cron.d/cronjob \
-    && /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config \
     && cd /app/web-server \
     && yarn install --network-timeout 1000000 && yarn build \
     && rm -rf ./artifacts \

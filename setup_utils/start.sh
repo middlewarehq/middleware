@@ -20,4 +20,5 @@ fi
 
 echo 'MHQ_STARTING SUPERVISOR'
 
+/app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
 /usr/bin/supervisord -c "/etc/supervisord.conf"
