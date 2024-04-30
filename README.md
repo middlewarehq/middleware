@@ -117,6 +117,26 @@ docker stop middleware
     - The postgres database can be accessed at host: `localhost`, port: `5434`, username: `postgres`, password: `postgres`, db name: `mhq-oss`.
     - The redis server can be accessed at host: `localhost`, port: `6385`.
 
+5. **View the logs**: The logs of services running inside the container can be viewed using the following
+   commands: 
+     
+   **frontend logs**
+   ```bash
+    docker exec -it middleware-dev tail -f /var/log/web-server/web-server.log
+   ```
+   **backend logs**
+   ```bash
+    docker exec -it middleware-dev tail -f /var/log/apiserver/apiserver.log
+   ```
+   **redis logs**
+   ```bash
+    docker exec -it middleware-dev tail -f /var/log/redis/redis.log
+   ```
+   **postgres logs**
+   ```bash
+    docker exec -it middleware-dev tail -f /var/log/postgres/postgres.log
+   ```
+
 
 ### 💻 Manual Setup
 
