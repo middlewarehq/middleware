@@ -25,9 +25,9 @@ def adapt_pull_request(
         "head_branch": pr.head_branch,
         "created_at": pr.created_at.isoformat(),
         "updated_at": pr.updated_at.isoformat(),
-        "state_changed_at": pr.state_changed_at.isoformat()
-        if pr.state_changed_at
-        else None,
+        "state_changed_at": (
+            pr.state_changed_at.isoformat() if pr.state_changed_at else None
+        ),
         "commits": pr.commits,
         "additions": pr.additions,
         "deletions": pr.deletions,
@@ -78,9 +78,9 @@ def get_non_paginated_pr_response(
                 "head_branch": pr.head_branch,
                 "created_at": pr.created_at.isoformat(),
                 "updated_at": pr.updated_at.isoformat(),
-                "state_changed_at": pr.state_changed_at.isoformat()
-                if pr.state_changed_at
-                else None,
+                "state_changed_at": (
+                    pr.state_changed_at.isoformat() if pr.state_changed_at else None
+                ),
                 "commits": pr.commits,
                 "additions": pr.additions,
                 "deletions": pr.deletions,
@@ -130,7 +130,6 @@ def adapt_team_repos(team_repos: List[TeamRepos]) -> List[Dict[str, any]]:
         {
             "team_id": str(team_repo.team_id),
             "org_repo_id": str(team_repo.org_repo_id),
-            "prod_branch": team_repo.prod_branch,
             "prod_branches": team_repo.prod_branches,
             "is_active": team_repo.is_active,
             "created_at": team_repo.created_at.isoformat(),

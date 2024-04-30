@@ -104,7 +104,6 @@ def coerce_team_repo(team_repo: Dict[str, str]) -> TeamRepos:
     return TeamRepos(
         team_id=team_repo["team_id"],
         org_repo_id=team_repo["org_repo_id"],
-        prod_branch=team_repo.get("prod_branch"),
         prod_branches=team_repo.get("prod_branches"),
         is_active=team_repo.get("is_active", True),
     )

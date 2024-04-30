@@ -58,7 +58,6 @@ class TeamRepos(db.Model):
     org_repo_id = db.Column(
         UUID(as_uuid=True), db.ForeignKey("OrgRepo.id"), primary_key=True
     )
-    prod_branch = db.Column(db.String)
     prod_branches = db.Column(ARRAY(db.String))
     deployment_type = db.Column(
         ENUM(TeamReposDeploymentType), default=TeamReposDeploymentType.PR_MERGE
