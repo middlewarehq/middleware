@@ -392,7 +392,6 @@ CREATE TABLE public."Team" (
 --
 
 CREATE TABLE public."TeamIncidentService" (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
     team_id uuid NOT NULL,
     service_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text) NOT NULL,
@@ -411,7 +410,6 @@ CREATE TABLE public."TeamRepos" (
     is_active boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
     updated_at timestamp with time zone DEFAULT now(),
-    prod_branch character varying,
     prod_branches character varying[],
     deployment_type character varying DEFAULT 'PR_MERGE'::character varying NOT NULL
 );
@@ -634,14 +632,6 @@ ALTER TABLE ONLY public."RepoWorkflow"
 
 ALTER TABLE ONLY public."Settings"
     ADD CONSTRAINT "Settings_pkey" PRIMARY KEY (setting_type, entity_type, entity_id);
-
-
---
--- Name: TeamIncidentService TeamIncidentService_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."TeamIncidentService"
-    ADD CONSTRAINT "TeamIncidentService_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1359,4 +1349,5 @@ ALTER TABLE ONLY public."PullRequestRevertPRMapping"
 --
 
 INSERT INTO public.schema_migrations (version) VALUES
-    ('20240404142732');
+    ('20240404142732'),
+    ('20240430142502');
