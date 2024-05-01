@@ -14,10 +14,10 @@ export const terminatedText = `
                                          `;
 
 export enum AppStates {
-  INIT,
-  DOCKER_READY,
-  TEARDOWN,
-  TERMINATED
+  INIT = 'INIT',
+  DOCKER_READY = 'DOCKER_READY',
+  TEARDOWN = 'TEARDOWN',
+  TERMINATED = 'TERMINATED'
 }
 
 export enum LogSource {
@@ -47,5 +47,9 @@ export const READY_MESSAGES = {
   [LogSource.Postgres]: `database system is ready to accept connections`,
   [LogSource.Redis]: `Ready to accept connections`,
   [LogSource.InitDb]: [`exit 0`, `Writing: ./db/schema.sql`],
-  [LogSource.DockerWatch]: [`Watch configuration for service`, `watch enabled`]
+  [LogSource.DockerWatch]: [
+    `Watch configuration for service`,
+    `watch enabled`,
+    `watching`
+  ]
 };
