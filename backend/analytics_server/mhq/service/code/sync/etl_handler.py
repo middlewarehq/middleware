@@ -66,8 +66,10 @@ class CodeETLHandler:
             )
             if not pull_requests:
                 return
+
+            pull_requests.sort(key=lambda x: x.updated_at)
             bookmark.bookmark = (
-                pull_requests[-1].state_changed_at.astimezone(tz=pytz.UTC).isoformat()
+                pull_requests[-1].updated_at.astimezone(tz=pytz.UTC).isoformat()
             )
             bookmark.updated_at = time_now()
             self.code_repo_service.update_org_repo_bookmark(bookmark)
