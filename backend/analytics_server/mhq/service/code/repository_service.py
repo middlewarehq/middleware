@@ -145,7 +145,6 @@ class RepositoryService:
             if service_id not in curr_team_services_map:
                 new_team_services.append(
                     TeamIncidentService(
-                        id=uuid4_str(),
                         team_id=team.id,
                         service_id=service_id,
                         created_at=time_now(),
