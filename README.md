@@ -172,8 +172,25 @@ To set up middleware locally, follow these steps:
      yarn build
      ```
 
-5. **Run the Project**:
-
+5. **Set up Environment Variables**:
+   - Create a `.env.local` file in the `/backend` directory and add the following environment variables, replacing the values with your own:
+     ```
+     DB_HOST=localhost
+     DB_NAME=mhq-oss
+     DB_PASS=postgres
+     DB_PORT=5436
+     DB_USER=postgres
+     REDIS_HOST=localhost
+     REDIS_PORT=6379
+     ANALYTICS_SERVER_PORT=5000
+     SYNC_SERVER_PORT=6000
+     ```
+   - Update the database, redis, `ANALYTICS_SERVER_URL`, and `SYNC_SERVER_URL` values as per your setup.
+6. **Run the Project**:
+   - For Database:
+     ```bash
+     cd database-docker && docker-compose up -d
+     ```
    - For backend analytics server:
      ```bash
      python app.py
@@ -187,7 +204,7 @@ To set up middleware locally, follow these steps:
      yarn http
      ```
 
-6. **Access the Application**:
+7. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:8000. \
    Additionally:
    - The analytics server is available at http://localhost:5000.
