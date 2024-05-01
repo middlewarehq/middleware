@@ -35,8 +35,10 @@ class OrgIncidentService(db.Model):
 class TeamIncidentService(db.Model):
     __tablename__ = "TeamIncidentService"
 
-    team_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Team.id"))
-    service_id = db.Column(UUID(as_uuid=True), db.ForeignKey("OrgIncidentService.id"))
+    team_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Team.id"), primary_key=True)
+    service_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("OrgIncidentService.id"), primary_key=True
+    )
     OrgIncidentService = relationship("OrgIncidentService", lazy="joined")
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(
