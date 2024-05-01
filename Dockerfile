@@ -78,8 +78,8 @@ RUN apt-get update && \
     && touch /var/log/redis/redis.log \
     && mkdir -p /var/log/apiserver \
     && touch /var/log/apiserver/apiserver.log \
-    && mkdir -p /var/log/webserver \
-    && touch /var/log/webserver/webserver.log \
+    && mkdir -p /var/log/web-server \
+    && touch /var/log/web-server/web-server.log \
     && mkdir -p /var/log/cron \
     && touch /var/log/cron/cron.log \
     && chmod 0644 /etc/cron.d/cronjob \

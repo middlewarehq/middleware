@@ -49,8 +49,8 @@ RUN mkdir -p /var/log/redis
 RUN touch /var/log/redis/redis.log
 RUN mkdir -p /var/log/apiserver
 RUN touch /var/log/apiserver/apiserver.log
-RUN mkdir -p /var/log/webserver
-RUN touch /var/log/webserver/webserver.log
+RUN mkdir -p /var/log/web-server
+RUN touch /var/log/web-server/web-server.log
 RUN mkdir -p /var/log/cron
 RUN touch /var/log/cron/cron.log
 RUN chmod 0644 /etc/cron.d/cronjob
