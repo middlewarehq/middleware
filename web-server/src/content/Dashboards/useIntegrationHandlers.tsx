@@ -86,6 +86,15 @@ const ConfigureGithubModalBody: FC<{
           <Line error tiny mt={1}>
             {showError.value}
           </Line>
+          <Line tiny mt={1}>
+            <Link
+              href="https://github.com/settings/tokens"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Generate new classic token
+            </Link>
+          </Line>
         </FlexBox>
 
         <FlexBox justifyBetween alignCenter mt={'auto'}>
