@@ -122,19 +122,19 @@ docker stop middleware
      
    **frontend logs**
    ```bash
-    docker exec -it middleware-dev tail -f /var/log/web-server/web-server.log
+    docker exec -it middleware-dev tail --lines 500 -f /var/log/web-server/web-server.log
    ```
    **backend logs**
    ```bash
-    docker exec -it middleware-dev tail -f /var/log/apiserver/apiserver.log
+    docker exec -it middleware-dev tail --lines 500 -f /var/log/apiserver/apiserver.log
    ```
    **redis logs**
    ```bash
-    docker exec -it middleware-dev tail -f /var/log/redis/redis.log
+    docker exec -it middleware-dev tail --lines 500 -f /var/log/redis/redis.log
    ```
    **postgres logs**
    ```bash
-    docker exec -it middleware-dev tail -f /var/log/postgres/postgres.log
+    docker exec -it middleware-dev tail --lines 500 -f /var/log/postgres/postgres.log
    ```
 
 
