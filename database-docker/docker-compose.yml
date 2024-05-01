@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: dora
+      POSTGRES_DB: mhq-oss
     ports:
       - "5436:5432"
     volumes:
@@ -23,7 +23,7 @@ services:
     volumes:
       - ./db:/db
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/dora?sslmode=disable
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/mhq-oss?sslmode=disable
     working_dir: /
     command: bash -c  "dbwait.sh && dbmate up && dbmate dump"
 
