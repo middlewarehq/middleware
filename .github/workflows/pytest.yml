@@ -1,0 +1,39 @@
+name: Unit Tests
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+
+    - name: Install dependencies
+      run: |
+        cd ./backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Test with pytest
+      env:  
+        DB_HOST: "localhost"
+        DB_NAME: "mhq-oss"
+        DB_PASS: "postgres"
+        DB_PORT: 5432
+        DB_USER: "postgres"
+
+      run: |
+        pip install pytest pytest-cov
+        pytest ./backend/analytics_server/tests/ --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
