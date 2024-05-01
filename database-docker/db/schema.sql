@@ -635,6 +635,14 @@ ALTER TABLE ONLY public."Settings"
 
 
 --
+-- Name: TeamIncidentService TeamIncidentService_composite_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."TeamIncidentService"
+    ADD CONSTRAINT "TeamIncidentService_composite_pkey" PRIMARY KEY (team_id, service_id);
+
+
+--
 -- Name: TeamIncidentService TeamIncidentService_team_id_service_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
