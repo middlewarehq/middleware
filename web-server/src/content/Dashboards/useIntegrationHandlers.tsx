@@ -91,7 +91,6 @@ const ConfigureGithubModalBody: FC<{
               href="https://github.com/settings/tokens"
               target="_blank"
               rel="noopener noreferrer"
-              mt={1}
             >
               Generate new classic token
             </Link>
