@@ -77,7 +77,8 @@ export const DoraMetricsBody = () => {
     dispatch,
     orgId,
     singleTeamId,
-    activeBranchMode
+    activeBranchMode,
+    isGithubIntegrated
   ]);
 
   const stats = useDoraStats();
