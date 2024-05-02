@@ -140,7 +140,7 @@ Make sure docker is running.
    ```
 
 
-### 💻 Manual Setup
+### 🛠️ Manual Setup
 
 To set up middleware locally, follow these steps:
 
@@ -251,7 +251,7 @@ To set up middleware locally, follow these steps:
    - The sync server can be accessed at http://localhost:9697.
 
 
-## 📈 Usage
+## 🚀 Usage
 
 ![Product Demo](media_files/product_demo_1.gif)
 
