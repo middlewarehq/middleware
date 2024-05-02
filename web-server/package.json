@@ -78,7 +78,7 @@
     "prod-tun": "bash -c \"$PROD_TUNNEL\"",
     "stage-tun": "bash -c \"$STAGE_TUNNEL\"",
     "http": "node http-server",
-    "dev": "NEXT_MANUAL_SIG_HANDLE=true next",
+    "dev":"[ -e ../.env ] && set -a && . ../.env; NEXT_MANUAL_SIG_HANDLE=true next -p $PORT",
     "dev-prod": "NEXT_MANUAL_SIG_HANDLE=true yarn env prod && next",
     "build": "./scripts/build.sh",
     "zip": "./scripts/zip.sh",

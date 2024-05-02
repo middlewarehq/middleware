@@ -2,7 +2,7 @@ const analyzer = require('@next/bundle-analyzer');
 const { loadEnvConfig } = require('@next/env');
 const images = require('next-images');
 
-loadEnvConfig('.');
+loadEnvConfig('../.env');
 
 console.info('BUILD ENV:', process.env.NEXT_PUBLIC_APP_ENVIRONMENT);
 
