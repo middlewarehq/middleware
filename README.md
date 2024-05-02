@@ -178,12 +178,13 @@ To set up middleware locally, follow these steps:
      DB_HOST=localhost
      DB_NAME=mhq-oss
      DB_PASS=postgres
-     DB_PORT=5436
+     DB_PORT=5434
      DB_USER=postgres
      REDIS_HOST=localhost
-     REDIS_PORT=6379
-     ANALYTICS_SERVER_PORT=5000
-     SYNC_SERVER_PORT=6000
+     REDIS_PORT=6385
+     ANALYTICS_SERVER_PORT=9696
+     SYNC_SERVER_PORT=9697
+     PORT=3333
      ```
    - Update the database, redis, `ANALYTICS_SERVER_URL`, and `SYNC_SERVER_URL` values as per your setup.
 6. **Run the Project**:
@@ -205,10 +206,10 @@ To set up middleware locally, follow these steps:
      ```
 
 7. **Access the Application**:
-   Once the project is running, access the application through your web browser at http://localhost:8000. \
+   Once the project is running, access the application through your web browser at http://localhost:3333. \
    Additionally:
-   - The analytics server is available at http://localhost:5000.
-   - The sync server can be accessed at http://localhost:6000.
+   - The analytics server is available at http://localhost:9696.
+   - The sync server can be accessed at http://localhost:9697.
 
 
 ## 📈 Usage
