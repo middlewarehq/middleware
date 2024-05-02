@@ -39,17 +39,16 @@
 **Table of Contents**
 
 - [Middleware - Open Source](#introduction)
-  - [Features](#features)
-  - [Quick Start](#quick-start)
-  - [Project Setup Guidelines](#project-setup-guidelines)
-    - [Using Docker](#using-docker)
-    - [Manual Setup](#manual-setup)
-  - [Contributing guidelines](#contributing-guidelines)
+  - [Features](#-features)
+  - [Quick Start](#-quick-start)
+  - [Developer Setup](#-developer-setup)
+    - [Using Docker](#-using-docker)
+    - [Manual Setup](#-manual-setup)
+  - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
   - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
-  - [Installation](#installation)
-  - [Usage](#usage)
+  - [Usage](#-usage)
   - [Examples](#examples)
-  - [Contributing](#contributing)
+  - [Contributing](#%EF%B8%8F-contributing)
   - [License](#license)
 
 ## 🚀 Features
@@ -67,7 +66,7 @@ Open the terminal and run the following command
 ```bash
 docker run \
     --name middleware \
-    -p 3000:3333 \
+    -p 3333:3333 \
     -d \
     middlewareeng/middleware:latest
     
@@ -84,9 +83,12 @@ docker stop middleware
 ```
 
 
-## 👩‍💻 Run Locally
+## 👩‍💻 Developer Setup
 
 ### 🐳 Using Docker
+
+If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
+Make sure docker is running.
 
 1. **Clone the Repository**:
 
@@ -138,7 +140,7 @@ docker stop middleware
    ```
 
 
-### 💻 Manual Setup
+### 🛠️ Manual Setup
 
 To set up middleware locally, follow these steps:
 
@@ -154,65 +156,102 @@ To set up middleware locally, follow these steps:
    cd middleware
    ```
 
-3. **Install Dependencies**:
+3. **Run Redis and Postgres Containers**:
 
-   - For backend:
+    If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/)
+  
+    Run the following commands to run Postgres and Redis using docker.
+
      ```bash
-     pip install -r requirements.txt -r dev-requirements.txt
+        cd database-docker && docker-compose up -d
      ```
+  
+    If you dont prefefer Docker, you can also choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
+
+4. **Backend Server Setup**
+
+    Install python version `3.11.6`
+    
+    - For this you can install python from [over here](https://www.python.org/downloads/) if you don't have it on your machine.
+    - Install pyenev
+  
+    ```bash
+      git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+    ```
+      
+     - Add pyenv to your shell's configuration file (.bashrc, .bash_profile, .zshrc, etc.):
+
+     ```bash
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
+        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
+     ```
+
+     - Reload your shell:
+      ```
+      source ~/.bashrc
+      ```
+     - Move backend directory to create a virtual environment  
+
+     ```bash
+       cd backend
+       python -m venv venv
+     ```
+
+      - Activate virtual environment
+
+     ```bash
+       . venv/bin/activate
+     ```
+  
+      - Install Dependencies
+
+     ```bash
+      pip install -r requirements.txt -r dev-requirements.txt
+     ```
+
+     - Create a `.env.local` file in the `/backend` directory and add the following environment variables, replacing the values with your own if needed:
+
+     ```
+       DB_HOST=localhost
+       DB_NAME=mhq-oss
+       DB_PASS=postgres
+       DB_PORT=5434
+       DB_USER=postgres
+       REDIS_HOST=localhost
+       REDIS_PORT=6385
+       ANALYTICS_SERVER_PORT=9696
+       SYNC_SERVER_PORT=9697
+     ```
+     
+    - For backend analytics server:
+    ```bash
+     flask --app app --debug run --port 9696
+    ```
+     
+    - For backend sync server:
+    ```bash
+       flask --app sync_app --debug run --port 9697
+    ```
+
+      NOTE: Open this sync sever in a new terminal window after activating the virtual environment if you are already using analytics server. 
+
+5. **Web Server Setup**
+   
+  
    - For frontend:
+     
      ```bash
      yarn install
      ```
 
-4. **Build the Project**:
-
-   - For frontend:
-     ```bash
-     yarn build
-     ```
-
-5. **Set up Environment Variables**:
-   - Create a `.env.local` file in the `/backend` directory and add the following environment variables, replacing the values with your own:
-     ```
-     DB_HOST=localhost
-     DB_NAME=mhq-oss
-     DB_PASS=postgres
-     DB_PORT=5434
-     DB_USER=postgres
-     REDIS_HOST=localhost
-     REDIS_PORT=6385
-     ANALYTICS_SERVER_PORT=9696
-     SYNC_SERVER_PORT=9697
-     PORT=3333
-     ```
-   - Update the database, redis, `ANALYTICS_SERVER_URL`, and `SYNC_SERVER_URL` values as per your setup.
-6. **Run the Project**:
-   - For Database:
-     ```bash
-     cd database-docker && docker-compose up -d
-     ```
-   - For backend analytics server:
-     ```bash
-     python app.py
-     ```
-   - For backend sync server:
-     ```bash
-     python sync_app.py
-     ```
-   - For frontend:
-     ```bash
-     yarn http
-     ```
-
-7. **Access the Application**:
+6. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
    Additionally:
    - The analytics server is available at http://localhost:9696.
    - The sync server can be accessed at http://localhost:9697.
 
 
-## 📈 Usage
+## 🚀 Usage
 
 ![Product Demo](media_files/product_demo_1.gif)
 
