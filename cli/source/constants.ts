@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 export const logoText = `
 ██╗  ██╗█╗████╗ ████╗ █╗   █████╗█╗    █╗ ███╗ ████╗ █████╗
 ███╗███║█║█╔══█╗█╔══█╗█║   █╔═══╝█║    █║█╔══█╗█╔══█╗█╔═══╝
@@ -31,7 +30,21 @@ export enum LogSource {
   DockerWatch
 }
 
-export type LogEntry = { time: Date; line: ReactNode };
+export type LogEntry = {
+  type:
+    | 'data'
+    | 'error'
+    | 'showing-logs'
+    | 'continuing-logs'
+    | 'intro'
+    | 'run-command-error'
+    | 'run-command-on-data'
+    | 'default';
+  line: string | undefined;
+  color?: string;
+  prefix?: string;
+  time: Date;
+};
 
 export const keysForLogSource = Object.entries(LogSource).reduce(
   (map, [k, v]) => ({ ...map, [v]: k as keyof typeof LogSource }),
