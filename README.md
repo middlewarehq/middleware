@@ -43,7 +43,7 @@
   - [Quick Start](#-quick-start)
   - [Developer Setup](#-developer-setup)
     - [Using Docker](#-using-docker)
-    - [Manual Setup](#-manual-setup)
+    - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
   - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
   - [Usage](#-usage)
@@ -87,7 +87,7 @@ docker stop middleware
 
 ### 🐳 Using Docker
 
-If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
+If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
 Make sure docker is running.
 
 1. **Clone the Repository**:
@@ -158,7 +158,7 @@ To set up middleware locally, follow these steps:
 
 3. **Run Redis and Postgres Containers**:
 
-    If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/)
+    If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/)
   
     Run the following commands to run Postgres and Redis using docker.
 
@@ -166,9 +166,17 @@ To set up middleware locally, follow these steps:
         cd database-docker && docker-compose up -d
      ```
   
-    If you dont prefefer Docker, you can also choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
+    If you don't prefer Docker, you can choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
 
-4. **Backend Server Setup**
+   Once you are done with using or developing Middleware, you can choose to close these running container. (NOTE: Don't do this if you are following this document and trying to run Middleware.)
+
+   ```
+   cd database-docker/
+   docker-compose down -v
+   ```
+
+
+5. **Backend Server Setup**
 
     Install python version `3.11.6`
     
@@ -222,6 +230,12 @@ To set up middleware locally, follow these steps:
        ANALYTICS_SERVER_PORT=9696
        SYNC_SERVER_PORT=9697
      ```
+
+    - Switch to analytics_server directory
+  
+    ```
+    cd analytics_server
+    ```
      
     - For backend analytics server:
     ```bash
@@ -235,7 +249,7 @@ To set up middleware locally, follow these steps:
 
       NOTE: Open this sync sever in a new terminal window after activating the virtual environment if you are already using analytics server. 
 
-5. **Web Server Setup**
+6. **Web Server Setup**
    
   
    - For frontend:
@@ -244,7 +258,7 @@ To set up middleware locally, follow these steps:
      yarn install
      ```
 
-6. **Access the Application**:
+7. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
    Additionally:
    - The analytics server is available at http://localhost:9696.
