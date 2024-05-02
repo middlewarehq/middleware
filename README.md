@@ -43,7 +43,7 @@
   - [Quick Start](#-quick-start)
   - [Developer Setup](#-developer-setup)
     - [Using Docker](#-using-docker)
-    - [Manual Setup](#-manual-setup)
+    - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
   - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
   - [Usage](#-usage)
@@ -222,6 +222,12 @@ To set up middleware locally, follow these steps:
        ANALYTICS_SERVER_PORT=9696
        SYNC_SERVER_PORT=9697
      ```
+
+    - Switch to analytics_server directory
+  
+    ```
+    cd analytics_server
+    ```
      
     - For backend analytics server:
     ```bash
