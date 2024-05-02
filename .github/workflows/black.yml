@@ -3,6 +3,9 @@ name: Black Integration
 on:
   pull_request:
     branches: ["main"]
+    paths:
+      - 'backend/**'
+      - '**/*.py'
 
 permissions:
   contents: read
