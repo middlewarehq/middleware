@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { OnboardingStep, UserRole } from '@/types/resources';
+import { depFn } from '@/utils/fn';
 
 import { ROUTES } from './routes';
 
@@ -29,21 +30,21 @@ export const useRedirectWithSession = () => {
   useEffect(() => {
     if (!orgId) return;
     if (!isOrgWelcomed) {
-      router.replace(ROUTES.WELCOME.PATH);
+      depFn(router.replace, ROUTES.WELCOME.PATH);
       return;
     }
     if (!isOneCodeProviderIntegrated || !anyTeamEverExisted) {
-      router.replace(ROUTES.INTEGRATIONS.PATH);
+      depFn(router.replace, ROUTES.INTEGRATIONS.PATH);
       return;
     }
-    router.replace(defaultRoute.PATH);
+    depFn(router.replace, defaultRoute.PATH);
   }, [
     anyTeamEverExisted,
     defaultRoute.PATH,
     isOneCodeProviderIntegrated,
     isOrgWelcomed,
     orgId,
-    router
+    router.replace
   ]);
 };
 
