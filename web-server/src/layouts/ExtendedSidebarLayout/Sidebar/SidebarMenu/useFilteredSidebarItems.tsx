@@ -1,6 +1,10 @@
 import { useMemo } from 'react';
 
-import { ItemTags } from '@/layouts/ExtendedSidebarLayout/Sidebar/SidebarMenu/items';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  ItemTags,
+  SideBarItems
+} from '@/layouts/ExtendedSidebarLayout/Sidebar/SidebarMenu/items';
 
 import menuItems, { MenuItem } from './items';
 
@@ -12,6 +16,10 @@ const checkTag = (tag: string | number[] | number, check: string | number) => {
 };
 
 export const useFilteredSidebarItems = () => {
+  const {
+    integrations: { github: isGithubIntegrated }
+  } = useAuth();
+
   const flagFilteredMenuItems = useMemo(() => {
     return menuItems();
   }, []);
@@ -19,6 +27,8 @@ export const useFilteredSidebarItems = () => {
   const sidebarItems = useMemo(() => {
     const filterCheck = (item: MenuItem): boolean => {
       if (checkTag(item.tag, ItemTags.HideItem)) return false;
+      if (!isGithubIntegrated && item.name !== SideBarItems.MANAGE_INTEGRATIONS)
+        return false;
       return true;
     };
 
@@ -35,7 +45,7 @@ export const useFilteredSidebarItems = () => {
         items: itemsFilter(section.items)
       }))
       .filter((section) => section.items?.length);
-  }, [flagFilteredMenuItems]);
+  }, [flagFilteredMenuItems, isGithubIntegrated]);
 
   return sidebarItems;
 };
