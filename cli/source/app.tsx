@@ -345,19 +345,6 @@ const CliUi = () => {
 };
 
 export function App() {
-  // const [logsStream, setLogsStream] = useState<ReactNode[]>([
-  //   <Box
-  //     borderStyle="double"
-  //     borderColor="#7e57c2"
-  //     key={0}
-  //     flexDirection="column"
-  //   >
-  //     <Text color="#7e57c2">{logoText}</Text>
-  //     <Text bold>Open Source</Text>
-  //   </Box>,
-  //   <Newline key={2} />
-  // ]);
-
   return (
     <ReduxProvider store={store}>
       <CliUi />
