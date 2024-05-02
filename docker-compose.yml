@@ -22,7 +22,7 @@ services:
       - "${SYNC_SERVER_PORT:-9697}:${SYNC_SERVER_PORT:-9697}"
       - "${PORT:-3333}:${PORT:-3333}"
       - "${DB_PORT:-5434}:${DB_PORT:-5434}"
-      - "${REDIS_PORT:-6379}:${REDIS_PORT:-6379}"
+      - "${REDIS_PORT:-6385}:${REDIS_PORT:-6385}"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
