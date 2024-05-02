@@ -166,9 +166,17 @@ To set up middleware locally, follow these steps:
         cd database-docker && docker-compose up -d
      ```
   
-    If you dont prefefer Docker, you can also choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
+    If you dont prefer Docker, you can also choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
 
-4. **Backend Server Setup**
+   Once you are done with using or developing Middleware, you can choose to close thes running container. (NOTE: Dont do this if you are following this document and trying to run Middleware.)
+
+   ```
+   cd database-docker/
+   docker-compose down -v
+   ```
+
+
+5. **Backend Server Setup**
 
     Install python version `3.11.6`
     
@@ -241,7 +249,7 @@ To set up middleware locally, follow these steps:
 
       NOTE: Open this sync sever in a new terminal window after activating the virtual environment if you are already using analytics server. 
 
-5. **Web Server Setup**
+6. **Web Server Setup**
    
   
    - For frontend:
@@ -250,7 +258,7 @@ To set up middleware locally, follow these steps:
      yarn install
      ```
 
-6. **Access the Application**:
+7. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
    Additionally:
    - The analytics server is available at http://localhost:9696.
