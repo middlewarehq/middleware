@@ -29,7 +29,10 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   const dispatch = useDispatch();
   const { dateRange, singleTeam, singleTeamId, setRange, partiallyUnselected } =
     useStateTeamConfig();
-  const { orgId } = useAuth();
+  const {
+    orgId,
+    integrations: { github: isGithubIntegrations }
+  } = useAuth();
   const [showAllTeams, setShowAllTeams] = useState(true);
   const activeBranchMode = useSelector((state) => state.app.branchMode);
   const isAllBranchMode = activeBranchMode === ActiveBranchMode.ALL;
@@ -117,8 +120,8 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
     const ids = teamIds.split(',').filter(Boolean);
     if (ids.length) params.include_teams = ids;
 
-    fetchTeams({ params });
-  }, [fetchTeams, orgId, showAllTeams, teamIds]);
+    if (isGithubIntegrations) fetchTeams({ params });
+  }, [fetchTeams, isGithubIntegrations, orgId, showAllTeams, teamIds]);
 
   const dateRangeLabel = !partiallyUnselected
     ? `${format(dateRange[0], 'do MMM')} to ${format(dateRange[1], 'do MMM')}`

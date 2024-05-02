@@ -51,7 +51,10 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
-  const { orgId } = useAuth();
+  const {
+    orgId,
+    integrations: { github: isGithubIntegrated }
+  } = useAuth();
   const isLinked = useSelector((s) => s.auth.org.integrations.github === true);
   const teams = useSelector((s) => s.team.teams);
   const dispatch = useDispatch();
@@ -62,14 +65,16 @@ const Content = () => {
 
   useEffect(() => {
     if (!orgId) return;
-    depFn(loading.true);
-    dispatch(
-      fetchTeams({
-        org_id: orgId,
-        provider: Integration.GITHUB
-      })
-    ).finally(loading.false);
-  }, [dispatch, loading.false, loading.true, orgId]);
+    if (isGithubIntegrated) {
+      depFn(loading.true);
+      dispatch(
+        fetchTeams({
+          org_id: orgId,
+          provider: Integration.GITHUB
+        })
+      ).finally(loading.false);
+    }
+  }, [dispatch, isGithubIntegrated, loading.false, loading.true, orgId]);
 
   return (
     <FlexBox col gap2>
