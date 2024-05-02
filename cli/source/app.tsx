@@ -1,14 +1,8 @@
 import { Box, Newline, Static, Text, useApp, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import { splitEvery } from 'ramda';
-import {
-  ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Provider as ReduxProvider } from 'react-redux';
 
 import { ChildProcessWithoutNullStreams } from 'child_process';
 
@@ -16,24 +10,24 @@ import {
   AppStates,
   LogSource,
   READY_MESSAGES,
-  logoText,
   terminatedText
 } from './constants.js';
-import { useAppContext, AppContextProvider } from './hooks/useAppContext.js';
-import { useLogsFromAllSources } from './hooks/useLogsFromAllSources.js';
+import {
+  useLogsFromAllSources,
+  transformLogToNode
+} from './hooks/useLogsFromAllSources.js';
+import { appSlice } from './slices/app.js';
+import { useSelector, store, useDispatch } from './store/index.js';
 import { getLineLimit } from './utils/line-limit.js';
 import { runCommand } from './utils/run-command.js';
 
 const CliUi = () => {
-  const {
-    logsStream,
-    appState,
-    setAppState,
-    logSource,
-    setLogSource,
-    addLog,
-    readyServices
-  } = useAppContext();
+  const dispatch = useDispatch();
+
+  const logSource = useSelector((state) => state.app.logSource);
+  const logsStream = useSelector((state) => state.app.logsStream);
+  const readyServices = useSelector((state) => state.app.readyServices);
+  const appState = useSelector((state) => state.app.appState);
   useLogsFromAllSources();
 
   const { exit } = useApp();
@@ -49,13 +43,12 @@ const CliUi = () => {
           .split('\n')
           .flatMap((l) => splitEvery(lineLimit, l))
           .map((l) =>
-            addLog(
-              <Text>
-                <Text color="yellow" bold inverse>
-                  CNTNR
-                </Text>{' '}
-                {l}
-              </Text>
+            dispatch(
+              appSlice.actions.addLog({
+                type: 'run-command-on-data',
+                line: l,
+                time: new Date()
+              })
             )
           ),
       onErr: (line) =>
@@ -63,21 +56,20 @@ const CliUi = () => {
           .split('\n')
           .flatMap((l) => splitEvery(lineLimit, l))
           .map((l) =>
-            addLog(
-              <Text color="red">
-                <Text color="red" bold inverse>
-                  CNTNR
-                </Text>{' '}
-                {l}
-              </Text>
+            dispatch(
+              appSlice.actions.addLog({
+                type: 'run-command-error',
+                line: l,
+                time: new Date()
+              })
             )
           )
     }),
-    [addLog, lineLimit]
+    [dispatch, lineLimit]
   );
 
-  const handleExit = useCallback(() => {
-    setAppState(AppStates.TEARDOWN);
+  const handleExit = useCallback(async () => {
+    await dispatch(appSlice.actions.setAppState(AppStates.TEARDOWN));
     setTimeout(() => {
       if (!processRef.current) return;
 
@@ -86,12 +78,12 @@ const CliUi = () => {
       processRef.current.stderr.destroy();
 
       runCommand('docker-compose', ['down'], runCommandOpts).promise.finally(
-        () => {
-          setAppState(AppStates.TERMINATED);
+        async () => {
+          await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
         }
       );
     }, 200);
-  }, [runCommandOpts, setAppState]);
+  }, [dispatch, runCommandOpts]);
 
   useEffect(() => {
     if (appState !== AppStates.TERMINATED) return;
@@ -101,17 +93,17 @@ const CliUi = () => {
   useInput((input) => {
     if (appState === AppStates.DOCKER_READY) {
       if (input === 'q') {
-        setLogSource(LogSource.WebServer);
+        dispatch(appSlice.actions.setLogSource(LogSource.WebServer));
       } else if (input === 'w') {
-        setLogSource(LogSource.ApiServer);
+        dispatch(appSlice.actions.setLogSource(LogSource.ApiServer));
       } else if (input === 'e') {
-        setLogSource(LogSource.Redis);
+        dispatch(appSlice.actions.setLogSource(LogSource.Redis));
       } else if (input === 'r') {
-        setLogSource(LogSource.Postgres);
+        dispatch(appSlice.actions.setLogSource(LogSource.Postgres));
       } else if (input === 't') {
-        setLogSource(LogSource.InitDb);
+        dispatch(appSlice.actions.setLogSource(LogSource.InitDb));
       } else if (input === 'a') {
-        setLogSource(LogSource.All);
+        dispatch(appSlice.actions.setLogSource(LogSource.All));
       }
     }
 
@@ -129,12 +121,18 @@ const CliUi = () => {
 
     promise.catch(() => {
       handleExit();
-      addLog('"docker watch" exited');
+      dispatch(
+        appSlice.actions.addLog({
+          type: 'default',
+          line: 'docker watch failed',
+          time: new Date()
+        })
+      );
     });
 
     processRef.current = process;
 
-    const lineListener = (data: Buffer) => {
+    const lineListener = async (data: Buffer) => {
       let watch_logs = String(data);
 
       if (
@@ -142,8 +140,14 @@ const CliUi = () => {
           watch_logs.includes(rdyMsg)
         )
       ) {
-        addLog('\n🚀 Container ready 🚀\n');
-        setAppState(AppStates.DOCKER_READY);
+        await dispatch(
+          appSlice.actions.addLog({
+            type: 'default',
+            line: '🚀 Container ready 🚀',
+            time: new Date()
+          })
+        );
+        await dispatch(appSlice.actions.setAppState(AppStates.DOCKER_READY));
       }
     };
 
@@ -154,11 +158,15 @@ const CliUi = () => {
     return () => {
       globalThis.process.off('exit', handleExit);
     };
-  }, [addLog, exit, handleExit, runCommandOpts, setAppState]);
+  }, [dispatch, exit, handleExit, runCommandOpts]);
 
+  const logsStreamNodes = useMemo(
+    () => logsStream.map((l) => transformLogToNode(l)),
+    [logsStream]
+  );
   return (
     <>
-      <Static items={logsStream} style={{ flexDirection: 'column' }}>
+      <Static items={logsStreamNodes} style={{ flexDirection: 'column' }}>
         {(log, i) => (
           <Box key={i}>
             {typeof log === 'string' ? <Text>{log}</Text> : log}
@@ -206,7 +214,7 @@ const CliUi = () => {
                       <Text inverse={logSource === LogSource.WebServer}>
                         {'web-server logs'.padEnd(40, ' ')}
                       </Text>{' '}
-                      {readyServices.has(LogSource.WebServer) ? (
+                      {readyServices.includes(LogSource.WebServer) ? (
                         <Text bold color="green">
                           READY
                         </Text>
@@ -221,7 +229,7 @@ const CliUi = () => {
                       <Text inverse={logSource === LogSource.ApiServer}>
                         {'api-server logs'.padEnd(40, ' ')}
                       </Text>{' '}
-                      {readyServices.has(LogSource.ApiServer) ? (
+                      {readyServices.includes(LogSource.ApiServer) ? (
                         <Text bold color="green">
                           READY
                         </Text>
@@ -236,7 +244,7 @@ const CliUi = () => {
                       <Text inverse={logSource === LogSource.Redis}>
                         {'redis logs'.padEnd(40, ' ')}
                       </Text>{' '}
-                      {readyServices.has(LogSource.Redis) ? (
+                      {readyServices.includes(LogSource.Redis) ? (
                         <Text bold color="green">
                           READY
                         </Text>
@@ -251,7 +259,7 @@ const CliUi = () => {
                       <Text inverse={logSource === LogSource.Postgres}>
                         {'postgres logs'.padEnd(40, ' ')}
                       </Text>{' '}
-                      {readyServices.has(LogSource.Postgres) ? (
+                      {readyServices.includes(LogSource.Postgres) ? (
                         <Text bold color="green">
                           READY
                         </Text>
@@ -266,7 +274,7 @@ const CliUi = () => {
                       <Text inverse={logSource === LogSource.InitDb}>
                         {'init_db logs'.padEnd(40, ' ')}
                       </Text>{' '}
-                      {readyServices.has(LogSource.InitDb) ? (
+                      {readyServices.includes(LogSource.InitDb) ? (
                         <Text bold color="green">
                           READY
                         </Text>
@@ -337,54 +345,22 @@ const CliUi = () => {
 };
 
 export function App() {
-  const [appState, setAppState] = useState<AppStates>(AppStates.INIT);
-  const [logSource, setLogSource] = useState<LogSource>(LogSource.All);
-  const [readyServices, setReadyServices] = useState<
-    Set<Omit<LogSource, LogSource.All>>
-  >(new Set());
-
-  const [logsStream, setLogsStream] = useState<ReactNode[]>([
-    <Box
-      borderStyle="double"
-      borderColor="#7e57c2"
-      key={0}
-      flexDirection="column"
-    >
-      <Text color="#7e57c2">{logoText}</Text>
-      <Text bold>Open Source</Text>
-    </Box>,
-    <Newline key={2} />
-  ]);
-
-  const addLog = useCallback((newNodes: ReactNode | ReactNode[]) => {
-    setLogsStream((nodes) => nodes.concat(newNodes));
-  }, []);
-
-  const updateReadyServices = useCallback(
-    (svcs: Omit<LogSource, LogSource.All>) => {
-      setReadyServices((set) => {
-        set.add(svcs);
-        return new Set(set);
-      });
-    },
-    []
-  );
+  // const [logsStream, setLogsStream] = useState<ReactNode[]>([
+  //   <Box
+  //     borderStyle="double"
+  //     borderColor="#7e57c2"
+  //     key={0}
+  //     flexDirection="column"
+  //   >
+  //     <Text color="#7e57c2">{logoText}</Text>
+  //     <Text bold>Open Source</Text>
+  //   </Box>,
+  //   <Newline key={2} />
+  // ]);
 
   return (
-    <AppContextProvider
-      value={{
-        appState,
-        setAppState,
-        logsStream,
-        setLogsStream,
-        logSource,
-        setLogSource,
-        addLog,
-        readyServices,
-        updateReadyServices
-      }}
-    >
+    <ReduxProvider store={store}>
       <CliUi />
-    </AppContextProvider>
+    </ReduxProvider>
   );
 }
