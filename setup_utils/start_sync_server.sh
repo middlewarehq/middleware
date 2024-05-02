@@ -4,6 +4,7 @@ set -u
 
 TOPIC="db_init"
 SUB_DIR="/tmp/pubsub"
+SYNC_SERVER_PORT=$SYNC_SERVER_PORT
 
 # Function to wait for message on a topic
 wait_for_message() {
@@ -21,7 +22,7 @@ wait_for_message
 
 cd /app/backend/analytics_server
 if [ "$ENVIRONMENT" == "prod" ]; then
-  /opt/venv/bin/gunicorn -w 2 -b 0.0.0.0:9697 --timeout 0 sync_app:app
+  /opt/venv/bin/gunicorn -w 2 -b 0.0.0.0:$SYNC_SERVER_PORT --timeout 0 sync_app:app
 else
-  /opt/venv/bin/gunicorn -w 2 -b 0.0.0.0:9697 --timeout 0 --reload sync_app:app
+  /opt/venv/bin/gunicorn -w 2 -b 0.0.0.0:$SYNC_SERVER_PORT --timeout 0 --reload sync_app:app
 fi
