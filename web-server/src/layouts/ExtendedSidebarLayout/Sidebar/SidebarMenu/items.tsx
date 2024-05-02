@@ -34,6 +34,13 @@ export interface MenuItems {
   id?: string | number[] | number;
 }
 
+export enum SideBarItems {
+  DORA_METRICS = 'DORA Metrics',
+  MANAGE_TEAMS = 'Manage Teams',
+  MANAGE_INTEGRATIONS = 'Manage Integrations',
+  SERVER_ADMIN = 'Server Admin'
+}
+
 const menuItems = (): MenuItems[] => [
   {
     heading: '',
