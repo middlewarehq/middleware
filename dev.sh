@@ -1,4 +1,7 @@
 #!/bin/bash
 cat env.example > .env
 
-docker-compose watch
+cd ./cli
+
+{ yarn && yarn build; } > /dev/null 2>&1
+yarn start
