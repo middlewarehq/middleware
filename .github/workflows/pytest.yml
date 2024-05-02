@@ -3,8 +3,14 @@ name: Unit Tests
 on:
   pull_request:
     branches: [ "main" ]
+    paths:
+      - 'backend/**'
+      - '**/*.py'
   push:
     branches: [ "main" ]
+    paths:
+      - 'backend/**'
+      - '**/*.py'
 
 jobs:
   build:
