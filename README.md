@@ -87,6 +87,9 @@ docker stop middleware
 
 ### 🐳 Using Docker
 
+If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
+Make sure docker is running.
+
 1. **Clone the Repository**:
 
    ```bash
@@ -155,8 +158,31 @@ To set up middleware locally, follow these steps:
 
 3. **Run Redis and Postgres Containers**:
 
-   - If you dont have docker installed, please install docker [over here]()
+    If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/)
+  
+    Run the following commands to run Postgres and Redis using docker.
 
+     ```bash
+        cd database-docker && docker-compose up -d
+     ```
+  
+    If you dont prefefer Docker, you can also choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
+
+4. Backend Server Setup
+
+  Install python version `3.11.6`
+  
+  - For this you can install python from [over here](https://www.python.org/downloads/) if you don't have it on your machine.
+  - Install pyenev
+
+ ```bash
+ pip install pyenv
+ pyenv local 3.11.6
+ ```
+
+
+5. Web Server Setup
+   
 
    - For backend:
      ```bash
@@ -167,14 +193,14 @@ To set up middleware locally, follow these steps:
      yarn install
      ```
 
-4. **Build the Project**:
+6. **Build the Project**:
 
    - For frontend:
      ```bash
      yarn build
      ```
 
-5. **Set up Environment Variables**:
+7. **Set up Environment Variables**:
    - Create a `.env.local` file in the `/backend` directory and add the following environment variables, replacing the values with your own:
      ```
      DB_HOST=localhost
@@ -188,7 +214,7 @@ To set up middleware locally, follow these steps:
      SYNC_SERVER_PORT=9697
      ```
    - Update the database, redis, `ANALYTICS_SERVER_URL`, and `SYNC_SERVER_URL` values as per your setup.
-6. **Run the Project**:
+8. **Run the Project**:
    - For Database:
      ```bash
      cd database-docker && docker-compose up -d
@@ -206,7 +232,7 @@ To set up middleware locally, follow these steps:
      yarn http
      ```
 
-7. **Access the Application**:
+9. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
    Additionally:
    - The analytics server is available at http://localhost:9696.
