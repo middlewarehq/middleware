@@ -30,7 +30,10 @@ import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
 export const DoraMetricsBody = () => {
   const dispatch = useDispatch();
-  const { orgId } = useAuth();
+  const {
+    orgId,
+    integrations: { github: isGithubIntegrated }
+  } = useAuth();
   const { singleTeamId, dates } = useSingleTeamConfig();
   const branches = useStateBranchConfig();
   const isLoading = useSelector(
@@ -52,6 +55,7 @@ export const DoraMetricsBody = () => {
 
   useEffect(() => {
     if (!singleTeamId) return;
+    if (!isGithubIntegrated) return;
     dispatch(
       fetchTeamDoraMetrics({
         orgId,
