@@ -39,17 +39,16 @@
 **Table of Contents**
 
 - [Middleware - Open Source](#introduction)
-  - [Features](#features)
-  - [Quick Start](#quick-start)
-  - [Project Setup Guidelines](#project-setup-guidelines)
-    - [Using Docker](#using-docker)
-    - [Manual Setup](#manual-setup)
-  - [Contributing guidelines](#contributing-guidelines)
+  - [Features](#-features)
+  - [Quick Start](#-quick-start)
+  - [Developer Setup](#-developer-setup)
+    - [Using Docker](#-using-docker)
+    - [Manual Setup](#-manual-setup)
+  - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
   - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
-  - [Installation](#installation)
-  - [Usage](#usage)
+  - [Usage](#-usage)
   - [Examples](#examples)
-  - [Contributing](#contributing)
+  - [Contributing](#%EF%B8%8F-contributing)
   - [License](#license)
 
 ## 🚀 Features
@@ -67,7 +66,7 @@ Open the terminal and run the following command
 ```bash
 docker run \
     --name middleware \
-    -p 3000:3333 \
+    -p 3333:3333 \
     -d \
     middlewareeng/middleware:latest
     
@@ -84,7 +83,7 @@ docker stop middleware
 ```
 
 
-## 👩‍💻 Run Locally
+## 👩‍💻 Developer Setup
 
 ### 🐳 Using Docker
 
@@ -154,7 +153,10 @@ To set up middleware locally, follow these steps:
    cd middleware
    ```
 
-3. **Install Dependencies**:
+3. **Run Redis and Postgres Containers**:
+
+   - If you dont have docker installed, please install docker [over here]()
+
 
    - For backend:
      ```bash
@@ -184,7 +186,6 @@ To set up middleware locally, follow these steps:
      REDIS_PORT=6385
      ANALYTICS_SERVER_PORT=9696
      SYNC_SERVER_PORT=9697
-     PORT=3333
      ```
    - Update the database, redis, `ANALYTICS_SERVER_URL`, and `SYNC_SERVER_URL` values as per your setup.
 6. **Run the Project**:
