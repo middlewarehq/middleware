@@ -73,7 +73,7 @@ const TeamsCRUD: FC<CRUDProps> = ({
   );
 };
 
-const Loader = () => {
+export const Loader = () => {
   return (
     <FlexBox alignCenter gap2>
       <CircularProgress size="20px" />
