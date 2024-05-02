@@ -87,7 +87,7 @@ docker stop middleware
 
 ### 🐳 Using Docker
 
-If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
+If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
 Make sure docker is running.
 
 1. **Clone the Repository**:
@@ -158,7 +158,7 @@ To set up middleware locally, follow these steps:
 
 3. **Run Redis and Postgres Containers**:
 
-    If you dont have docker installed, please install docker [over here](https://docs.docker.com/get-docker/)
+    If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/)
   
     Run the following commands to run Postgres and Redis using docker.
 
@@ -166,9 +166,9 @@ To set up middleware locally, follow these steps:
         cd database-docker && docker-compose up -d
      ```
   
-    If you dont prefer Docker, you can also choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
+    If you don't prefer Docker, you can choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
 
-   Once you are done with using or developing Middleware, you can choose to close thes running container. (NOTE: Dont do this if you are following this document and trying to run Middleware.)
+   Once you are done with using or developing Middleware, you can choose to close these running container. (NOTE: Don't do this if you are following this document and trying to run Middleware.)
 
    ```
    cd database-docker/
