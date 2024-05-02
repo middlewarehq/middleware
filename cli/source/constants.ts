@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 export const logoText = `
 ██╗  ██╗█╗████╗ ████╗ █╗   █████╗█╗    █╗ ███╗ ████╗ █████╗
 ███╗███║█║█╔══█╗█╔══█╗█║   █╔═══╝█║    █║█╔══█╗█╔══█╗█╔═══╝
@@ -14,10 +13,10 @@ export const terminatedText = `
                                          `;
 
 export enum AppStates {
-  INIT,
-  DOCKER_READY,
-  TEARDOWN,
-  TERMINATED
+  INIT = 'INIT',
+  DOCKER_READY = 'DOCKER_READY',
+  TEARDOWN = 'TEARDOWN',
+  TERMINATED = 'TERMINATED'
 }
 
 export enum LogSource {
@@ -31,7 +30,21 @@ export enum LogSource {
   DockerWatch
 }
 
-export type LogEntry = { time: Date; line: ReactNode };
+export type LogEntry = {
+  type:
+    | 'data'
+    | 'error'
+    | 'showing-logs'
+    | 'continuing-logs'
+    | 'intro'
+    | 'run-command-error'
+    | 'run-command-on-data'
+    | 'default';
+  line: string | undefined;
+  color?: string;
+  prefix?: string;
+  time: Date;
+};
 
 export const keysForLogSource = Object.entries(LogSource).reduce(
   (map, [k, v]) => ({ ...map, [v]: k as keyof typeof LogSource }),
@@ -47,5 +60,9 @@ export const READY_MESSAGES = {
   [LogSource.Postgres]: `database system is ready to accept connections`,
   [LogSource.Redis]: `Ready to accept connections`,
   [LogSource.InitDb]: [`exit 0`, `Writing: ./db/schema.sql`],
-  [LogSource.DockerWatch]: [`Watch configuration for service`, `watch enabled`]
+  [LogSource.DockerWatch]: [
+    `Watch configuration for service`,
+    `watch enabled`,
+    `watching`
+  ]
 };

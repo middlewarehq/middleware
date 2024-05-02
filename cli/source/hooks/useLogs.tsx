@@ -1,8 +1,5 @@
-import { Text } from 'ink';
 import { splitEvery } from 'ramda';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
-import { useAppContext } from './useAppContext.js';
 
 import {
   AppStates,
@@ -10,6 +7,8 @@ import {
   LogSource,
   READY_MESSAGES
 } from '../constants.js';
+import { appSlice } from '../slices/app.js';
+import { useDispatch, useSelector } from '../store/index.js';
 import { getLineLimit } from '../utils/line-limit.js';
 import { runCommand } from '../utils/run-command.js';
 
@@ -18,7 +17,8 @@ export const useLogs = (
   addLogs: (entry: LogEntry) => any
 ) => {
   const lineLimit = getLineLimit();
-  const { appState, updateReadyServices } = useAppContext();
+  const dispatch = useDispatch();
+  const appState = useSelector((state) => state.app.appState);
   const [started, setStarted] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logFile, prefix, color] = (() => {
@@ -45,23 +45,10 @@ export const useLogs = (
     (line: string, type?: 'data' | 'error') => {
       const log: LogEntry = {
         time: new Date(),
-        line:
-          type === 'error' ? (
-            <Text color="redBright">
-              <Text bold color={color} inverse>
-                {prefix}
-              </Text>
-              {' ❗️ '}
-              {line}
-            </Text>
-          ) : (
-            <Text>
-              <Text bold color={color} inverse>
-                {prefix}
-              </Text>{' '}
-              {line}
-            </Text>
-          )
+        type: type === 'error' ? 'error' : 'data',
+        color: color,
+        prefix: prefix,
+        line: line
       };
 
       addLogs(log);
@@ -80,7 +67,8 @@ export const useLogs = (
         return line.includes(msgs);
       };
 
-      if (checkLogEquality()) updateReadyServices(logSource);
+      if (checkLogEquality())
+        dispatch(appSlice.actions.updateReadyServices(logSource));
 
       line
         .split('\n')
@@ -92,7 +80,8 @@ export const useLogs = (
       onData: (line: string) => handleLines(line),
       onErr: (line: string) => handleLines(line, 'error')
     };
-  }, [logSource, updateReadyServices, lineLimit, updateLogs]);
+  }, [dispatch, logSource, lineLimit, updateLogs]);
+
   useEffect(() => {
     if (appState !== AppStates.DOCKER_READY || started) return;
 
