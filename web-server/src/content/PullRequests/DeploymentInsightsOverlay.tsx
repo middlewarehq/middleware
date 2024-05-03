@@ -135,9 +135,7 @@ export const DeploymentInsightsOverlay = () => {
     return deployments.find((dep) => dep.id === selectedDepID.value);
   }, [deployments, selectedDepID.value]);
 
-  const statePrs = useSelector((s) => {
-    return [];
-  });
+  const statePrs = useSelector((s) => s.doraMetrics.deploymentPrs);
   const loadingPrs = useSelector(
     (s) => s.doraMetrics.requests?.summary_prs === FetchState.REQUEST
   );
