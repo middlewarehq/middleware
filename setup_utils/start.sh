@@ -20,5 +20,16 @@ fi
 
 echo 'MHQ_STARTING SUPERVISOR'
 
-/app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
+if [ -f "/app/backend/analytics_server/mhq/config/config.ini" ]; then
+  echo "config.ini found. Setting environment variables from config.ini..."
+    while IFS='=' read -r key value; do
+        if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ && ! -z "$value" ]]; then
+            echo "$key"="$value" >> ~/.bashrc
+        fi
+    done < "../backend/analytics_server/mhq/config/config.ini"
+else
+    echo "config.ini not found. Running generate_config_ini.sh..."
+    /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
+fi
+
 /usr/bin/supervisord -c "/etc/supervisord.conf"
