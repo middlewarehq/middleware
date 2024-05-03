@@ -81,10 +81,19 @@ export const DeploymentInsightsOverlay = () => {
   const selectedRepo = useEasyState<ID | null>(null);
 
   useEffect(() => {
-    if (selectedRepo.value || !deploymentsListByRepo.length) return;
+    if (
+      (selectedRepo.value && teamDeployments.repos_map[selectedRepo.value]) ||
+      !deploymentsListByRepo.length
+    )
+      return;
 
     depFn(selectedRepo.set, deploymentsListByRepo[0].repo.id as ID);
-  }, [deploymentsListByRepo, selectedRepo.set, selectedRepo.value]);
+  }, [
+    deploymentsListByRepo,
+    selectedRepo.set,
+    selectedRepo.value,
+    teamDeployments.repos_map
+  ]);
 
   const deployments = useMemo(() => {
     if (!selectedRepo.value) return [];
