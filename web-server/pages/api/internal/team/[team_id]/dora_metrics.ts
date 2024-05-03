@@ -45,7 +45,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     team_id: teamId,
     from_date: rawFromDate,
     to_date: rawToDate,
-    branches,
+    branches
   } = req.payload;
 
   const teamProdBranchesMap =
