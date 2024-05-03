@@ -1,3 +1,6 @@
+volumes:
+  postgres_data:
+
 services:
   middleware-dev:
     container_name: middleware-dev
@@ -26,6 +29,9 @@ services:
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/15/main
 
     develop:
       watch:
