@@ -63,7 +63,7 @@ export const READY_MESSAGES = {
   [LogSource.DockerWatch]: [
     `Watch configuration for service`,
     `Watch enabled`,
-    `Watch enabled`,
+    `watch enabled`,
     `watching`
   ]
 };
