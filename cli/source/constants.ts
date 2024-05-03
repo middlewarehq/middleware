@@ -62,7 +62,8 @@ export const READY_MESSAGES = {
   [LogSource.InitDb]: [`exit 0`, `Writing: ./db/schema.sql`],
   [LogSource.DockerWatch]: [
     `Watch configuration for service`,
-    `watch enabled`,
+    `Watch enabled`,
+    `Watch enabled`,
     `watching`
   ]
 };
