@@ -45,6 +45,7 @@ expected_git_incident = get_incident(
     resolved_date=revert_pr.state_changed_at,
     assigned_to=revert_pr.author,
     assignees=[revert_pr.author],
+    url=original_pr.url,
     meta={
         "revert_pr": GitIncidentsETLHandler._adapt_pr_to_json(revert_pr),
         "original_pr": GitIncidentsETLHandler._adapt_pr_to_json(original_pr),
