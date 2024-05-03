@@ -67,6 +67,9 @@ export const doraMetricsSlice = createSlice({
       state.deploymentPrs = [];
       state.team_deployments = initialState.team_deployments;
     },
+    setFirstTeamLoadDone(state: State) {
+      state.firstLoadDone = true;
+    },
     toggleActiveModeValue(
       state: State,
       action: PayloadAction<ChangeTimeModes>
