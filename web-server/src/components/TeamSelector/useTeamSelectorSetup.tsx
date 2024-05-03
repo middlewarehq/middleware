@@ -100,7 +100,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
     [isAppSliceUpdated, dispatch, singleTeamId]
   );
 
-  const [payload, { fetch: fetchTeams, loading: loadingTeams, fetch_state }] =
+  const [payload, { fetch: fetchTeams, loading: loadingTeams }] =
     useAxios<FetchTeamsResponse>(`/resources/orgs/${orgId}/teams`, {
       manual: true,
       onSuccess: updateUsers
@@ -110,8 +110,6 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
     () => payload?.teams || ([] as Team[]),
     [payload?.teams]
   );
-
-  const usersMap = {};
 
   useEffect(() => {
     if (!orgId) return;
@@ -141,7 +139,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
     () => ({
       teams,
       apiTeams,
-      usersMap,
+      usersMap: {},
       dateRangeLabel,
       teamsLabel,
       hideDateSelector,
@@ -166,8 +164,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
       setRange,
       showAllTeams,
       teams,
-      teamsLabel,
-      usersMap
+      teamsLabel
     ]
   );
 };
