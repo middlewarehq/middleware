@@ -22,7 +22,7 @@ export const useLogs = (
   const [started, setStarted] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [logFile, prefix, color] = (() => {
-    const def = ['webserver/webserver', 'web', '#70d6ff'] as const;
+    const def = ['web-server/web-server', 'web', '#70d6ff'] as const;
     switch (logSource) {
       case LogSource.WebServer:
         return def;
