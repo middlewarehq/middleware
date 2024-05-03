@@ -158,7 +158,7 @@ export const transformLogToNode = (log: LogEntry) => {
           <Text color="yellow" bold inverse>
             CNTNR
           </Text>{' '}
-          ${log.line}
+          {log.line}
         </Text>
       );
     case 'run-command-error':
@@ -167,7 +167,7 @@ export const transformLogToNode = (log: LogEntry) => {
           <Text color="red" bold inverse>
             CNTNR
           </Text>{' '}
-          ${log.line}
+          {log.line}
         </Text>
       );
     case 'intro':
