@@ -269,7 +269,7 @@ To set up middleware locally, follow these steps:
    ```
     
 
-8. **Access the Application**:
+7. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
    Additionally:
    - The analytics server is available at http://localhost:9696.
