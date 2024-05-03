@@ -223,7 +223,6 @@ CREATE TABLE public."PullRequest" (
     rework_cycles bigint DEFAULT '0'::bigint,
     first_commit_to_open bigint,
     merge_to_deploy bigint,
-    lead_time bigint,
     merge_commit_sha character varying,
     created_in_db_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_in_db_at timestamp with time zone DEFAULT now() NOT NULL
@@ -1358,4 +1357,5 @@ ALTER TABLE ONLY public."PullRequestRevertPRMapping"
 
 INSERT INTO public.schema_migrations (version) VALUES
     ('20240404142732'),
-    ('20240430142502');
+    ('20240430142502'),
+    ('20240503060203');

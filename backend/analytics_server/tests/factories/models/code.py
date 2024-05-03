@@ -43,7 +43,6 @@ def get_pull_request(
     merge_time=None,
     cycle_time=None,
     merge_to_deploy=None,
-    lead_time=None,
     url=None,
     merge_commit_sha=None,
 ):
@@ -68,7 +67,6 @@ def get_pull_request(
         merge_time=merge_time,
         cycle_time=cycle_time,
         merge_to_deploy=merge_to_deploy,
-        lead_time=lead_time,
         reviewers=reviewers
         if reviewers is not None
         else ["randomuser1", "randomuser2"],

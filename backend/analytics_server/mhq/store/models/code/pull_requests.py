@@ -38,7 +38,6 @@ class PullRequest(db.Model):
     rework_cycles = db.Column(db.Integer, default=0)
     first_commit_to_open = db.Column(db.Integer)
     merge_to_deploy = db.Column(db.Integer)
-    lead_time = db.Column(db.Integer)
     merge_commit_sha = db.Column(db.String)
     created_in_db_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_in_db_at = db.Column(
