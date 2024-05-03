@@ -32,6 +32,7 @@ def get_incident(
     acknowledged_date: datetime = time_now(),
     assigned_to: str = "assigned_to",
     assignees: List[str] = default_factory(list),
+    url: str = "url",
     meta: dict = default_factory(dict),
 ) -> Incident:
     return Incident(
@@ -48,6 +49,7 @@ def get_incident(
         resolved_date=resolved_date,
         assigned_to=assigned_to,
         assignees=assignees,
+        url=url,
         acknowledged_date=acknowledged_date,
         meta=meta,
     )

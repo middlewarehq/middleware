@@ -90,7 +90,8 @@ CREATE TABLE public."Incident" (
     meta jsonb DEFAULT '{}'::jsonb NOT NULL,
     creation_date timestamp with time zone DEFAULT (now() AT TIME ZONE 'utc'::text) NOT NULL,
     assignees character varying[],
-    incident_type character varying DEFAULT 'INCIDENT'::character varying
+    incident_type character varying DEFAULT 'INCIDENT'::character varying,
+    url character varying
 );
 
 
@@ -1358,4 +1359,5 @@ ALTER TABLE ONLY public."PullRequestRevertPRMapping"
 INSERT INTO public.schema_migrations (version) VALUES
     ('20240404142732'),
     ('20240430142502'),
-    ('20240503060203');
+    ('20240503060203'),
+    ('20240503073715');

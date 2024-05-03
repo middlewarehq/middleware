@@ -22,6 +22,7 @@ class Incident(db.Model):
     assigned_to = db.Column(db.String)
     assignees = db.Column(ARRAY(db.String))
     incident_type = db.Column(ENUM(IncidentType), default=IncidentType.INCIDENT)
+    url = db.Column(db.String)
     meta = db.Column(JSONB, default={})
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(

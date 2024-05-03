@@ -1,12 +1,13 @@
 from typing import Dict, List
+
+from mhq.api.resources.core_resources import adapt_user_info
+from mhq.api.resources.deployment_resources import adapt_deployment
+from mhq.service.deployments.models.models import Deployment
 from mhq.service.incidents.models.mean_time_to_recovery import (
     MeanTimeToRecoveryMetrics,
     ChangeFailureRateMetrics,
 )
-from mhq.api.resources.deployment_resources import adapt_deployment
-from mhq.service.deployments.models.models import Deployment
 from mhq.store.models.incidents import Incident
-from mhq.api.resources.core_resources import adapt_user_info
 
 
 def adapt_incident(
@@ -34,7 +35,7 @@ def adapt_incident(
                 incident.assignees or [],
             )
         ),
-        "url": None,  # ToDo: Add URL to incidents
+        "url": incident.url,
         "summary": incident.meta.get("summary"),
         "incident_type": incident.incident_type.value,
     }
