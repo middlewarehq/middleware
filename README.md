@@ -200,6 +200,13 @@ To set up middleware locally, follow these steps:
    docker-compose down -v
    ```
 
+4. **Generate Encryption keys**:
+    
+    Generate encryption keys for the project by running the following command in the project root directory:
+
+    ```bash
+    cd setup_utils && . ./generate_config_ini.sh && cd ..
+    ```
 
 5. **Backend Server Setup**
 
