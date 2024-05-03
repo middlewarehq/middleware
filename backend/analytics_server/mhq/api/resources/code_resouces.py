@@ -13,7 +13,7 @@ def _get_lead_time_for_pr(pr: PullRequest) -> int:
         else 0
     )
 
-    cycle_time = pr.cycle_time
+    cycle_time = pr.cycle_time or 0
     merge_to_deploy = pr.merge_to_deploy or 0
 
     return first_commit_to_open_time + cycle_time + merge_to_deploy
