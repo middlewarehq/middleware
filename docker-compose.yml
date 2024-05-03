@@ -44,7 +44,7 @@ services:
           path: ./backend/dev-requirements.txt
 
         - action: sync+restart
-          path: ./setup_util/supervisord.conf
+          path: ./setup_utils/supervisord.conf
           target: /etc/supervisord.conf
 
         - action: rebuild
@@ -66,3 +66,8 @@ services:
 
         - action: rebuild
           path: ./web-server/package.json
+
+        - action: sync+restart
+          path: ./setup_utils/
+          target: /app/setup_utils
+          
