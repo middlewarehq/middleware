@@ -7,9 +7,13 @@ from mhq.store.models.core import Users
 
 def _get_lead_time_for_pr(pr: PullRequest) -> int:
     return (
-        pr.first_commit_to_open
-        if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
-        else 0 + pr.cycle_time + pr.merge_to_deploy
+        (
+            pr.first_commit_to_open
+            if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
+            else 0
+        )
+        + pr.cycle_time
+        + pr.merge_to_deploy
     )
 
 
