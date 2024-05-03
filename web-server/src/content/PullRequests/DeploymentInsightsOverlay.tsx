@@ -137,7 +137,7 @@ export const DeploymentInsightsOverlay = () => {
 
   const statePrs = useSelector((s) => s.doraMetrics.deploymentPrs);
   const loadingPrs = useSelector(
-    (s) => s.doraMetrics.requests?.summary_prs === FetchState.REQUEST
+    (s) => s.doraMetrics.requests?.deploymentPrs === FetchState.REQUEST
   );
 
   const theme = useTheme();
