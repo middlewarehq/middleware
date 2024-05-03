@@ -65,7 +65,7 @@ const Content = () => {
 
   useEffect(() => {
     if (!orgId) return;
-    if (isGithubIntegrated) {
+    if (isGithubIntegrated && !teamCount) {
       depFn(loading.true);
       dispatch(
         fetchTeams({
@@ -74,7 +74,14 @@ const Content = () => {
         })
       ).finally(loading.false);
     }
-  }, [dispatch, isGithubIntegrated, loading.false, loading.true, orgId]);
+  }, [
+    dispatch,
+    isGithubIntegrated,
+    loading.false,
+    loading.true,
+    orgId,
+    teamCount
+  ]);
 
   return (
     <FlexBox col gap2>
