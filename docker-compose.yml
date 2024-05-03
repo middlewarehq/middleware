@@ -1,5 +1,8 @@
 volumes:
   postgres_data:
+    driver: local
+  keys:
+    driver: local
 
 services:
   middleware-dev:
@@ -32,6 +35,7 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/15/main
+      - keys:/app/backend/analytics_server/mhq/config
 
     develop:
       watch:

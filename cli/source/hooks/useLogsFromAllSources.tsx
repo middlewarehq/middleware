@@ -179,7 +179,7 @@ export const transformLogToNode = (log: LogEntry) => {
             key={0}
             flexDirection="column"
           >
-            <Text color="#7e57c2">${logoText}</Text>
+            <Text color="#7e57c2">{logoText}</Text>
             <Text bold>Open Source</Text>
           </Box>
           <Newline key={2} />
