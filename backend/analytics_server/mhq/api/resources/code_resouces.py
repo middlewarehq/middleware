@@ -6,15 +6,17 @@ from mhq.store.models.core import Users
 
 
 def _get_lead_time_for_pr(pr: PullRequest) -> int:
-    return (
-        (
-            pr.first_commit_to_open
-            if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
-            else 0
-        )
-        + pr.cycle_time
-        + pr.merge_to_deploy
+
+    first_commit_to_open_time = (
+        pr.first_commit_to_open
+        if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
+        else 0
     )
+
+    cycle_time = pr.cycle_time or 0
+    merge_to_deploy = pr.merge_to_deploy or 0
+
+    return first_commit_to_open_time + cycle_time + merge_to_deploy
 
 
 def adapt_pull_request(
