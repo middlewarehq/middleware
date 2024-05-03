@@ -173,7 +173,7 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
             resolved_date=revert_pr_map.revert_pr.state_changed_at,
             assigned_to=revert_pr_map.revert_pr.author,
             assignees=[revert_pr_map.revert_pr.author],
-            url=revert_pr_map.revert_pr.url,
+            url=revert_pr_map.original_pr.url,
             meta={
                 "revert_pr": self._adapt_pr_to_json(revert_pr_map.revert_pr),
                 "original_pr": self._adapt_pr_to_json(revert_pr_map.original_pr),
