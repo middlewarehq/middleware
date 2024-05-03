@@ -77,7 +77,7 @@ export const PullRequestsTable: FC<
     updateSortConf,
     conf,
     getCSV
-  } = useTableSort(propPrs, { field: 'cycle_time', order: 'desc' });
+  } = useTableSort(propPrs, { field: 'lead_time', order: 'desc' });
 
   const filteredPrs = useMemo(() => {
     let prs = sortedPrs;
@@ -389,20 +389,10 @@ export const PullRequestsTable: FC<
                       </Line>
                     </TableCell>
                   )}
-                  {enabledColumnsSet.has('cycle_time') && (
-                    <TableCell sx={{ p: CELL_PAD }}>
-                      <MiniCycleTimeStat
-                        cycle={pr.cycle_time}
-                        response={pr.first_response_time}
-                        rework={pr.rework_time}
-                        release={pr.merge_time}
-                      />
-                    </TableCell>
-                  )}
                   {enabledColumnsSet.has('lead_time_as_sum_of_parts') && (
                     <TableCell sx={{ p: CELL_PAD }}>
                       <MiniLeadTimeStat
-                        lead={pr.lead_time_as_sum_of_parts}
+                        lead={pr.lead_time}
                         response={pr.first_response_time}
                         commit={Math.max(0, pr.first_commit_to_open)}
                         rework={pr.rework_time}
@@ -674,100 +664,6 @@ const PrMetaCell: FC<{ pr: PR }> = ({ pr }) => {
   );
 };
 
-export const MiniCycleTimeCore: FC<
-  {
-    cycle?: number;
-    response?: number;
-    rework?: number;
-    release?: number;
-  } & BoxProps
-> = ({ cycle = 0, release = 0, response = 0, rework = 0, ...props }) => {
-  const theme = useTheme();
-
-  const calcCycleTime = cycle || response + rework + release;
-
-  const defaultFlex = !calcCycleTime ? 1 : 0;
-
-  return (
-    <Box
-      display="flex"
-      borderRadius={1 / 2}
-      overflow="hidden"
-      width="100%"
-      flex={1}
-      maxWidth="400px"
-      {...props}
-    >
-      <Box
-        bgcolor={brandColors.pr.firstResponseTime}
-        color={theme.palette.background.default}
-        fontWeight={700}
-        py={1 / 2}
-        pl={2}
-        pr={3}
-        minWidth={0}
-        height="30px"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        whiteSpace="nowrap"
-        flex={response || defaultFlex}
-        sx={{
-          clipPath: `polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%)`
-        }}
-      >
-        {getDurationString(response || 0, {
-          segments: response > secondsInDay ? 2 : 1
-        }) || '-'}
-      </Box>
-      <Box
-        bgcolor={brandColors.pr.reworkTime}
-        color={theme.palette.background.default}
-        fontWeight={700}
-        mx={-1 / 2}
-        py={1 / 2}
-        px={3}
-        minWidth={0}
-        height="30px"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        whiteSpace="nowrap"
-        flex={rework || defaultFlex}
-        sx={{
-          clipPath: `polygon(0% 0%, calc(100% - 10px) 0%, 100% 50%, calc(100% - 10px) 100%, 0% 100%, 10px 50%)`
-        }}
-      >
-        {getDurationString(rework || 0, {
-          segments: rework > secondsInDay ? 2 : 1
-        }) || '-'}
-      </Box>
-      <Box
-        bgcolor={brandColors.pr.mergeTime}
-        color={theme.palette.background.default}
-        fontWeight={700}
-        py={1 / 2}
-        pl={3}
-        pr={2}
-        minWidth={0}
-        height="30px"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        whiteSpace="nowrap"
-        flex={release || defaultFlex}
-        sx={{
-          clipPath: `polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 10px 50%)`
-        }}
-      >
-        {getDurationString(release || 0, {
-          segments: release > secondsInDay ? 2 : 1
-        }) || '-'}
-      </Box>
-    </Box>
-  );
-};
-
 export const MiniLeadTimeCore: FC<
   {
     lead?: number;
@@ -1000,37 +896,6 @@ export const MiniCycleTimeLabels = ({
   );
 };
 
-export const MiniCycleTimeStat: FC<{
-  cycle?: number;
-  response?: number;
-  rework?: number;
-  release?: number;
-}> = ({ cycle = 0, release = 0, response = 0, rework = 0 }) => {
-  const calcCycleTime = response + rework + release;
-
-  return (
-    <FlexBox
-      alignCenter
-      gap1
-      darkTip
-      title={
-        <>
-          <MiniCycleTimeCore
-            cycle={cycle}
-            release={release}
-            response={response}
-            rework={rework}
-            mb={1}
-          />
-          <MiniCycleTimeLabels />
-        </>
-      }
-      tooltipPlacement="left"
-    >
-      <CycleTimePill time={calcCycleTime || cycle} />
-    </FlexBox>
-  );
-};
 
 export const MiniLeadTimeStat: FC<{
   lead?: number;
@@ -1083,14 +948,6 @@ export const MiniLeadTimeStat: FC<{
     >
       <CycleTimePill
         time={lead}
-        sx={{
-          color:
-            missingState === 'TOTAL'
-              ? 'error.main'
-              : missingState === 'PARTIAL'
-              ? 'warning.main'
-              : undefined
-        }}
       />
     </FlexBox>
   );
