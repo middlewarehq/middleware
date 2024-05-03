@@ -17,7 +17,7 @@ import {
   useSingleTeamConfig,
   useStateBranchConfig
 } from '@/hooks/useStateTeamConfig';
-import { fetchTeamDoraMetrics } from '@/slices/dora_metrics';
+import { doraMetricsSlice, fetchTeamDoraMetrics } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { ActiveBranchMode } from '@/types/resources';
 import { getRandomLoadMsg } from '@/utils/loading-messages';
@@ -27,6 +27,7 @@ import { ChangeFailureRateCard } from './DoraCards/ChangeFailureRateCard';
 import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
+import { SomethingWentWrong } from '@/components/SomethingWentWrong/SomethingWentWrong';
 
 export const DoraMetricsBody = () => {
   const dispatch = useDispatch();
@@ -39,7 +40,12 @@ export const DoraMetricsBody = () => {
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.metrics_summary === FetchState.REQUEST
   );
+  const isErrored = useSelector(
+    (s) => s.doraMetrics.requests?.metrics_summary === FetchState.FAILURE
+  );
+
   const firstLoadDone = useSelector((s) => s.doraMetrics.firstLoadDone);
+
   const activeBranchMode = useSelector((s) => s.app.branchMode);
 
   const isTeamInsightsEmpty = useSelector(
@@ -85,8 +91,14 @@ export const DoraMetricsBody = () => {
 
   const { isFreshOrg } = useFreshOrgCalculator();
 
+  if (isErrored)
+    return (
+      <SomethingWentWrong
+        error="Dora metrics data could not be loaded"
+        desc="Hey there! Sorry about that, the intern that was supposed to deliver your metrics got lost on the way"
+      />
+    );
   if (!firstLoadDone) return <MiniLoader label={getRandomLoadMsg()} />;
-
   if (isTeamInsightsEmpty)
     if (isFreshOrg)
       return (
