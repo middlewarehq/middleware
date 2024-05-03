@@ -250,15 +250,26 @@ To set up middleware locally, follow these steps:
       NOTE: Open this sync sever in a new terminal window after activating the virtual environment if you are already using analytics server. 
 
 6. **Web Server Setup**
-   
-  
-   - For frontend:
-     
-     ```bash
-     yarn install
-     ```
 
-7. **Access the Application**:
+   - Install NodeJs 16.17 (LTS) either [manually](https://nodejs.org/en/download) or using a tool like [nvm](https://github.com/nvm-sh/nvm) or [volta](https://volta.sh/).
+
+   - Install `yarn` package manager
+   ```
+   npm install --global yarn
+   ```
+   - Change Directory to web-server and install packages
+   ```
+   cd web-server
+   yarn
+   ```
+   
+   - Start the web-server
+   ```
+   yarn dev
+   ```
+    
+
+8. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
    Additionally:
    - The analytics server is available at http://localhost:9696.
