@@ -266,17 +266,6 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             </TableSortLabel>
           </TableCell>
         )}
-        {enabledColumnsSet.has('cycle_time') && (
-          <TableCell sx={{ p: CELL_PAD, py: 1.5 }}>
-            <TableSortLabel
-              direction={conf.field === 'cycle_time' ? conf.order : 'asc'}
-              active={conf.field === 'cycle_time'}
-              onClick={() => updateSortConf('cycle_time')}
-            >
-              Cycle <ClockIcon />
-            </TableSortLabel>
-          </TableCell>
-        )}
         {enabledColumnsSet.has('lead_time_as_sum_of_parts') && (
           <TableCell sx={{ p: CELL_PAD, py: 1.5 }}>
             <TableSortLabel
