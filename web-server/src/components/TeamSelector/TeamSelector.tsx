@@ -6,7 +6,6 @@ import {
   TerminalOutlined
 } from '@mui/icons-material';
 import { Box } from '@mui/material';
-import { useRouter } from 'next/router';
 import { FC, useRef } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -56,7 +55,6 @@ export const TeamSelector: FC<{
 
   const { team } = useSingleTeamConfig();
 
-  const router = useRouter();
   const hideTeamMemberFilter = true;
 
   if (!org) return null;
