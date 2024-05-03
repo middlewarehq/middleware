@@ -5,6 +5,14 @@ from mhq.store.models.code import PullRequest, OrgRepo, TeamRepos
 from mhq.store.models.core import Users
 
 
+def _get_lead_time_for_pr(pr: PullRequest) -> int:
+    return (
+        pr.first_commit_to_open
+        if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
+        else 0 + pr.cycle_time + pr.merge_to_deploy
+    )
+
+
 def adapt_pull_request(
     pr: PullRequest,
     username_user_map: Dict[str, Users] = None,
@@ -40,11 +48,7 @@ def adapt_pull_request(
         "merge_time": pr.merge_time,
         "merge_to_deploy": pr.merge_to_deploy,
         "cycle_time": pr.cycle_time,
-        "lead_time": (
-            pr.first_commit_to_open
-            if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
-            else 0 + pr.cycle_time + pr.merge_to_deploy
-        ),
+        "lead_time": _get_lead_time_for_pr(pr),
         "rework_cycles": pr.rework_cycles,
     }
 
@@ -71,12 +75,7 @@ def get_non_paginated_pr_response(
                 "rework_time": pr.rework_time,
                 "merge_time": pr.merge_time,
                 "cycle_time": pr.cycle_time,
-                "lead_time": (
-                    pr.first_commit_to_open
-                    if pr.first_commit_to_open is not None
-                    and pr.first_commit_to_open > 0
-                    else 0 + pr.cycle_time + pr.merge_to_deploy
-                ),
+                "lead_time": _get_lead_time_for_pr(pr),
                 "author": adapt_user_info(pr.author, username_user_map),
                 "reviewers": [
                     adapt_user_info(r, username_user_map) for r in (pr.reviewers or [])
