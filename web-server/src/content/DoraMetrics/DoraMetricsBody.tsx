@@ -166,7 +166,7 @@ export const DoraMetricsBody = () => {
   );
 };
 
-const FRESH_ORG_THRESHOLD = 5; // in minutes
+const FRESH_ORG_THRESHOLD = 10; // in minutes
 
 export const useFreshOrgCalculator = () => {
   const result = { isFreshOrg: false };
