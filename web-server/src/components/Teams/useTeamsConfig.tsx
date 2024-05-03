@@ -182,10 +182,13 @@ export const TeamsCRUDProvider: React.FC<{
       depFn(isSaveLoading.true);
       const repoPayload = repoToPayload(selections.value);
 
+      const capitalizedTeamName =
+        teamName.value.charAt(0).toUpperCase() + teamName.value.slice(1);
+
       return dispatch(
         createTeam({
           org_id: orgId,
-          team_name: teamName.value,
+          team_name: capitalizedTeamName,
           org_repos: repoPayload,
           provider: Integration.GITHUB
         })
