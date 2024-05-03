@@ -29,13 +29,14 @@ function Page() {
       depFn(router.replace, ROUTES.INTEGRATIONS.PATH);
       return;
     }
-    dispatch(
-      fetchTeams({
-        org_id: orgId,
-        provider: Integration.GITHUB
-      })
-    );
-  }, [dispatch, isGithubIntegrated, orgId, router.replace]);
+    if (!teamsList.length)
+      dispatch(
+        fetchTeams({
+          org_id: orgId,
+          provider: Integration.GITHUB
+        })
+      );
+  }, [dispatch, isGithubIntegrated, orgId, router.replace, teamsList.length]);
 
   return (
     <PageWrapper
