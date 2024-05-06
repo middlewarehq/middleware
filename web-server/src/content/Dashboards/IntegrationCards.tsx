@@ -10,6 +10,7 @@ import { track } from '@/constants/events';
 import { FetchState } from '@/constants/ui-states';
 import { integrationsDisplay } from '@/content/Dashboards/githubIntegration';
 import { useIntegrationHandlers } from '@/content/Dashboards/useIntegrationHandlers';
+import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';
 import { fetchCurrentOrg } from '@/slices/auth';
 import { useDispatch, useSelector } from '@/store';
@@ -21,7 +22,8 @@ const getRadiusWithPadding = (radius: number, padding: number) =>
 
 export const GithubIntegrationCard = () => {
   const theme = useTheme();
-  const isLinked = useSelector((s) => s.auth.org?.integrations.github === true);
+  const { integrations } = useAuth();
+  const isGithubIntegrated = integrations.github;
   const sliceLoading = useSelector(
     (s) => s.auth.requests.org === FetchState.REQUEST
   );
@@ -37,7 +39,7 @@ export const GithubIntegrationCard = () => {
 
   return (
     <FlexBox relative>
-      {isLinked && (
+      {integrations.github && (
         <FlexBox
           title="Linked"
           sx={{
@@ -85,12 +87,12 @@ export const GithubIntegrationCard = () => {
             <IntegrationActionsButton
               onClick={async () => {
                 track(
-                  isLinked
+                  isGithubIntegrated
                     ? 'INTEGRATION_UNLINK_TRIGGERED'
                     : 'INTEGRATION_LINK_TRIGGERED',
                   { integration_name: integrationsDisplay.name }
                 );
-                if (!isLinked) {
+                if (!isGithubIntegrated) {
                   link.github();
                   return;
                 }
@@ -116,8 +118,8 @@ export const GithubIntegrationCard = () => {
                     .finally(localLoading.false);
                 }
               }}
-              label={!isLinked ? 'Link' : 'Unlink'}
-              bgOpacity={!isLinked ? 0.45 : 0.25}
+              label={!isGithubIntegrated ? 'Link' : 'Unlink'}
+              bgOpacity={!isGithubIntegrated ? 0.45 : 0.25}
               endIcon={
                 isLoading && (
                   <CircularProgress
