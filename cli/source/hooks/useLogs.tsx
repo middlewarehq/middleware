@@ -35,7 +35,7 @@ export const useLogs = (
       case LogSource.Postgres:
         return ['postgres/postgres', 'pgs', '#ff70a6'];
       case LogSource.Cron:
-        return ['cron', 'cro', '#ffd166'];
+        return ['cron/cron', 'cro', '#ffd166'];
       default:
         return def;
     }
