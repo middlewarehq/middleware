@@ -18,6 +18,7 @@ export interface AuthContextValue extends AuthState {
   orgId: string | null;
   role: UserRole;
   integrations: User['integrations'];
+  integrationsLinkedAtMap: Org['integrationsLinkedAtMap'];
   onboardingState: OnboardingStep[];
   integrationSet: Set<IntegrationGroup>;
 }
@@ -27,6 +28,7 @@ export const AuthContext = createContext<AuthContextValue>({
   orgId: null,
   role: UserRole.MOM,
   integrations: {},
+  integrationsLinkedAtMap: {},
   onboardingState: [],
   integrationSet: new Set()
 });
@@ -70,11 +72,6 @@ export const AuthProvider: FC = (props) => {
       if (!isMounted()) return;
       const org = session?.org;
       if (org) {
-        // @ts-ignore
-        // window.FreshworksWidget?.('identify', 'ticketForm', {
-        //   name: identifyConfig.name,
-        //   email: identifyConfig.email
-        // });
         dispatch(
           authSlice.actions.init({
             isAuthenticated: true,
@@ -116,8 +113,9 @@ export const AuthProvider: FC = (props) => {
         orgId: state.org?.id,
         role,
         integrations,
+        integrationsLinkedAtMap: state.org?.integrationsLinkedAtMap || {},
         integrationSet,
-        onboardingState: state.org?.onboarding_state || []
+        onboardingState: (state.org?.onboarding_state as OnboardingStep[]) || []
       }}
     >
       {children}
