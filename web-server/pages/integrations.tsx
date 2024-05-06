@@ -55,7 +55,7 @@ const Content = () => {
     orgId,
     integrations: { github: isGithubIntegrated }
   } = useAuth();
-  const isLinked = useSelector((s) => s.auth.org.integrations.github === true);
+  const isLinked = useSelector((s) => s.auth.org?.integrations.github === true);
   const teams = useSelector((s) => s.team.teams);
   const dispatch = useDispatch();
   const loading = useBoolState(false);
