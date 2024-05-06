@@ -39,7 +39,7 @@ export const GithubIntegrationCard = () => {
 
   return (
     <FlexBox relative>
-      {integrations.github && (
+      {isGithubIntegrated && (
         <FlexBox
           title="Linked"
           sx={{
