@@ -15,7 +15,7 @@ import { useBoolState } from '@/hooks/useEasyState';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
-import { PageLayout } from '@/types/resources';
+import {PageLayout, IntegrationGroup} from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
 function Integrations() {
@@ -53,15 +53,16 @@ export default Integrations;
 const Content = () => {
   const {
     orgId,
-    integrations: { github: isGithubIntegrated }
+    integrations: { github: isGithubIntegrated },
+    integrationSet
   } = useAuth();
-  const isLinked = useSelector((s) => s.auth.org?.integrations.github === true);
+  const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
   const teams = useSelector((s) => s.team.teams);
   const dispatch = useDispatch();
   const loading = useBoolState(false);
 
   const teamCount = teams.length;
-  const showCreationCTA = isLinked && !teamCount && !loading.value;
+  const showCreationCTA = hasCodeProviderLinked && !teamCount && !loading.value;
 
   useEffect(() => {
     if (!orgId) return;
@@ -89,7 +90,7 @@ const Content = () => {
         <Line white fontSize={'24px'}>
           Integrate your Github to fetch DORA for your team
         </Line>
-        {Boolean(teamCount) && Boolean(isLinked) && (
+        {Boolean(teamCount) && Boolean(hasCodeProviderLinked) && (
           <Button href={ROUTES.DORA_METRICS.PATH} variant="contained">
             <FlexBox centered fullWidth p={2 / 3}>
               Continue to Dora {'->'}
