@@ -28,13 +28,17 @@ export const useRedirectWithSession = () => {
     org?.integrations?.bitbucket;
 
   useEffect(() => {
-    if (!orgId) return;
+    if (!orgId || !router.isReady) return;
     if (!isOrgWelcomed) {
       depFn(router.replace, ROUTES.WELCOME.PATH);
       return;
     }
-    if (!isOneCodeProviderIntegrated || !anyTeamEverExisted) {
+    if (!isOneCodeProviderIntegrated) {
       depFn(router.replace, ROUTES.INTEGRATIONS.PATH);
+      return;
+    }
+    if (!anyTeamEverExisted) {
+      depFn(router.replace, ROUTES.TEAMS.PATH);
       return;
     }
     depFn(router.replace, defaultRoute.PATH);
@@ -44,6 +48,7 @@ export const useRedirectWithSession = () => {
     isOneCodeProviderIntegrated,
     isOrgWelcomed,
     orgId,
+    router.isReady,
     router.replace
   ]);
 };
