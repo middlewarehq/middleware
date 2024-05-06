@@ -60,7 +60,7 @@ RUN apt-get update && \
     && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
     && apt-get install -y nodejs \
     && mkdir -p /etc/cron.d && mv /app/setup_utils/cronjob.txt /etc/cron.d/cronjob \
-    && chmod +x /app/setup_utils/start.sh /app/setup_utils/init_db.sh /app/setup_utils/generate_config_ini.sh \
+    && chmod +x /app/setup_utils/* \
     && mv /app/setup_utils/supervisord.conf /etc/supervisord.conf \
     && mv /app/database-docker/db/ /app/ && rm -rf /app/database-docker/ \
     && echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf \
