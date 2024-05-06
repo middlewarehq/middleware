@@ -21,7 +21,7 @@ const getRadiusWithPadding = (radius: number, padding: number) =>
 
 export const GithubIntegrationCard = () => {
   const theme = useTheme();
-  const isLinked = useSelector((s) => s.auth.org.integrations.github === true);
+  const isLinked = useSelector((s) => s.auth.org?.integrations.github === true);
   const sliceLoading = useSelector(
     (s) => s.auth.requests.org === FetchState.REQUEST
   );
