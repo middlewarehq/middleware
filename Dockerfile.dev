@@ -30,7 +30,7 @@ COPY . /app/
 WORKDIR /app/backend
 RUN python3 -m venv /opt/venv
 RUN /opt/venv/bin/pip install --upgrade pip
-RUN /opt/venv/bin/pip install -r requirements.txt -r dev-requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip /opt/venv/bin/pip install -r requirements.txt -r dev-requirements.txt
 
 WORKDIR /app
 RUN mkdir -p /etc/cron.d && mv /app/setup_utils/cronjob.txt /etc/cron.d/cronjob
