@@ -2,7 +2,7 @@ import { NextApiResponse } from 'next/types';
 
 import { getOnBoardingState } from '@/api/resources/orgs/[org_id]/onboarding';
 import { Endpoint, nullSchema } from '@/api-helpers/global';
-import { Table } from '@/constants/db';
+import { Row, Table } from '@/constants/db';
 import { db, getFirstRow } from '@/utils/db';
 
 const endpoint = new Endpoint(nullSchema);
@@ -30,14 +30,18 @@ export const delUserIdCookie = (res: NextApiResponse) => {
 };
 
 endpoint.handle.GET(nullSchema, async (_req, res) => {
-  const [orgDetails, integrations] = await Promise.all([
-    getOrgDetails(),
-    getOrgIntegrations()
-  ]);
+  const [orgDetails, { integrations, integrationsLinkedAtMap }] =
+    await Promise.all([getOrgDetails(), getOrgIntegrations()]);
 
   const onboardingState = await getOnBoardingState(orgDetails.id);
   res.send({
-    org: { ...orgDetails, ...onboardingState, integrations } || {}
+    org:
+      {
+        ...orgDetails,
+        ...onboardingState,
+        integrations,
+        integrationsLinkedAtMap
+      } || {}
   });
 });
 
@@ -49,14 +53,23 @@ const getOrgDetails = async () => {
 
 const getOrgIntegrations = async () => {
   return db(Table.Integration)
-    .select('name')
+    .select('*')
     .whereNotNull('access_token_enc_chunks')
-    .then((rows) =>
-      rows
+    .then((rows) => {
+      const integrations = rows
         .map((row) => row.name)
         .reduce(
           (map: IntegrationsMap, name: string) => ({ ...map, [name]: true }),
           {} as IntegrationsMap
-        )
-    );
+        );
+      const integrationsLinkedAtMap = rows.reduce(
+        (map: IntegrationsLinkedAtMap, r: Row<'Integration'>) => ({
+          ...map,
+          [r.name]: r.created_at
+        }),
+        {} as IntegrationsLinkedAtMap
+      );
+
+      return { integrations, integrationsLinkedAtMap };
+    });
 };
