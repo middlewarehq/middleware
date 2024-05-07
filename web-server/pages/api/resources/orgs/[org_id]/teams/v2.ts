@@ -8,6 +8,10 @@ import {
 } from '@/api/internal/[org_id]/git_provider_org';
 import { syncReposForOrg } from '@/api/internal/[org_id]/sync_repos';
 import {
+  getAllTeamsReposProdBranchesForOrg,
+  transformTeamRepoBranchesToMap
+} from '@/api/internal/team/[team_id]/repo_branches';
+import {
   getOnBoardingState,
   updateOnBoardingState
 } from '@/api/resources/orgs/[org_id]/onboarding';
@@ -88,21 +92,28 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     .andWhereNot('is_deleted', true)
     .orderBy('name', 'asc');
 
-  const [teams, orgRepos] = await Promise.all([
-    getQuery,
-    getAllOrgRepos(org_id, provider as CodeSourceProvidersIntegration).then(
-      (res) => res.flat()
-    )
-  ]);
+  const [teamsReposProductionBranchDetails, teams, orgRepos] =
+    await Promise.all([
+      getAllTeamsReposProdBranchesForOrg(org_id),
+      getQuery,
+      getAllOrgRepos(org_id, provider as CodeSourceProvidersIntegration).then(
+        (res) => res.flat()
+      )
+    ]);
 
   const repos = (
     await Promise.all(teams.map((team) => getTeamRepos(team.id)))
   ).flat();
 
+  const teamReposProdBranchMap = transformTeamRepoBranchesToMap(
+    teamsReposProductionBranchDetails
+  );
+
   res.send({
     teams: teams,
     orgRepos: orgRepos,
-    teamReposMap: groupBy(prop('team_id'), repos)
+    teamReposMap: groupBy(prop('team_id'), repos),
+    teamReposProdBranchMap
   });
 });
 
