@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { uniq } from 'ramda';
+import { head, uniq } from 'ramda';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import {
@@ -186,10 +186,22 @@ export const appSlice = createSlice({
       fetchTeams,
       'singleTeam',
       (state, action) => {
-        state.singleTeam = getSelectedTeam(
+        const selectedTeam = getSelectedTeam(
           state.singleTeam,
           action.payload.teams
         );
+        state.singleTeam = selectedTeam;
+        const teamReposProdBranchMap = action.payload.teamReposProdBranchMap;
+        state.teamsProdBranchMap = teamReposProdBranchMap;
+        if (!state.isUpdated) {
+          const { branchMode, branchNames } = getBranchData(
+            teamReposProdBranchMap,
+            head(selectedTeam)?.id
+          );
+          state.branchMode = branchMode;
+          state.branchNames = branchNames;
+          state.isUpdated = true;
+        }
       }
     );
   }
@@ -245,4 +257,24 @@ const getBiggestTeam = (allTeams: Team[]): Team[] => {
     return acc;
   }, allTeams[0]);
   return [biggestTeam];
+};
+
+const getBranchData = (
+  teamReposProdBranchMap: Record<string, TeamRepoBranchDetails[]>,
+  selectedTeamId?: string
+) => {
+  const teamProdBranchNames =
+    teamReposProdBranchMap?.[selectedTeamId]
+      ?.map((r) => r.prod_branches)
+      .filter(Boolean)
+      .join(',') || '';
+  const branchMode = ActiveBranchMode.PROD;
+  const branchNames = uniq(teamProdBranchNames.split(','))
+    .map((name) => `^${name.replace(/^\^/, '')}`)
+    .join(',');
+
+  return {
+    branchMode,
+    branchNames
+  };
 };
