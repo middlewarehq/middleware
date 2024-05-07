@@ -1,0 +1,9 @@
+# Ports to expose
+ports:
+  - port: 3333
+    onOpen: open-preview
+
+# Tasks to run
+tasks:
+  - name: Run Project
+    command: ./dev.sh
