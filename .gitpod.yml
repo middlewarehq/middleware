@@ -6,4 +6,5 @@ tasks:
 
 ports:
   - port: 3333
+    visibility: public
     onOpen: open-preview
