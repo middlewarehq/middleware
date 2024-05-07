@@ -1,11 +1,11 @@
 import { groupBy, prop } from 'ramda';
 import * as yup from 'yup';
 
+import { getAllOrgRepos } from '@/api/internal/[org_id]/git_provider_org';
 import {
   getAllTeamsReposProdBranchesForOrg,
   transformTeamRepoBranchesToMap
 } from '@/api/internal/team/[team_id]/repo_branches';
-import { getAllOrgRepos } from '@/api/resources/orgs/[org_id]/teams/v2';
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { Endpoint } from '@/api-helpers/global';
 import { getTeamMembersFilterSettingForOrg } from '@/api-helpers/team';
