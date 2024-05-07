@@ -1,10 +1,9 @@
 # Ports to expose
+tasks:
+  - init: |
+    command: ./dev.sh
+    openMode: split-right
+
 ports:
   - port: 3333
     onOpen: open-preview
-
-# Tasks to run
-tasks:
-  - name: Initialize Project
-    init: ./dev.sh
-    openMode: split-right
