@@ -78,9 +78,7 @@ class GithubApiService:
     def get_user_repos_raw(self, per_page: int = 30, page: int = 0) -> [Dict]:
         try:
             user = self._g.get_user()
-            with self.temp_config(
-                    per_page=per_page
-            ):
+            with self.temp_config(per_page=per_page):
                 repos = user.get_repos().get_page(page)
         except GithubException as e:
             raise e
