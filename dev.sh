@@ -1,4 +1,7 @@
 #!/bin/bash
+
+docker-compose down
+
 cat env.example > .env
 
 cd ./cli
