@@ -17,6 +17,8 @@ import {
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
+import { fetchTeams } from './team';
+
 type Error = {
   /* we'll add more fields later */
 };
@@ -179,6 +181,17 @@ export const appSlice = createSlice({
         }));
       }
     );
+    addFetchCasesToReducer(
+      builder,
+      fetchTeams,
+      'singleTeam',
+      (state, action) => {
+        state.singleTeam = getSelectedTeam(
+          state.singleTeam,
+          action.payload.teams
+        );
+      }
+    );
   }
 });
 
@@ -199,3 +212,37 @@ export const updateTeamMemberDataSetting = createAsyncThunk(
     return Boolean(response.setting.should_apply_team_members_filter);
   }
 );
+
+const getSelectedTeam = (
+  selectedTeam: State['singleTeam'],
+  allTeams: State['allTeams']
+): Team[] => {
+  if (!allTeams.length) return [];
+  if (!selectedTeam.length) return getBiggestTeam(allTeams);
+  if (!isSelectedTeamPresent(selectedTeam, allTeams)) {
+    return getBiggestTeam(allTeams);
+  }
+  return selectedTeam;
+};
+
+const isSelectedTeamPresent = (
+  selectedTeam: State['singleTeam'],
+  allTeams: State['allTeams']
+): boolean => {
+  if (!selectedTeam.length) return false;
+  if (!allTeams.length) return false;
+
+  const selectedTeamId = selectedTeam[0].id;
+  const allTeamIds = allTeams.map((team) => team.id);
+
+  return allTeamIds.includes(selectedTeamId);
+};
+
+const getBiggestTeam = (allTeams: Team[]): Team[] => {
+  if (!allTeams.length) return [];
+  const biggestTeam = allTeams.reduce((acc, team) => {
+    if (team.member_ids.length > acc.member_ids.length) return team;
+    return acc;
+  }, allTeams[0]);
+  return [biggestTeam];
+};
