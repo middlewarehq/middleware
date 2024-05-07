@@ -13,9 +13,10 @@ import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
+import { appSlice } from '@/slices/app';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
-import {PageLayout, IntegrationGroup} from '@/types/resources';
+import { PageLayout, IntegrationGroup } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
 function Integrations() {
@@ -57,11 +58,10 @@ const Content = () => {
     integrationSet
   } = useAuth();
   const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
-  const teams = useSelector((s) => s.team.teams);
+  const teamCount = useSelector((s) => s.team.teams.length);
   const dispatch = useDispatch();
   const loading = useBoolState(false);
 
-  const teamCount = teams.length;
   const showCreationCTA = hasCodeProviderLinked && !teamCount && !loading.value;
 
   useEffect(() => {
@@ -74,6 +74,9 @@ const Content = () => {
           provider: Integration.GITHUB
         })
       ).finally(loading.false);
+    }
+    if (!isGithubIntegrated) {
+      dispatch(appSlice.actions.setSingleTeam([]));
     }
   }, [
     dispatch,
