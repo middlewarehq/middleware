@@ -9,7 +9,6 @@ on:
         - 'Dockerfile'
         - 'backend/**'
         - 'database-docker/**'
-        - 'setup_utils/**'
         - 'web-server/**'
   workflow_dispatch:
 
@@ -75,7 +74,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ github.ref == 'refs/heads/main' && format('middlewareeng/middleware:latest') ||  steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=false,name-canonical=true,push=true
 
