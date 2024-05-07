@@ -58,7 +58,6 @@ const ConfigureGithubModalBody: FC<{
 
   const setError = useCallback(
     (error: string) => {
-      console.error(error);
       depFn(showError.set, error);
     },
     [showError.set]
@@ -75,7 +74,7 @@ const ConfigureGithubModalBody: FC<{
       return;
     }
     depFn(isLoading.true);
-    await checkGitHubValidity(token.value)
+    checkGitHubValidity(token.value)
       .then(async (isValid) => {
         if (!isValid) throw new Error('Invalid token');
       })
@@ -93,12 +92,21 @@ const ConfigureGithubModalBody: FC<{
       .then(async () => {
         try {
           return await linkProvider(token.value, orgId, Integration.GITHUB);
-        } catch (e) {
-          throw new Error('Failed to link Github: ', e);
+        } catch (e: any) {
+          throw new Error(
+            `Failed to link Github${e?.message ? `: ${e?.message}` : ''}`,
+            e
+          );
         }
       })
       .then(() => {
         dispatch(fetchCurrentOrg());
+        dispatch(
+          fetchTeams({
+            org_id: orgId,
+            provider: Integration.GITHUB
+          })
+        );
         enqueueSnackbar('Github linked successfully', {
           variant: 'success',
           autoHideDuration: 2000
@@ -106,9 +114,8 @@ const ConfigureGithubModalBody: FC<{
         onClose();
       })
       .catch((e) => {
-        setError(e);
-        console.error('Error while linking token: ', e.message);
         setError(e.message);
+        console.error(`Error while linking token: ${e.message}`, e);
       })
       .finally(() => {
         depFn(isLoading.false);
@@ -180,67 +187,7 @@ const ConfigureGithubModalBody: FC<{
             <LoadingButton
               loading={isLoading.value}
               variant="contained"
-              onClick={() => {
-                if (!token.value) {
-                  setError('Please enter a valid token');
-                  return;
-                }
-                isLoading.true();
-                checkGitHubValidity(token.value)
-                  .then(async (isValid) => {
-                    if (!isValid) throw new Error('Invalid token');
-                  })
-                  .then(async () => {
-                    try {
-                      const res = await getMissingPATScopes(token.value);
-                      if (res.length) {
-                        throw new Error(
-                          `Token is missing scopes: ${res.join(', ')}`
-                        );
-                      }
-                    } catch (e) {
-                      // @ts-ignore
-                      throw new Error(e?.message, e);
-                    }
-                  })
-                  .then(async () => {
-                    try {
-                      return await linkProvider(
-                        token.value,
-                        orgId,
-                        Integration.GITHUB
-                      );
-                    } catch (e: any) {
-                      throw new Error(
-                        `Failed to link Github${
-                          e?.message ? `: ${e?.message}` : ''
-                        }`,
-                        e
-                      );
-                    }
-                  })
-                  .then(() => {
-                    dispatch(fetchCurrentOrg());
-                    dispatch(
-                      fetchTeams({
-                        org_id: orgId,
-                        provider: Integration.GITHUB
-                      })
-                    );
-                    enqueueSnackbar('Github linked successfully', {
-                      variant: 'success',
-                      autoHideDuration: 2000
-                    });
-                    onClose();
-                  })
-                  .catch((e) => {
-                    setError(e.message);
-                    console.error(`Error while linking token: ${e.message}`, e);
-                  })
-                  .finally(() => {
-                    isLoading.false();
-                  });
-              }}
+              onClick={handleSubmission}
             >
               Confirm
             </LoadingButton>
