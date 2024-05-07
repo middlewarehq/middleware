@@ -10,7 +10,7 @@ env:
 
 jobs:
 
-  build-and-push:
+  build:
     name: Build and Push Docker Image
     runs-on: ${{ matrix.runner }}
     strategy:
