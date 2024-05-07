@@ -5,6 +5,12 @@ on:
     types: [published]
   push:
     branches: ["main"]
+    paths:  
+        - 'Dockerfile'
+        - 'backend/**'
+        - 'database-docker/**'
+        - 'setup_utils/**'
+        - 'web-server/**'
   workflow_dispatch:
 
 env:
