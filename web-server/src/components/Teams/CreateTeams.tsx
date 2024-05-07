@@ -251,6 +251,7 @@ const ActionTray: FC<CRUDProps> = ({
       <Button
         variant="outlined"
         sx={{ minWidth: '200px' }}
+        disabled={isSaveLoading}
         onClick={() => {
           onDiscard(onDiscardCallBack);
         }}
