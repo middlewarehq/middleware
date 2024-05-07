@@ -56,6 +56,7 @@
 Open the terminal and run the following command
 
 ```bash
+docker pull middlewareeng/middleware:latest
 docker run \
     --name middleware \
     -p 3333:3333 \
