@@ -55,19 +55,73 @@ const ConfigureGithubModalBody: FC<{
 
   const showError = useEasyState<string>('');
 
-  const setError = (error: string) => {
-    console.error(error);
-    showError.set(error);
-  };
-
-  const removeError = () => {
-    showError.set('');
-  };
+  const setError = useCallback(
+    (error: string) => {
+      console.error(error);
+      depFn(showError.set, error);
+    },
+    [showError]
+  );
 
   const handleChange = (e: string) => {
     token.set(e);
-    removeError();
+    showError.set('');
   };
+
+  const handleSubmission = useCallback(async () => {
+    if (!token.value) {
+      setError('Please enter a valid token');
+      return;
+    }
+    depFn(isLoading.true);
+    await checkGitHubValidity(token.value)
+      .then(async (isValid) => {
+        if (!isValid) throw new Error('Invalid token');
+      })
+      .then(async () => {
+        try {
+          const res = await getMissingPATScopes(token.value);
+          if (res.length) {
+            throw new Error(`Token is missing scopes: ${res.join(', ')}`);
+          }
+        } catch (e) {
+          // @ts-ignore
+          throw new Error(e?.message, e);
+        }
+      })
+      .then(async () => {
+        try {
+          return await linkProvider(token.value, orgId, Integration.GITHUB);
+        } catch (e) {
+          throw new Error('Failed to link Github: ', e);
+        }
+      })
+      .then(() => {
+        dispatch(fetchCurrentOrg());
+        enqueueSnackbar('Github linked successfully', {
+          variant: 'success',
+          autoHideDuration: 2000
+        });
+        onClose();
+      })
+      .catch((e) => {
+        setError(e);
+        console.error('Error while linking token: ', e.message);
+        setError(e.message);
+      })
+      .finally(() => {
+        depFn(isLoading.false);
+      });
+  }, [
+    dispatch,
+    enqueueSnackbar,
+    isLoading.false,
+    isLoading.true,
+    onClose,
+    orgId,
+    setError,
+    token.value
+  ]);
 
   return (
     <FlexBox gap2>
@@ -75,6 +129,15 @@ const ConfigureGithubModalBody: FC<{
         <FlexBox>Enter you Github token below.</FlexBox>
         <FlexBox fullWidth minHeight={'80px'} col>
           <TextField
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+                handleSubmission();
+                return;
+              }
+            }}
             error={!!showError.value}
             sx={{ width: '100%' }}
             value={token.value}
@@ -116,57 +179,7 @@ const ConfigureGithubModalBody: FC<{
             <LoadingButton
               loading={isLoading.value}
               variant="contained"
-              onClick={() => {
-                if (!token.value) {
-                  setError('Please enter a valid token');
-                  return;
-                }
-                isLoading.true();
-                checkGitHubValidity(token.value)
-                  .then(async (isValid) => {
-                    if (!isValid) throw new Error('Invalid token');
-                  })
-                  .then(async () => {
-                    try {
-                      const res = await getMissingPATScopes(token.value);
-                      if (res.length) {
-                        throw new Error(
-                          `Token is missing scopes: ${res.join(', ')}`
-                        );
-                      }
-                    } catch (e) {
-                      // @ts-ignore
-                      throw new Error(e?.message, e);
-                    }
-                  })
-                  .then(async () => {
-                    try {
-                      return await linkProvider(
-                        token.value,
-                        orgId,
-                        Integration.GITHUB
-                      );
-                    } catch (e) {
-                      throw new Error('Failed to link Github: ', e);
-                    }
-                  })
-                  .then(() => {
-                    dispatch(fetchCurrentOrg());
-                    enqueueSnackbar('Github linked successfully', {
-                      variant: 'success',
-                      autoHideDuration: 2000
-                    });
-                    onClose();
-                  })
-                  .catch((e) => {
-                    setError(e);
-                    console.error('Error while linking token: ', e.message);
-                    setError(e.message);
-                  })
-                  .finally(() => {
-                    isLoading.false();
-                  });
-              }}
+              onClick={handleSubmission}
             >
               Confirm
             </LoadingButton>
