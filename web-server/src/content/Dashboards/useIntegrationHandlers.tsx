@@ -3,7 +3,6 @@ import { Divider, Link, SxProps, TextField, alpha } from '@mui/material';
 import Image from 'next/image';
 import { useSnackbar } from 'notistack';
 import { FC, useCallback, useEffect, useMemo } from 'react';
-import { useDispatch } from 'react-redux';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
@@ -12,6 +11,8 @@ import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { fetchCurrentOrg } from '@/slices/auth';
+import { fetchTeams } from '@/slices/team';
+import { useDispatch } from '@/store';
 import {
   unlinkProvider,
   checkGitHubValidity,
@@ -60,7 +61,7 @@ const ConfigureGithubModalBody: FC<{
       console.error(error);
       depFn(showError.set, error);
     },
-    [showError]
+    [showError.set]
   );
 
   const handleChange = (e: string) => {
@@ -69,12 +70,13 @@ const ConfigureGithubModalBody: FC<{
   };
 
   const handleSubmission = useCallback(async () => {
+
     if (!token.value) {
       setError('Please enter a valid token');
       return;
     }
-    depFn(isLoading.true);
-    await checkGitHubValidity(token.value)
+    isLoading.true();
+    checkGitHubValidity(token.value)
       .then(async (isValid) => {
         if (!isValid) throw new Error('Invalid token');
       })
@@ -82,7 +84,9 @@ const ConfigureGithubModalBody: FC<{
         try {
           const res = await getMissingPATScopes(token.value);
           if (res.length) {
-            throw new Error(`Token is missing scopes: ${res.join(', ')}`);
+            throw new Error(
+              `Token is missing scopes: ${res.join(', ')}`
+            );
           }
         } catch (e) {
           // @ts-ignore
@@ -91,13 +95,28 @@ const ConfigureGithubModalBody: FC<{
       })
       .then(async () => {
         try {
-          return await linkProvider(token.value, orgId, Integration.GITHUB);
-        } catch (e) {
-          throw new Error('Failed to link Github: ', e);
+          return await linkProvider(
+            token.value,
+            orgId,
+            Integration.GITHUB
+          );
+        } catch (e: any) {
+          throw new Error(
+            `Failed to link Github${
+              e?.message ? `: ${e?.message}` : ''
+            }`,
+            e
+          );
         }
       })
       .then(() => {
         dispatch(fetchCurrentOrg());
+        dispatch(
+          fetchTeams({
+            org_id: orgId,
+            provider: Integration.GITHUB
+          })
+        );
         enqueueSnackbar('Github linked successfully', {
           variant: 'success',
           autoHideDuration: 2000
@@ -105,12 +124,11 @@ const ConfigureGithubModalBody: FC<{
         onClose();
       })
       .catch((e) => {
-        setError(e);
-        console.error('Error while linking token: ', e.message);
         setError(e.message);
+        console.error(`Error while linking token: ${e.message}`, e);
       })
       .finally(() => {
-        depFn(isLoading.false);
+        isLoading.false();
       });
   }, [
     dispatch,
