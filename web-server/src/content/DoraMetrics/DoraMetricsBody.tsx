@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { FixedContentRefreshLoader } from '@/components/FixedContentRefreshLoader/FixedContentRefreshLoader';
 import { FlexBox } from '@/components/FlexBox';
 import { MiniLoader } from '@/components/MiniLoader';
+import { SomethingWentWrong } from '@/components/SomethingWentWrong/SomethingWentWrong';
 import { Line } from '@/components/Text';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
@@ -17,7 +18,7 @@ import {
   useSingleTeamConfig,
   useStateBranchConfig
 } from '@/hooks/useStateTeamConfig';
-import { doraMetricsSlice, fetchTeamDoraMetrics } from '@/slices/dora_metrics';
+import { fetchTeamDoraMetrics } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { ActiveBranchMode } from '@/types/resources';
 import { getRandomLoadMsg } from '@/utils/loading-messages';
@@ -27,7 +28,6 @@ import { ChangeFailureRateCard } from './DoraCards/ChangeFailureRateCard';
 import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
-import { SomethingWentWrong } from '@/components/SomethingWentWrong/SomethingWentWrong';
 
 export const DoraMetricsBody = () => {
   const dispatch = useDispatch();
@@ -171,7 +171,7 @@ const FRESH_ORG_THRESHOLD = 10; // in minutes
 export const useFreshOrgCalculator = () => {
   const result = { isFreshOrg: false };
   const { org } = useAuth();
-  const createdAt = org?.created_at;
+  const createdAt = org?.integrationsLinkedAtMap.github;
   if (!createdAt) return result;
   result.isFreshOrg = calculateIsFreshOrg(createdAt);
   return result;
