@@ -58,7 +58,7 @@ const Content = () => {
     integrationSet
   } = useAuth();
   const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
-  const teamCount = useSelector((s) => s.team.teams.length);
+  const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
   const loading = useBoolState(false);
 
