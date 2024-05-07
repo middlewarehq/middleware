@@ -37,6 +37,21 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=sha-
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=${{ fromJson('["MIT"]') }}
+          flavor: |
+            latest=auto
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
