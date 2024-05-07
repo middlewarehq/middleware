@@ -75,6 +75,16 @@ class GithubApiService:
 
         return [repo.__dict__["_rawData"] for repo in repos]
 
+    def get_user_repos_raw(self, per_page: int = 30, page: int = 0) -> [Dict]:
+        try:
+            user = self._g.get_user()
+            with self.temp_config(per_page=per_page):
+                repos = user.get_repos().get_page(page)
+        except GithubException as e:
+            raise e
+
+        return [repo.__dict__["_rawData"] for repo in repos]
+
     def get_repo(self, org_login: str, repo_name: str) -> Optional[GithubRepository]:
         try:
             return self._g.get_repo(f"{org_login}/{repo_name}")

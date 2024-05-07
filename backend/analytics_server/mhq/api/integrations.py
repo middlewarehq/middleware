@@ -54,7 +54,7 @@ def get_github_orgs(org_id: str):
         }
     ),
 )
-def get_repos(org_id: str, org_login: str, page_size: int, page: int):
+def get_org_repos(org_id: str, org_login: str, page_size: int, page: int):
     query_validator = get_query_validator()
     query_validator.org_validator(org_id)
 
@@ -70,6 +70,38 @@ def get_repos(org_id: str, org_login: str, page_size: int, page: int):
     try:
         return external_integrations_service.get_github_org_repos(
             org_login, page_size, page - 1
+        )
+    except GithubException as e:
+        return jsonify(e.data), e.status
+
+
+@app.route("/orgs/<org_id>/integrations/github/user/repos", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Optional("page_size", default="30"): All(
+                str, Coerce(int), Range(min=1, max=100)
+            ),
+            Optional("page", default="1"): All(str, Coerce(int), Range(min=1)),
+        }
+    ),
+)
+def get_user_repos(org_id: str, page_size: int, page: int):
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    try:
+        external_integrations_service = get_external_integrations_service(
+            org_id, UserIdentityProvider.GITHUB
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    # GitHub pages start from 0 and Bitbucket pages start from 1.
+    # Need to be consistent, hence making standard as page starting from 1
+    # and passing a decremented value to GitHub
+    try:
+        return external_integrations_service.get_github_personal_repos(
+            page_size, page - 1
         )
     except GithubException as e:
         return jsonify(e.data), e.status
