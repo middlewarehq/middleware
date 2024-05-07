@@ -33,6 +33,7 @@
   - [Features](#-features)
   - [Quick Start](#-quick-start)
   - [Developer Setup](#-developer-setup)
+    - [Using Gitpod](#-Gitpod Setup)
     - [Using Docker](#-using-docker)
     - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
@@ -76,6 +77,20 @@ docker stop middleware
 
 ## 👩‍💻 Developer Setup
 
+# ☁️ Using GitPod
+
+Gitpod enables development on remote machines and helps you get started with Middleware if your machine does not support running the project locally. 
+
+If you want to run the project locally you can [setup using docker](#-using-docker) or [setup everything manually](#%EF%B8%8F-manual-setup). 
+
+1. Click the button below to open this project in Gitpod.
+
+2. This will open a fully configured workspace in your browser with all the necessary dependencies already installed.
+
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/middlewarehq/middleware)
+
+After initialized, you can access the server at at port 3333 of the gitpod instance.
+
 ### 🐳 Using Docker
 
 If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
@@ -94,10 +109,9 @@ Make sure docker is running.
    ```
 
 3. **Run `dev.sh` script in the project root 🪄**\
-    `./dev.sh` creates a `.env` file with required development environments and run container with `docker compose watch`.\
+    `./dev.sh` creates a `.env` file with required development environments and runs a CLI with does all the heavy lifting from tracking the container with `docker compose watch` to providing you with logs from different services.\
     The usage is as follows:
    ```bash
-   # runs without the ssh tunnel
    ./dev.sh
    ```
    You may update the `env.example` and set `ENVIRONMENT=prod` to run it in production setup.\
@@ -110,8 +124,7 @@ Make sure docker is running.
     - The postgres database can be accessed at host: `localhost`, port: `5434`, username: `postgres`, password: `postgres`, db name: `mhq-oss`.
     - The redis server can be accessed at host: `localhost`, port: `6385`.
 
-5. **View the logs**: The logs of services running inside the container can be viewed using the following
-   commands: 
+5. **View the logs**: Although the CLI tracks all logs, the logs of services running inside the container can be viewed in different terminals using the following commands: 
      
    **frontend logs**
    ```bash
