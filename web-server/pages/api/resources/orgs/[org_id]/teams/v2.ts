@@ -1,10 +1,6 @@
 import { groupBy, prop, mapObjIndexed, forEachObjIndexed } from 'ramda';
 import * as yup from 'yup';
 
-import {
-  CodeSourceProvidersIntegration,
-  getAllOrgRepos
-} from '@/api/internal/[org_id]/git_provider_org';
 import { syncReposForOrg } from '@/api/internal/[org_id]/sync_repos';
 import {
   getOnBoardingState,
@@ -87,12 +83,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     .andWhereNot('is_deleted', true)
     .orderBy('name', 'asc');
 
-  const [teams, orgRepos] = await Promise.all([
-    getQuery,
-    getAllOrgRepos(org_id, provider as CodeSourceProvidersIntegration).then(
-      (res) => res.flat()
-    )
-  ]);
+  const teams = await getQuery;
 
   const repos = (
     await Promise.all(teams.map((team) => getTeamRepos(team.id)))
@@ -100,7 +91,6 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 
   res.send({
     teams: teams,
-    orgRepos: orgRepos,
     teamReposMap: groupBy(prop('team_id'), repos)
   });
 });
@@ -219,4 +209,3 @@ const createTeam = async (
     }
   });
 };
-
