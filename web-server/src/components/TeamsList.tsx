@@ -10,7 +10,7 @@ import {
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { ascend } from 'ramda';
-import { FC, MouseEventHandler, useCallback, useEffect, useMemo } from 'react';
+import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
@@ -25,6 +25,7 @@ import { depFn } from '@/utils/fn';
 import { FlexBox } from './FlexBox';
 import { useOverlayPage } from './OverlayPageContext';
 import { CreateEditTeams } from './Teams/CreateTeams';
+import { Loader } from './Teams/CreateTeams';
 import { Line } from './Text';
 
 type TeamCardProps = {
@@ -57,16 +58,6 @@ export const TeamsList = () => {
       state.team?.requests?.teams === FetchState.REQUEST ||
       state.team?.requests?.orgRepos === FetchState.REQUEST
   );
-  const animateFlicker = useBoolState(false);
-
-  useEffect(() => {
-    if (isLoadingTeams) {
-      const flickerInterval = setInterval(() => {
-        depFn(animateFlicker.toggle);
-      }, 500);
-      return () => clearInterval(flickerInterval);
-    }
-  }, [animateFlicker.toggle, isLoadingTeams]);
 
   return (
     <>
@@ -81,20 +72,23 @@ export const TeamsList = () => {
           <Line secondary>No teams found</Line>
         </FlexBox>
       ) : null}
-      <FlexBox
-        gap={4}
-        grid
-        gridTemplateColumns={'1fr 1fr '}
-        maxWidth={'900px'}
-        relative
-        sx={{
-          opacity: isLoadingTeams ? (animateFlicker.value ? 0.2 : 0.5) : 1,
-          transition: 'opacity 0.5s linear'
-        }}
-      >
-        {teamsArrayFiltered.map((team, index) => (
-          <TeamCard onEdit={showCreate.false} key={index} team={team} />
-        ))}
+      <FlexBox relative>
+        <FlexBox
+          gap={4}
+          grid
+          gridTemplateColumns={'1fr 1fr'}
+          maxWidth={'900px'}
+          relative
+          sx={{
+            filter: isLoadingTeams ? 'blur(2px)' : 'none',
+            opacity: isLoadingTeams ? 0.5 : 1,
+            transition: 'all 0.2s linear'
+          }}
+        >
+          {teamsArrayFiltered.map((team, index) => (
+            <TeamCard onEdit={showCreate.false} key={index} team={team} />
+          ))}
+        </FlexBox>
         {isLoadingTeams && (
           <FlexBox
             fullWidth
@@ -102,7 +96,12 @@ export const TeamsList = () => {
             sx={{ position: 'absolute' }}
             top={0}
             left={0}
-          />
+            p={2}
+          >
+            <FlexBox sx={{ position: 'absolute' }} top={0} left={0} p={2}>
+              <Loader />
+            </FlexBox>
+          </FlexBox>
         )}
       </FlexBox>
     </>
