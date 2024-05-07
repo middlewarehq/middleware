@@ -95,7 +95,7 @@ const Heading = () => {
         <Line>
           Currently editing{' '}
           <Line info semibold>
-            {editingTeam.name}
+            {editingTeam?.name}
           </Line>{' '}
         </Line>
       ) : (
