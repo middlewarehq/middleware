@@ -126,11 +126,22 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Create tag for new image
+        id: tag
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "DOCKER_TAG=-t middlewareeng/middleware:latest"
+            echo "DOCKER_TAG=-t middlewareeng/middleware:latest" >> $GITHUB_ENV
+          else
+            echo "AUTOMATIC TAG"
+            echo "DOCKER_TAG=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")" >> $GITHUB_ENV
+          fi
+
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)   
+          docker buildx imagetools create ${{ env.DOCKER_TAG }} \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
