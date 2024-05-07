@@ -3,8 +3,7 @@ import * as yup from 'yup';
 
 import {
   CodeSourceProvidersIntegration,
-  getProviderOrgs,
-  getRepos
+  getAllOrgRepos
 } from '@/api/internal/[org_id]/git_provider_org';
 import { syncReposForOrg } from '@/api/internal/[org_id]/sync_repos';
 import {
@@ -221,15 +220,3 @@ const createTeam = async (
   });
 };
 
-export const getAllOrgRepos = async (
-  org_id: ID,
-  provider: CodeSourceProvidersIntegration
-) => {
-  const providerOrgs = await getProviderOrgs(org_id, provider).then(
-    (r) => r.data.orgs
-  );
-  const repos = await Promise.all(
-    providerOrgs.map((org) => getRepos(org_id, provider, org.login))
-  );
-  return repos;
-};
