@@ -33,7 +33,7 @@
   - [Features](#-features)
   - [Quick Start](#-quick-start)
   - [Developer Setup](#-developer-setup)
-    - [Using Gitpod](#-Gitpod Setup)
+    - [Using Gitpod](#%EF%B8%8F-using-gitpod)
     - [Using Docker](#-using-docker)
     - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
@@ -43,7 +43,7 @@
   - [Contributing](#%EF%B8%8F-contributing)
   - [License](#license)
 
-## 🚀 Features
+# 🚀 Features
 
 - Integration with various CI/CD tools
 - Automated collection and analysis of DORA metrics
@@ -51,7 +51,7 @@
 - Customizable reports and dashboards
 - Integration with popular project management platforms
 
-## ✨ Quick Start
+# ✨ Quick Start
 
 Open the terminal and run the following command
 
@@ -75,9 +75,9 @@ docker stop middleware
 ```
 
 
-## 👩‍💻 Developer Setup
+# 👩‍💻 Developer Setup
 
-# ☁️ Using GitPod
+## ☁️ Using GitPod
 
 Gitpod enables development on remote machines and helps you get started with Middleware if your machine does not support running the project locally. 
 
@@ -91,7 +91,7 @@ If you want to run the project locally you can [setup using docker](#-using-dock
 
 After initialized, you can access the server at at port 3333 of the gitpod instance.
 
-### 🐳 Using Docker
+## 🐳 Using Docker
 
 If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
 Make sure docker is running.
@@ -144,7 +144,7 @@ Make sure docker is running.
    ```
 
 
-### 🛠️ Manual Setup
+## 🛠️ Manual Setup
 
 To set up middleware locally, follow these steps:
 
@@ -280,7 +280,7 @@ To set up middleware locally, follow these steps:
    - The sync server can be accessed at http://localhost:9697.
 
 
-## 🚀 Usage
+# 🚀 Usage
 
 ![Product Demo](media_files/product_demo_1.gif)
 
@@ -291,7 +291,7 @@ To set up middleware locally, follow these steps:
 - Update settings related to incident filters, excluded pull requests, prod branches etc to get more accurate data.
 
 
-## ❤️ Contributing
+# ❤️ Contributing
 
 ![contributor Metrics](https://open-source-assets.middlewarehq.com/svgs/middlewarehq-middleware-contributor-metrics-dark-widget-premium.svg)
 
@@ -306,7 +306,7 @@ To get started contributing to middleware check out our [SECURITY.md](https://gi
 We look forward to your part in keeping Middleware secure!
 
 
-## Examples 
+# Examples 
 
 - Sample reports and dashboards showcasing DORA metrics
 - Real-world use cases and success stories
@@ -319,7 +319,7 @@ To get started contributing to middleware check out our [SECURITY.md](https://gi
 We look forward to your part in keeping Middleware secure!
 
 
-## License
+# License
 
  
  This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/middleware/blob/main/LICENSE) License - see the LICENSE.md file for details.
