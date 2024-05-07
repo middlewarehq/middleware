@@ -146,6 +146,7 @@ export const fetchTeams = createAsyncThunk(
       teams: Team[];
       teamReposMap: Record<ID, DB_OrgRepo[]>;
       orgRepos: BaseRepo[];
+      teamReposProdBranchMap: Record<string, TeamRepoBranchDetails[]>;
     }>(`/resources/orgs/${params.org_id}/teams/v2`, {
       params
     });
