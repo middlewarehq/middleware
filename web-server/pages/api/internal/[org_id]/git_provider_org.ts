@@ -20,30 +20,24 @@ const pathSchema = yup.object().shape({
 
 const getSchema = yup.object().shape({
   provider: yup.string().oneOf(Object.values(Integration)),
-  org_name: yup.string().optional().nullable(),
-  team_id: yup.string().uuid().optional().nullable()
+  search_text: yup.string().nullable().optional()
 });
 
 const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.GET(getSchema, async (req, res) => {
-  // This API returns either orgs, or repos for orgs depending on it `team_id` is supplied.
-
-  const { org_name, org_id, provider, team_id } = req.payload;
-  if (!org_name) {
-    const response = await getProviderOrgs(
-      org_id,
-      provider as CodeSourceProvidersIntegration
-    );
-    return res.status(200).send(response.data.orgs);
-  }
-
-  const response = await getRepos(
-    org_id,
-    provider as CodeSourceProvidersIntegration,
-    org_name
+  const { org_id, provider, search_text } = req.payload;
+  const repos = await batchPaginatedListsRequest(
+    `/orgs/${org_id}/integrations/${provider}/user/repos`
+  ).then((rs) =>
+    rs.map(getBaseRepoFromUnionRepo).filter((repo) => {
+      if (!search_text) return true;
+      const repoName = repo.name.toLowerCase();
+      const searchText = search_text.toLowerCase();
+      return repoName.includes(searchText);
+    })
   );
-  return res.status(200).send(response);
+  return res.status(200).send(repos);
 });
 
 export default endpoint.serve();
@@ -75,4 +69,17 @@ export const getRepos = async (
   return await batchPaginatedListsRequest(
     `/orgs/${org_id}/integrations/${provider}/${providerOrgBrandingMap[provider]}/${org_name}/repos`
   ).then((rs) => rs.map(getBaseRepoFromUnionRepo));
+};
+
+export const getAllOrgRepos = async (
+  org_id: ID,
+  provider: CodeSourceProvidersIntegration
+) => {
+  const providerOrgs = await getProviderOrgs(org_id, provider).then(
+    (r) => r.data.orgs
+  );
+  const repos = await Promise.all(
+    providerOrgs.map((org) => getRepos(org_id, provider, org.login))
+  );
+  return repos.flat();
 };
