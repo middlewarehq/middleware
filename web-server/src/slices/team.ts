@@ -86,8 +86,15 @@ export const teamSlice = createSlice({
     addFetchCasesToReducer(builder, fetchTeams, 'teams', (state, action) => {
       state.teams = action.payload.teams;
       state.teamReposMaps = action.payload.teamReposMap;
-      state.orgRepos = action.payload.orgRepos;
     });
+    addFetchCasesToReducer(
+      builder,
+      fetchOrgRepos,
+      'orgRepos',
+      (state, action) => {
+        state.orgRepos = action.payload;
+      }
+    );
     addFetchCasesToReducer(
       builder,
       fetchTeamReposProductionBranches,
@@ -145,10 +152,25 @@ export const fetchTeams = createAsyncThunk(
     return await handleApi<{
       teams: Team[];
       teamReposMap: Record<ID, DB_OrgRepo[]>;
-      orgRepos: BaseRepo[];
     }>(`/resources/orgs/${params.org_id}/teams/v2`, {
       params
     });
+  }
+);
+
+export const fetchOrgRepos = createAsyncThunk(
+  'teams/fetchOrgRepos',
+  async (params: {
+    org_id: ID;
+    provider: Integration;
+    search_text?: string;
+  }) => {
+    return await handleApi<BaseRepo[]>(
+      `/internal/${params.org_id}/git_provider_org`,
+      {
+        params: { provider: params.provider, search_text: params.search_text }
+      }
+    );
   }
 );
 
