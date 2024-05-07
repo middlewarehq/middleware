@@ -45,14 +45,6 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY_IMAGE }}
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix=sha-
           labels: |
             org.opencontainers.image.source=${{ github.event.repository.clone_url }}
             org.opencontainers.image.created=${{ steps.meta.outputs.created }}
@@ -73,6 +65,9 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Print build metadata
+        run: echo "${{ toJson(steps.meta.outputs) }}"
+
       - name: Build and push Docker image by digest
         id: build
         uses: docker/build-push-action@v5
@@ -80,8 +75,10 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=false,name-canonical=true,push=true
+
 
       - name: Print build output
         run: echo "${{ toJson(steps.build.outputs) }}"
@@ -100,6 +97,9 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: delete local temp digest
+        run: |
+          rm -rf /tmp/digests
   merge:
     runs-on: ubuntu-latest
     needs:
