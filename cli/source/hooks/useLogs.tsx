@@ -31,7 +31,7 @@ export const useLogs = (
       case LogSource.Redis:
         return ['redis/redis', 'rdi', '#ef476f'];
       case LogSource.InitDb:
-        return ['init_db/init_db', 'ind', '#118ab2'];
+        return ['init_db/init_db', 'idb', '#118ab2'];
       case LogSource.Postgres:
         return ['postgres/postgres', 'pgs', '#ff70a6'];
       case LogSource.Cron:
