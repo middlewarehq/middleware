@@ -7,12 +7,9 @@ import {
 } from '@/api/internal/team/[team_id]/repo_branches';
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { Endpoint } from '@/api-helpers/global';
-import { batchPaginatedListsRequest } from '@/api-helpers/internal';
 import { getTeamMembersFilterSettingForOrg } from '@/api-helpers/team';
-import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { FetchTeamsResponse } from '@/types/resources';
-import { getBaseRepoFromUnionRepo } from '@/utils/code';
 import { db } from '@/utils/db';
 const getSchema = yup.object().shape({
   user_id: yup.string().uuid().nullable().optional(),
@@ -56,14 +53,10 @@ export const getOrgTeams = async (
     {} as Record<ID, boolean>
   );
 
-  const [teamsReposProductionBranchDetails, repos, orgRepos] =
-    await Promise.all([
-      getAllTeamsReposProdBranchesForOrg(org_id),
-      Promise.all(teamRows.map((team) => getTeamRepos(team.id))),
-      batchPaginatedListsRequest(
-        `/orgs/${org_id}/integrations/${Integration.GITHUB}/user/repos`
-      ).then((rs) => rs.map(getBaseRepoFromUnionRepo))
-    ]);
+  const [teamsReposProductionBranchDetails, repos] = await Promise.all([
+    getAllTeamsReposProdBranchesForOrg(org_id),
+    Promise.all(teamRows.map((team) => getTeamRepos(team.id)))
+  ]);
 
   const teamManagers = {} as Record<ID, any>;
 
@@ -86,7 +79,6 @@ export const getOrgTeams = async (
 
   return {
     teams,
-    orgRepos,
     teamReposProdBranchMap,
     teamReposMap: groupBy(prop('team_id'), repos.flat())
   };
