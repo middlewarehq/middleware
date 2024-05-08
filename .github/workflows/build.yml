@@ -10,6 +10,7 @@ on:
         - 'backend/**'
         - 'database-docker/**'
         - 'web-server/**'
+        - 'setup_utils/**'
   workflow_dispatch:
 
 env:
