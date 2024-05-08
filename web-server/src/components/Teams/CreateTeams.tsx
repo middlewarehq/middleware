@@ -145,7 +145,9 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
     teamRepoError,
     handleRepoSelectionChange,
     selectedRepos,
-    raiseTeamRepoError
+    raiseTeamRepoError,
+    loadingRepos,
+    handleReposSearch,
   } = useTeamCRUD();
 
   return (
@@ -158,6 +160,8 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
       </FlexBox>
       <FlexBox>
         <Autocomplete
+          loading={loadingRepos}
+          loadingText="Loading repos..."
           onBlur={raiseTeamRepoError}
           disableCloseOnSelect
           disableClearable
@@ -169,9 +173,21 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
           getOptionLabel={(option) => option.name}
           renderInput={(params) => (
             <TextField
+              onChange={handleReposSearch}
               {...params}
               label={`${selectedRepos.length} selected`}
               error={teamRepoError}
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {loadingRepos ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                )
+              }}
             />
           )}
           renderOption={(props, option, { selected }) => (
