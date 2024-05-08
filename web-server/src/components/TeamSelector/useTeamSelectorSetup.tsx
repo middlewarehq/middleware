@@ -63,14 +63,13 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
     [dispatch, isAllBranchMode, teamReposProdBranchMap]
   );
 
-  const updateUsers = useCallback(
+  const updateTeams = useCallback(
     (res: AxiosResponse<FetchTeamsResponse>) => {
       dispatch(teamSlice.actions.setTeams(res.data.teams));
       dispatch(teamSlice.actions.setTeamReposMaps(res.data.teamReposMap));
       dispatch(
         appSlice.actions.setTeamProdBranchMap(res.data.teamReposProdBranchMap)
       );
-      dispatch(teamSlice.actions.setOrgRepos(res.data.orgRepos));
       const teams = res.data.teams.filter((t) => t.id);
 
       const singleT = teams.find((team) => singleTeamId === team.id);
@@ -102,7 +101,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   const [payload, { fetch: fetchTeams, loading: loadingTeams }] =
     useAxios<FetchTeamsResponse>(`/resources/orgs/${orgId}/teams`, {
       manual: true,
-      onSuccess: updateUsers
+      onSuccess: updateTeams
     });
 
   const apiTeams = useMemo(
