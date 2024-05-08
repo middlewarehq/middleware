@@ -1,11 +1,9 @@
 <br /><br />
 <p align="center">
-<a href="https://www.middlewarehq.com/">
-  <img src="media_files/logo.png" alt="Middleware Logo" width=300px>
-</a>
+<a href="https://www.middlewarehq.com/"><img src="media_files/logo.png" alt="Middleware Logo" width=300px></a>
 </p>
 
-<p align="center"><b>Open-source engineering management that unlocks developer potential.</b></p>
+<p align="center"><b>Open-source engineering management that unlocks developer potential</b></p>
 
 <p align="center">
 <a href="https://github.com/middlewarehq/middleware/actions/workflows/build.yml"><img alt="continuous integration" src="https://img.shields.io/github/actions/workflow/status/middlewarehq/middleware/build.yml?branch=main&label=build&style=for-the-badge"></a>
@@ -17,6 +15,28 @@
 </p>
 
 ![Banner](media_files/banner.png)
+
+
+
+<details>
+  <summary>👉 Just want to <strong>get started</strong>, ASAP? Click here 👈</summary>
+
+  ### Production Build
+  ```sh
+  docker pull middlewareeng/middleware:latest
+  docker run --name middleware -p 3333:3333 -d middlewareeng/middleware:latest
+  # and later
+  docker stop middleware
+  ```
+
+  ### Dev build
+  ```sh
+  git clone https://github.com/middlewarehq/middleware && cd middleware
+  ./dev.sh
+  ```
+  OR  
+  [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/middlewarehq/middleware)
+</details>
 
 
 ## Introduction
