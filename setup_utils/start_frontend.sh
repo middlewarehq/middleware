@@ -2,7 +2,7 @@
 
 set -u
 
-cd /app/web-server/
+cd /app/web-server/ || exit
 
 if [ "$ENVIRONMENT" == "prod" ]; then
   yarn http

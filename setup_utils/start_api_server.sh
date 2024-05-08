@@ -19,9 +19,7 @@ wait_for_message() {
 # Wait for message on the specified topic
 wait_for_message
 
-cd /app/backend/analytics_server
-
-cd /app/backend/analytics_server
+cd /app/backend/analytics_server || exit
 if [ "$ENVIRONMENT" == "prod" ]; then
   /opt/venv/bin/gunicorn -w 4 -b 0.0.0.0:$API_SERVER_PORT --timeout 0 --access-logfile '-' --error-logfile '-' app:app
 else
