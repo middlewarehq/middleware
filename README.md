@@ -76,13 +76,11 @@
 Open the terminal and run the following command
 
 ```bash
-docker pull middlewareeng/middleware:latest
-docker run \
-    --name middleware \
-    -p 3333:3333 \
-    -d \
-    middlewareeng/middleware:latest
-    
+docker run --name middleware \
+           -p 3333:3333 \
+           -v middleware_postgres_data:/var/lib/postgresql/data \
+           -v middleware_keys:/app/keys \
+           -d middlewareeng/middleware:latest
 ```
 
 Wait for sometime for the services to be up.
