@@ -27,12 +27,11 @@ export const updatedDeploymentFrequencyThresholds = (metric: {
       if (metric.count >= 1) return 'elite';
       return 'high';
     case 'week':
-      if (metric.count > 1) return 'high';
+      if (metric.count >= 1) return 'high';
       return 'medium';
     case 'month':
       if (metric.count === 1) return 'high';
-      if (metric.count > 1) return 'medium';
-      return 'low';
+      return 'medium';
     default:
       return 'low';
   }
