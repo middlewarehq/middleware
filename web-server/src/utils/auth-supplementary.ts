@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { splitEvery } from 'ramda';
 
 import { privateDecrypt, publicEncrypt } from 'crypto';
@@ -24,3 +25,18 @@ export const dec = (chunks: string[]) => {
 };
 
 export const INTEGRATION_CONFLICT_COLUMNS = ['org_id', 'name'];
+
+export const validateGithubToken = async (token: string) => {
+  try {
+    const response = await axios.get('https://api.github.com/user/repos', {
+      headers: {
+        // @ts-ignore
+        Authorization: `token ${dec(token)}`
+      }
+    });
+    return response.status === 200;
+  } catch (error: any) {
+    console.error('Token validation error:', error.response);
+    return false;
+  }
+};

@@ -8,7 +8,8 @@ import { useRefMounted } from '@/hooks/useRefMounted';
 import {
   authSlice,
   State as AuthState,
-  initialState as initialAuthState
+  initialState as initialAuthState,
+  fetchIntegrationsMap
 } from '@/slices/auth';
 import { useDispatch, useSelector } from '@/store';
 import { UserRole, IntegrationGroup, OnboardingStep } from '@/types/resources';
@@ -17,7 +18,7 @@ import { depFn } from '@/utils/fn';
 export interface AuthContextValue extends AuthState {
   orgId: string | null;
   role: UserRole;
-  integrations: User['integrations'];
+  integrations: Org['integrations'];
   integrationsLinkedAtMap: Org['integrationsLinkedAtMap'];
   onboardingState: OnboardingStep[];
   integrationSet: Set<IntegrationGroup>;
@@ -72,12 +73,13 @@ export const AuthProvider: FC = (props) => {
       if (!isMounted()) return;
       const org = session?.org;
       if (org) {
-        dispatch(
+        await dispatch(
           authSlice.actions.init({
             isAuthenticated: true,
             org: org
           })
         );
+        dispatch(fetchIntegrationsMap());
       } else {
         onUnauthenticated();
       }

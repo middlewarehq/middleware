@@ -32,7 +32,6 @@ export const authSlice = createSlice({
   reducers: {
     init(state: State, action: PayloadAction<Partial<State>>): void {
       const { isAuthenticated, org } = action.payload;
-
       state.isAuthenticated = isAuthenticated;
       state.isInitialized = true;
       state.org = org;
@@ -60,6 +59,16 @@ export const authSlice = createSlice({
         }
       }
     );
+    addFetchCasesToReducer(
+      builder,
+      fetchIntegrationsMap,
+      'org',
+      (state, action: PayloadAction<Partial<IntegrationsMap>>) => {
+        if (state.org) {
+          state.org.integrations = action.payload;
+        }
+      }
+    );
   }
 });
 
@@ -82,6 +91,15 @@ export const updateOnboardingState = createAsyncThunk(
           onboarding_state: params.onboardingState
         }
       }
+    );
+  }
+);
+
+export const fetchIntegrationsMap = createAsyncThunk(
+  'auth/fetchIntegrationsMap',
+  async () => {
+    return handleApi<Partial<IntegrationsMap>>(
+      '/integrations/integrations-map'
     );
   }
 );
