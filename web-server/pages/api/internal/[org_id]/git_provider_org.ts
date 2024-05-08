@@ -8,6 +8,7 @@ import { Errors, ResponseError } from '@/constants/error';
 import { Integration } from '@/constants/integrations';
 import { LoadedOrg } from '@/types/github';
 import { getBaseRepoFromUnionRepo } from '@/utils/code';
+import { homogenize } from '@/utils/datatype';
 
 export type CodeSourceProvidersIntegration =
   | Integration.GITHUB
@@ -32,8 +33,9 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   ).then((rs) =>
     rs.map(getBaseRepoFromUnionRepo).filter((repo) => {
       if (!search_text) return true;
-      const repoName = `${repo.parent}/${repo.name}`.toLowerCase();
-      const searchText = search_text.toLowerCase();
+      homogenize;
+      const repoName = homogenize(`${repo.parent}/${repo.name}`);
+      const searchText = homogenize(search_text);
       return repoName.includes(searchText);
     })
   );
