@@ -145,4 +145,4 @@ jobs:
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.DOCKER_TAG }}
+          docker buildx imagetools inspect $(echo "${{ env.DOCKER_TAG }}" | sed 's/-t //g') 
