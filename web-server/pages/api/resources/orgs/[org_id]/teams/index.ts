@@ -1,17 +1,18 @@
 import { groupBy, prop } from 'ramda';
 import * as yup from 'yup';
 
-import { getAllOrgRepos } from '@/api/internal/[org_id]/git_provider_org';
 import {
   getAllTeamsReposProdBranchesForOrg,
   transformTeamRepoBranchesToMap
 } from '@/api/internal/team/[team_id]/repo_branches';
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { Endpoint } from '@/api-helpers/global';
+import { batchPaginatedListsRequest } from '@/api-helpers/internal';
 import { getTeamMembersFilterSettingForOrg } from '@/api-helpers/team';
 import { Integration } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { FetchTeamsResponse } from '@/types/resources';
+import { getBaseRepoFromUnionRepo } from '@/utils/code';
 import { db } from '@/utils/db';
 const getSchema = yup.object().shape({
   user_id: yup.string().uuid().nullable().optional(),
@@ -59,7 +60,9 @@ export const getOrgTeams = async (
     await Promise.all([
       getAllTeamsReposProdBranchesForOrg(org_id),
       Promise.all(teamRows.map((team) => getTeamRepos(team.id))),
-      getAllOrgRepos(org_id, Integration.GITHUB).then((res) => res.flat())
+      batchPaginatedListsRequest(
+        `/orgs/${org_id}/integrations/${Integration.GITHUB}/user/repos`
+      ).then((rs) => rs.map(getBaseRepoFromUnionRepo))
     ]);
 
   const teamManagers = {} as Record<ID, any>;

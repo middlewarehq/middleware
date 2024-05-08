@@ -6,15 +6,15 @@ import { FlexBox } from '@/components/FlexBox';
 import { CreateEditTeams, Loader } from '@/components/Teams/CreateTeams';
 import { TeamsList } from '@/components/TeamsList';
 import { Integration } from '@/constants/integrations';
-import { ROUTES } from '@/constants/routes';
+import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
-import { depFn } from '@/utils/fn';
 
 function Page() {
+  useRedirectWithSession();
   const dispatch = useDispatch();
   const {
     orgId,
@@ -25,10 +25,6 @@ function Page() {
 
   useEffect(() => {
     if (!orgId) return;
-    if (!isGithubIntegrated) {
-      depFn(router.replace, ROUTES.INTEGRATIONS.PATH);
-      return;
-    }
     if (!teamsList.length)
       dispatch(
         fetchTeams({

@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { OnboardingStep, UserRole } from '@/types/resources';
-import { depFn } from '@/utils/fn';
 
 import { ROUTES } from './routes';
 
@@ -30,26 +29,28 @@ export const useRedirectWithSession = () => {
   useEffect(() => {
     if (!orgId || !router.isReady) return;
     if (!isOrgWelcomed) {
-      depFn(router.replace, ROUTES.WELCOME.PATH);
+      router.replace(ROUTES.WELCOME.PATH);
       return;
     }
-    if (!isOneCodeProviderIntegrated) {
-      depFn(router.replace, ROUTES.INTEGRATIONS.PATH);
+    if (
+      !isOneCodeProviderIntegrated &&
+      router.pathname !== ROUTES.INTEGRATIONS.PATH
+    ) {
+      router.replace(ROUTES.INTEGRATIONS.PATH);
       return;
     }
-    if (!anyTeamEverExisted) {
-      depFn(router.replace, ROUTES.TEAMS.PATH);
+    if (!anyTeamEverExisted && router.pathname !== ROUTES.TEAMS.PATH) {
+      router.replace(ROUTES.TEAMS.PATH);
       return;
     }
-    depFn(router.replace, defaultRoute.PATH);
+    if (router.pathname === ROUTES.DORA_METRICS.PATH) return;
   }, [
     anyTeamEverExisted,
     defaultRoute.PATH,
     isOneCodeProviderIntegrated,
     isOrgWelcomed,
     orgId,
-    router.isReady,
-    router.replace
+    router
   ]);
 };
 

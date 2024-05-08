@@ -8,6 +8,7 @@ import { Line } from '@/components/Text';
 import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
+import { useRedirectWithSession } from '@/constants/useRoute';
 import { GithubIntegrationCard } from '@/content/Dashboards/IntegrationCards';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +21,7 @@ import { PageLayout, IntegrationGroup } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
 function Integrations() {
+  useRedirectWithSession();
   const isLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
   );

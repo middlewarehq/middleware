@@ -2,9 +2,11 @@ import Head from 'next/head';
 import { Authenticated } from 'src/components/Authenticated';
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
+import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageLayout } from '@/types/resources';
 
 function Integrations() {
+  useRedirectWithSession();
   return (
     <>
       <Head>
