@@ -132,7 +132,7 @@ If you want to run the project locally you can [setup using docker](#-using-dock
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/middlewarehq/middleware)
 
-After initialized, you can access the server at port 3333 of the gitpod instance.
+After initialization, you can access the server at port 3333 of the gitpod instance.
 
 ## 🐳 Using Docker
 
