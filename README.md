@@ -23,7 +23,7 @@
 
   * Ensure that you have [docker](https://www.docker.com/products/docker-desktop/) installed and running.
   ### Production Build
-  ```sh
+  ```bash
   docker run --name middleware \
            -p 3333:3333 \
            -v middleware_postgres_data:/var/lib/postgresql/data \
@@ -32,7 +32,7 @@
   ```
 
   ### Dev build
-  ```sh
+  ```bash
   git clone https://github.com/middlewarehq/middleware && cd middleware
   ./dev.sh
   ```
@@ -42,8 +42,9 @@
 
 
 ## Introduction
-**Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. They are:
+**Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. 
 
+They are:
 - **Deployment Frequency**: The frequency of code deployments to production or an operational environment.
 - **Lead Time for Changes**: The time it takes for a commit to make it into production.
 - **Mean Time to Restore**: The time it takes to restore service after an incident or failure.
@@ -54,14 +55,15 @@
 - [Middleware - Open Source](#introduction)
   - [Features](#-features)
   - [Quick Start](#-quick-start)
+    - [Installing Middleware](#-installing-middleware)
+    - [Troubleshooting](#-troubleshooting)
   - [Developer Setup](#-developer-setup)
     - [Using Gitpod](#-using-gitpod)
     - [Using Docker](#-using-docker)
     - [Manual Setup](#-manual-setup)
-  - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
-  - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
   - [Usage](#-usage)
-  - [Contributing](#-contributing)
+  - [Contributing guidelines](#-contributing-guidelines)
+  - [Security guidelines and disclosure](#-security-guidelines-and-disclosure)
   - [License](#license)
 
 # 🚀 Features
@@ -74,45 +76,46 @@
 
 # ✨ Quick Start
 
-If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
-Ensure that docker is running.
+## ⭐ Installing Middleware
+* Ensure that you have [docker](https://www.docker.com/products/docker-desktop/) installed and running.
 
-Open the terminal and run the following command:
+* Open the terminal and run the following command:
 
-```bash
-docker run --name middleware \
-           -p 3333:3333 \
-           -v middleware_postgres_data:/var/lib/postgresql/data \
-           -v middleware_keys:/app/keys \
-           -d middlewareeng/middleware:latest
-```
+  ```bash
+  docker run --name middleware \
+             -p 3333:3333 \
+             -v middleware_postgres_data:/var/lib/postgresql/data \
+             -v middleware_keys:/app/keys \
+             -d middlewareeng/middleware:latest
+  ```
 
-Wait for sometime for the services to be up.
+- Wait for sometime for the services to be up.
 
-The app shall be available on your host at http://localhost:3333.
+- The app shall be available on your host at http://localhost:3333.
 
-In case you want to stop the container, run the following command:
+## 🛠️ Troubleshooting
+1. In case you want to stop the container, run the following command:
 
-```bash
-docker stop middleware
-```
+   ```bash
+   docker stop middleware
+   ```
 
-In order to fetch latest version from remote and then starting the system, use following command:
-```bash
-docker pull middlewareeng/middleware:latest
-docker rm -f middleware || true
-docker run --name middleware \
-           -p 3333:3333 \
-           -v middleware_postgres_data:/var/lib/postgresql/data \
-           -v middleware_keys:/app/keys \
-           -d middlewareeng/middleware:latest
-```
+2. In order to fetch latest version from remote and then starting the system, use following command:
+   ```bash
+   docker pull middlewareeng/middleware:latest
+   docker rm -f middleware || true
+   docker run --name middleware \
+              -p 3333:3333 \
+              -v middleware_postgres_data:/var/lib/postgresql/data \
+              -v middleware_keys:/app/keys \
+              -d middlewareeng/middleware:latest
+   ```
 
-If you see an error like: `Conflict. The container name "/middleware" is already in use by container`. \
-Then run following command before running the container again:
-```bash
-docker rm -f middleware
-```
+3. If you see an error like: `Conflict. The container name "/middleware" is already in use by container`. \
+   Then run following command before running the container again:
+   ```bash
+   docker rm -f middleware
+   ```
 
 
 # 👩‍💻 Developer Setup
@@ -121,7 +124,7 @@ docker rm -f middleware
 
 Gitpod enables development on remote machines and helps you get started with Middleware if your machine does not support running the project locally. 
 
-If you want to run the project locally you can [setup using docker](#-using-docker) or [setup everything manually](#%EF%B8%8F-manual-setup). 
+If you want to run the project locally you can [setup using docker](#-using-docker) or [setup everything manually](#-manual-setup). 
 
 1. Click the button below to open this project in Gitpod.
 
@@ -129,7 +132,7 @@ If you want to run the project locally you can [setup using docker](#-using-dock
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/middlewarehq/middleware)
 
-After initialized, you can access the server at at port 3333 of the gitpod instance.
+After initialized, you can access the server at port 3333 of the gitpod instance.
 
 ## 🐳 Using Docker
 
@@ -330,23 +333,25 @@ To set up middleware locally, follow these steps:
 
 ![Product Demo](media_files/product_demo_1.gif)
 
-- Setup the project by following the [steps mentioned above](#quick-start).
+- Setup the project by following the [steps mentioned above](#-quick-start).
 - Generate and Add your PAT token from code provider.
 - Create a team and select repositories for the team.
 - See Dora Metrics for your team.
 - Update settings related to incident filters, excluded pull requests, prod branches etc to get more accurate data.
 
 
-# ❤️ Contributing
+# ❤️ Contributing guidelines
 
 ![contributor Metrics](https://open-source-assets.middlewarehq.com/svgs/middlewarehq-middleware-contributor-metrics-dark-widget-premium.svg)
 
 To get started contributing to middleware check out our [CONTRIBUTING.md](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md).
+
 We appreciate your contributions and look forward to working together to make Middleware even better!
 
-## ⛓️ Security guidelines and disclosure
+# ⛓️ Security guidelines and disclosure
 
 To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
+
 We look forward to your part in keeping Middleware secure!
 
 
