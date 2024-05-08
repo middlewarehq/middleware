@@ -18,7 +18,8 @@ import {
   fetchTeams,
   createTeam,
   updateTeam,
-  fetchOrgRepos
+  fetchOrgRepos,
+  teamSlice
 } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { DB_OrgRepo } from '@/types/api/org_repo';
@@ -290,6 +291,7 @@ export const TeamsCRUDProvider: React.FC<{
   const onDiscard = useCallback(
     (callBack?: AnyFunction) => {
       resetErrors();
+      dispatch(teamSlice.actions.setOrgRepos([]));
       if (!isEditing) {
         depFn(teamName.set, '');
         depFn(selections.set, []);
@@ -301,6 +303,7 @@ export const TeamsCRUDProvider: React.FC<{
     },
     [
       resetErrors,
+      dispatch,
       isEditing,
       teamName.set,
       initState.name,
