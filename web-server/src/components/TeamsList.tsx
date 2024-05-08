@@ -55,8 +55,7 @@ export const TeamsList = () => {
 
   const isLoadingTeams = useSelector(
     (state) =>
-      state.team?.requests?.teams === FetchState.REQUEST ||
-      state.team?.requests?.orgRepos === FetchState.REQUEST
+      state.team?.requests?.teams === FetchState.REQUEST
   );
 
   return (
