@@ -32,7 +32,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   ).then((rs) =>
     rs.map(getBaseRepoFromUnionRepo).filter((repo) => {
       if (!search_text) return true;
-      const repoName = repo.name.toLowerCase();
+      const repoName = `${repo.parent}/${repo.name}`.toLowerCase();
       const searchText = search_text.toLowerCase();
       return repoName.includes(searchText);
     })

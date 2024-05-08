@@ -170,7 +170,7 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
           options={repoOptions}
           value={selectedRepos}
           onChange={handleRepoSelectionChange}
-          getOptionLabel={(option) => option.name}
+          getOptionLabel={(option) => `${option.parent}/${option.name}`}
           renderInput={(params) => (
             <TextField
               onChange={handleReposSearch}
