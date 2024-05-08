@@ -373,3 +373,48 @@ const repoToPayload = (repos: BaseRepo[]) => {
 
   return repoPayload;
 };
+
+const DEBOUNCE_TIME = 500;
+
+const useReposSearch = () => {
+  const { orgId } = useAuth();
+  const dispatch = useDispatch();
+  const searchResults = useSelector((s) => s.team.orgRepos);
+  const isLoading = useSelector(
+    (s) => s.team.requests?.orgRepos === FetchState.REQUEST
+  );
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    if (!query) return;
+    debouncedSearch(query);
+  };
+
+  const debouncedSearch = debounce((query: string) => {
+    fetchData(query);
+  }, DEBOUNCE_TIME);
+
+  const fetchData = (query: string) =>
+    dispatch(
+      fetchOrgRepos({
+        org_id: orgId,
+        provider: Integration.GITHUB,
+        search_text: query
+      })
+    );
+
+  return {
+    searchResults,
+    onChange,
+    loadingRepos: isLoading
+  };
+};
+
+const adaptBaseRepo = (repo: DB_OrgRepo): BaseRepo =>
+  ({
+    id: Number(repo.idempotency_key),
+    name: repo.name,
+    slug: repo.slug,
+    branch: repo.default_branch,
+    parent: repo.org_name
+  }) as BaseRepo;
