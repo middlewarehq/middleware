@@ -299,7 +299,6 @@ To set up middleware locally, follow these steps:
    ```
    yarn dev
    ```
-    
 
 7. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
