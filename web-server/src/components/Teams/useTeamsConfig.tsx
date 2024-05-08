@@ -73,6 +73,12 @@ export const TeamsCRUDProvider: React.FC<{
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
   );
+  const {
+    loadingRepos,
+    onChange: handleReposSearch,
+    searchResults: repoSearchResult
+  } = useReposSearch();
+
   const fetchTeamsAndRepos = useCallback(() => {
     return dispatch(
       fetchTeams({
@@ -103,7 +109,6 @@ export const TeamsCRUDProvider: React.FC<{
 
   // team-repo selection logic
   const selections = useEasyState<BaseRepo[]>([]);
-  const repoOptions = orgRepos || [];
   const selectedRepos = selections.value;
   const teamRepoError = useBoolState();
   const raiseTeamRepoError = useCallback(() => {
@@ -331,7 +336,7 @@ export const TeamsCRUDProvider: React.FC<{
     teams,
     orgRepos,
     handleTeamNameChange,
-    repoOptions,
+    repoOptions: repoSearchResult,
     selectedRepos,
     handleRepoSelectionChange,
     teamRepoError: teamRepoError.value,
@@ -343,7 +348,9 @@ export const TeamsCRUDProvider: React.FC<{
     onDiscard,
     isEditing,
     editingTeam,
-    saveDisabled
+    saveDisabled,
+    loadingRepos,
+    handleReposSearch
   };
 
   return (
