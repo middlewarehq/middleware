@@ -21,16 +21,18 @@
 <details>
   <summary>👉 Just want to <strong>get started</strong>, ASAP? Click here 👈</summary>
 
+  * Ensure that you have [docker](https://www.docker.com/products/docker-desktop/) installed and running.
   ### Production Build
-  ```sh
-  docker pull middlewareeng/middleware:latest
-  docker run --name middleware -p 3333:3333 -d middlewareeng/middleware:latest
-  # and later
-  docker stop middleware
+  ```bash
+  docker run --name middleware \
+           -p 3333:3333 \
+           -v middleware_postgres_data:/var/lib/postgresql/data \
+           -v middleware_keys:/app/keys \
+           -d middlewareeng/middleware:latest
   ```
 
   ### Dev build
-  ```sh
+  ```bash
   git clone https://github.com/middlewarehq/middleware && cd middleware
   ./dev.sh
   ```
@@ -40,8 +42,9 @@
 
 
 ## Introduction
-**Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. They are:
+**Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. 
 
+They are:
 - **Deployment Frequency**: The frequency of code deployments to production or an operational environment.
 - **Lead Time for Changes**: The time it takes for a commit to make it into production.
 - **Mean Time to Restore**: The time it takes to restore service after an incident or failure.
@@ -52,15 +55,15 @@
 - [Middleware - Open Source](#introduction)
   - [Features](#-features)
   - [Quick Start](#-quick-start)
+    - [Installing Middleware](#-installing-middleware)
+    - [Troubleshooting](#-troubleshooting)
   - [Developer Setup](#-developer-setup)
-    - [Using Gitpod](#%EF%B8%8F-using-gitpod)
+    - [Using Gitpod](#-using-gitpod)
     - [Using Docker](#-using-docker)
-    - [Manual Setup](#%EF%B8%8F-manual-setup)
-  - [Contributing guidelines](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md)
-  - [Security guidelines and disclosure](#security-guidelines-and-disclosure)
+    - [Manual Setup](#-manual-setup)
   - [Usage](#-usage)
-  - [Examples](#examples)
-  - [Contributing](#%EF%B8%8F-contributing)
+  - [Contributing guidelines](#-contributing-guidelines)
+  - [Security guidelines and disclosure](#-security-guidelines-and-disclosure)
   - [License](#license)
 
 # 🚀 Features
@@ -73,25 +76,46 @@
 
 # ✨ Quick Start
 
-Open the terminal and run the following command
+## ⭐ Installing Middleware
+* Ensure that you have [docker](https://www.docker.com/products/docker-desktop/) installed and running.
 
-```bash
-docker run --name middleware \
-           -p 3333:3333 \
-           -v middleware_postgres_data:/var/lib/postgresql/data \
-           -v middleware_keys:/app/keys \
-           -d middlewareeng/middleware:latest
-```
+* Open the terminal and run the following command:
 
-Wait for sometime for the services to be up.
+  ```bash
+  docker run --name middleware \
+             -p 3333:3333 \
+             -v middleware_postgres_data:/var/lib/postgresql/data \
+             -v middleware_keys:/app/keys \
+             -d middlewareeng/middleware:latest
+  ```
 
-The app shall be available on your host at http://localhost:3333.
+- Wait for sometime for the services to be up.
 
-In case you want to stop the container, run the following command:
+- The app shall be available on your host at http://localhost:3333.
 
-```bash
-docker stop middleware
-```
+## 🛠️ Troubleshooting
+1. In case you want to stop the container, run the following command:
+
+   ```bash
+   docker stop middleware
+   ```
+
+2. In order to fetch latest version from remote and then starting the system, use following command:
+   ```bash
+   docker pull middlewareeng/middleware:latest
+   docker rm -f middleware || true
+   docker run --name middleware \
+              -p 3333:3333 \
+              -v middleware_postgres_data:/var/lib/postgresql/data \
+              -v middleware_keys:/app/keys \
+              -d middlewareeng/middleware:latest
+   ```
+
+3. If you see an error like: `Conflict. The container name "/middleware" is already in use by container`. \
+   Then run following command before running the container again:
+   ```bash
+   docker rm -f middleware
+   ```
 
 
 # 👩‍💻 Developer Setup
@@ -100,7 +124,7 @@ docker stop middleware
 
 Gitpod enables development on remote machines and helps you get started with Middleware if your machine does not support running the project locally. 
 
-If you want to run the project locally you can [setup using docker](#-using-docker) or [setup everything manually](#%EF%B8%8F-manual-setup). 
+If you want to run the project locally you can [setup using docker](#-using-docker) or [setup everything manually](#-manual-setup). 
 
 1. Click the button below to open this project in Gitpod.
 
@@ -108,7 +132,7 @@ If you want to run the project locally you can [setup using docker](#-using-dock
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/middlewarehq/middleware)
 
-After initialized, you can access the server at at port 3333 of the gitpod instance.
+After initialization, you can access the server at port 3333 of the gitpod instance.
 
 ## 🐳 Using Docker
 
@@ -145,21 +169,21 @@ Make sure docker is running.
 
 5. **View the logs**: Although the CLI tracks all logs, the logs of services running inside the container can be viewed in different terminals using the following commands: 
      
-   **frontend logs**
+   **Frontend logs**
    ```bash
-    docker exec -it middleware-dev tail --lines 500 -f /var/log/web-server/web-server.log
+   docker exec -it middleware-dev tail --lines 500 -f /var/log/web-server/web-server.log
    ```
-   **backend logs**
+   **Backend logs**
    ```bash
-    docker exec -it middleware-dev tail --lines 500 -f /var/log/apiserver/apiserver.log
+   docker exec -it middleware-dev tail --lines 500 -f /var/log/apiserver/apiserver.log
    ```
-   **redis logs**
+   **Redis logs**
    ```bash
-    docker exec -it middleware-dev tail --lines 500 -f /var/log/redis/redis.log
+   docker exec -it middleware-dev tail --lines 500 -f /var/log/redis/redis.log
    ```
-   **postgres logs**
+   **Postgres logs**
    ```bash
-    docker exec -it middleware-dev tail --lines 500 -f /var/log/postgres/postgres.log
+   docker exec -it middleware-dev tail --lines 500 -f /var/log/postgres/postgres.log
    ```
 
 
@@ -186,17 +210,17 @@ To set up middleware locally, follow these steps:
     Run the following commands to run Postgres and Redis using docker.
 
      ```bash
-        cd database-docker && docker-compose up -d
+     cd database-docker && docker-compose up -d
      ```
   
     If you don't prefer Docker, you can choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
 
-   Once you are done with using or developing Middleware, you can choose to close these running container. (NOTE: Don't do this if you are following this document and trying to run Middleware.)
+    Once you are done with using or developing Middleware, you can choose to close these running container. (NOTE: Don't do this if you are following this document and trying to run Middleware.)
 
-   ```
-   cd database-docker/
-   docker-compose down -v
-   ```
+    ```bash
+    cd database-docker/
+    docker-compose down -v
+    ```
 
 4. **Generate Encryption keys**:
     
@@ -208,95 +232,95 @@ To set up middleware locally, follow these steps:
 
 5. **Backend Server Setup**
 
-    Install python version `3.11.6`
+    - Install python version `3.11.6`
     
-    - For this you can install python from [over here](https://www.python.org/downloads/) if you don't have it on your machine.
-    - Install pyenev
+      - For this you can install python from [over here](https://www.python.org/downloads/) if you don't have it on your machine.
+      - Install pyenev
   
-    ```bash
-      git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-    ```
+        ```bash
+        git clone https://github.com/pyenv/pyenv.git ~/.pyenv
+        ```
       
-     - Add pyenv to your shell's configuration file (.bashrc, .bash_profile, .zshrc, etc.):
+      - Add pyenv to your shell's configuration file (.bashrc, .bash_profile, .zshrc, etc.):
 
-     ```bash
+        ```bash
         echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
         echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.bashrc
-     ```
+        ```
 
-     - Reload your shell:
+      - Reload your shell:
+        ```
+        source ~/.bashrc
+        ```
+    - Move backend directory to create a virtual environment  
+
+      ```bash
+      cd backend
+      python -m venv venv
       ```
-      source ~/.bashrc
-      ```
-     - Move backend directory to create a virtual environment  
 
-     ```bash
-       cd backend
-       python -m venv venv
-     ```
+    - Activate virtual environment
 
-      - Activate virtual environment
-
-     ```bash
-       . venv/bin/activate
-     ```
+      ```bash
+      . venv/bin/activate
+        ```
   
-      - Install Dependencies
+    - Install Dependencies
 
-     ```bash
+      ```bash
       pip install -r requirements.txt -r dev-requirements.txt
-     ```
+      ```
 
-     - Create a `.env.local` file in the `/backend` directory and add the following environment variables, replacing the values with your own if needed:
+    - Create a `.env.local` file in the `/backend` directory and add the following environment variables, replacing the values with your own if needed:
 
-     ```
-       DB_HOST=localhost
-       DB_NAME=mhq-oss
-       DB_PASS=postgres
-       DB_PORT=5434
-       DB_USER=postgres
-       REDIS_HOST=localhost
-       REDIS_PORT=6385
-       ANALYTICS_SERVER_PORT=9696
-       SYNC_SERVER_PORT=9697
-     ```
+      ```text
+      DB_HOST=localhost
+      DB_NAME=mhq-oss
+      DB_PASS=postgres
+      DB_PORT=5434
+      DB_USER=postgres
+      REDIS_HOST=localhost
+      REDIS_PORT=6385
+      ANALYTICS_SERVER_PORT=9696
+      SYNC_SERVER_PORT=9697
+      ```
 
-    - Switch to analytics_server directory
-  
-    ```
-    cd analytics_server
-    ```
+    - Start the backend servers
+    
+      - Change Directory to analytics_server
+        ```bash
+        cd analytics_server
+        ```
      
-    - For backend analytics server:
-    ```bash
-     flask --app app --debug run --port 9696
-    ```
+      - For backend analytics server:
+        ```bash
+        flask --app app --debug run --port 9696
+        ```
      
-    - For backend sync server:
-    ```bash
-       flask --app sync_app --debug run --port 9697
-    ```
-
-      NOTE: Open this sync sever in a new terminal window after activating the virtual environment if you are already using analytics server. 
+      - For backend sync server:
+        ```bash
+        flask --app sync_app --debug run --port 9697
+        ```
+        NOTE: Open this sync sever in a new terminal window after activating the virtual environment only after starting analytics server. 
 
 6. **Web Server Setup**
 
    - Install NodeJs 16.17 (LTS) either [manually](https://nodejs.org/en/download) or using a tool like [nvm](https://github.com/nvm-sh/nvm) or [volta](https://volta.sh/).
 
    - Install `yarn` package manager
-   ```
-   npm install --global yarn
-   ```
+     ```bash
+     npm install --global yarn
+     ```
    - Change Directory to web-server and install packages
-   ```
-   cd web-server
-   yarn
-   ```
+     ```bash
+     cd web-server
+     yarn
+     ```
    
    - Start the web-server
-   ```
-   yarn dev
-   ```
+     ```bash
+     yarn dev
+     ```
 
 7. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333. \
@@ -309,14 +333,14 @@ To set up middleware locally, follow these steps:
 
 ![Product Demo](media_files/product_demo_1.gif)
 
-- Setup the project by following the [steps mentioned above](#quick-start).
+- Setup the project by following the [steps mentioned above](#-quick-start).
 - Generate and Add your PAT token from code provider.
 - Create a team and select repositories for the team.
 - See Dora Metrics for your team.
 - Update settings related to incident filters, excluded pull requests, prod branches etc to get more accurate data.
 
 
-# ❤️ Contributing
+# ❤️ Contributing guidelines
 
 ![contributor Metrics](https://open-source-assets.middlewarehq.com/svgs/middlewarehq-middleware-contributor-metrics-dark-widget-premium.svg)
 
@@ -324,20 +348,7 @@ To get started contributing to middleware check out our [CONTRIBUTING.md](https:
 
 We appreciate your contributions and look forward to working together to make Middleware even better!
 
-## Security guidelines and disclosure
-
-To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
-
-We look forward to your part in keeping Middleware secure!
-
-
-# Examples 
-
-- Sample reports and dashboards showcasing DORA metrics
-- Real-world use cases and success stories
-- Screenshots of the analyzer in action
-
-## ⛓️ Security guidelines and disclosure
+# ⛓️ Security guidelines and disclosure
 
 To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
 
@@ -345,9 +356,8 @@ We look forward to your part in keeping Middleware secure!
 
 
 # License
-
  
- This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/middleware/blob/main/LICENSE) License - see the LICENSE.md file for details.
+This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/middleware/blob/main/LICENSE) License - see the LICENSE.md file for details.
 
 
 
