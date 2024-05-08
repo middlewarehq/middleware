@@ -26,11 +26,12 @@ if [ -f "/app/backend/analytics_server/mhq/config/config.ini" ]; then
         if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ && ! -z "$value" ]]; then
             echo "$key"="$value" >> ~/.bashrc
         fi
-    source ~/.bashrc
     done < "../backend/analytics_server/mhq/config/config.ini"
 else
     echo "config.ini not found. Running generate_config_ini.sh..."
     /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
 fi
+
+source ~/.bashrc
 
 /usr/bin/supervisord -c "/etc/supervisord.conf"
