@@ -1,3 +1,4 @@
+import { debounce } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { equals } from 'ramda';
 import {
@@ -13,7 +14,12 @@ import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
-import { fetchTeams, createTeam, updateTeam } from '@/slices/team';
+import {
+  fetchTeams,
+  createTeam,
+  updateTeam,
+  fetchOrgRepos
+} from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Team } from '@/types/api/teams';
@@ -44,6 +50,8 @@ interface TeamsCRUDContextType {
   isEditing: boolean;
   editingTeam: Team | null;
   saveDisabled: boolean;
+  loadingRepos: boolean;
+  handleReposSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const TeamsCRUDContext = createContext<TeamsCRUDContextType | undefined>(
@@ -147,20 +155,18 @@ export const TeamsCRUDProvider: React.FC<{
   const initState = useMemo(() => {
     if (isEditing) {
       const selectedTeam = editingTeam;
-      const selectedTeamRepos: string[] =
-        teamReposMaps?.[teamId]?.map((item) => item.idempotency_key) || [];
+      const selectedTeamRepos =
+        teamReposMaps?.[teamId].map(adaptBaseRepo) || [];
       return {
         name: selectedTeam?.name || '',
-        repos:
-          orgRepos?.filter((r) => selectedTeamRepos.includes(String(r.id))) ||
-          []
+        repos: selectedTeamRepos
       };
     }
     return {
       name: '',
       repos: []
     };
-  }, [editingTeam, isEditing, orgRepos, teamId, teamReposMaps]);
+  }, [editingTeam, isEditing, teamId, teamReposMaps]);
 
   useEffect(() => {
     if (isEditing) {
@@ -168,16 +174,11 @@ export const TeamsCRUDProvider: React.FC<{
       depFn(selections.set, initState.repos);
     }
   }, [
-    editingTeam,
-    initState,
     initState.name,
     initState.repos,
     isEditing,
-    orgRepos,
     selections.set,
-    teamId,
-    teamName.set,
-    teamReposMaps
+    teamName.set
   ]);
 
   // save team logic
