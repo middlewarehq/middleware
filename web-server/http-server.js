@@ -34,7 +34,7 @@ const MAX_ERR_GAP = 10;
 let gapThreshold = clamp(0, MAX_ERR_GAP, Number(read('gap-threshold') || 0));
 
 const channel = {
-  webServerAlerts: `https://hooks.slack.com/services/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`,
+  webServerAlerts: ``,
   botTest: ``
 };
 
