@@ -60,11 +60,6 @@ const menuItems = (): MenuItems[] => [
         icon: ExtensionTwoTone,
         link: ROUTES.INTEGRATIONS.PATH
       },
-      {
-        name: 'Server Admin',
-        icon: ExtensionTwoTone,
-        link: ROUTES.SERVER_ADMIN.PATH
-      }
     ]
   }
 ];
