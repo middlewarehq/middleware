@@ -1,7 +1,7 @@
 import { Box, Newline, Static, Text, useApp, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import { splitEvery } from 'ramda';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Provider as ReduxProvider } from 'react-redux';
 
 import { ChildProcessWithoutNullStreams } from 'child_process';
@@ -20,6 +20,7 @@ import { appSlice } from './slices/app.js';
 import { useSelector, store, useDispatch } from './store/index.js';
 import { getLineLimit } from './utils/line-limit.js';
 import { runCommand } from './utils/run-command.js';
+import CircularBuffer from './utils/circularBuffer.js';
 
 const CliUi = () => {
   const dispatch = useDispatch();
@@ -29,6 +30,8 @@ const CliUi = () => {
   const readyServices = useSelector((state) => state.app.readyServices);
   const appState = useSelector((state) => state.app.appState);
   useLogsFromAllSources();
+
+  const [retryToggle, setRetryToggle] = useState<Boolean>(false);
 
   const { exit } = useApp();
 
@@ -63,8 +66,10 @@ const CliUi = () => {
                 time: new Date()
               })
             )
-          )
+          ),
+      log_buffer: new CircularBuffer<string>(10)
     }),
+
     [dispatch, lineLimit]
   );
 
@@ -119,12 +124,12 @@ const CliUi = () => {
       runCommandOpts
     );
 
-    promise.catch(() => {
+    promise.catch((err) => {
       handleExit();
       dispatch(
         appSlice.actions.addLog({
           type: 'default',
-          line: 'docker watch failed',
+          line: `docker watch failed: ${err}`,
           time: new Date()
         })
       );
@@ -149,6 +154,33 @@ const CliUi = () => {
         );
         await dispatch(appSlice.actions.setAppState(AppStates.DOCKER_READY));
       }
+
+      if (
+        READY_MESSAGES[LogSource.DockerWatchProcessIdLock].some((lock_msg) =>
+          watch_logs.includes(lock_msg)
+        )
+      ) {
+        const pattern = /PID (\d+)/;
+        const match = watch_logs.match(pattern);
+        if (match) {
+          const pid = match[1];
+          dispatch(
+            appSlice.actions.addLog({
+              type: 'default',
+              line: `Killing Process ${pid}`,
+              time: new Date()
+            })
+          );
+
+          const { process, promise } = runCommand(
+            'kill',
+            ['-9', pid!],
+            runCommandOpts
+          );
+          await promise;
+          setRetryToggle(true);
+        }
+      }
     };
 
     process?.stdout.on('data', lineListener);
@@ -158,7 +190,7 @@ const CliUi = () => {
     return () => {
       globalThis.process.off('exit', handleExit);
     };
-  }, [dispatch, exit, handleExit, runCommandOpts]);
+  }, [dispatch, exit, handleExit, runCommandOpts, retryToggle]);
 
   const logsStreamNodes = useMemo(
     () => logsStream.map((l) => transformLogToNode(l)),
