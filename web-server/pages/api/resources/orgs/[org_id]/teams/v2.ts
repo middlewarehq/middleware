@@ -159,9 +159,9 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
       data: {
         repos: orgReposList
       }
-    }).then((repos) => repos.map((r) => ({ ...r, team_id: id }))),
-    syncReposForOrg()
+    }).then((repos) => repos.map((r) => ({ ...r, team_id: id })))
   ]);
+  syncReposForOrg();
   res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
 });
 
