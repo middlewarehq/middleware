@@ -1,7 +1,7 @@
 volumes:
-  postgres_data:
+  dev_postgres_data:
     driver: local
-  keys:
+  dev_keys:
     driver: local
 
 services:
@@ -34,8 +34,8 @@ services:
       - "host.docker.internal:host-gateway"
 
     volumes:
-      - postgres_data:/var/lib/postgresql/15/main
-      - keys:/app/backend/analytics_server/mhq/config
+      - dev_postgres_data:/var/lib/postgresql/15/main
+      - dev_keys:/app/backend/analytics_server/mhq/config
 
     develop:
       watch:
