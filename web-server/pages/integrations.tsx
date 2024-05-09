@@ -17,7 +17,6 @@ import { appSlice } from '@/slices/app';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { PageLayout, IntegrationGroup } from '@/types/resources';
-import { depFn } from '@/utils/fn';
 
 function Integrations() {
   const isLoading = useSelector(
@@ -60,32 +59,26 @@ const Content = () => {
   const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
-  const loading = useBoolState(false);
+  const loadedTeams = useBoolState(false);
 
-  const showCreationCTA = hasCodeProviderLinked && !teamCount && !loading.value;
+  const showCreationCTA =
+    hasCodeProviderLinked && !teamCount && loadedTeams.value;
 
   useEffect(() => {
     if (!orgId) return;
+    if (!isGithubIntegrated) {
+      dispatch(appSlice.actions.setSingleTeam([]));
+      return;
+    }
     if (isGithubIntegrated && !teamCount) {
-      depFn(loading.true);
       dispatch(
         fetchTeams({
           org_id: orgId,
           provider: Integration.GITHUB
         })
-      ).finally(loading.false);
+      ).finally(loadedTeams.true);
     }
-    if (!isGithubIntegrated) {
-      dispatch(appSlice.actions.setSingleTeam([]));
-    }
-  }, [
-    dispatch,
-    isGithubIntegrated,
-    loading.false,
-    loading.true,
-    orgId,
-    teamCount
-  ]);
+  }, [dispatch, isGithubIntegrated, loadedTeams.true, orgId, teamCount]);
 
   return (
     <FlexBox col gap2>
