@@ -5,6 +5,13 @@ import { FlexBox, FlexBoxProps } from '@/components/FlexBox';
 
 export const CardRoot = (props: FlexBoxProps) => (
   <FlexBox
+    sx={{
+      cursor: 'pointer',
+      '&:hover': {
+        filter: 'brightness(1.3)',
+        transition: 'all 0.3s'
+      }
+    }}
     component={Paper}
     col
     relative
