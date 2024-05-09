@@ -27,7 +27,8 @@ export enum LogSource {
   InitDb,
   Postgres,
   Cron,
-  DockerWatch
+  DockerWatch,
+  DockerWatchProcessIdLock
 }
 
 export type LogEntry = {
@@ -65,5 +66,8 @@ export const READY_MESSAGES = {
     `Watch enabled`,
     `watch enabled`,
     `watching`
+  ],
+  [LogSource.DockerWatchProcessIdLock]: [
+    `cannot take exclusive lock for project`
   ]
 };
