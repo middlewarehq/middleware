@@ -82,8 +82,11 @@ class GithubETLHandler(CodeProviderETLHandler):
         }
 
         return [
-            self._process_github_repo(repo_idempotency_key_org_repo_map.get(str(github_repo.id)), github_repo)
-            for github_repo in github_repos if repo_idempotency_key_org_repo_map.get(str(github_repo.id))
+            self._process_github_repo(
+                repo_idempotency_key_org_repo_map.get(str(github_repo.id)), github_repo
+            )
+            for github_repo in github_repos
+            if repo_idempotency_key_org_repo_map.get(str(github_repo.id))
         ]
 
     def get_repo_pull_requests_data(
