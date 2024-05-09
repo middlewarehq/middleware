@@ -46,7 +46,7 @@ class CodeETLHandler:
     def _sync_org_repos(self, org_id: str) -> List[OrgRepo]:
         try:
             org_repos = self.code_repo_service.get_active_org_repos(org_id)
-            self.etl_service.get_org_repos(org_repos)
+            org_repos = self.etl_service.get_org_repos(org_repos)
             self.code_repo_service.update_org_repos(org_repos)
             return org_repos
         except Exception as e:
