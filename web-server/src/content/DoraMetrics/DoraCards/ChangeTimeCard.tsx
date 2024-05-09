@@ -110,7 +110,23 @@ export const ChangeTimeCard = () => {
   );
 
   return (
-    <CardRoot>
+    <CardRoot
+      onClick={() => {
+        track('DORA_METRICS_SEE_DETAILS_CLICKED', {
+          viewed: 'CT'
+        });
+        addPage({
+          page: {
+            title: 'Pull requests insights',
+            ui: 'team_prs',
+            props: {
+              referrer: 'dora_metrics',
+              metric: ChangeTimeModes.LEAD_TIME
+            }
+          }
+        });
+      }}
+    >
       <FlexBox col gap1 flexGrow={1} minHeight={'15em'}>
         <FlexBox justifyBetween paddingX={2} alignCenter>
           <FlexBox gap1 alignCenter justifyBetween fullWidth>

@@ -106,7 +106,19 @@ export const ChangeFailureRateCard = () => {
 
   const { addPage } = useOverlayPage();
   return (
-    <CardRoot>
+    <CardRoot
+      onClick={() => {
+        track('DORA_METRICS_SEE_DETAILS_CLICKED', {
+          viewed: 'CFR'
+        });
+        addPage({
+          page: {
+            title: 'Deployments with incidents',
+            ui: 'all_incidents'
+          }
+        });
+      }}
+    >
       <FlexBox col gap1 flexGrow={1} minHeight={'15em'}>
         <FlexBox justifyBetween paddingX={2} alignCenter>
           <FlexBox gap1 alignCenter>

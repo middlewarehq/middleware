@@ -79,7 +79,19 @@ export const MeanTimeToRestoreCard = () => {
   const { addPage } = useOverlayPage();
 
   return (
-    <CardRoot>
+    <CardRoot
+      onClick={() => {
+        track('DORA_METRICS_SEE_DETAILS_CLICKED', {
+          viewed: 'MTR'
+        });
+        addPage({
+          page: {
+            title: 'Resolved Incidents',
+            ui: 'resolved_incidents'
+          }
+        });
+      }}
+    >
       <FlexBox col gap1 flexGrow={1} minHeight={'15em'}>
         <FlexBox justifyBetween paddingX={2} alignCenter>
           <FlexBox gap1 alignCenter>
