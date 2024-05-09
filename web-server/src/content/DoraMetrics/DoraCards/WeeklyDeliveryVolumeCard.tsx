@@ -95,7 +95,20 @@ export const WeeklyDeliveryVolumeCard = () => {
   const { weeksCovered, daysCovered } = useStateDateConfig();
 
   return (
-    <CardRoot>
+    <CardRoot
+      onClick={() => {
+        if (!deploymentFrequencyProps.count && !totalDeployments) return;
+        track('DORA_METRICS_SEE_DETAILS_CLICKED', {
+          viewed: 'DF'
+        });
+        addPage({
+          page: {
+            title: 'Deployments insights',
+            ui: 'deployment_freq'
+          }
+        });
+      }}
+    >
       <FlexBox col gap1 flexGrow={1} minHeight={'15em'}>
         <FlexBox justifyBetween paddingX={2} alignCenter>
           <FlexBox gap1 alignCenter>
