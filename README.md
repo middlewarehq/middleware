@@ -32,14 +32,14 @@ They are:
   - [Features](#-features)
   - [Quick Start](#-quick-start)
     - [Installing Middleware](#-installing-middleware)
-    - [Troubleshooting](#-troubleshooting)
+    - [Troubleshooting](#%EF%B8%8F-troubleshooting)
   - [Developer Setup](#-developer-setup)
-    - [Using Gitpod](#-using-gitpod)
+    - [Using Gitpod](#%EF%B8%8F-using-gitpod)
     - [Using Docker](#-using-docker)
-    - [Manual Setup](#-manual-setup)
+    - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Usage](#-usage)
-  - [Contributing guidelines](#-contributing-guidelines)
-  - [Security guidelines and disclosure](#-security-guidelines-and-disclosure)
+  - [Contributing guidelines](#%EF%B8%8F-contributing-guidelines)
+  - [Security guidelines](#%EF%B8%8F-security-guidelines)
   - [License](#license)
 
 # 🚀 Features
@@ -324,7 +324,7 @@ To get started contributing to middleware check out our [CONTRIBUTING.md](https:
 
 We appreciate your contributions and look forward to working together to make Middleware even better!
 
-# ⛓️ Security guidelines and disclosure
+# ⛓️ Security guidelines
 
 To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
 
