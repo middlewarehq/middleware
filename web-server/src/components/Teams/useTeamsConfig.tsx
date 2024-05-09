@@ -14,6 +14,7 @@ import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { updateTeamBranchesMap } from '@/slices/app';
 import {
   fetchTeams,
   createTeam,
@@ -82,11 +83,6 @@ export const TeamsCRUDProvider: React.FC<{
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
   );
-  const {
-    loadingRepos,
-    onChange: handleReposSearch,
-    searchResults: repoSearchResult
-  } = useReposSearch();
 
   const fetchTeamsAndRepos = useCallback(() => {
     return dispatch(
@@ -118,8 +114,21 @@ export const TeamsCRUDProvider: React.FC<{
 
   // team-repo selection logic
   const selections = useEasyState<BaseRepo[]>([]);
-  const selectedRepos = selections.value;
+  const selectedRepos = useMemo(() => selections.value, [selections.value]);
   const teamRepoError = useBoolState();
+  const {
+    loadingRepos,
+    onChange: handleReposSearch,
+    searchResults
+  } = useReposSearch();
+  const repoSearchResult = useMemo(
+    () =>
+      searchResults.filter(
+        (repo) => !selectedRepos.find((r) => r.id === repo.id)
+      ),
+    [searchResults, selectedRepos]
+  );
+
   const raiseTeamRepoError = useCallback(() => {
     if (!selections.value.length) {
       depFn(teamRepoError.true);
@@ -157,7 +166,7 @@ export const TeamsCRUDProvider: React.FC<{
     if (isEditing) {
       const selectedTeam = editingTeam;
       const selectedTeamRepos =
-        teamReposMaps?.[teamId].map(adaptBaseRepo) || [];
+        teamReposMaps?.[teamId]?.map(adaptBaseRepo) || [];
       return {
         name: selectedTeam?.name || '',
         repos: selectedTeamRepos
@@ -256,6 +265,7 @@ export const TeamsCRUDProvider: React.FC<{
             autoHideDuration: 2000
           });
           fetchTeamsAndRepos();
+          dispatch(updateTeamBranchesMap({ orgId }));
           callBack?.(res);
         })
         .finally(isSaveLoading.false);

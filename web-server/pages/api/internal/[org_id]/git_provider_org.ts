@@ -7,6 +7,7 @@ import { batchPaginatedListsRequest } from '@/api-helpers/internal';
 import { Errors, ResponseError } from '@/constants/error';
 import { Integration } from '@/constants/integrations';
 import { LoadedOrg } from '@/types/github';
+import { BaseRepo } from '@/types/resources';
 import { getBaseRepoFromUnionRepo } from '@/utils/code';
 import { homogenize } from '@/utils/datatype';
 
@@ -28,18 +29,29 @@ const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.GET(getSchema, async (req, res) => {
   const { org_id, provider, search_text } = req.payload;
+  let count = 0;
   const repos = await batchPaginatedListsRequest(
     `/orgs/${org_id}/integrations/${provider}/user/repos`
-  ).then((rs) =>
-    rs.map(getBaseRepoFromUnionRepo).filter((repo) => {
-      if (!search_text) return true;
-      homogenize;
-      const repoName = homogenize(`${repo.parent}/${repo.name}`);
-      const searchText = homogenize(search_text);
-      return repoName.includes(searchText);
-    })
   );
-  return res.status(200).send(repos);
+
+  const searchResults = [] as BaseRepo[];
+  for (let raw_repo of repos) {
+    const repo = getBaseRepoFromUnionRepo(raw_repo);
+    if (count >= 5) break;
+    if (!search_text) {
+      count++;
+      searchResults.push(repo);
+      continue;
+    }
+    const repoName = homogenize(`${repo.parent}/${repo.name}`);
+    const searchText = homogenize(search_text);
+    const matchesSearch = repoName.includes(searchText);
+    if (matchesSearch) {
+      count++;
+      searchResults.push(repo);
+    }
+  }
+  return res.status(200).send(searchResults);
 });
 
 export default endpoint.serve();

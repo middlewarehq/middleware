@@ -27,7 +27,7 @@ export const useRedirectWithSession = () => {
     org?.integrations?.bitbucket;
 
   useEffect(() => {
-    if (!orgId || !router.isReady) return;
+    if (!router.isReady) return;
     if (!isOrgWelcomed) {
       router.replace(ROUTES.WELCOME.PATH);
       return;
@@ -43,7 +43,9 @@ export const useRedirectWithSession = () => {
       router.replace(ROUTES.TEAMS.PATH);
       return;
     }
-    if (router.pathname === ROUTES.DORA_METRICS.PATH) return;
+    if (router.pathname === ROUTES.BASE) {
+      router.replace(defaultRoute.PATH);
+    }
   }, [
     anyTeamEverExisted,
     defaultRoute.PATH,

@@ -25,7 +25,7 @@ function Page() {
     <PageWrapper
       title={
         <FlexBox gap1 alignCenter>
-          DORA metrics <Chip label="BETA" color="primary" size="small" />
+          DORA metrics
         </FlexBox>
       }
       pageTitle="DORA metrics"

@@ -17,30 +17,6 @@
 ![Banner](media_files/banner.png)
 
 
-
-<details>
-  <summary>👉 Just want to <strong>get started</strong>, ASAP? Click here 👈</summary>
-
-  * Ensure that you have [docker](https://www.docker.com/products/docker-desktop/) installed and running.
-  ### Production Build
-  ```bash
-  docker run --name middleware \
-           -p 3333:3333 \
-           -v middleware_postgres_data:/var/lib/postgresql/data \
-           -v middleware_keys:/app/keys \
-           -d middlewareeng/middleware:latest
-  ```
-
-  ### Dev build
-  ```bash
-  git clone https://github.com/middlewarehq/middleware && cd middleware
-  ./dev.sh
-  ```
-  OR  
-  [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/middlewarehq/middleware)
-</details>
-
-
 ## Introduction
 **Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. 
 
@@ -56,15 +32,15 @@ They are:
   - [Features](#-features)
   - [Quick Start](#-quick-start)
     - [Installing Middleware](#-installing-middleware)
-    - [Troubleshooting](#-troubleshooting)
+    - [Troubleshooting](#%EF%B8%8F-troubleshooting)
   - [Developer Setup](#-developer-setup)
-    - [Using Gitpod](#-using-gitpod)
+    - [Using Gitpod](#%EF%B8%8F-using-gitpod)
     - [Using Docker](#-using-docker)
-    - [Manual Setup](#-manual-setup)
+    - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Usage](#-usage)
   - [Roadmap](#%EF%B8%8F-roadmap)
-  - [Contributing guidelines](#-contributing-guidelines)
-  - [Security guidelines and disclosure](#-security-guidelines-and-disclosure)
+  - [Contributing guidelines](#%EF%B8%8F-contributing-guidelines)
+  - [Security guidelines](#%EF%B8%8F-security-guidelines)
   - [License](#license)
 
 # 🚀 Features
@@ -352,7 +328,7 @@ To get started contributing to middleware check out our [CONTRIBUTING.md](https:
 
 We appreciate your contributions and look forward to working together to make Middleware even better!
 
-# ⛓️ Security guidelines and disclosure
+# ⛓️ Security guidelines
 
 To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
 

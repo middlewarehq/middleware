@@ -14,6 +14,7 @@ import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
+import { useEasyState } from '@/hooks/useEasyState';
 import { BaseRepo } from '@/types/resources';
 
 import { FlexBox } from '../FlexBox';
@@ -49,7 +50,7 @@ const TeamsCRUD: FC<CRUDProps> = ({
   onDiscard,
   hideCardComponents
 }) => {
-  const { isPageLoading } = useTeamCRUD();
+  const { isPageLoading, editingTeam, isEditing } = useTeamCRUD();
   return (
     <>
       {isPageLoading ? (
@@ -63,10 +64,16 @@ const TeamsCRUD: FC<CRUDProps> = ({
           p={2}
           width={'900px'}
         >
-          <Heading />
-          <TeamName />
-          <TeamRepos hideCardComponents={hideCardComponents} />
-          <ActionTray onDiscard={onDiscard} onSave={onSave} />
+          {isEditing && !editingTeam?.name ? (
+            <FlexBox>No team selected</FlexBox>
+          ) : (
+            <>
+              <Heading />
+              <TeamName />
+              <TeamRepos hideCardComponents={hideCardComponents} />
+              <ActionTray onDiscard={onDiscard} onSave={onSave} />
+            </>
+          )}
         </FlexBox>
       )}
     </>
@@ -147,8 +154,10 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
     selectedRepos,
     raiseTeamRepoError,
     loadingRepos,
-    handleReposSearch,
+    handleReposSearch
   } = useTeamCRUD();
+
+  const searchQuery = useEasyState('');
 
   return (
     <FlexBox col gap={2}>
@@ -160,6 +169,11 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
       </FlexBox>
       <FlexBox>
         <Autocomplete
+          noOptionsText={
+            !searchQuery.value
+              ? 'Start typing to search...'
+              : 'No repositories found'
+          }
           loading={loadingRepos}
           loadingText="Loading repos..."
           onBlur={raiseTeamRepoError}
@@ -173,9 +187,16 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
           getOptionLabel={(option) => `${option.parent}/${option.name}`}
           renderInput={(params) => (
             <TextField
-              onChange={handleReposSearch}
+              onChange={(e) => {
+                handleReposSearch(e as React.ChangeEvent<HTMLInputElement>);
+                searchQuery.set(e.target.value);
+              }}
               {...params}
-              label={`${selectedRepos.length} selected`}
+              label={
+                selectedRepos.length
+                  ? `${selectedRepos.length} selected`
+                  : `Search repositories`
+              }
               error={teamRepoError}
               InputProps={{
                 ...params.InputProps,
