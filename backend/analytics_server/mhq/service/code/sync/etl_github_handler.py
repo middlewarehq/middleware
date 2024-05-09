@@ -76,9 +76,14 @@ class GithubETLHandler(CodeProviderETLHandler):
             self._api.get_repo(org_repo.org_name, org_repo.name)
             for org_repo in org_repos
         ]
+
+        repo_idempotency_key_org_repo_map = {
+            org_repo.idempotency_key: org_repo for org_repo in org_repos
+        }
+
         return [
-            self._process_github_repo(org_repos, github_repo)
-            for github_repo in github_repos
+            self._process_github_repo(repo_idempotency_key_org_repo_map.get(str(github_repo.id)), github_repo)
+            for github_repo in github_repos if repo_idempotency_key_org_repo_map.get(str(github_repo.id))
         ]
 
     def get_repo_pull_requests_data(
@@ -190,19 +195,15 @@ class GithubETLHandler(CodeProviderETLHandler):
         return self.github_revert_pr_sync_handler(prs)
 
     def _process_github_repo(
-        self, org_repos: List[OrgRepo], github_repo: GithubRepository
+        self, org_repo: OrgRepo, github_repo: GithubRepository
     ) -> OrgRepo:
 
-        repo_idempotency_key_id_map = {
-            org_repo.idempotency_key: str(org_repo.id) for org_repo in org_repos
-        }
-
         org_repo = OrgRepo(
-            id=repo_idempotency_key_id_map.get(str(github_repo.id), uuid.uuid4()),
+            id=org_repo.id,
             org_id=self.org_id,
             name=github_repo.name,
             provider=self.provider,
-            org_name=github_repo.organization.login,
+            org_name=org_repo.org_name,
             default_branch=github_repo.default_branch,
             language=github_repo.language,
             contributors=self._api.get_repo_contributors(github_repo),
