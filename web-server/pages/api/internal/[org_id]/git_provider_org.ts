@@ -28,15 +28,24 @@ const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.GET(getSchema, async (req, res) => {
   const { org_id, provider, search_text } = req.payload;
+  let count = 0;
   const repos = await batchPaginatedListsRequest(
     `/orgs/${org_id}/integrations/${provider}/user/repos`
   ).then((rs) =>
     rs.map(getBaseRepoFromUnionRepo).filter((repo) => {
-      if (!search_text) return true;
-      homogenize;
+      if (count >= 5) return false;
+      if (!search_text) {
+        count++;
+        return true;
+      }
       const repoName = homogenize(`${repo.parent}/${repo.name}`);
       const searchText = homogenize(search_text);
-      return repoName.includes(searchText);
+      const matchesSearch = repoName.includes(searchText);
+      if (matchesSearch) {
+        count++;
+        return true;
+      }
+      return false;
     })
   );
   return res.status(200).send(repos);
