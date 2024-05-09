@@ -53,7 +53,7 @@ endpoint.handle.PUT(putSchema, async (req, res) => {
   }));
   await handleRequest<Omit<TeamRepoBranchDetails, 'name'>[]>(
     `/teams/${team_id}/team_repos`,
-    { method: 'PUT', data: { team_repos_data: adapted_team_repos_data } }
+    { method: 'PATCH', data: { team_repos_data: adapted_team_repos_data } }
   );
 
   return res.send(team_repos_data);
