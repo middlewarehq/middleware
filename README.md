@@ -64,6 +64,7 @@ They are:
              -v middleware_postgres_data:/var/lib/postgresql/data \
              -v middleware_keys:/app/keys \
              -d middlewareeng/middleware:latest
+  docker logs -f middleware
   ```
 
 - Wait for sometime for the services to be up.
@@ -86,6 +87,7 @@ They are:
               -v middleware_postgres_data:/var/lib/postgresql/data \
               -v middleware_keys:/app/keys \
               -d middlewareeng/middleware:latest
+   docker logs -f middleware
    ```
 
 3. If you see an error like: `Conflict. The container name "/middleware" is already in use by container`. \
