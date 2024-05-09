@@ -14,6 +14,7 @@ import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { updateTeamBranchesMap } from '@/slices/app';
 import {
   fetchTeams,
   createTeam,
@@ -264,6 +265,7 @@ export const TeamsCRUDProvider: React.FC<{
             autoHideDuration: 2000
           });
           fetchTeamsAndRepos();
+          dispatch(updateTeamBranchesMap({ orgId }));
           callBack?.(res);
         })
         .finally(isSaveLoading.false);
