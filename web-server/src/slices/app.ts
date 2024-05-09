@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { uniq } from 'ramda';
+import { head, uniq } from 'ramda';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import {
@@ -13,7 +13,8 @@ import {
   TeamRepoBranchDetails,
   ActiveBranchMode,
   TeamSettings,
-  FetchTeamSettingsAPIResponse
+  FetchTeamSettingsAPIResponse,
+  FetchTeamsResponse
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
@@ -77,7 +78,7 @@ const initialState: State = {
   dateMode: 'oneMonth',
   branchMode: ActiveBranchMode.ALL,
   branchNames: '',
-  teamsProdBranchMap: null,
+  teamsProdBranchMap: {},
   isUpdated: false,
   sidebarState: {},
   prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP
@@ -186,10 +187,34 @@ export const appSlice = createSlice({
       fetchTeams,
       'singleTeam',
       (state, action) => {
+        state.allTeams = action.payload.teams;
         state.singleTeam = getSelectedTeam(
           state.singleTeam,
           action.payload.teams
         );
+      }
+    );
+    addFetchCasesToReducer(
+      builder,
+      updateTeamBranchesMap,
+      'allTeams',
+      (state, action) => {
+        state.teamsProdBranchMap = action.payload.teamReposProdBranchMap;
+        const teamProdBranchNames =
+          action.payload.teamReposProdBranchMap?.[head(state.singleTeam)?.id]
+            ?.map((r) => r.prod_branches)
+            .filter(Boolean)
+            .join(',') || '';
+
+        if (state.isUpdated) return;
+
+        if (head(state.singleTeam)?.id) {
+          state.branchMode = ActiveBranchMode.ALL;
+          state.branchNames = teamProdBranchNames;
+        } else {
+          state.branchMode = ActiveBranchMode.PROD;
+          state.branchNames = teamProdBranchNames;
+        }
       }
     );
   }
@@ -210,6 +235,16 @@ export const updateTeamMemberDataSetting = createAsyncThunk(
       }
     });
     return Boolean(response.setting.should_apply_team_members_filter);
+  }
+);
+
+export const updateTeamBranchesMap = createAsyncThunk(
+  'app/updateTeamBranchesMap',
+  async (params: { orgId: ID }) => {
+    const { orgId } = params;
+    return await handleApi<FetchTeamsResponse>(
+      `/resources/orgs/${orgId}/teams/team_branch_map`
+    );
   }
 );
 
