@@ -5,7 +5,8 @@ import {
   Card,
   CircularProgress,
   Divider,
-  TextField
+  TextField,
+  Tooltip
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { FC } from 'react';
@@ -26,6 +27,8 @@ export type CRUDProps = {
   teamId?: ID;
   hideCardComponents?: boolean;
 };
+
+const MAX_LENGTH_REPO_NAME = 25;
 
 export const CreateEditTeams: FC<CRUDProps> = ({
   onSave,
@@ -223,10 +226,20 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
                   overflow: 'hidden'
                 }}
               >
-                <Line sx={{ maxWidth: '200px', overflow: 'hidden' }}>
-                  {option.parent ? option.parent + '/' : ''}
-                  {option.name}
-                </Line>
+                <FlexBox col sx={{ maxWidth: '200px', overflow: 'hidden' }}>
+                  {option.parent && <Line tiny>{option.parent}</Line>}
+
+                  {option.name.length > MAX_LENGTH_REPO_NAME ? (
+                    <Tooltip title={option.name}>
+                      <Line>{`${option.name.substring(
+                        0,
+                        MAX_LENGTH_REPO_NAME
+                      )}...`}</Line>
+                    </Tooltip>
+                  ) : (
+                    <Line>{option.name}</Line>
+                  )}
+                </FlexBox>
                 {selected ? <Close fontSize="small" /> : null}
               </FlexBox>
             </li>
