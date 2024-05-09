@@ -49,7 +49,7 @@ const TeamsCRUD: FC<CRUDProps> = ({
   onDiscard,
   hideCardComponents
 }) => {
-  const { isPageLoading } = useTeamCRUD();
+  const { isPageLoading, editingTeam, isEditing } = useTeamCRUD();
   return (
     <>
       {isPageLoading ? (
@@ -63,10 +63,16 @@ const TeamsCRUD: FC<CRUDProps> = ({
           p={2}
           width={'900px'}
         >
-          <Heading />
-          <TeamName />
-          <TeamRepos hideCardComponents={hideCardComponents} />
-          <ActionTray onDiscard={onDiscard} onSave={onSave} />
+          {isEditing && !editingTeam?.name ? (
+            <FlexBox>No team selected</FlexBox>
+          ) : (
+            <>
+              <Heading />
+              <TeamName />
+              <TeamRepos hideCardComponents={hideCardComponents} />
+              <ActionTray onDiscard={onDiscard} onSave={onSave} />
+            </>
+          )}
         </FlexBox>
       )}
     </>
@@ -147,7 +153,7 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
     selectedRepos,
     raiseTeamRepoError,
     loadingRepos,
-    handleReposSearch,
+    handleReposSearch
   } = useTeamCRUD();
 
   return (

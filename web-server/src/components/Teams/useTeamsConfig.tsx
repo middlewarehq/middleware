@@ -165,7 +165,7 @@ export const TeamsCRUDProvider: React.FC<{
     if (isEditing) {
       const selectedTeam = editingTeam;
       const selectedTeamRepos =
-        teamReposMaps?.[teamId].map(adaptBaseRepo) || [];
+        teamReposMaps?.[teamId]?.map(adaptBaseRepo) || [];
       return {
         name: selectedTeam?.name || '',
         repos: selectedTeamRepos
