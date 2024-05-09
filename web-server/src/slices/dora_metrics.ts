@@ -108,7 +108,8 @@ export const doraMetricsSlice = createSlice({
       (state, action) => {
         state.all_deployments = action.payload.deployments_with_incidents;
         state.revert_prs = action.payload.revert_prs;
-        state.summary_prs = action.payload.summary_prs;
+        // TODO: Impement when summary PRs are available
+        // state.summary_prs = action.payload.summary_prs;
       }
     );
     addFetchCasesToReducer(
