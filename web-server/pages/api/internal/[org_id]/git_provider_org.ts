@@ -3,13 +3,14 @@ import * as yup from 'yup';
 
 import { internal } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
-import { batchPaginatedListsRequest } from '@/api-helpers/internal';
 import { Errors, ResponseError } from '@/constants/error';
 import { Integration } from '@/constants/integrations';
-import { LoadedOrg } from '@/types/github';
+import { LoadedOrg, Repo } from '@/types/github';
 import { BaseRepo } from '@/types/resources';
+import { dec } from '@/utils/auth-supplementary';
 import { getBaseRepoFromUnionRepo } from '@/utils/code';
 import { homogenize } from '@/utils/datatype';
+import { db, getFirstRow } from '@/utils/db';
 
 export type CodeSourceProvidersIntegration =
   | Integration.GITHUB
@@ -28,11 +29,9 @@ const getSchema = yup.object().shape({
 const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.GET(getSchema, async (req, res) => {
-  const { org_id, provider, search_text } = req.payload;
+  const { org_id, search_text } = req.payload;
   let count = 0;
-  const repos = await batchPaginatedListsRequest(
-    `/orgs/${org_id}/integrations/${provider}/user/repos`
-  );
+  const repos = await getRepos(org_id, search_text);
 
   const searchResults = [] as BaseRepo[];
   for (let raw_repo of repos) {
@@ -75,25 +74,55 @@ export const getProviderOrgs = (
       throw new ResponseError(Errors.INTEGRATION_NOT_FOUND);
     });
 
-export const getRepos = async (
+async function getRepos(
   org_id: ID,
-  provider: CodeSourceProvidersIntegration,
-  org_name: string
-) => {
-  return await batchPaginatedListsRequest(
-    `/orgs/${org_id}/integrations/${provider}/${providerOrgBrandingMap[provider]}/${org_name}/repos`
-  ).then((rs) => rs.map(getBaseRepoFromUnionRepo));
-};
+  searchQuery?: string
+): Promise<Partial<Repo>[]> {
+  const token = await db('Integration')
+    .select()
+    .where({
+      org_id,
+      name: Integration.GITHUB
+    })
+    .returning('*')
+    .then(getFirstRow)
+    .then((r) => dec(r.access_token_enc_chunks));
 
-export const getAllOrgRepos = async (
-  org_id: ID,
-  provider: CodeSourceProvidersIntegration
-) => {
-  const providerOrgs = await getProviderOrgs(org_id, provider).then(
-    (r) => r.data.orgs
-  );
-  const repos = await Promise.all(
-    providerOrgs.map((org) => getRepos(org_id, provider, org.login))
-  );
-  return repos.flat();
-};
+  const baseUrl = 'https://api.github.com/user/repos';
+  const params: URLSearchParams = new URLSearchParams();
+  params.set('access_token', token);
+
+  if (searchQuery) {
+    params.set('q', searchQuery);
+  }
+
+  let allRepos: any[] = [];
+  let url = `${baseUrl}?${params.toString()}`;
+  let response: Response;
+
+  do {
+    response = await fetch(url, {
+      headers: {
+        Authorization: `token ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch repos: ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as any[];
+    allRepos = allRepos.concat(data);
+
+    const nextLink = response.headers.get('Link');
+    if (nextLink) {
+      // @ts-ignore
+      const nextUrl = nextLink.split(',').find((link) => link?.rel === 'next');
+      url = nextUrl ? nextUrl.slice(1, -1) : ''; // Extract URL from link header
+    } else {
+      url = '';
+    }
+  } while (url);
+
+  return allRepos;
+}
