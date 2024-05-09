@@ -38,6 +38,7 @@ They are:
     - [Using Docker](#-using-docker)
     - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Usage](#-usage)
+  - [Roadmap](#%EF%B8%8F-roadmap)
   - [Contributing guidelines](#%EF%B8%8F-contributing-guidelines)
   - [Security guidelines](#%EF%B8%8F-security-guidelines)
   - [License](#license)
@@ -315,6 +316,9 @@ To set up middleware locally, follow these steps:
 - See Dora Metrics for your team.
 - Update settings related to incident filters, excluded pull requests, prod branches etc to get more accurate data.
 
+# 🛣️ Roadmap
+
+Coming Soon!
 
 # ❤️ Contributing guidelines
 
