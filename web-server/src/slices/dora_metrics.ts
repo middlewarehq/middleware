@@ -155,7 +155,8 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
         params: {
           org_id: params.orgId,
           from_date: params.fromDate,
-          to_date: params.toDate
+          to_date: params.toDate,
+          branches: params.branches
         }
       }
     );
