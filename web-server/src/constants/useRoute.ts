@@ -43,7 +43,7 @@ export const useRedirectWithSession = () => {
       router.replace(ROUTES.TEAMS.PATH);
       return;
     }
-    if (router.pathname !== ROUTES.DORA_METRICS.PATH){
+    if (router.pathname === ROUTES.BASE) {
       router.replace(defaultRoute.PATH);
     }
   }, [
