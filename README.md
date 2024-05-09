@@ -62,7 +62,7 @@ They are:
     - [Using Docker](#-using-docker)
     - [Manual Setup](#-manual-setup)
   - [Usage](#-usage)
-  - [Roadmap](#-Roadmap)
+  - [Roadmap](#%EF%B8%8F-roadmap)
   - [Contributing guidelines](#-contributing-guidelines)
   - [Security guidelines and disclosure](#-security-guidelines-and-disclosure)
   - [License](#license)
