@@ -341,7 +341,7 @@ For simplicity, we synchronize your Pull Request data and classify reverted Pull
 
 - MTTR measures how swiftly a team can restore service after a failure occurs in production.
 - The team's average incident resolution time is utilized to compute its MTTR.
-- When treating Revert PRs as incidents, the resolution time for an incident is calculated from the creation of the original PR to the merging of the revert PR.
+- When treating Revert PRs as incidents, the resolution time for an incident is calculated from the merging of the original PR to the merging of the revert PR.
 
 **Change Failure Rate (CFR)**
 
