@@ -1,5 +1,4 @@
-import { useRouter } from 'next/router';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -9,9 +8,11 @@ import { Integration } from '@/constants/integrations';
 import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
+import { useBoolState } from '@/hooks/useEasyState';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
+import { depFn } from '@/utils/fn';
 
 function Page() {
   useRedirectWithSession();
@@ -21,18 +22,23 @@ function Page() {
     integrations: { github: isGithubIntegrated }
   } = useAuth();
   const teamsList = useSelector((state) => state.team.teams);
-  const router = useRouter();
+  const loading = useBoolState(true);
+
+  const fetchAllTeams = useCallback(async () => {
+    depFn(loading.true);
+    await dispatch(
+      fetchTeams({
+        org_id: orgId,
+        provider: Integration.GITHUB
+      })
+    );
+    depFn(loading.false);
+  }, [dispatch, loading.false, loading.true, orgId]);
 
   useEffect(() => {
     if (!orgId) return;
-    if (!teamsList.length)
-      dispatch(
-        fetchTeams({
-          org_id: orgId,
-          provider: Integration.GITHUB
-        })
-      );
-  }, [dispatch, isGithubIntegrated, orgId, router.replace, teamsList.length]);
+    if (!teamsList.length) fetchAllTeams();
+  }, [fetchAllTeams, orgId, teamsList.length]);
 
   return (
     <PageWrapper
@@ -45,7 +51,7 @@ function Page() {
       showEvenIfNoTeamSelected
       hideAllSelectors
     >
-      {isGithubIntegrated ? (
+      {isGithubIntegrated && !loading.value ? (
         <FlexBox col gap={4}>
           {teamsList.length ? <TeamsList /> : <CreateEditTeams />}
         </FlexBox>
