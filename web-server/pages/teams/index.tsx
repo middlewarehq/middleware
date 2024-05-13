@@ -22,7 +22,7 @@ function Page() {
     integrations: { github: isGithubIntegrated }
   } = useAuth();
   const teamsList = useSelector((state) => state.team.teams);
-  const loading = useBoolState(true);
+  const loading = useBoolState(!Boolean(teamsList.length));
 
   const fetchAllTeams = useCallback(async () => {
     depFn(loading.true);
