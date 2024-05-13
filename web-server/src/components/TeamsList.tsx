@@ -54,8 +54,7 @@ export const TeamsList = () => {
   }, [showCreate.toggle]);
 
   const isLoadingTeams = useSelector(
-    (state) =>
-      state.team?.requests?.teams === FetchState.REQUEST
+    (state) => state.team?.requests?.teams === FetchState.REQUEST
   );
 
   return (
@@ -179,14 +178,27 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
     [assignedReposToTeam]
   );
 
+  const minifiedName = useMemo(() => {
+    if (teamName.length <= 25) {
+      return teamName;
+    }
+    const miniName = teamName.slice(0, 25);
+    return miniName + '...';
+  }, [teamName]);
+
   return (
     <FlexBox component={Card} p={2} minHeight={'144px'} gap2>
       <FlexBox fullWidth col gap2 justifyBetween>
         <FlexBox col gap2>
           <FlexBox justifyBetween alignStart>
-            <Line big semibold>
-              {teamName}
-            </Line>
+            <FlexBox
+              title={minifiedName === teamName ? null : teamName}
+              tooltipPlacement="right"
+            >
+              <Line big semibold>
+                {minifiedName}
+              </Line>
+            </FlexBox>
           </FlexBox>
 
           <FlexBox gap2 alignCenter minHeight={'64px'}>
