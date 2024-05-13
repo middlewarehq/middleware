@@ -116,7 +116,7 @@ export const AllIncidentsBody = () => {
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isTrendSeriesAvailable = head(
     trendsSeriesMap?.changeFailureRateTrends || []
-  )?.data?.length;
+  )?.data?.some((s) => s.y);
 
   if (isLoading) return <MiniLoader label="Fetching incidents ..." />;
   if (!allDeployments.length || !isTrendSeriesAvailable)
