@@ -11,6 +11,7 @@ import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { ascend } from 'ramda';
 import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
+import { truncate } from 'voca';
 
 import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
@@ -179,11 +180,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
   );
 
   const minifiedName = useMemo(() => {
-    if (teamName.length <= 25) {
-      return teamName;
-    }
-    const miniName = teamName.slice(0, 25);
-    return miniName + '...';
+    return truncate(teamName, 25);
   }, [teamName]);
 
   return (
