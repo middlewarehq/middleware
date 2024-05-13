@@ -14,7 +14,7 @@
 <img src="https://img.shields.io/github/stars/middlewarehq/middleware?style=for-the-badge" alt="Stars" />
 </p>
 
-![Middleware Opensource](media_files/banner-main.gif)
+![Middleware Opensource](media_files/banner-.gif)
 
 
 ## Introduction
