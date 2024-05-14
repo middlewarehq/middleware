@@ -60,6 +60,8 @@ They are:
 * Open the terminal and run the following command:
 
   ```bash
+  docker volume create middleware_postgres_data
+  docker volume create middleware_keys
   docker run --name middleware \
              -p 3333:3333 \
              -v middleware_postgres_data:/var/lib/postgresql/data \
