@@ -116,9 +116,10 @@ async function getRepos(
 
     const nextLink = response.headers.get('Link');
     if (nextLink) {
-      // @ts-ignore
-      const nextUrl = nextLink.split(',').find((link) => link?.rel === 'next');
-      url = nextUrl ? nextUrl.slice(1, -1) : ''; // Extract URL from link header
+      const nextUrl = nextLink
+        .split(',')
+        .find((link) => link.includes('rel="next"'));
+      url = nextUrl ? nextUrl.trim().split(';')[0].slice(1, -1) : '';
     } else {
       url = '';
     }
