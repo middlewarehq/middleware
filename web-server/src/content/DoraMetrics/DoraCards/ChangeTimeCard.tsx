@@ -1,15 +1,7 @@
 import { ArrowForwardRounded, WarningAmberRounded } from '@mui/icons-material';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
-import {
-  alpha,
-  Button,
-  Chip,
-  darken,
-  List,
-  ListItem,
-  useTheme
-} from '@mui/material';
+import { alpha, Button, Chip, darken, List, ListItem } from '@mui/material';
 import Link from 'next/link';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
@@ -62,7 +54,6 @@ const chartOptions = {
 
 export const ChangeTimeCard = () => {
   const { addPage } = useOverlayPage();
-  const theme = useTheme();
   const { role } = useAuth();
   const isEng = isRoleLessThanEM(role);
 
@@ -135,7 +126,7 @@ export const ChangeTimeCard = () => {
                 Lead Time for Changes
               </Line>
               <MetricExternalRead
-                link={`https://docs.gitlab.com/ee/user/analytics/dora_metrics.html#lead-time-for-changes`}
+                link={`https://www.middlewarehq.com/blog/lead-time-optimization-101-unlock-software-engineering-efficiency`}
                 label={'Lead Time for Changes'}
               >
                 {isSufficientDataAvailable &&

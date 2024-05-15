@@ -116,7 +116,7 @@ export const WeeklyDeliveryVolumeCard = () => {
               Deployment Frequency
             </Line>
             <MetricExternalRead
-              link={`https://docs.gitlab.com/ee/user/analytics/dora_metrics.html#deployment-frequency`}
+              link={`https://www.middlewarehq.com/blog/is-deployment-frequency-the-goldilocks-zone-for-software-delivery`}
               label="Delivery Volume"
             />
           </FlexBox>

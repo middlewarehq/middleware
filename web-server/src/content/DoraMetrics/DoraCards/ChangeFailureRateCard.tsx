@@ -126,7 +126,7 @@ export const ChangeFailureRateCard = () => {
               Change Failure Rate
             </Line>
             <MetricExternalRead
-              link={`https://docs.gitlab.com/ee/user/analytics/dora_metrics.html#change-failure-rate`}
+              link={`https://www.middlewarehq.com/blog/how-to-reduce-change-failure-rate-build-bulletproof-software-delivery-process`}
               label="Change Failure Rate"
             />
           </FlexBox>
