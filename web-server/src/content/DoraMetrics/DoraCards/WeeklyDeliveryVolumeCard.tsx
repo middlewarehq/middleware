@@ -115,10 +115,16 @@ export const WeeklyDeliveryVolumeCard = () => {
             <Line white huge bold py={1}>
               Deployment Frequency
             </Line>
-            <MetricExternalRead
-              link={`https://www.middlewarehq.com/blog/is-deployment-frequency-the-goldilocks-zone-for-software-delivery`}
-              label="Delivery Volume"
-            />
+            <FlexBox
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <MetricExternalRead
+                link={`https://www.middlewarehq.com/blog/is-deployment-frequency-the-goldilocks-zone-for-software-delivery`}
+                label="Delivery Volume"
+              />
+            </FlexBox>
           </FlexBox>
           {isCodeProviderIntegrationEnabled && (
             <FlexBox
