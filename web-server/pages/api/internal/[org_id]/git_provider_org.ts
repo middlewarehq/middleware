@@ -61,6 +61,8 @@ const providerOrgBrandingMap = {
   gitlab: 'groups'
 };
 
+const THRESHOLD = 300;
+
 export const getProviderOrgs = (
   org_id: ID,
   provider: CodeSourceProvidersIntegration
@@ -99,8 +101,12 @@ async function getRepos(
   let allRepos: any[] = [];
   let url = `${baseUrl}?${params.toString()}`;
   let response: Response;
+  let count = 0;
 
   do {
+    if (count >= THRESHOLD) {
+      break;
+    }
     response = await fetch(url, {
       headers: {
         Authorization: `token ${token}`
@@ -113,6 +119,7 @@ async function getRepos(
 
     const data = (await response.json()) as any[];
     allRepos = allRepos.concat(data);
+    count += data.length;
 
     const nextLink = response.headers.get('Link');
     if (nextLink) {
