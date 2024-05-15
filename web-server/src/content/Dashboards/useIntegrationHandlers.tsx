@@ -70,12 +70,11 @@ const ConfigureGithubModalBody: FC<{
   };
 
   const handleSubmission = useCallback(async () => {
-
     if (!token.value) {
       setError('Please enter a valid token');
       return;
     }
-    isLoading.true();
+    depFn(isLoading.true);
     checkGitHubValidity(token.value)
       .then(async (isValid) => {
         if (!isValid) throw new Error('Invalid token');
@@ -84,9 +83,7 @@ const ConfigureGithubModalBody: FC<{
         try {
           const res = await getMissingPATScopes(token.value);
           if (res.length) {
-            throw new Error(
-              `Token is missing scopes: ${res.join(', ')}`
-            );
+            throw new Error(`Token is missing scopes: ${res.join(', ')}`);
           }
         } catch (e) {
           // @ts-ignore
@@ -95,16 +92,10 @@ const ConfigureGithubModalBody: FC<{
       })
       .then(async () => {
         try {
-          return await linkProvider(
-            token.value,
-            orgId,
-            Integration.GITHUB
-          );
+          return await linkProvider(token.value, orgId, Integration.GITHUB);
         } catch (e: any) {
           throw new Error(
-            `Failed to link Github${
-              e?.message ? `: ${e?.message}` : ''
-            }`,
+            `Failed to link Github${e?.message ? `: ${e?.message}` : ''}`,
             e
           );
         }
@@ -127,9 +118,7 @@ const ConfigureGithubModalBody: FC<{
         setError(e.message);
         console.error(`Error while linking token: ${e.message}`, e);
       })
-      .finally(() => {
-        isLoading.false();
-      });
+      .finally(isLoading.false);
   }, [
     dispatch,
     enqueueSnackbar,
@@ -219,14 +208,15 @@ const TokenPermissions = () => {
   }, [position, positionArray.length]);
 
   const expand = useBoolState(false);
-  const isLoading = useBoolState(false);
+  const imageLoaded = useBoolState(false);
 
   // change position every second
   useEffect(() => {
+    if (!imageLoaded.value) return;
     if (expand.value) return depFn(position.set, 0);
     const interval = setInterval(changePosition, 2000);
     return () => clearInterval(interval);
-  }, [changePosition, expand.value, position.set]);
+  }, [changePosition, expand.value, imageLoaded.value, position.set]);
 
   const styles: SxProps[] = useMemo(() => {
     const baseStyles = {
@@ -297,7 +287,7 @@ const TokenPermissions = () => {
   return (
     <FlexBox col gap1 maxWidth={'100%'} overflow={'auto'}>
       <div
-        onMouseEnter={expand.true}
+        onMouseEnter={!imageLoaded.value ? null : expand.true}
         onMouseLeave={expand.false}
         style={{
           overflow: 'hidden',
@@ -305,17 +295,17 @@ const TokenPermissions = () => {
           height: expand.value ? '1257px' : '240px',
           transition: 'all 0.8s ease',
           position: 'relative',
-          maxWidth: '100%'
+          maxWidth: '100%',
+          background: '#0D1017'
         }}
       >
         <Image
-          onLoadStart={isLoading.true}
-          onLoad={isLoading.false}
+          onLoadingComplete={imageLoaded.true}
           style={{
             position: 'relative',
             bottom: expand.value ? 0 : positionArray[position.value],
             transition: 'all 0.8s ease',
-            opacity: isLoading.value ? 0 : 1
+            opacity: !imageLoaded.value ? 0 : 1
           }}
           src="/assets/PAT_permissions.png"
           width={816}
@@ -323,13 +313,14 @@ const TokenPermissions = () => {
           alt="PAT_permissions"
         />
 
-        <FlexBox sx={styles[position.value]} />
+        {imageLoaded.value && <FlexBox sx={styles[position.value]} />}
 
-        {expandedStyles.map((style, index) => (
-          <FlexBox key={index} sx={style} />
-        ))}
+        {imageLoaded.value &&
+          expandedStyles.map((style, index) => (
+            <FlexBox key={index} sx={style} />
+          ))}
 
-        {isLoading.value && (
+        {!imageLoaded.value && (
           <FlexBox
             sx={{
               position: 'absolute',
@@ -338,11 +329,11 @@ const TokenPermissions = () => {
               transform: 'translate(-50%, -50%)'
             }}
           >
-            Loading...
+            <Line secondary>Loading...</Line>
           </FlexBox>
         )}
       </div>
-      <Line tiny secondary>
+      <Line tiny secondary sx={{ opacity: imageLoaded.value ? 1 : 0 }}>
         Hover to expand
       </Line>
     </FlexBox>
