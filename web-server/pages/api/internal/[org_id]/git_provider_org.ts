@@ -101,10 +101,9 @@ async function getRepos(
   let allRepos: any[] = [];
   let url = `${baseUrl}?${params.toString()}`;
   let response: Response;
-  let count = 0;
 
   do {
-    if (count >= THRESHOLD) {
+    if (allRepos.length >= THRESHOLD) {
       break;
     }
     response = await fetch(url, {
@@ -119,7 +118,6 @@ async function getRepos(
 
     const data = (await response.json()) as any[];
     allRepos = allRepos.concat(data);
-    count += data.length;
 
     const nextLink = response.headers.get('Link');
     if (nextLink) {
