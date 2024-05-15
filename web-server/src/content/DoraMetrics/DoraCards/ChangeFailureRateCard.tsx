@@ -125,10 +125,16 @@ export const ChangeFailureRateCard = () => {
             <Line white huge bold py={1}>
               Change Failure Rate
             </Line>
-            <MetricExternalRead
-              link={`https://www.middlewarehq.com/blog/how-to-reduce-change-failure-rate-build-bulletproof-software-delivery-process`}
-              label="Change Failure Rate"
-            />
+            <FlexBox
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <MetricExternalRead
+                link={`https://www.middlewarehq.com/blog/how-to-reduce-change-failure-rate-build-bulletproof-software-delivery-process`}
+                label="Change Failure Rate"
+              />
+            </FlexBox>
           </FlexBox>
           <FlexBox
             title={

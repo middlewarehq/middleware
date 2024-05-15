@@ -125,109 +125,115 @@ export const ChangeTimeCard = () => {
               <Line white huge bold py={1}>
                 Lead Time for Changes
               </Line>
-              <MetricExternalRead
-                link={`https://www.middlewarehq.com/blog/lead-time-optimization-101-unlock-software-engineering-efficiency`}
-                label={'Lead Time for Changes'}
+              <FlexBox
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               >
-                {isSufficientDataAvailable &&
-                  !isAllAssignedReposHaveDeploymentsConfigured && (
-                    <FlexBox
-                      color="white"
-                      title={
-                        <FlexBox col gap={1}>
-                          <Line medium bold white>
-                            Insight based on data from{' '}
-                            {reposCountWithWorkflowConfigured} out of{' '}
-                            {allAssignedRepos.length}{' '}
-                            {pluralize('repo', allAssignedRepos.length)} which
-                            have workflow configured.
-                          </Line>
-                          <Line medium>
-                            Following{' '}
-                            {pluralize(
-                              'repo',
-                              reposWithNoDeploymentsConfigured.length
-                            )}{' '}
-                            {reposWithNoDeploymentsConfigured.length > 1
-                              ? "don't"
-                              : "doesn't"}{' '}
-                            have any workflow assigned :
-                            <List sx={{ listStyleType: 'disc' }}>
-                              {reposWithNoDeploymentsConfigured.map((r) => (
-                                <ListItem
-                                  key={r.id}
-                                  sx={{
-                                    color: darken('#FFF', 0.25),
-                                    display: 'list-item',
-                                    padding: '0px',
-                                    marginLeft: '6px'
-                                  }}
+                <MetricExternalRead
+                  link={`https://www.middlewarehq.com/blog/lead-time-optimization-101-unlock-software-engineering-efficiency`}
+                  label={'Lead Time for Changes'}
+                >
+                  {isSufficientDataAvailable &&
+                    !isAllAssignedReposHaveDeploymentsConfigured && (
+                      <FlexBox
+                        color="white"
+                        title={
+                          <FlexBox col gap={1}>
+                            <Line medium bold white>
+                              Insight based on data from{' '}
+                              {reposCountWithWorkflowConfigured} out of{' '}
+                              {allAssignedRepos.length}{' '}
+                              {pluralize('repo', allAssignedRepos.length)} which
+                              have workflow configured.
+                            </Line>
+                            <Line medium>
+                              Following{' '}
+                              {pluralize(
+                                'repo',
+                                reposWithNoDeploymentsConfigured.length
+                              )}{' '}
+                              {reposWithNoDeploymentsConfigured.length > 1
+                                ? "don't"
+                                : "doesn't"}{' '}
+                              have any workflow assigned :
+                              <List sx={{ listStyleType: 'disc' }}>
+                                {reposWithNoDeploymentsConfigured.map((r) => (
+                                  <ListItem
+                                    key={r.id}
+                                    sx={{
+                                      color: darken('#FFF', 0.25),
+                                      display: 'list-item',
+                                      padding: '0px',
+                                      marginLeft: '6px'
+                                    }}
+                                  >
+                                    {r.name}
+                                  </ListItem>
+                                ))}
+                              </List>
+                            </Line>
+                            {!isEng && (
+                              <Link passHref href={ROUTES.INTEGRATIONS.PATH}>
+                                <Button
+                                  size="small"
+                                  endIcon={
+                                    <ArrowForwardRounded fontSize="inherit" />
+                                  }
+                                  variant="outlined"
+                                  sx={{ width: 'fit-content' }}
                                 >
-                                  {r.name}
-                                </ListItem>
-                              ))}
-                            </List>
-                          </Line>
-                          {!isEng && (
-                            <Link passHref href={ROUTES.INTEGRATIONS.PATH}>
-                              <Button
-                                size="small"
-                                endIcon={
-                                  <ArrowForwardRounded fontSize="inherit" />
-                                }
-                                variant="outlined"
-                                sx={{ width: 'fit-content' }}
-                              >
-                                Configure deployment workflows here
-                              </Button>
-                            </Link>
-                          )}
-                        </FlexBox>
-                      }
-                      darkTip
-                    >
-                      <WarningAmberRounded
-                        sx={{ fontSize: '1.4em' }}
-                        color="warning"
-                      />
-                    </FlexBox>
-                  )}
-                {isSufficientDataAvailable &&
-                  isAllAssignedReposHaveDeploymentsConfigured && (
-                    <FlexBox
-                      color="white"
-                      title={
-                        <FlexBox col gap={1}>
-                          <Line small bold white>
-                            All assigned{' '}
-                            {pluralize('repo', allAssignedRepos.length)} have
-                            deployment configured.
-                          </Line>
-                          {!isEng && (
-                            <Link passHref href={ROUTES.INTEGRATIONS.PATH}>
-                              <Button
-                                size="small"
-                                endIcon={
-                                  <ArrowForwardRounded fontSize="inherit" />
-                                }
-                                variant="outlined"
-                                sx={{ width: 'fit-content' }}
-                              >
-                                Modify deployment workflows here
-                              </Button>
-                            </Link>
-                          )}
-                        </FlexBox>
-                      }
-                      darkTip
-                    >
-                      <CheckCircleOutlineRoundedIcon
-                        sx={{ fontSize: '1.4em' }}
-                        color="success"
-                      />
-                    </FlexBox>
-                  )}
-              </MetricExternalRead>
+                                  Configure deployment workflows here
+                                </Button>
+                              </Link>
+                            )}
+                          </FlexBox>
+                        }
+                        darkTip
+                      >
+                        <WarningAmberRounded
+                          sx={{ fontSize: '1.4em' }}
+                          color="warning"
+                        />
+                      </FlexBox>
+                    )}
+                  {isSufficientDataAvailable &&
+                    isAllAssignedReposHaveDeploymentsConfigured && (
+                      <FlexBox
+                        color="white"
+                        title={
+                          <FlexBox col gap={1}>
+                            <Line small bold white>
+                              All assigned{' '}
+                              {pluralize('repo', allAssignedRepos.length)} have
+                              deployment configured.
+                            </Line>
+                            {!isEng && (
+                              <Link passHref href={ROUTES.INTEGRATIONS.PATH}>
+                                <Button
+                                  size="small"
+                                  endIcon={
+                                    <ArrowForwardRounded fontSize="inherit" />
+                                  }
+                                  variant="outlined"
+                                  sx={{ width: 'fit-content' }}
+                                >
+                                  Modify deployment workflows here
+                                </Button>
+                              </Link>
+                            )}
+                          </FlexBox>
+                        }
+                        darkTip
+                      >
+                        <CheckCircleOutlineRoundedIcon
+                          sx={{ fontSize: '1.4em' }}
+                          color="success"
+                        />
+                      </FlexBox>
+                    )}
+                </MetricExternalRead>
+              </FlexBox>
             </FlexBox>
           </FlexBox>
 

@@ -98,10 +98,16 @@ export const MeanTimeToRestoreCard = () => {
             <Line white huge bold py={1}>
               Mean Time to Recovery
             </Line>
-            <MetricExternalRead
-              link={`https://docs.gitlab.com/ee/user/analytics/dora_metrics.html#time-to-restore-service`}
-              label="Mean Time to Recovery"
-            />
+            <FlexBox
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <MetricExternalRead
+                link={`https://docs.gitlab.com/ee/user/analytics/dora_metrics.html#time-to-restore-service`}
+                label="Mean Time to Recovery"
+              />
+            </FlexBox>
           </FlexBox>
           <FlexBox
             title={
