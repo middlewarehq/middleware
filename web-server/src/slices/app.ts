@@ -4,8 +4,8 @@ import { head, uniq } from 'ramda';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import {
-  defaultRange,
-  QuickRangeOptions
+  QuickRangeOptions,
+  defaultDate
 } from '@/components/DateRangePicker/utils';
 import { Team } from '@/types/api/teams';
 import { StateFetchConfig } from '@/types/redux';
@@ -72,10 +72,10 @@ const initialState: State = {
   errors: {},
   singleTeam: [],
   allTeams: [],
-  dateRange: defaultRange.map((date) =>
+  dateRange: defaultDate.range.map((date) =>
     date.toISOString()
   ) as SerializableDateRange,
-  dateMode: 'oneMonth',
+  dateMode: defaultDate.preset,
   branchMode: ActiveBranchMode.ALL,
   branchNames: '',
   teamsProdBranchMap: {},

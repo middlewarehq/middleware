@@ -187,9 +187,12 @@ export const presetOptions: {
   }
 ];
 
-export const defaultRange =
-  process.env.NEXT_PUBLIC_APP_ENVIRONMENT === 'development'
-    ? DateRangeLogic.oneWeek()
-    : DateRangeLogic.oneMonth();
+export const defaultDate = {
+  preset: 'twoWeeks',
+  range: DateRangeLogic.twoWeeks()
+} as {
+  preset: QuickRangeOptions;
+  range: DateRange;
+};
 
 export const DATE_RANGE_MAX_DIFF = 95;
