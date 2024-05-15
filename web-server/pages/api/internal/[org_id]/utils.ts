@@ -68,7 +68,7 @@ export const searchGithubRepos = async (
         id: repo.databaseId,
         name: repo.name,
         desc: repo.description,
-        slug: `${repo.owner.login}/${repo.name}`,
+        slug: repo.name,
         parent: repo.owner.login,
         web_url: repo.url,
         language: repo.primaryLanguage?.name,
