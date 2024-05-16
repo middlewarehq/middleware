@@ -1,8 +1,8 @@
 import { LoadingButton } from '@mui/lab';
-import { Divider, Link, SxProps, TextField, alpha } from '@mui/material';
+import { Divider, Link, TextField, alpha } from '@mui/material';
 import Image from 'next/image';
 import { useSnackbar } from 'notistack';
-import { FC, useCallback, useEffect, useMemo } from 'react';
+import { FC, useCallback, useMemo } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
@@ -132,7 +132,7 @@ const ConfigureGithubModalBody: FC<{
 
   return (
     <FlexBox gap2>
-      <FlexBox gap={2} minWidth={'400px'} maxHeight={'255px'} col>
+      <FlexBox gap={2} minWidth={'400px'} col>
         <FlexBox>Enter you Github token below.</FlexBox>
         <FlexBox fullWidth minHeight={'80px'} col>
           <TextField
@@ -156,15 +156,25 @@ const ConfigureGithubModalBody: FC<{
           <Line error tiny mt={1}>
             {showError.value}
           </Line>
-          <Line tiny mt={1}>
-            <Link
-              href="https://github.com/settings/tokens"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Generate new classic token
-            </Link>
-          </Line>
+          <FlexBox>
+            <Line tiny mt={1} primary sx={{ cursor: 'pointer' }}>
+              <Link
+                href="https://github.com/settings/tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Line
+                  underline
+                  sx={{
+                    textUnderlineOffset: '2px'
+                  }}
+                >
+                  Generate new classic token
+                </Line>
+              </Link>
+              <Line ml={'5px'}>{' ->'}</Line>
+            </Line>
+          </FlexBox>
         </FlexBox>
 
         <FlexBox justifyBetween alignCenter mt={'auto'}>
@@ -200,62 +210,14 @@ const ConfigureGithubModalBody: FC<{
 };
 
 const TokenPermissions = () => {
-  const positionArray = ['0px', '130px', '340px', '740px'];
-  const position = useEasyState(0);
-
-  const changePosition = useCallback(() => {
-    position.set((position.value + 1) % positionArray.length);
-  }, [position, positionArray.length]);
-
-  const expand = useBoolState(false);
   const imageLoaded = useBoolState(false);
-
-  // change position every second
-  useEffect(() => {
-    if (!imageLoaded.value) return;
-    if (expand.value) return depFn(position.set, 0);
-    const interval = setInterval(changePosition, 2000);
-    return () => clearInterval(interval);
-  }, [changePosition, expand.value, imageLoaded.value, position.set]);
-
-  const styles: SxProps[] = useMemo(() => {
-    const baseStyles = {
-      border: `2px solid ${alpha('rgb(256,0,0)', 0.4)}`,
-      transition: 'all 0.8s ease',
-      borderRadius: '12px',
-      opacity: expand.value ? 0 : 1,
-      width: '240px',
-      position: 'absolute',
-      maxWidth: 'calc(100% - 48px)',
-      left: '24px'
-    };
-
-    return [
-      {
-        height: '170px',
-        top: '58px'
-      },
-      {
-        height: '42px',
-        top: '98px'
-      },
-      {
-        height: '120px',
-        top: '38px'
-      },
-      {
-        height: '120px',
-        top: '66px'
-      }
-    ].map((item) => ({ ...item, ...baseStyles }));
-  }, [expand.value]);
 
   const expandedStyles = useMemo(() => {
     const baseStyles = {
       border: `2px solid ${alpha('rgb(256,0,0)', 0.4)}`,
       transition: 'all 0.8s ease',
       borderRadius: '12px',
-      opacity: !expand.value ? 0 : 1,
+      opacity: 1,
       width: '240px',
       position: 'absolute',
       maxWidth: 'calc(100% - 48px)',
@@ -282,17 +244,17 @@ const TokenPermissions = () => {
         top: '806px'
       }
     ].map((item) => ({ ...item, ...baseStyles }));
-  }, [expand.value]);
+  }, []);
 
   return (
     <FlexBox col gap1 maxWidth={'100%'} overflow={'auto'}>
       <div
-        onMouseEnter={!imageLoaded.value ? null : expand.true}
-        onMouseLeave={expand.false}
         style={{
           overflow: 'hidden',
           borderRadius: '12px',
-          height: expand.value ? '1257px' : '240px',
+          height: 'calc(100vh - 300px)',
+          maxHeight: '1257px',
+          overflowY: 'auto',
           transition: 'all 0.8s ease',
           position: 'relative',
           maxWidth: '100%',
@@ -303,7 +265,6 @@ const TokenPermissions = () => {
           onLoadingComplete={imageLoaded.true}
           style={{
             position: 'relative',
-            bottom: expand.value ? 0 : positionArray[position.value],
             transition: 'all 0.8s ease',
             opacity: !imageLoaded.value ? 0 : 1
           }}
@@ -312,8 +273,6 @@ const TokenPermissions = () => {
           height={1257}
           alt="PAT_permissions"
         />
-
-        {imageLoaded.value && <FlexBox sx={styles[position.value]} />}
 
         {imageLoaded.value &&
           expandedStyles.map((style, index) => (
@@ -334,7 +293,7 @@ const TokenPermissions = () => {
         )}
       </div>
       <Line tiny secondary sx={{ opacity: imageLoaded.value ? 1 : 0 }}>
-        Hover to expand
+        Scroll to see all required permissions
       </Line>
     </FlexBox>
   );
