@@ -76,7 +76,7 @@ export const TeamsList = () => {
           gap={4}
           grid
           gridTemplateColumns={'1fr 1fr'}
-          maxWidth={'900px'}
+          width={'900px'}
           relative
           sx={{
             filter: isLoadingTeams ? 'blur(2px)' : 'none',
