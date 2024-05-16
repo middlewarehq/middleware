@@ -1,6 +1,6 @@
 import { Add } from '@mui/icons-material';
 import { Button, Divider } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Authenticated } from 'src/components/Authenticated';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -80,13 +80,25 @@ const Content = () => {
     }
   }, [dispatch, isGithubIntegrated, loadedTeams.true, orgId, teamCount]);
 
+  const showDoraCTA = useMemo(
+    () => Boolean(teamCount) && Boolean(hasCodeProviderLinked),
+    [hasCodeProviderLinked, teamCount]
+  );
+
   return (
     <FlexBox col gap2>
-      <FlexBox justifyBetween>
-        <Line white fontSize={'24px'}>
+      <FlexBox justifyBetween height={'52px'} alignCenter>
+        <Line
+          white
+          fontSize={'24px'}
+          sx={{
+            opacity: showDoraCTA || showCreationCTA ? 0.4 : 1,
+            transition: 'all 0.2s ease'
+          }}
+        >
           Integrate your Github to fetch DORA for your team
         </Line>
-        {Boolean(teamCount) && Boolean(hasCodeProviderLinked) && (
+        {showDoraCTA && (
           <Button href={ROUTES.DORA_METRICS.PATH} variant="contained">
             <FlexBox centered fullWidth p={2 / 3}>
               Continue to Dora {'->'}
@@ -104,7 +116,7 @@ const Content = () => {
           <Line fontSize={'24px'} semibold white>
             Create team structure to see DORA
           </Line>
-          <Line fontSize={'16px'} white mt="14px">
+          <Line fontSize={'16px'} mt="9px">
             Just add team's name, add repos and you're good to go.
           </Line>
           <Button
