@@ -14,7 +14,7 @@ function SidebarTopSection() {
         position: 'relative'
       }}
     >
-      <Logo height={40} />
+      <Logo mode="long" height={'40px'} />
     </Box>
   );
 }
