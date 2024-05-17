@@ -29,12 +29,8 @@ import { CreateEditTeams } from './Teams/CreateTeams';
 import { Loader } from './Teams/CreateTeams';
 import { Line } from './Text';
 
-type TeamCardProps = {
-  team: Team;
-  onEdit: () => void;
-};
-
 const VISIBLE_REPOS_COUNT = 3;
+const HORIZONTAL_SPACE = 3 / 2;
 
 export const TeamsList = () => {
   const teamsArray = useSelector((state) => state.team.teams);
@@ -73,7 +69,7 @@ export const TeamsList = () => {
       ) : null}
       <FlexBox relative>
         <FlexBox
-          gap={4}
+          gap={HORIZONTAL_SPACE}
           grid
           gridTemplateColumns={'1fr 1fr'}
           width={'900px'}
@@ -115,25 +111,35 @@ const SearchFilter: FC<{
 }> = ({ searchQuery, onChange, handleShowCreateTeam, showCreate }) => {
   return (
     <FlexBox col gap={4}>
-      <FlexBox width={'900px'} gap={4}>
+      <FlexBox width={'900px'} gap={HORIZONTAL_SPACE}>
         <FlexBox flex1>
           <TextField
+            size="small"
             value={searchQuery}
             onChange={(e) => {
               onChange(e.target.value);
             }}
             fullWidth
-            placeholder="Search for teams"
+            InputProps={{
+              sx: {
+                padding: '3px'
+              }
+            }}
+            placeholder="Search"
           />
         </FlexBox>
-        <FlexBox flex1 alignCenter gap={4}>
+        <FlexBox flex1 alignCenter gap={HORIZONTAL_SPACE}>
           <FlexBox flex1>
             <Button
               onClick={handleShowCreateTeam}
-              sx={{ width: '100%' }}
               variant="outlined"
+              color="secondary"
+              sx={{
+                bgcolor: 'transparent',
+                width: '100%'
+              }}
             >
-              <FlexBox centered gap1 fullWidth p={2 / 3}>
+              <FlexBox centered gap1 fullWidth>
                 <Add fontSize="small" /> Add new team
               </FlexBox>
             </Button>
@@ -144,7 +150,7 @@ const SearchFilter: FC<{
               sx={{ width: '100%' }}
               variant="contained"
             >
-              <FlexBox centered fullWidth p={2 / 3}>
+              <FlexBox centered fullWidth>
                 Continue to Dora {'->'}
               </FlexBox>
             </Button>
@@ -159,6 +165,11 @@ const SearchFilter: FC<{
       )}
     </FlexBox>
   );
+};
+
+type TeamCardProps = {
+  team: Team;
+  onEdit: () => void;
 };
 
 const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
