@@ -4,28 +4,28 @@ import {
 } from '@mui/icons-material';
 import UndoRoundedIcon from '@mui/icons-material/UndoRounded';
 import {
-  alpha,
   Avatar,
   Box,
   BoxProps,
+  Button,
   Checkbox,
   Divider,
-  lighten,
   Link,
+  Pagination,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableRow,
-  useTheme,
-  Pagination,
-  Button
+  alpha,
+  lighten,
+  useTheme
 } from '@mui/material';
 import { format } from 'date-fns';
 import { secondsInDay } from 'date-fns/constants';
 import pluralize from 'pluralize';
 import { filter, keys } from 'ramda';
-import { FC, ReactNode, useMemo, useEffect } from 'react';
+import { FC, ReactNode, useEffect, useMemo } from 'react';
 import { GoCommentDiscussion } from 'react-icons/go';
 import { IoGitCommit } from 'react-icons/io5';
 import { VscRequestChanges } from 'react-icons/vsc';
@@ -301,11 +301,6 @@ export const PullRequestsTable: FC<
                         title={
                           <Box>
                             <Box>{`@${pr.author.username}`}</Box>
-                            {!pr.author.linked_user && (
-                              <Box fontStyle="italic" color="secondary.dark">
-                                User not added to Middleware
-                              </Box>
-                            )}
                           </Box>
                         }
                       >
@@ -896,7 +891,6 @@ export const MiniCycleTimeLabels = ({
   );
 };
 
-
 export const MiniLeadTimeStat: FC<{
   lead?: number;
   commit?: number;
@@ -946,9 +940,7 @@ export const MiniLeadTimeStat: FC<{
       }
       tooltipPlacement="left"
     >
-      <CycleTimePill
-        time={lead}
-      />
+      <CycleTimePill time={lead} />
     </FlexBox>
   );
 };
