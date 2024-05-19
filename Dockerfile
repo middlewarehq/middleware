@@ -77,6 +77,8 @@ RUN apt-get update && \
     && touch /var/log/redis/redis.log \
     && mkdir -p /var/log/apiserver \
     && touch /var/log/apiserver/apiserver.log \
+    && mkdir -p /var/log/sync_server \
+    && touch /var/log/sync_server/sync_server.log \
     && mkdir -p /var/log/web-server \
     && touch /var/log/web-server/web-server.log \
     && mkdir -p /var/log/cron \
