@@ -109,6 +109,8 @@ const CliUi = () => {
         dispatch(appSlice.actions.setLogSource(LogSource.InitDb));
       } else if (input === 'a') {
         dispatch(appSlice.actions.setLogSource(LogSource.All));
+      } else if (input === 's') {
+        dispatch(appSlice.actions.setLogSource(LogSource.SyncServer));
       }
     }
 
@@ -314,6 +316,21 @@ const CliUi = () => {
                         <Text color="yellow">STARTING</Text>
                       )}
                     </Text>
+                    <Text>
+                      <Text bold color="green">
+                        [s]
+                      </Text>{' '}
+                      <Text inverse={logSource === LogSource.SyncServer}>
+                        {'sync server logs'.padEnd(40, ' ')}
+                      </Text>{' '}
+                      {readyServices.includes(LogSource.SyncServer) ? (
+                        <Text bold color="green">
+                          READY
+                        </Text>
+                      ) : (
+                        <Text color="yellow">STARTING</Text>
+                      )}
+                    </Text>
                     <Newline />
                     <Text>
                       <Text bold color="yellow">
@@ -369,6 +386,7 @@ const CliUi = () => {
             <Text bold color="grey">
               --
             </Text>
+            <Text bold>http://localhost:9697</Text>
           </Box>
         )}
       </Box>

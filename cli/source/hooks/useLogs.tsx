@@ -28,6 +28,8 @@ export const useLogs = (
         return def;
       case LogSource.ApiServer:
         return ['apiserver/apiserver', 'api', '#06d6a0'];
+      case LogSource.SyncServer:
+        return ['sync_server/sync_server', 'snc', '#ab34eb'];
       case LogSource.Redis:
         return ['redis/redis', 'rdi', '#ef476f'];
       case LogSource.InitDb:

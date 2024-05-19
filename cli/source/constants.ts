@@ -23,6 +23,7 @@ export enum LogSource {
   All,
   WebServer,
   ApiServer,
+  SyncServer,
   Redis,
   InitDb,
   Postgres,
@@ -54,6 +55,7 @@ export const keysForLogSource = Object.entries(LogSource).reduce(
 
 export const READY_MESSAGES = {
   [LogSource.ApiServer]: `Listening at: http://0.0.0.0`,
+  [LogSource.SyncServer]: `Listening at: http://0.0.0.0`,
   [LogSource.WebServer]: [
     `Server started on http://localhost`,
     `http://localhost:`
