@@ -40,6 +40,7 @@ export const useLogsFromAllSources = () => {
 
   const webLogs = useLogs(LogSource.WebServer, addLogs(LogSource.WebServer));
   const apiLogs = useLogs(LogSource.ApiServer, addLogs(LogSource.ApiServer));
+  const syncLogs = useLogs(LogSource.SyncServer, addLogs(LogSource.SyncServer));
   const redisLogs = useLogs(LogSource.Redis, addLogs(LogSource.Redis));
   const initDbLogs = useLogs(LogSource.InitDb, addLogs(LogSource.InitDb));
   const pgLogs = useLogs(LogSource.Postgres, addLogs(LogSource.Postgres));
@@ -47,6 +48,7 @@ export const useLogsFromAllSources = () => {
 
   const webLogsRef = useRef(webLogs);
   const apiLogsRef = useRef(apiLogs);
+  const syncLogsRef = useRef(syncLogs);
   const redisLogsRef = useRef(redisLogs);
   const initDbLogsRef = useRef(initDbLogs);
   const pgLogsRef = useRef(pgLogs);
@@ -55,6 +57,7 @@ export const useLogsFromAllSources = () => {
 
   webLogsRef.current = webLogs;
   apiLogsRef.current = apiLogs;
+  syncLogsRef.current = syncLogs;
   redisLogsRef.current = redisLogs;
   initDbLogsRef.current = initDbLogs;
   pgLogsRef.current = pgLogs;
@@ -71,6 +74,9 @@ export const useLogsFromAllSources = () => {
         break;
       case LogSource.ApiServer:
         newLogs.push(...apiLogsRef.current.slice(-HIST_LIMIT));
+        break;
+      case LogSource.SyncServer:
+        newLogs.push(...syncLogsRef.current.slice(-HIST_LIMIT));
         break;
       case LogSource.Postgres:
         newLogs.push(...redisLogsRef.current.slice(-HIST_LIMIT));
