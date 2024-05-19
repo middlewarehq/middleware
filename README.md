@@ -155,9 +155,13 @@ Make sure docker is running.
    ```bash
    docker exec -it middleware-dev tail --lines 500 -f /var/log/web-server/web-server.log
    ```
-   **Backend logs**
+   **Backend api server logs**
    ```bash
    docker exec -it middleware-dev tail --lines 500 -f /var/log/apiserver/apiserver.log
+   ```
+   **Backend sync server logs**
+   ```bash
+   docker exec -it middleware-dev tail --lines 500 -f /var/log/sync_server/sync_server.log
    ```
    **Redis logs**
    ```bash
