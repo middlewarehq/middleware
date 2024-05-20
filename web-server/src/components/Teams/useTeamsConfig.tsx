@@ -399,35 +399,62 @@ const DEBOUNCE_TIME = 500;
 
 const useReposSearch = () => {
   const { orgId } = useAuth();
-  const dispatch = useDispatch();
-  const searchResults = useSelector((s) => s.team.orgRepos);
-  const isLoading = useSelector(
-    (s) => s.team.requests?.orgRepos === FetchState.REQUEST
-  );
+  const searchResults = useEasyState<BaseRepo[]>([]);
+  const isLoading = useBoolState(false);
+
+  let cancelTokenSource = axios.CancelToken.source();
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    depFn(isLoading.true);
     const query = e.target.value;
-    if (!query) return;
+    if (!query) {
+      depFn(isLoading.false);
+      return;
+    }
     debouncedSearch(query);
   };
 
-  const debouncedSearch = debounce((query: string) => {
+  const debouncedSearch = useCallback(
+    debounce((query) => {
     fetchData(query);
-  }, DEBOUNCE_TIME);
+    }, DEBOUNCE_TIME),
+    []
+  );
 
-  const fetchData = (query: string) =>
-    dispatch(
-      fetchOrgRepos({
-        org_id: orgId,
-        provider: Integration.GITHUB,
-        search_text: query
-      })
+  const fetchData = useCallback(
+    async (query) => {
+      // cancel the previous request if it exists
+      if (cancelTokenSource) {
+        cancelTokenSource.cancel('Operation canceled due to new request.');
+      }
+      // create a new cancel token
+      cancelTokenSource = axios.CancelToken.source();
+
+      try {
+        const response = await axios(
+          `/api/internal/${orgId}/git_provider_org`,
+          {
+            params: { provider: Integration.GITHUB, search_text: query },
+            cancelToken: cancelTokenSource.token
+          }
+        );
+        const data = response.data;
+        depFn(searchResults.set, data);
+        depFn(isLoading.false);
+      } catch (error: any) {
+        if (!axios.isCancel(error)) {
+          depFn(isLoading.false);
+          console.error(error);
+        }
+      }
+    },
+    [orgId]
     );
 
   return {
-    searchResults,
+    searchResults: searchResults.value,
     onChange,
-    loadingRepos: isLoading
+    loadingRepos: isLoading.value
   };
 };
 
