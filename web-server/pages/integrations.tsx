@@ -20,6 +20,8 @@ import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { PageLayout, IntegrationGroup } from '@/types/resources';
 
+const TIME_LIMIT_FOR_FORCE_SYNC = 600000;
+
 function Integrations() {
   const isLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
@@ -75,7 +77,7 @@ const Content = () => {
     const currentDate = new Date();
     if (githubLinkedAt) {
       const diffMilliseconds = currentDate.getTime() - githubLinkedAt.getTime();
-      return diffMilliseconds >= 600000;
+      return diffMilliseconds >= TIME_LIMIT_FOR_FORCE_SYNC;
     }
   }, [hasCodeProviderLinked, integrationsLinkedAtMap]);
 
@@ -85,7 +87,7 @@ const Content = () => {
     const currentDate = new Date();
     const diffMilliseconds =
       currentDate.getTime() - lastForceSyncedAt.getTime();
-    return diffMilliseconds >= 600000;
+    return diffMilliseconds >= TIME_LIMIT_FOR_FORCE_SYNC;
   }, [org?.last_force_synced_at]);
 
   useEffect(() => {
