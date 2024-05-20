@@ -1,4 +1,5 @@
 import { debounce } from '@mui/material';
+import axios from 'axios';
 import { useSnackbar } from 'notistack';
 import { equals } from 'ramda';
 import {
@@ -15,13 +16,7 @@ import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { updateTeamBranchesMap } from '@/slices/app';
-import {
-  fetchTeams,
-  createTeam,
-  updateTeam,
-  fetchOrgRepos,
-  teamSlice
-} from '@/slices/team';
+import { fetchTeams, createTeam, updateTeam } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Team } from '@/types/api/teams';
@@ -29,7 +24,6 @@ import { BaseRepo, RepoUniqueDetails } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
 interface TeamsCRUDContextType {
-  orgRepos: BaseRepo[];
   teams: Team[];
   teamReposMaps: Record<string, DB_OrgRepo[]>;
   teamName: string;
@@ -78,7 +72,6 @@ export const TeamsCRUDProvider: React.FC<{
   const dispatch = useDispatch();
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
-  const orgRepos = useSelector((s) => s.team.orgRepos);
   const { orgId } = useAuth();
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
@@ -301,7 +294,6 @@ export const TeamsCRUDProvider: React.FC<{
   const onDiscard = useCallback(
     (callBack?: AnyFunction) => {
       resetErrors();
-      dispatch(teamSlice.actions.setOrgRepos([]));
       if (!isEditing) {
         depFn(teamName.set, '');
         depFn(selections.set, []);
@@ -313,7 +305,6 @@ export const TeamsCRUDProvider: React.FC<{
     },
     [
       resetErrors,
-      dispatch,
       isEditing,
       teamName.set,
       initState.name,
@@ -348,7 +339,6 @@ export const TeamsCRUDProvider: React.FC<{
     raiseTeamNameError,
     teamReposMaps,
     teams,
-    orgRepos,
     handleTeamNameChange,
     repoOptions: repoSearchResult,
     selectedRepos,
@@ -416,7 +406,7 @@ const useReposSearch = () => {
 
   const debouncedSearch = useCallback(
     debounce((query) => {
-    fetchData(query);
+      fetchData(query);
     }, DEBOUNCE_TIME),
     []
   );
@@ -449,7 +439,7 @@ const useReposSearch = () => {
       }
     },
     [orgId]
-    );
+  );
 
   return {
     searchResults: searchResults.value,
