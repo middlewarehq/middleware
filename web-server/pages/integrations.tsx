@@ -1,5 +1,6 @@
 import { Add } from '@mui/icons-material';
-import { Button, Divider } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { Button, Divider, Card } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 import { Authenticated } from 'src/components/Authenticated';
 
@@ -14,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
 import { appSlice } from '@/slices/app';
+import { syncReposForOrg } from '@/slices/auth';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { PageLayout, IntegrationGroup } from '@/types/resources';
@@ -52,17 +54,39 @@ export default Integrations;
 
 const Content = () => {
   const {
+    org,
     orgId,
     integrations: { github: isGithubIntegrated },
+    integrationsLinkedAtMap,
     integrationSet
   } = useAuth();
   const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
   const loadedTeams = useBoolState(false);
-
+  const forceSyncing = useBoolState(false);
   const showCreationCTA =
-    hasCodeProviderLinked && !teamCount && loadedTeams.value;
+    hasCodeProviderLinked && !teamCount && !loadedTeams.value;
+  const showForceSyncBtn = useMemo(() => {
+    if (!hasCodeProviderLinked) return false;
+    const githubLinkedAt = new Date(
+      integrationsLinkedAtMap[Integration.GITHUB]
+    );
+    const currentDate = new Date();
+    if (githubLinkedAt) {
+      const diffMilliseconds = currentDate.getTime() - githubLinkedAt.getTime();
+      return diffMilliseconds >= 600000;
+    }
+  }, [hasCodeProviderLinked, integrationsLinkedAtMap]);
+
+  const enableForceSyncBtn = useMemo(() => {
+    if (!org?.last_force_synced_at) return true;
+    const lastForceSyncedAt = new Date(org?.last_force_synced_at);
+    const currentDate = new Date();
+    const diffMilliseconds =
+      currentDate.getTime() - lastForceSyncedAt.getTime();
+    return diffMilliseconds >= 600000;
+  }, [org?.last_force_synced_at]);
 
   useEffect(() => {
     if (!orgId) return;
@@ -107,7 +131,39 @@ const Content = () => {
         )}
       </FlexBox>
 
-      <Divider sx={{ mb: '20px' }} />
+      <Divider sx={{ mb: '10px' }} />
+      {showForceSyncBtn && (
+        <FlexBox component={Card} justifyBetween p={1} alignCenter>
+          <Line>
+            Initiate force sync will force a sync of all integrations. This is
+            useful if you have made changes to your integrations outside of
+            middleware.
+          </Line>
+          <LoadingButton
+            type="submit"
+            variant="outlined"
+            color="primary"
+            disabled={!enableForceSyncBtn}
+            loading={forceSyncing.value}
+            sx={{
+              '&.Mui-disabled': {
+                borderColor: 'secondary.light'
+              }
+            }}
+            onClick={async () => {
+              forceSyncing.true();
+              await dispatch(
+                syncReposForOrg({
+                  orgId: orgId
+                })
+              ).finally(forceSyncing.false);
+            }}
+          >
+            Initiate Force Sync
+          </LoadingButton>
+        </FlexBox>
+      )}
+
       <FlexBox>
         <GithubIntegrationCard />
       </FlexBox>
