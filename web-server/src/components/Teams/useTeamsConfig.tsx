@@ -397,10 +397,7 @@ const useReposSearch = () => {
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     depFn(isLoading.true);
     const query = e.target.value;
-    if (!query) {
-      depFn(isLoading.false);
-      return;
-    }
+    if (!query) return;
     debouncedSearch(query);
   };
 
