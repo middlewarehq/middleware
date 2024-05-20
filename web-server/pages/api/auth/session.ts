@@ -1,5 +1,6 @@
 import { NextApiResponse } from 'next/types';
 
+import { getForcedSyncedAt } from '@/api/internal/[org_id]/sync_repos';
 import { getOnBoardingState } from '@/api/resources/orgs/[org_id]/onboarding';
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { Row, Table } from '@/constants/db';
@@ -33,12 +34,16 @@ endpoint.handle.GET(nullSchema, async (_req, res) => {
   const [orgDetails, { integrations, integrationsLinkedAtMap }] =
     await Promise.all([getOrgDetails(), getOrgIntegrations()]);
 
-  const onboardingState = await getOnBoardingState(orgDetails.id);
+  const [onboardingState, forceSyncedAt] = await Promise.all([
+    getOnBoardingState(orgDetails.id),
+    getForcedSyncedAt(orgDetails.id)
+  ]);
   res.send({
     org:
       {
         ...orgDetails,
         ...onboardingState,
+        ...forceSyncedAt,
         integrations,
         integrationsLinkedAtMap
       } || {}

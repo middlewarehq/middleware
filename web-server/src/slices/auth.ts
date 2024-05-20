@@ -69,6 +69,11 @@ export const authSlice = createSlice({
         }
       }
     );
+    addFetchCasesToReducer(builder, syncReposForOrg, 'org', (state, action) => {
+      if (state.org) {
+        state.org.last_force_synced_at = action.payload.last_force_synced_at;
+      }
+    });
   }
 });
 
@@ -100,6 +105,22 @@ export const fetchIntegrationsMap = createAsyncThunk(
   async () => {
     return handleApi<Partial<IntegrationsMap>>(
       '/integrations/integrations-map'
+    );
+  }
+);
+
+type SyncApiResponseType = {
+  last_force_synced_at: DateString | null;
+};
+
+export const syncReposForOrg = createAsyncThunk(
+  'app/syncReposForOrg',
+  async (params: { orgId: ID }) => {
+    return handleApi<SyncApiResponseType>(
+      `/internal/${params.orgId}/sync_repos`,
+      {
+        method: 'POST'
+      }
     );
   }
 );
