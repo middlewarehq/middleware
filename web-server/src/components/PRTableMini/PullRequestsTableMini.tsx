@@ -263,11 +263,6 @@ export const PullRequestsTableMini: FC<
                                   pr.author.username
                                 : `@${pr.author.username}`}
                             </Box>
-                            {!pr.author.linked_user && (
-                              <Box fontStyle="italic" color="secondary.dark">
-                                User not added to Middleware
-                              </Box>
-                            )}
                           </Box>
                         }
                       >
