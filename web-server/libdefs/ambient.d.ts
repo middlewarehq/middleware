@@ -17,6 +17,7 @@ declare type Org = {
   onboarding_state: string[];
   integrations: Partial<IntegrationsMap>;
   integrationsLinkedAtMap: Partial<IntegrationsLinkedAtMap>;
+  last_force_synced_at: DateString | null;
 };
 
 declare type ONBOARDING_STEP =
