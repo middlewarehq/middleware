@@ -395,9 +395,7 @@ const useReposSearch = () => {
   let cancelTokenSource = axios.CancelToken.source();
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    depFn(isLoading.true);
     const query = e.target.value;
-    if (!query) return;
     debouncedSearch(query);
   };
 
@@ -410,10 +408,12 @@ const useReposSearch = () => {
 
   const fetchData = useCallback(
     async (query) => {
+      depFn(isLoading.true);
       // cancel the previous request if it exists
-      if (cancelTokenSource) {
+      if (cancelTokenSource || !query) {
         cancelTokenSource.cancel('Operation canceled due to new request.');
       }
+      if (!query) return depFn(isLoading.false);
       // create a new cancel token
       cancelTokenSource = axios.CancelToken.source();
 
