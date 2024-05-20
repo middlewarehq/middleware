@@ -29,7 +29,6 @@ type State = StateFetchConfig<{
   fetch_error: string;
   teams: Team[];
   showAllTeams?: boolean;
-  orgRepos: BaseRepo[];
   teamRepos: DB_OrgRepo[];
   teamReposProductionBranches: TeamRepoBranchDetails[];
   teamIncidentFilters: null | TeamIncidentSettingsResponse;
@@ -45,7 +44,6 @@ const initialState: State = {
   fetch_error: '',
   teams: [],
   showAllTeams: getUrlParam('show_all') !== 'false',
-  orgRepos: [],
   teamRepos: [],
   teamReposProductionBranches: [],
   teamIncidentFilters: null,
@@ -66,9 +64,6 @@ export const teamSlice = createSlice({
     ): void {
       state.teamReposMaps = action.payload;
     },
-    setOrgRepos(state: State, action: PayloadAction<State['orgRepos']>): void {
-      state.orgRepos = action.payload;
-    },
     setTeamRepos(
       state: State,
       action: PayloadAction<State['teamRepos']>
@@ -87,14 +82,6 @@ export const teamSlice = createSlice({
       state.teams = action.payload.teams;
       state.teamReposMaps = action.payload.teamReposMap;
     });
-    addFetchCasesToReducer(
-      builder,
-      fetchOrgRepos,
-      'orgRepos',
-      (state, action) => {
-        state.orgRepos = action.payload;
-      }
-    );
     addFetchCasesToReducer(
       builder,
       fetchTeamReposProductionBranches,
