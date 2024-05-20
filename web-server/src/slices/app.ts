@@ -45,6 +45,7 @@ type State = StateFetchConfig<{
   teamsProdBranchMap: Record<ID, TeamRepoBranchDetails[]>;
   isUpdated: boolean;
   prTableColumnsConfig: typeof DEFAULT_PR_TABLE_COLUMN_STATE_MAP;
+  lastSyncedAt: Date | null;
 }>;
 
 export const DEFAULT_PR_TABLE_COLUMN_STATE_MAP = {
@@ -81,7 +82,8 @@ const initialState: State = {
   teamsProdBranchMap: {},
   isUpdated: false,
   sidebarState: {},
-  prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP
+  prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP,
+  lastSyncedAt: null
 };
 
 export const appSlice = createSlice({
