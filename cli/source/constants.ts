@@ -54,8 +54,8 @@ export const keysForLogSource = Object.entries(LogSource).reduce(
 );
 
 export const READY_MESSAGES = {
-  [LogSource.ApiServer]: `Listening at: http://0.0.0.0`,
-  [LogSource.SyncServer]: `Listening at: http://0.0.0.0`,
+  [LogSource.ApiServer]: `Listening at: http://127.0.0.1`,
+  [LogSource.SyncServer]: `Listening at: http://127.0.0.1`,
   [LogSource.WebServer]: [
     `Server started on http://localhost`,
     `http://localhost:`
