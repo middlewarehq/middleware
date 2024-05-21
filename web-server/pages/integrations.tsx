@@ -1,8 +1,10 @@
 import { Add } from '@mui/icons-material';
-import { Button, Divider } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
+import { Button, Divider, Card } from '@mui/material';
 import { useEffect, useMemo } from 'react';
 import { Authenticated } from 'src/components/Authenticated';
 
+import { handleApi } from '@/api-helpers/axios-api-instance';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { Integration } from '@/constants/integrations';
@@ -11,12 +13,15 @@ import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/IntegrationCards';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
-import { useBoolState } from '@/hooks/useEasyState';
+import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
 import { appSlice } from '@/slices/app';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { PageLayout, IntegrationGroup } from '@/types/resources';
+import { depFn } from '@/utils/fn';
+
+const TIME_LIMIT_FOR_FORCE_SYNC = 600000;
 
 function Integrations() {
   const isLoading = useSelector(
@@ -51,34 +56,67 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
-  const {
-    orgId,
-    integrations: { github: isGithubIntegrated },
-    integrationSet
-  } = useAuth();
+  const { orgId, integrations, integrationSet, activeCodeProvider } = useAuth();
   const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
   const loadedTeams = useBoolState(false);
-
+  const forceSyncing = useBoolState(false);
+  const localLastForceSyncedAt = useEasyState<Date | null>(null);
   const showCreationCTA =
-    hasCodeProviderLinked && !teamCount && loadedTeams.value;
+    hasCodeProviderLinked && !teamCount && !loadedTeams.value;
+  const showForceSyncBtn = useMemo(() => {
+    if (!hasCodeProviderLinked) return false;
+    const githubLinkedAt = new Date(integrations[Integration.GITHUB].linked_at);
+    const currentDate = new Date();
+    if (githubLinkedAt) {
+      const diffMilliseconds = currentDate.getTime() - githubLinkedAt.getTime();
+      return diffMilliseconds >= TIME_LIMIT_FOR_FORCE_SYNC;
+    }
+  }, [hasCodeProviderLinked, integrations]);
+
+  const enableForceSyncBtn = useMemo(() => {
+    if (!integrations[activeCodeProvider]?.last_synced_at) return true;
+    const lastForceSyncedAt = Math.max(
+      new Date(integrations[activeCodeProvider]?.last_synced_at).getTime(),
+      localLastForceSyncedAt.value?.getTime()
+    );
+    const currentDate = new Date();
+    const diffMilliseconds = currentDate.getTime() - lastForceSyncedAt;
+    return diffMilliseconds >= TIME_LIMIT_FOR_FORCE_SYNC;
+  }, [activeCodeProvider, integrations, localLastForceSyncedAt.value]);
 
   useEffect(() => {
-    if (!orgId) return;
-    if (!isGithubIntegrated) {
+    if (!orgId || !activeCodeProvider) return;
+    if (!hasCodeProviderLinked) {
       dispatch(appSlice.actions.setSingleTeam([]));
       return;
     }
-    if (isGithubIntegrated && !teamCount) {
+    if (hasCodeProviderLinked && !teamCount) {
       dispatch(
         fetchTeams({
           org_id: orgId,
-          provider: Integration.GITHUB
+          provider: activeCodeProvider
         })
       ).finally(loadedTeams.true);
     }
-  }, [dispatch, isGithubIntegrated, loadedTeams.true, orgId, teamCount]);
+  }, [
+    activeCodeProvider,
+    dispatch,
+    hasCodeProviderLinked,
+    loadedTeams.true,
+    orgId,
+    teamCount
+  ]);
+
+  useEffect(() => {
+    if (!orgId) return;
+    handleApi<{ last_force_synced_at: DateString | null }>(
+      `/internal/${orgId}/sync_repos`
+    ).then((res) => {
+      depFn(localLastForceSyncedAt.set, new Date(res.last_force_synced_at));
+    });
+  }, [localLastForceSyncedAt.set, orgId]);
 
   const showDoraCTA = useMemo(
     () => Boolean(teamCount) && Boolean(hasCodeProviderLinked),
@@ -107,7 +145,47 @@ const Content = () => {
         )}
       </FlexBox>
 
-      <Divider sx={{ mb: '20px' }} />
+      <Divider sx={{ mb: '10px' }} />
+      {showForceSyncBtn && (
+        <FlexBox component={Card} justifyBetween p={1} alignCenter>
+          <Line>
+            Initiate force sync will force a sync of all integrations. This is
+            useful if you have made changes to your integrations outside of
+            middleware.
+          </Line>
+          <LoadingButton
+            type="submit"
+            variant="outlined"
+            color="primary"
+            disabled={!enableForceSyncBtn}
+            loading={forceSyncing.value}
+            sx={{
+              '&.Mui-disabled': {
+                borderColor: 'secondary.light'
+              }
+            }}
+            onClick={async () => {
+              forceSyncing.true();
+              handleApi<{ last_force_synced_at: DateString | null }>(
+                `/internal/${orgId}/sync_repos`,
+                {
+                  method: 'POST'
+                }
+              )
+                .then((res) => {
+                  depFn(
+                    localLastForceSyncedAt.set,
+                    new Date(res.last_force_synced_at)
+                  );
+                })
+                .finally(forceSyncing.false);
+            }}
+          >
+            Initiate Force Sync
+          </LoadingButton>
+        </FlexBox>
+      )}
+
       <FlexBox>
         <GithubIntegrationCard />
       </FlexBox>

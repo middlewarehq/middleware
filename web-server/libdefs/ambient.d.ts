@@ -15,8 +15,7 @@ declare type Org = {
   name: string;
   domain: string;
   onboarding_state: string[];
-  integrations: Partial<IntegrationsMap>;
-  integrationsLinkedAtMap: Partial<IntegrationsLinkedAtMap>;
+  integrations: IntegrationsMap;
 };
 
 declare type ONBOARDING_STEP =
@@ -43,11 +42,17 @@ declare type IdentityMap = Record<
   { username: string; meta?: { avatar_url?: string } }
 >;
 
-declare type IntegrationsMap = Record<'github' | 'gitlab' | 'bitbucket', true>;
-declare type IntegrationsLinkedAtMap = Record<
-  'github' | 'gitlab' | 'bitbucket',
-  DateString
+declare type IntegrationsMap = Partial<
+  Record<
+    'github' | 'gitlab' | 'bitbucket',
+    {
+      integrated: Boolean;
+      linked_at: DateString | null;
+      last_synced_at: DateString | null;
+    }
+  >
 >;
+
 declare type User = {
   id: string;
   created_at: Date;

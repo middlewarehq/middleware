@@ -38,7 +38,8 @@ export const getOnBoardingState = async (
 ): Promise<{ onboarding_state: OnboardingStep[] }> => {
   const results = await db(Table.UIPreferences)
     .select(Columns[Table.UIPreferences].data)
-    .where(Columns[Table.UIPreferences].entity_id, org_id);
+    .where(Columns[Table.UIPreferences].entity_id, org_id)
+    .andWhere(Columns[Table.UIPreferences].setting_type, 'ONBOARDING_STATE');
   return results[0]?.data ?? { onboarding_state: [] };
 };
 

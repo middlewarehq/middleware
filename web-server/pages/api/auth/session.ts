@@ -1,8 +1,11 @@
 import { NextApiResponse } from 'next/types';
 
+import { getLastSyncedAtForCodeProvider } from '@/api/internal/[org_id]/sync_repos';
 import { getOnBoardingState } from '@/api/resources/orgs/[org_id]/onboarding';
 import { Endpoint, nullSchema } from '@/api-helpers/global';
+import { CODE_PROVIDER_INTEGRATIONS_MAP } from '@/constants/api';
 import { Row, Table } from '@/constants/db';
+import { IntegrationsLinkedAtMap } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
 
 const endpoint = new Endpoint(nullSchema);
@@ -30,17 +33,36 @@ export const delUserIdCookie = (res: NextApiResponse) => {
 };
 
 endpoint.handle.GET(nullSchema, async (_req, res) => {
-  const [orgDetails, { integrations, integrationsLinkedAtMap }] =
-    await Promise.all([getOrgDetails(), getOrgIntegrations()]);
+  const [orgDetails, integrationsLinkedAtMap] = await Promise.all([
+    getOrgDetails(),
+    getOrgIntegrations()
+  ]);
 
-  const onboardingState = await getOnBoardingState(orgDetails.id);
+  const [onboardingState, codeProviderLastSyncedAt] = await Promise.all([
+    getOnBoardingState(orgDetails.id),
+    getLastSyncedAtForCodeProvider(orgDetails.id)
+  ]);
+  const integrations = {} as IntegrationsMap;
+  Object.entries(integrationsLinkedAtMap).forEach(
+    ([integrationName, integrationLinkedAt]) => {
+      integrations[integrationName as keyof IntegrationsMap] = {
+        integrated: true,
+        linked_at: integrationLinkedAt,
+        last_synced_at: CODE_PROVIDER_INTEGRATIONS_MAP[
+          integrationName as keyof typeof CODE_PROVIDER_INTEGRATIONS_MAP
+        ]
+          ? codeProviderLastSyncedAt
+          : null
+      };
+    }
+  );
+
   res.send({
     org:
       {
         ...orgDetails,
         ...onboardingState,
-        integrations,
-        integrationsLinkedAtMap
+        integrations
       } || {}
   });
 });
@@ -51,17 +73,11 @@ const getOrgDetails = async () => {
   return db(Table.Organization).select('*').then(getFirstRow);
 };
 
-const getOrgIntegrations = async () => {
+export const getOrgIntegrations = async () => {
   return db(Table.Integration)
     .select('*')
     .whereNotNull('access_token_enc_chunks')
     .then(async (rows) => {
-      const integrations = rows
-        .map((row) => row.name)
-        .reduce(
-          (map: IntegrationsMap, name: string) => ({ ...map, [name]: true }),
-          {} as IntegrationsMap
-        );
       const integrationsLinkedAtMap = rows.reduce(
         (map: IntegrationsLinkedAtMap, r: Row<'Integration'>) => ({
           ...map,
@@ -70,6 +86,6 @@ const getOrgIntegrations = async () => {
         {} as IntegrationsLinkedAtMap
       );
 
-      return { integrations, integrationsLinkedAtMap };
+      return integrationsLinkedAtMap;
     });
 };

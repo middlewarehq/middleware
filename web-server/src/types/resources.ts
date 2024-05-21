@@ -1003,3 +1003,5 @@ export enum OnboardingStep {
   'CODE_PROVIDER_INTEGRATED' = 'CODE_PROVIDER_INTEGRATED',
   'TEAM_CREATED' = 'TEAM_CREATED'
 }
+
+export type IntegrationsLinkedAtMap = Record<keyof IntegrationsMap, DateString>;

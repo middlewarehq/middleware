@@ -97,9 +97,14 @@ export const updateOnboardingState = createAsyncThunk(
 
 export const fetchIntegrationsMap = createAsyncThunk(
   'auth/fetchIntegrationsMap',
-  async () => {
+  async (params: { orgId: ID }) => {
     return handleApi<Partial<IntegrationsMap>>(
-      '/integrations/integrations-map'
+      '/integrations/integrations-map',
+      {
+        params: {
+          org_id: params.orgId
+        }
+      }
     );
   }
 );

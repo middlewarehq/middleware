@@ -54,14 +54,13 @@ export const Columns = {
     }
     return Columns;
   }),
-  [Table.TeamRelations]: objectEnumFromFn(() => {
+  [Table.Bookmark]: objectEnumFromFn(() => {
     enum Columns {
       created_at,
       updated_at,
-      user_id,
-      relation,
-      related_user_id,
-      org_id
+      repo_id,
+      bookmark,
+      type
     }
     return Columns;
   }),
