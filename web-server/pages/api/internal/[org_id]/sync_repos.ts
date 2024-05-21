@@ -49,6 +49,7 @@ export const getForcedSyncedAt = async (
     .select(Columns[Table.UIPreferences].data)
     .where(Columns[Table.UIPreferences].entity_id, org_id)
     .andWhere(Columns[Table.UIPreferences].setting_type, 'LAST_FORCED_SYNC_AT');
+
   return {
     last_force_synced_at: results[0]?.data?.last_force_synced_at ?? null
   };
@@ -56,3 +57,18 @@ export const getForcedSyncedAt = async (
 
 export const syncReposForOrg = () =>
   handleSyncServerRequest(`/sync`, { method: 'POST' });
+
+export const getLastSyncedAtForCodeProvider = async (
+  org_id: ID
+): Promise<DateString> => {
+  const repoIds = await db(Table.OrgRepo)
+    .select(Columns[Table.OrgRepo].id)
+    .where(Columns[Table.OrgRepo].org_id, org_id)
+    .then((rows) => rows.map((row) => row.id));
+  return db(Table.Bookmark)
+    .whereIn('repo_id', repoIds)
+    .orderBy(Columns[Table.Bookmark].updated_at, 'desc')
+    .first()
+    .select(Columns[Table.Bookmark].updated_at)
+    .then((row) => row.updated_at);
+};

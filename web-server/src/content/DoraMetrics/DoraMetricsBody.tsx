@@ -170,8 +170,8 @@ const FRESH_ORG_THRESHOLD = 10; // in minutes
 
 export const useFreshOrgCalculator = () => {
   const result = { isFreshOrg: false };
-  const { org } = useAuth();
-  const createdAt = org?.integrationsLinkedAtMap?.github;
+  const { integrations, activeCodeProvider } = useAuth();
+  const createdAt = integrations[activeCodeProvider].linked_at;
   if (!createdAt) return result;
   result.isFreshOrg = calculateIsFreshOrg(createdAt);
   return result;

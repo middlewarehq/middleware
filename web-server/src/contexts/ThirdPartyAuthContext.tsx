@@ -3,6 +3,7 @@ import { Session } from 'next-auth';
 import { FC, createContext, useEffect, useCallback } from 'react';
 import { useMemo } from 'react';
 
+import { Integration } from '@/constants/integrations';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { useRefMounted } from '@/hooks/useRefMounted';
 import {
@@ -15,13 +16,17 @@ import { useDispatch, useSelector } from '@/store';
 import { UserRole, IntegrationGroup, OnboardingStep } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
+type CodeProviderIntegrations =
+  | Integration.GITHUB
+  | Integration.GITLAB
+  | Integration.BITBUCKET;
 export interface AuthContextValue extends AuthState {
   orgId: string | null;
   role: UserRole;
   integrations: Org['integrations'];
-  integrationsLinkedAtMap: Org['integrationsLinkedAtMap'];
   onboardingState: OnboardingStep[];
   integrationSet: Set<IntegrationGroup>;
+  activeCodeProvider: CodeProviderIntegrations | null;
 }
 
 export const AuthContext = createContext<AuthContextValue>({
@@ -29,9 +34,9 @@ export const AuthContext = createContext<AuthContextValue>({
   orgId: null,
   role: UserRole.MOM,
   integrations: {},
-  integrationsLinkedAtMap: {},
   onboardingState: [],
-  integrationSet: new Set()
+  integrationSet: new Set(),
+  activeCodeProvider: null
 });
 
 export const AuthProvider: FC = (props) => {
@@ -79,7 +84,7 @@ export const AuthProvider: FC = (props) => {
             org: org
           })
         );
-        dispatch(fetchIntegrationsMap());
+        dispatch(fetchIntegrationsMap({ orgId: org.id }));
       } else {
         onUnauthenticated();
       }
@@ -108,6 +113,16 @@ export const AuthProvider: FC = (props) => {
     [integrations.github]
   );
 
+  const activeCodeProvider = useMemo(
+    () =>
+      Object.keys(state?.org?.integrations || {}).find(
+        (integrationName) =>
+          state?.org?.integrations[integrationName as keyof IntegrationsMap]
+            ?.integrated
+      ) as CodeProviderIntegrations | null,
+    [state?.org?.integrations]
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -115,8 +130,8 @@ export const AuthProvider: FC = (props) => {
         orgId: state.org?.id,
         role,
         integrations,
-        integrationsLinkedAtMap: state.org?.integrationsLinkedAtMap || {},
         integrationSet,
+        activeCodeProvider,
         onboardingState: (state.org?.onboarding_state as OnboardingStep[]) || []
       }}
     >
