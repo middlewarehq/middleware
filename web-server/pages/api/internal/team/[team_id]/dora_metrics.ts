@@ -8,6 +8,7 @@ import {
   updatePrFilterParams,
   workFlowFiltersFromTeamProdBranches
 } from '@/api-helpers/team';
+import { Table } from '@/constants/db';
 import { mockDoraMetrics } from '@/mocks/dora_metrics';
 import { TeamDoraMetricsApiResponseType } from '@/types/resources';
 import {
@@ -17,6 +18,7 @@ import {
   fetchDeploymentFrequencyStats
 } from '@/utils/cockpitMetricUtils';
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
+import { db } from '@/utils/db';
 
 import { getTeamLeadTimePRs } from './insights';
 import { getAllTeamsReposProdBranchesForOrgAsMap } from './repo_branches';
@@ -48,8 +50,10 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     branches
   } = req.payload;
 
-  const teamProdBranchesMap =
-    await getAllTeamsReposProdBranchesForOrgAsMap(org_id);
+  const [teamProdBranchesMap, bookmarkedRepos] = await Promise.all([
+    getAllTeamsReposProdBranchesForOrgAsMap(org_id),
+    getBookmarkedRepos()
+  ]);
   const teamRepoFiltersMap =
     repoFiltersFromTeamProdBranches(teamProdBranchesMap);
 
@@ -169,8 +173,13 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     deployment_frequency_trends:
       deploymentFrequencyResponse.deployment_frequency_trends,
     lead_time_prs: leadtimePrs,
-    assigned_repos: teamRepos
-  } as TeamDoraMetricsApiResponseType);
+    assigned_repos: teamRepos,
+    bookmarked_repos: bookmarkedRepos
+  } as TeamDoraMetricsApiResponseType & any);
 });
 
 export default endpoint.serve();
+
+export const getBookmarkedRepos = async () => {
+  return await db(Table.Bookmark).select('*');
+};
