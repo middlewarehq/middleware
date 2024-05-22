@@ -577,6 +577,7 @@ export type TeamDoraMetricsApiResponseType = {
   };
   lead_time_prs: PR[];
   assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
+  bookmarked_repos: Row<'Bookmark'>[];
 };
 
 export enum ActiveBranchMode {
