@@ -36,7 +36,7 @@ class DeploymentAnalyticsService:
         interval: Interval,
         pr_filter: PRFilter,
         workflow_filter: WorkflowFilter,
-    ) -> Dict[str, List[Dict[Deployment, List[PullRequest]]]]:
+    ) -> Dict[str, Dict[Deployment, List[PullRequest]]]:
         """
         Retrieves all deployments within the specified interval for a given team,
         along with related pull requests. Returns A dictionary mapping repository IDs to lists of deployments along with
@@ -220,16 +220,19 @@ class DeploymentAnalyticsService:
                 team_weekly_deployments
             )
         )
-        if weekly_deployment_frequency < daily_deployment_frequency * 7:
-            weekly_deployment_frequency = daily_deployment_frequency * 7
 
         monthly_deployment_frequency = (
             self._get_deployment_frequency_from_date_to_deployment_map(
                 team_monthly_deployments
             )
         )
-        if monthly_deployment_frequency < daily_deployment_frequency * 30:
-            monthly_deployment_frequency = daily_deployment_frequency * 30
+
+        weekly_deployment_frequency = self._adjust_frequency_for_granularity(
+            weekly_deployment_frequency, daily_deployment_frequency, 7
+        )
+        monthly_deployment_frequency = self._adjust_frequency_for_granularity(
+            monthly_deployment_frequency, daily_deployment_frequency, 30
+        )
 
         return DeploymentFrequencyMetrics(
             len(successful_deployments),
@@ -244,8 +247,7 @@ class DeploymentAnalyticsService:
 
         successful_deployments = list(
             filter(
-                lambda x: x.conducted_at >= interval.from_time
-                and x.conducted_at <= interval.to_time,
+                lambda x: interval.from_time <= x.conducted_at <= interval.to_time,
                 successful_deployments,
             )
         )
@@ -255,6 +257,13 @@ class DeploymentAnalyticsService:
         )
 
         return get_key_to_count_map_from_key_to_list_map(team_weekly_deployments)
+
+    def _adjust_frequency_for_granularity(
+        self, frequency: int, daily_frequency: int, days_in_granularity: int
+    ) -> int:
+        if frequency < daily_frequency * days_in_granularity:
+            frequency = daily_frequency * days_in_granularity
+        return frequency
 
 
 def get_deployment_analytics_service() -> DeploymentAnalyticsService:
