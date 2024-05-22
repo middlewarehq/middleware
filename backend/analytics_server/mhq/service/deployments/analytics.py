@@ -30,7 +30,7 @@ class DeploymentAnalyticsService:
         self.deployments_service = deployments_service
         self.code_repo_service = code_repo_service
 
-    def get_team_successful_deployments_in_interval_with_related_prs(
+    def get_team_all_deployments_in_interval_with_related_prs(
         self,
         team_id: str,
         interval: Interval,
@@ -38,13 +38,14 @@ class DeploymentAnalyticsService:
         workflow_filter: WorkflowFilter,
     ) -> Dict[str, List[Dict[Deployment, List[PullRequest]]]]:
         """
-        Retrieves successful deployments within the specified interval for a given team,
-        along with related pull requests. Returns A dictionary mapping repository IDs to lists of deployments along with related pull requests. Each deployment is associated with a list of pull requests that contributed to it.
+        Retrieves all deployments within the specified interval for a given team,
+        along with related pull requests. Returns A dictionary mapping repository IDs to lists of deployments along with
+        related pull requests. Each deployment is associated with a list of pull requests that contributed to it.
         """
 
         deployments: List[
             Deployment
-        ] = self.deployments_service.get_team_successful_deployments_in_interval(
+        ] = self.deployments_service.get_team_all_deployments_in_interval(
             team_id, interval, pr_filter, workflow_filter
         )
 
@@ -193,8 +194,7 @@ class DeploymentAnalyticsService:
 
         successful_deployments = list(
             filter(
-                lambda x: x.conducted_at >= interval.from_time
-                and x.conducted_at <= interval.to_time,
+                lambda x: interval.from_time <= x.conducted_at <= interval.to_time,
                 successful_deployments,
             )
         )
@@ -220,12 +220,16 @@ class DeploymentAnalyticsService:
                 team_weekly_deployments
             )
         )
+        if weekly_deployment_frequency < daily_deployment_frequency * 7:
+            weekly_deployment_frequency = daily_deployment_frequency * 7
 
         monthly_deployment_frequency = (
             self._get_deployment_frequency_from_date_to_deployment_map(
                 team_monthly_deployments
             )
         )
+        if monthly_deployment_frequency < daily_deployment_frequency * 30:
+            monthly_deployment_frequency = daily_deployment_frequency * 30
 
         return DeploymentFrequencyMetrics(
             len(successful_deployments),
