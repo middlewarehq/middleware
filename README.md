@@ -14,6 +14,8 @@
 <img src="https://img.shields.io/github/stars/middlewarehq/middleware?style=for-the-badge" alt="Stars" />
 </p>
 
+<!-- [Join our Engineering Leaders Community]() -->
+
 ![Middleware Opensource](media_files/banner.gif)
 
 
@@ -44,7 +46,7 @@ They are:
   - [Security guidelines](#%EF%B8%8F-security-guidelines)
   - [License](#license)
 
-# 🚀 Features
+## 🚀 Features
 
 - Integration with various CI/CD tools
 - Automated collection and analysis of DORA metrics
@@ -52,9 +54,9 @@ They are:
 - Customizable reports and dashboards
 - Integration with popular project management platforms
 
-# ✨ Quick Start
+## ✨ Quick Start
 
-## ⭐ Installing Middleware
+### ⭐ Installing Middleware
 * Ensure that you have [docker](https://www.docker.com/products/docker-desktop/) installed and running.
 
 * Open the terminal and run the following command:
@@ -100,9 +102,9 @@ They are:
    ```
 
 
-# 👩‍💻 Developer Setup
+## 👩‍💻 Developer Setup
 
-## ☁️ Using GitPod
+### ☁️ Using GitPod
 
 Gitpod enables development on remote machines and helps you get started with Middleware if your machine does not support running the project locally. 
 
@@ -116,7 +118,7 @@ If you want to run the project locally you can [setup using docker](#-using-dock
 
 After initialization, you can access the server at port 3333 of the gitpod instance.
 
-## 🐳 Using Docker
+### 🐳 Using Docker
 
 If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
 Make sure docker is running.
@@ -356,11 +358,11 @@ For simplicity, we synchronize your Pull Request data and classify reverted Pull
 - Deployments that can be linked to any incident are considered as causing a failure or outage.
 - The fraction of deployments causing outages to the total deployments in an interval is used to determine the CFR.
 
-# 🛣️ Roadmap
+## 🛣️ Roadmap
 
 Coming Soon!
 
-# ❤️ Contributing guidelines
+## ❤️ Contributing guidelines
 
 ![contributor Metrics](https://open-source-assets.middlewarehq.com/svgs/middlewarehq-middleware-contributor-metrics-dark-widget-premium.svg)
 
@@ -375,7 +377,7 @@ To get started contributing to middleware check out our [SECURITY.md](https://gi
 We look forward to your part in keeping Middleware secure!
 
 
-# License
+## License
  
 This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/middleware/blob/main/LICENSE) License - see the LICENSE.md file for details.
 
