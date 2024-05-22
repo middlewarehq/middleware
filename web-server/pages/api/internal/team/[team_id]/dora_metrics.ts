@@ -175,7 +175,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     lead_time_prs: leadtimePrs,
     assigned_repos: teamRepos,
     bookmarked_repos: bookmarkedRepos
-  } as TeamDoraMetricsApiResponseType & any);
+  } as TeamDoraMetricsApiResponseType);
 });
 
 export default endpoint.serve();
