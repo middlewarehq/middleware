@@ -48,7 +48,7 @@ const initialState: State = {
   teamReposProductionBranches: [],
   teamIncidentFilters: null,
   excludedPrs: [],
-  teamReposMaps: null
+  teamReposMaps: {}
 };
 
 export const teamSlice = createSlice({
