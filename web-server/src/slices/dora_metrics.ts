@@ -38,6 +38,7 @@ export type State = StateFetchConfig<{
   deployments_map: Record<string, Deployment>;
   revert_prs: PR[];
   summary_prs: PR[];
+  bookmarkedRepos: ID[];
 }>;
 
 const initialState: State = {
@@ -56,7 +57,8 @@ const initialState: State = {
   prs_map: {},
   deployments_map: {},
   revert_prs: [],
-  summary_prs: []
+  summary_prs: [],
+  bookmarkedRepos: []
 };
 
 export const doraMetricsSlice = createSlice({
@@ -99,6 +101,9 @@ export const doraMetricsSlice = createSlice({
         );
         state.allReposAssignedToTeam = action.payload.assigned_repos;
         state.summary_prs = action.payload.lead_time_prs;
+        state.bookmarkedRepos = action.payload.bookmarked_repos.map(
+          (item) => item.repo_id
+        );
       }
     );
     addFetchCasesToReducer(
