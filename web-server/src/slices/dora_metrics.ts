@@ -101,9 +101,7 @@ export const doraMetricsSlice = createSlice({
         );
         state.allReposAssignedToTeam = action.payload.assigned_repos;
         state.summary_prs = action.payload.lead_time_prs;
-        state.bookmarkedRepos = action.payload.bookmarked_repos.map(
-          (item) => item.repo_id
-        );
+        state.bookmarkedRepos = action.payload.bookmarked_repos;
       }
     );
     addFetchCasesToReducer(
