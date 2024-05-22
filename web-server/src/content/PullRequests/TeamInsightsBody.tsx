@@ -210,7 +210,7 @@ export const TeamInsightsBodyRouterless: FC<{
                   justifyCenter
                   p={1}
                 >
-                  <TrendsLineChart series={series} />
+                  <TrendsLineChart series={series} isTimeBased />
                 </FlexBox>
                 <LegendsMenu series={series} />
               </FlexBox>
