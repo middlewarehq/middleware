@@ -18,6 +18,7 @@ export const PageWrapper: FC<{
   headerChildren?: ReactNode;
   isLoading?: boolean;
   showEvenIfNoTeamSelected?: boolean;
+  additionalFilters?: ReactNode[];
 }> = ({
   title = 'Collaborate',
   hideAllSelectors,
@@ -27,7 +28,8 @@ export const PageWrapper: FC<{
   teamDateSelectorMode,
   headerChildren,
   isLoading,
-  showEvenIfNoTeamSelected = false
+  showEvenIfNoTeamSelected = false,
+  additionalFilters = []
 }) => {
   const { noTeamSelected } = useSingleTeamConfig();
   // TODO: use fetchState
@@ -45,6 +47,7 @@ export const PageWrapper: FC<{
           teamDateSelectorMode={
             teamDateSelectorMode || (showDate ? 'single' : 'single-only')
           }
+          additionalFilters={additionalFilters}
           selectBranch
         >
           {headerChildren}
