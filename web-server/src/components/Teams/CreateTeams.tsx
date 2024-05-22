@@ -83,11 +83,11 @@ const TeamsCRUD: FC<CRUDProps> = ({
   );
 };
 
-export const Loader = () => {
+export const Loader: FC<{ label?: string }> = ({ label = 'Loading...' }) => {
   return (
     <FlexBox alignCenter gap2>
       <CircularProgress size="20px" />
-      <Line>Loading...</Line>
+      <Line>{label}</Line>
     </FlexBox>
   );
 };
