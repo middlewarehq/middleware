@@ -1,6 +1,6 @@
 import { Grid, Divider, Button } from '@mui/material';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 import { DoraMetricsConfigurationSettings } from '@/components/DoraMetricsConfigurationSettings';
 import { DoraScore } from '@/components/DoraScore';
@@ -14,6 +14,7 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useDoraStats } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
+import { usePageRefreshCallback } from '@/hooks/usePageRefreshCallback';
 import {
   useSingleTeamConfig,
   useStateBranchConfig
@@ -183,4 +184,32 @@ export const calculateIsFreshOrg = (createdAt: string | Date): boolean => {
   const timeDiffMs = now - date.getTime();
 
   return timeDiffMs <= FRESH_ORG_THRESHOLD * 60 * 1000;
+};
+
+export const useSyncedRepos = () => {
+  const pageRefreshCallback = usePageRefreshCallback();
+
+  const reposMap = useSelector((s) => s.team.teamReposMaps);
+  const { singleTeamId } = useSingleTeamConfig();
+  const syncedRepos = useSelector((s) => s.doraMetrics.bookmarkedRepos);
+
+  const isSyncing = useMemo(() => {
+    const teamRepos = reposMap[singleTeamId] || [];
+    return !teamRepos.every((repo) => syncedRepos.includes(repo.id));
+  }, [reposMap, singleTeamId, syncedRepos]);
+
+  useEffect(() => {
+    if (!isSyncing) return;
+    const interval = setInterval(() => {
+      pageRefreshCallback();
+    }, 10_000);
+
+    return () => clearInterval(interval);
+  }, [isSyncing, pageRefreshCallback]);
+
+  return {
+    isSyncing,
+    syncedRepos,
+    teamRepos: reposMap[singleTeamId] || []
+  };
 };
