@@ -100,7 +100,10 @@ export const ResolvedIncidentsBody = () => {
         <Divider sx={{ mt: 2, mb: isTrendsSeriesDataAvailable ? 4 : 2 }} />
         {isTrendsSeriesDataAvailable ? (
           <FlexBox fullWidth height={'300px'} alignCenter justifyCenter p={1}>
-            <TrendsLineChart series={trendsSeriesMap.meanTimeToRestoreTrends} />
+            <TrendsLineChart
+              series={trendsSeriesMap.meanTimeToRestoreTrends}
+              isTimeBased
+            />
           </FlexBox>
         ) : (
           <Line>Not enough data to show trends.</Line>
