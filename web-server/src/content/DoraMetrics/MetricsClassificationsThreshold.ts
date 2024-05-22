@@ -19,22 +19,23 @@ export const deploymentFrequencyThresholds = {
 
 export const updatedDeploymentFrequencyThresholds = (metric: {
   count: number;
-  prev: number;
   interval: 'day' | 'week' | 'month';
-}) => {
+}): 'elite' | 'high' | 'medium' | 'low' => {
   switch (metric.interval) {
     case 'day':
       if (metric.count >= 1) return 'elite';
-      return 'high';
+      break;
     case 'week':
       if (metric.count >= 1) return 'high';
-      return 'medium';
+      break;
     case 'month':
-      if (metric.count === 1) return 'high';
-      return 'medium';
+      if (metric.count === 1) return 'medium';
+      else if (metric.count > 1) return 'high';
+      break;
     default:
       return 'low';
   }
+  return 'low';
 };
 
 export const changeFailureRateThresholds = {
