@@ -65,6 +65,7 @@ class CodeETLHandler:
                 pull_requests, pull_request_commits, pull_request_events
             )
             if not pull_requests:
+                self.code_repo_service.update_org_repo_bookmark(bookmark)
                 return
 
             pull_requests.sort(key=lambda x: x.updated_at)
