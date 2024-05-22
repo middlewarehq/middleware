@@ -31,11 +31,13 @@ const badgeDetailsToKey = {
 } as const;
 
 export const getBadgeDetails = (
-  data: Pick<
-    UpdatedDeploymentFrequencyAnalyticsResponseV2,
-    | 'avg_daily_deployment_frequency'
-    | 'avg_monthly_deployment_frequency'
-    | 'avg_weekly_deployment_frequency'
+  data: Partial<
+    Pick<
+      UpdatedDeploymentFrequencyAnalyticsResponseV2,
+      | 'avg_daily_deployment_frequency'
+      | 'avg_monthly_deployment_frequency'
+      | 'avg_weekly_deployment_frequency'
+    >
   >,
   duration?: 'day' | 'week' | 'month'
 ): {
