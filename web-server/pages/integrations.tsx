@@ -64,7 +64,7 @@ const Content = () => {
   const forceSyncing = useBoolState(false);
   const localLastForceSyncedAt = useEasyState<Date | null>(null);
   const showCreationCTA =
-    hasCodeProviderLinked && !teamCount && !loadedTeams.value;
+    hasCodeProviderLinked && !teamCount && loadedTeams.value;
   const showForceSyncBtn = useMemo(() => {
     if (!hasCodeProviderLinked) return false;
     const githubLinkedAt = new Date(integrations[Integration.GITHUB].linked_at);
