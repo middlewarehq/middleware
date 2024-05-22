@@ -75,7 +75,7 @@ def get_team_deployment_analytics(
 
     repo_id_to_deployments_map_with_prs: Dict[
         str, List[Dict[Deployment, List[PullRequest]]]
-    ] = deployments_analytics_service.get_team_successful_deployments_in_interval_with_related_prs(
+    ] = deployments_analytics_service.get_team_all_deployments_in_interval_with_related_prs(
         team_id, interval, pr_filter, workflow_filter
     )
 

@@ -1,9 +1,7 @@
 from mhq.service.code import sync_code_repos
 from mhq.service.incidents import sync_org_incidents
 from mhq.service.merge_to_deploy_broker import process_merge_to_deploy_cache
-from mhq.service.query_validator import get_query_validator
 from mhq.service.workflows import sync_org_workflows
-from mhq.utils.lock import get_redis_lock_service
 from mhq.utils.log import LOG
 
 sync_sequence = [
