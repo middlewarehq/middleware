@@ -181,5 +181,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 export default endpoint.serve();
 
 export const getBookmarkedRepos = async () => {
-  return await db(Table.Bookmark).select('*');
+  return (await db(Table.Bookmark)
+    .select('repo_id')
+    .then((res) => res.map((item) => item?.repo_id))) as ID[];
 };
