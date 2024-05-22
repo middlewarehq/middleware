@@ -70,5 +70,5 @@ export const getLastSyncedAtForCodeProvider = async (
     .orderBy(Columns[Table.Bookmark].updated_at, 'desc')
     .first()
     .select(Columns[Table.Bookmark].updated_at)
-    .then((row) => row.updated_at);
+    .then((row) => row?.updated_at);
 };
