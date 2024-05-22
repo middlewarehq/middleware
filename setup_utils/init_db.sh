@@ -5,7 +5,7 @@ set -u
 
 POSTGRES_USER="${DB_USER:-postgres}"
 POSTGRES_PASSWORD="${DB_PASS:-postgres}"
-POSTGRES_DB="${DB_NAME:-dora-oss}"
+POSTGRES_DB="${DB_NAME:-mhq-oss}"
 POSTGRES_PORT="${DB_PORT:-5432}"
 POSTGRES_HOST="${DB_HOST:-127.0.0.1}"
 
