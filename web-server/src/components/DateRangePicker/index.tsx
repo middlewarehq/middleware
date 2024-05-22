@@ -82,8 +82,9 @@ export const DateRangePicker: FC<{
       track(activeRouteEvent, {
         mode: option
       });
+      setTimeout(onClose, 500);
     },
-    [activeRouteEvent, localRangeSelection.set, setRange]
+    [activeRouteEvent, localRangeSelection.set, onClose, setRange]
   );
 
   const handleRangeChange = useCallback(
