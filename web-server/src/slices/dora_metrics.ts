@@ -135,7 +135,7 @@ export const doraMetricsSlice = createSlice({
     );
     addFetchCasesToReducer(
       builder,
-      getSyncedRepos,
+      getUnyncedRepos,
       'unsyncedRepos',
       (state, action) => (state.unsyncedRepos = action.payload)
     );
@@ -214,8 +214,8 @@ export const fetchDeploymentPRs = createAsyncThunk(
   }
 );
 
-export const getSyncedRepos = createAsyncThunk(
-  'dora_metrics/getSyncedRepos',
+export const getUnyncedRepos = createAsyncThunk(
+  'dora_metrics/getUnyncedRepos',
   async (params: { team_id: ID }) => {
     return await handleApi<ID[]>(
       `/resources/teams/${params.team_id}/unsynced_repos`
