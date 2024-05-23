@@ -92,7 +92,7 @@ export const DoraMetricsBody = () => {
 
   const stats = useDoraStats();
 
-  const { isFreshOrg } = useFreshOrgCalculator();
+  const { isSyncing } = useSyncedRepos();
 
   if (isErrored)
     return (
@@ -103,12 +103,18 @@ export const DoraMetricsBody = () => {
     );
   if (!firstLoadDone) return <MiniLoader label={getRandomLoadMsg()} />;
   if (isTeamInsightsEmpty)
-    if (isFreshOrg)
+    if (isSyncing)
       return (
         <EmptyState
           type="SYNC_IN_PROGRESS"
           title="Sync in progress"
-          desc="Your data is syncing. Please reload in a few minutes."
+          desc={
+            <FlexBox gap={1}>
+              <MiniLoader
+                label={'Your repos are syncing, please wait for a few minutes'}
+              />
+            </FlexBox>
+          }
         >
           <FixedContentRefreshLoader show={isLoading} />
         </EmptyState>
