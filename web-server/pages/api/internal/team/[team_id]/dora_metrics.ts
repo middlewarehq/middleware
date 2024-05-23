@@ -52,7 +52,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 
   const [teamProdBranchesMap, bookmarkedRepos] = await Promise.all([
     getAllTeamsReposProdBranchesForOrgAsMap(org_id),
-    getBookmarkedRepos()
+    getBookmarkedRepos(teamId)
   ]);
   const teamRepoFiltersMap =
     repoFiltersFromTeamProdBranches(teamProdBranchesMap);
@@ -180,8 +180,19 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 
 export default endpoint.serve();
 
-export const getBookmarkedRepos = async () => {
-  return (await db(Table.Bookmark)
-    .select('repo_id')
+export const getBookmarkedRepos = async (teamId?: ID) => {
+  const query = db(Table.Bookmark).select('repo_id');
+
+  if (!teamId)
+    return (await query.then((res) =>
+      res.map((item) => item?.repo_id)
+    )) as ID[];
+
+  const teamRepoIds = await getTeamRepos(teamId).then((res) =>
+    res.map((repo) => repo.id)
+  );
+
+  return (await query
+    .whereIn('repo_id', teamRepoIds)
     .then((res) => res.map((item) => item?.repo_id))) as ID[];
 };
