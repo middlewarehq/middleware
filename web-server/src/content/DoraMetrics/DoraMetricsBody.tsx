@@ -1,6 +1,6 @@
 import { Grid, Divider, Button } from '@mui/material';
 import Link from 'next/link';
-import { FC, useEffect, useMemo } from 'react';
+import { FC, useEffect } from 'react';
 
 import { DoraMetricsConfigurationSettings } from '@/components/DoraMetricsConfigurationSettings';
 import { DoraScore } from '@/components/DoraScore';
@@ -186,12 +186,7 @@ export const useSyncedRepos = () => {
 
   const reposMap = useSelector((s) => s.team.teamReposMaps);
   const { singleTeamId } = useSingleTeamConfig();
-  const syncedRepos = useSelector((s) => s.doraMetrics.bookmarkedRepos);
-
-  const isSyncing = useMemo(() => {
-    const teamRepos = reposMap[singleTeamId] || [];
-    return !teamRepos.every((repo) => syncedRepos.includes(repo.id));
-  }, [reposMap, singleTeamId, syncedRepos]);
+  const isSyncing = useSelector((s) => s.doraMetrics.unsyncedRepos.length);
 
   useEffect(() => {
     if (!isSyncing) return;
@@ -205,7 +200,6 @@ export const useSyncedRepos = () => {
 
   return {
     isSyncing,
-    syncedRepos,
     teamRepos: reposMap[singleTeamId] || []
   };
 };
@@ -242,6 +236,7 @@ export const LoaderCore: FC<{
 }> = ({ animation }) => {
   return (
     <FlexBox
+      fullWidth
       gap={4}
       sx={{
         transition: `opacity ${ANIMATON_DURATION}ms linear, height 300ms ease, margin 300ms ease`,
