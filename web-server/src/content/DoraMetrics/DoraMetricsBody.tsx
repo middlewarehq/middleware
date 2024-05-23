@@ -20,7 +20,7 @@ import {
   useSingleTeamConfig,
   useStateBranchConfig
 } from '@/hooks/useStateTeamConfig';
-import { fetchTeamDoraMetrics } from '@/slices/dora_metrics';
+import { fetchTeamDoraMetrics, getUnyncedRepos } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { ActiveBranchMode } from '@/types/resources';
 import { depFn } from '@/utils/fn';
@@ -184,19 +184,27 @@ export const calculateIsFreshOrg = (createdAt: string | Date): boolean => {
 export const useSyncedRepos = () => {
   const pageRefreshCallback = usePageRefreshCallback();
 
+  const dispatch = useDispatch();
   const reposMap = useSelector((s) => s.team.teamReposMaps);
   const { singleTeamId } = useSingleTeamConfig();
-  const isSyncing = useSelector((s) => s.doraMetrics.unsyncedRepos.length);
+  const isSyncing = useSelector((s) => s.doraMetrics?.unsyncedRepos?.length);
 
   useEffect(() => {
-    if (!isSyncing) return;
+    if (!isSyncing || !singleTeamId) return;
 
     const interval = setInterval(() => {
-      pageRefreshCallback();
+      dispatch(getUnyncedRepos({ team_id: singleTeamId })).then(
+        async (res: any) => {
+          const unsyncedRepoCount = res.payload?.length;
+          if (unsyncedRepoCount === 0) {
+            pageRefreshCallback();
+          }
+        }
+      );
     }, 10_000);
 
     return () => clearInterval(interval);
-  }, [isSyncing, pageRefreshCallback]);
+  }, [dispatch, isSyncing, pageRefreshCallback, singleTeamId]);
 
   return {
     isSyncing,
