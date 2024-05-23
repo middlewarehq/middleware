@@ -109,9 +109,9 @@ export const DoraMetricsBody = () => {
           type="SYNC_IN_PROGRESS"
           title="Sync in progress"
           desc={
-            <FlexBox gap={1}>
+            <FlexBox>
               <MiniLoader
-                label={'Your repos are syncing, please wait for a few minutes'}
+                label={'Your repos are syncing, please wait for a few minutes.'}
               />
             </FlexBox>
           }
@@ -224,7 +224,7 @@ export const useSyncedRepos = () => {
   };
 };
 
-const ANIMATON_DURATION = 700;
+const ANIMATON_DURATION = 1000;
 
 const Syncing = () => {
   const flickerAnimation = useBoolState(false);
@@ -243,8 +243,9 @@ const Syncing = () => {
       gap={4}
       sx={{
         height: isSyncing ? '66px' : '0px',
-        opacity: flickerAnimation.value ? 1 : 0.6,
-        transition: `all ${isSyncing ? ANIMATON_DURATION : 200}ms linear`
+        mb: isSyncing ? 0 : -2,
+        opacity: !isSyncing ? 0 : flickerAnimation.value ? 1 : 0.6,
+        transition: `opacity ${ANIMATON_DURATION}ms linear, height 300ms ease, margin 300ms ease`
       }}
       overflow={'hidden'}
     >
