@@ -14,6 +14,7 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useDoraStats } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
+import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { usePageRefreshCallback } from '@/hooks/usePageRefreshCallback';
 import {
   useSingleTeamConfig,
@@ -22,6 +23,7 @@ import {
 import { fetchTeamDoraMetrics } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { ActiveBranchMode } from '@/types/resources';
+import { depFn } from '@/utils/fn';
 import { getRandomLoadMsg } from '@/utils/loading-messages';
 
 import { ClassificationPills } from './ClassificationPills';
@@ -136,7 +138,8 @@ export const DoraMetricsBody = () => {
           <DoraMetricsConfigurationSettings />
         </FlexBox>
       </FlexBox>
-      <Divider sx={{ mt: 2 }} />
+      <Syncing />
+      <Divider />
       <Grid container spacing={4}>
         <Grid item xs={12} md={6} order={1}>
           <ChangeTimeCard />
@@ -200,6 +203,7 @@ export const useSyncedRepos = () => {
 
   useEffect(() => {
     if (!isSyncing) return;
+
     const interval = setInterval(() => {
       pageRefreshCallback();
     }, 10_000);
@@ -212,4 +216,94 @@ export const useSyncedRepos = () => {
     syncedRepos,
     teamRepos: reposMap[singleTeamId] || []
   };
+};
+
+const ANIMATON_DURATION = 700;
+
+const Syncing = () => {
+  const flickerAnimation = useBoolState(false);
+  const { isSyncing } = useSyncedRepos();
+
+  useEffect(() => {
+    if (!isSyncing) return;
+    const interval = setInterval(() => {
+      depFn(flickerAnimation.toggle);
+    }, ANIMATON_DURATION);
+    return () => clearInterval(interval);
+  }, [isSyncing, flickerAnimation.toggle]);
+
+  return (
+    <FlexBox
+      gap={4}
+      sx={{
+        height: isSyncing ? '66px' : '0px',
+        opacity: flickerAnimation.value ? 1 : 0.6,
+        transition: `all ${isSyncing ? ANIMATON_DURATION : 200}ms linear`
+      }}
+      overflow={'hidden'}
+    >
+      <FlexBox
+        relative
+        gap={2}
+        alignCenter
+        p={2}
+        borderRadius={'8px'}
+        overflow={'hidden'}
+        flex={1}
+      >
+        <FlexBox
+          bgcolor={'#14AE5C'}
+          sx={{ opacity: 0.1 }}
+          position={'absolute'}
+          left={0}
+          top={0}
+          fullWidth
+          height={'100%'}
+        />
+        <FlexBox height={'25px'} centered>
+          {isSyncing && <LoadingWrapper />}
+        </FlexBox>
+        <Line color={'#1AE579'} medium big>
+          Calculating Dora
+        </Line>
+        <Line>We’re processing your data, it usually takes ~ 5 mins</Line>
+      </FlexBox>
+      <FlexBox p={2} flex1 />
+    </FlexBox>
+  );
+};
+
+const LoadingWrapper = () => {
+  const rotation = useEasyState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      rotation.set((r) => r + 1);
+    }, 10);
+    return () => clearInterval(interval);
+  }, [rotation]);
+  return (
+    <FlexBox
+      sx={{
+        transform: `rotate(${rotation.value}deg)`,
+        transition: 'transform 100ms linear',
+        borderRadius: '50%'
+      }}
+    >
+      <svg
+        width="30"
+        height="30"
+        viewBox="0 0 30 30"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M15.0002 2.50195V5.00195M21.2502 4.17695L20.0002 6.34195M25.8252 8.75195L23.6602 10.002M27.5002 15.002H25.0002M25.8252 21.252L23.6602 20.002M21.2502 25.827L20.0002 23.662M15.0002 27.502V25.002M8.75024 25.827L10.0002 23.662M4.17524 21.252L6.34024 20.002M2.50024 15.002H5.00024M4.17524 8.75195L6.34024 10.002M8.75024 4.17695L10.0002 6.34195"
+          stroke="#1AE579"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </FlexBox>
+  );
 };
