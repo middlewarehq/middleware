@@ -14,7 +14,7 @@ const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.GET(nullSchema, async (req, res) => {
   if (req.meta?.features?.use_mock_data) {
-    return res.send([1, 2, 3].map(() => uuid()));
+    return res.send([uuid(), uuid()]);
   }
 
   res.send(await getBookmarkedRepos(req.payload.team_id));
