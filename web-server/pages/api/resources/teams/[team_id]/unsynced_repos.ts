@@ -17,24 +17,25 @@ endpoint.handle.GET(nullSchema, async (req, res) => {
     return res.send([uuid(), uuid()]);
   }
 
-  res.send(await getBookmarkedRepos(req.payload.team_id));
+  res.send(await getUnsyncedRepos(req.payload.team_id));
 });
 
-export const getBookmarkedRepos = async (teamId?: ID) => {
+export const getUnsyncedRepos = async (teamId: ID) => {
   const query = db(Table.Bookmark).select('repo_id');
-
-  if (!teamId)
-    return (await query.then((res) =>
-      res.map((item) => item?.repo_id)
-    )) as ID[];
 
   const teamRepoIds = await getTeamRepos(teamId).then((res) =>
     res.map((repo) => repo.id)
   );
 
-  return (await query
+  const syncedRepos = (await query
     .whereIn('repo_id', teamRepoIds)
     .then((res) => res.map((item) => item?.repo_id))) as ID[];
+
+  const unsyncedRepos = teamRepoIds.filter(
+    (repo) => !syncedRepos.includes(repo)
+  );
+
+  return unsyncedRepos;
 };
 
 export default endpoint.serve();
