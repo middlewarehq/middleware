@@ -1,6 +1,6 @@
 import { Grid, Divider, Button } from '@mui/material';
 import Link from 'next/link';
-import { useEffect, useMemo } from 'react';
+import { FC, useEffect, useMemo } from 'react';
 
 import { DoraMetricsConfigurationSettings } from '@/components/DoraMetricsConfigurationSettings';
 import { DoraScore } from '@/components/DoraScore';
@@ -30,6 +30,7 @@ import { ClassificationPills } from './ClassificationPills';
 import { ChangeFailureRateCard } from './DoraCards/ChangeFailureRateCard';
 import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
+import { DataStillSyncing } from './DoraCards/SkeletalCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
 export const DoraMetricsBody = () => {
@@ -103,22 +104,7 @@ export const DoraMetricsBody = () => {
     );
   if (!firstLoadDone) return <MiniLoader label={getRandomLoadMsg()} />;
   if (isTeamInsightsEmpty)
-    if (isSyncing)
-      return (
-        <EmptyState
-          type="SYNC_IN_PROGRESS"
-          title="Sync in progress"
-          desc={
-            <FlexBox gap={1}>
-              <MiniLoader
-                label={'Your repos are syncing, please wait for a few minutes'}
-              />
-            </FlexBox>
-          }
-        >
-          <FixedContentRefreshLoader show={isLoading} />
-        </EmptyState>
-      );
+    if (isSyncing) return <DataStillSyncing />;
     else
       return (
         <EmptyState
@@ -224,9 +210,9 @@ export const useSyncedRepos = () => {
   };
 };
 
-const ANIMATON_DURATION = 700;
+const ANIMATON_DURATION = 1000;
 
-const Syncing = () => {
+export const Syncing = () => {
   const flickerAnimation = useBoolState(false);
   const { isSyncing } = useSyncedRepos();
 
@@ -240,11 +226,26 @@ const Syncing = () => {
 
   return (
     <FlexBox
-      gap={4}
       sx={{
         height: isSyncing ? '66px' : '0px',
-        opacity: flickerAnimation.value ? 1 : 0.6,
-        transition: `all ${isSyncing ? ANIMATON_DURATION : 200}ms linear`
+        mb: isSyncing ? 0 : -2,
+        transition: `opacity ${ANIMATON_DURATION}ms linear, height 300ms ease, margin 300ms ease`
+      }}
+    >
+      <LoaderCore animation={flickerAnimation.value} />
+    </FlexBox>
+  );
+};
+
+export const LoaderCore: FC<{
+  animation?: boolean;
+}> = ({ animation }) => {
+  return (
+    <FlexBox
+      gap={4}
+      sx={{
+        transition: `opacity ${ANIMATON_DURATION}ms linear, height 300ms ease, margin 300ms ease`,
+        opacity: !animation ? 1 : 0.6
       }}
       overflow={'hidden'}
     >
@@ -267,7 +268,7 @@ const Syncing = () => {
           height={'100%'}
         />
         <FlexBox height={'25px'} centered>
-          {isSyncing && <LoadingWrapper />}
+          {<LoadingWrapper />}
         </FlexBox>
         <Line color={'#1AE579'} medium big>
           Calculating Dora
