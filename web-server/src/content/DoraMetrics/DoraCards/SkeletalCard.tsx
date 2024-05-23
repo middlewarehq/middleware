@@ -53,6 +53,7 @@ const SkeletalCard: FC<{ animation?: boolean }> = ({ animation }) => {
       minHeight={'15em'}
       component={Paper}
       col
+      boxShadow={'none !important'}
       relative
       width={'100%'}
       flexGrow={1}
