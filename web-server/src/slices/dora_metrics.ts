@@ -133,6 +133,12 @@ export const doraMetricsSlice = createSlice({
       'deploymentPrs',
       (state, action) => (state.deploymentPrs = action.payload)
     );
+    addFetchCasesToReducer(
+      builder,
+      getSyncedRepos,
+      'bookmarkedRepos',
+      (state, action) => (state.bookmarkedRepos = action.payload)
+    );
   }
 });
 
@@ -205,5 +211,14 @@ export const fetchDeploymentPRs = createAsyncThunk(
   'collab/fetchDeploymentPRs',
   async (params: { deployment_id: ID }) => {
     return await handleApi<PR[]>(`/internal/deployments/prs`, { params });
+  }
+);
+
+export const getSyncedRepos = createAsyncThunk(
+  'dora_metrics/getSyncedRepos',
+  async (params: { team_id: ID }) => {
+    return await handleApi<ID[]>(
+      `/resources/teams/${params.team_id}/bookmarked_repos`
+    );
   }
 );
