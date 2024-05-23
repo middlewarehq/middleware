@@ -2,7 +2,7 @@ import { endOfDay, startOfDay } from 'date-fns';
 import * as yup from 'yup';
 
 import { getTeamRepos } from '@/api/resources/team_repos';
-import { getBookmarkedRepos } from '@/api/resources/teams/[team_id]/bookmarked_repos';
+import { getUnsyncedRepos } from '@/api/resources/teams/[team_id]/unsynced_repos';
 import { Endpoint } from '@/api-helpers/global';
 import {
   repoFiltersFromTeamProdBranches,
@@ -49,9 +49,9 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     branches
   } = req.payload;
 
-  const [teamProdBranchesMap, bookmarkedRepos] = await Promise.all([
+  const [teamProdBranchesMap, unsyncedRepos] = await Promise.all([
     getAllTeamsReposProdBranchesForOrgAsMap(org_id),
-    getBookmarkedRepos(teamId)
+    getUnsyncedRepos(teamId)
   ]);
   const teamRepoFiltersMap =
     repoFiltersFromTeamProdBranches(teamProdBranchesMap);
@@ -173,7 +173,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       deploymentFrequencyResponse.deployment_frequency_trends,
     lead_time_prs: leadtimePrs,
     assigned_repos: teamRepos,
-    bookmarked_repos: bookmarkedRepos
+    unsynced_repos: unsyncedRepos
   } as TeamDoraMetricsApiResponseType);
 });
 

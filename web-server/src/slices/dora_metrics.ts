@@ -38,7 +38,7 @@ export type State = StateFetchConfig<{
   deployments_map: Record<string, Deployment>;
   revert_prs: PR[];
   summary_prs: PR[];
-  bookmarkedRepos: ID[];
+  unsyncedRepos: ID[];
 }>;
 
 const initialState: State = {
@@ -58,7 +58,7 @@ const initialState: State = {
   deployments_map: {},
   revert_prs: [],
   summary_prs: [],
-  bookmarkedRepos: []
+  unsyncedRepos: []
 };
 
 export const doraMetricsSlice = createSlice({
@@ -101,7 +101,7 @@ export const doraMetricsSlice = createSlice({
         );
         state.allReposAssignedToTeam = action.payload.assigned_repos;
         state.summary_prs = action.payload.lead_time_prs;
-        state.bookmarkedRepos = action.payload.bookmarked_repos;
+        state.unsyncedRepos = action.payload.unsynced_repos;
       }
     );
     addFetchCasesToReducer(
@@ -136,8 +136,8 @@ export const doraMetricsSlice = createSlice({
     addFetchCasesToReducer(
       builder,
       getSyncedRepos,
-      'bookmarkedRepos',
-      (state, action) => (state.bookmarkedRepos = action.payload)
+      'unsyncedRepos',
+      (state, action) => (state.unsyncedRepos = action.payload)
     );
   }
 });
@@ -218,7 +218,7 @@ export const getSyncedRepos = createAsyncThunk(
   'dora_metrics/getSyncedRepos',
   async (params: { team_id: ID }) => {
     return await handleApi<ID[]>(
-      `/resources/teams/${params.team_id}/bookmarked_repos`
+      `/resources/teams/${params.team_id}/unsynced_repos`
     );
   }
 );
