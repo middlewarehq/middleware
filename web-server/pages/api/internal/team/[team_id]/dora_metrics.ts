@@ -2,13 +2,13 @@ import { endOfDay, startOfDay } from 'date-fns';
 import * as yup from 'yup';
 
 import { getTeamRepos } from '@/api/resources/team_repos';
+import { getBookmarkedRepos } from '@/api/resources/teams/[team_id]/bookmarked_repos';
 import { Endpoint } from '@/api-helpers/global';
 import {
   repoFiltersFromTeamProdBranches,
   updatePrFilterParams,
   workFlowFiltersFromTeamProdBranches
 } from '@/api-helpers/team';
-import { Table } from '@/constants/db';
 import { mockDoraMetrics } from '@/mocks/dora_metrics';
 import { TeamDoraMetricsApiResponseType } from '@/types/resources';
 import {
@@ -18,7 +18,6 @@ import {
   fetchDeploymentFrequencyStats
 } from '@/utils/cockpitMetricUtils';
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
-import { db } from '@/utils/db';
 
 import { getTeamLeadTimePRs } from './insights';
 import { getAllTeamsReposProdBranchesForOrgAsMap } from './repo_branches';
@@ -179,20 +178,3 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 });
 
 export default endpoint.serve();
-
-export const getBookmarkedRepos = async (teamId?: ID) => {
-  const query = db(Table.Bookmark).select('repo_id');
-
-  if (!teamId)
-    return (await query.then((res) =>
-      res.map((item) => item?.repo_id)
-    )) as ID[];
-
-  const teamRepoIds = await getTeamRepos(teamId).then((res) =>
-    res.map((repo) => repo.id)
-  );
-
-  return (await query
-    .whereIn('repo_id', teamRepoIds)
-    .then((res) => res.map((item) => item?.repo_id))) as ID[];
-};
