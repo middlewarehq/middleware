@@ -1,4 +1,4 @@
-import { ascend, descend, partition, propOr, sort } from 'ramda';
+import { ascend, descend, head, partition, propOr, sort } from 'ramda';
 import { useCallback, useMemo } from 'react';
 
 import { track } from '@/constants/events';
@@ -28,9 +28,30 @@ export const useTableSort = <T = Record<string, any>>(
     [conf.field, conf.order, sortConfig.set]
   );
 
-  const sortedList: T[] = useMemo(
-    () =>
-      sort(
+  const handleAuthorUsernameSort = useCallback(
+    (rawList: any[]) => {
+      if (!head(rawList || [])?.author?.username) return rawList;
+
+      const result = [...rawList];
+      if (conf.order === 'asc') {
+        result.sort((a, b) => {
+          return a.author.username.localeCompare(b.author.username);
+        });
+      } else {
+        result.sort((b, a) => {
+          return a.author.username.localeCompare(b.author.username);
+        });
+      }
+      return result;
+    },
+    [conf.order]
+  );
+
+  const sortedList: T[] = useMemo(() => {
+    if (conf.field === 'author') {
+      return handleAuthorUsernameSort(list);
+    } else
+      return sort(
         // @ts-ignore
         conf.order === 'asc'
           ? // @ts-ignore
@@ -38,9 +59,8 @@ export const useTableSort = <T = Record<string, any>>(
           : // @ts-ignore
             descend(propOr('', conf.field)),
         list
-      ),
-    [conf.field, conf.order, list]
-  );
+      );
+  }, [conf.field, conf.order, handleAuthorUsernameSort, list]);
 
   const getCSV = useCallback(() => {
     createCsvFromList(list);
