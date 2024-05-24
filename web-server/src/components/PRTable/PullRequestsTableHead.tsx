@@ -1,6 +1,5 @@
 import { ScheduleRounded } from '@mui/icons-material';
 import {
-  Box,
   Checkbox,
   TableCell,
   TableHead,
@@ -95,46 +94,37 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             Pull Request
           </TableSortLabel>
         </TableCell>
-        <TableCell sx={{ p: CELL_PAD, py: 1.5 }}>
+
+        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
           <TableSortLabel
             direction={conf.field === 'commits' ? conf.order : 'asc'}
             active={conf.field === 'commits'}
-            onClick={() => {
-              if (enabledColumnsSet?.has('commits')) {
-                return updateSortConf('commits');
-              }
-              if (enabledColumnsSet?.has('lines_changed')) {
-                return updateSortConf('additions');
-              }
-              if (enabledColumnsSet?.has('comments')) {
-                return updateSortConf('comments');
-              }
-            }}
+            onClick={() => updateSortConf('commits')}
           >
-            <Box
-              display="flex"
-              gap={1}
-              alignItems="center"
-              justifyContent="center"
-            >
-              {enabledColumnsSet?.has('commits') && (
-                <>
-                  <Box color="secondary.main">Commits</Box>
-                  <Box>/</Box>
-                </>
-              )}
-              {enabledColumnsSet?.has('lines_changed') && (
-                <>
-                  <Box color="warning.main">Lines</Box>
-                  <Box>/</Box>
-                </>
-              )}
-              {enabledColumnsSet?.has('comments') && (
-                <Box color="info.main">Comments</Box>
-              )}
-            </Box>
+            Commits
           </TableSortLabel>
         </TableCell>
+
+        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+          <TableSortLabel
+            direction={conf.field === 'additions' ? conf.order : 'asc'}
+            active={conf.field === 'additions'}
+            onClick={() => updateSortConf('additions')}
+          >
+            Lines
+          </TableSortLabel>
+        </TableCell>
+
+        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+          <TableSortLabel
+            direction={conf.field === 'comments' ? conf.order : 'asc'}
+            active={conf.field === 'comments'}
+            onClick={() => updateSortConf('comments')}
+          >
+            Comments
+          </TableSortLabel>
+        </TableCell>
+
         {enabledColumnsSet.has('base_branch') && (
           <TableCell
             align="center"
