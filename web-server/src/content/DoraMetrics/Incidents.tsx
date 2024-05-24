@@ -184,33 +184,41 @@ export const AllIncidentsBody = () => {
           </Line>{' '}
           from {dateRangeLabel} across all data sources,{' '}
           {filteredDeployments.length}{' '}
-          {pluralize('deployment', filteredDeployments.length)} may have led to
-          possible incidents.
+          {pluralize('deployment', filteredDeployments.length)}{' '}
+          {filteredDeployments.length ? 'may' : ''} have led to possible
+          incidents.
         </Line>
       </FlexBox>
-      <Divider />
-      <FlexBox gap1 flex1 fullWidth component={Paper} minHeight="75vh">
-        <FlexBox col>
-          <FlexBox flexGrow={1}>
-            <Scrollbar autoHeight autoHeightMin="100%">
-              <FlexBox col gap1 p={1} flexGrow={1}>
-                {filteredDeployments?.map((deployment) => {
-                  return (
-                    <DeploymentWithIncidentsMenuItem
-                      deployment={deployment}
-                      key={deployment.id}
-                      onSelect={setSelectedDeploymentId}
-                      selected={selectedDeploymentId.value === deployment.id}
-                    />
-                  );
-                })}
+
+      {!!filteredDeployments.length && (
+        <>
+          <Divider />
+          <FlexBox gap1 flex1 fullWidth component={Paper} minHeight="75vh">
+            <FlexBox col>
+              <FlexBox flexGrow={1}>
+                <Scrollbar autoHeight autoHeightMin="100%">
+                  <FlexBox col gap1 p={1} flexGrow={1}>
+                    {filteredDeployments?.map((deployment) => {
+                      return (
+                        <DeploymentWithIncidentsMenuItem
+                          deployment={deployment}
+                          key={deployment.id}
+                          onSelect={setSelectedDeploymentId}
+                          selected={
+                            selectedDeploymentId.value === deployment.id
+                          }
+                        />
+                      );
+                    })}
+                  </FlexBox>
+                </Scrollbar>
               </FlexBox>
-            </Scrollbar>
+            </FlexBox>
+            <Divider orientation="vertical" />
+            <SelectedIncidentDetails deploymentDetails={selectedDeployment} />
           </FlexBox>
-        </FlexBox>
-        <Divider orientation="vertical" />
-        <SelectedIncidentDetails deploymentDetails={selectedDeployment} />
-      </FlexBox>
+        </>
+      )}
     </FlexBox>
   );
 };
