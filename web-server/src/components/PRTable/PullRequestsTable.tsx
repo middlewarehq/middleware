@@ -37,8 +37,8 @@ import { Line } from '@/components/Text';
 import { SearchInput } from '@/components/TicketsTableAddons/SearchInput';
 import { EasyState, useEasyState } from '@/hooks/useEasyState';
 import { useTableSort } from '@/hooks/useTableSort';
-import { DEFAULT_PR_TABLE_COLUMN_STATE_MAP } from '@/slices/app';
-import { useSelector } from '@/store';
+import { DEFAULT_PR_TABLE_COLUMN_STATE_MAP, appSlice } from '@/slices/app';
+import { useDispatch, useSelector } from '@/store';
 import { brandColors } from '@/theme/schemes/theme';
 import { PR } from '@/types/resources';
 import { getDurationString } from '@/utils/date';
@@ -109,6 +109,8 @@ export const PullRequestsTable: FC<
   }, [page, pageCount]);
 
   const enableCsv = true;
+
+  useLeadTimeMigration();
 
   return (
     <FlexBox col gap1>
@@ -943,4 +945,17 @@ export const MiniLeadTimeStat: FC<{
       <CycleTimePill time={lead} />
     </FlexBox>
   );
+};
+
+const useLeadTimeMigration = () => {
+  const prEnabledConfig = useSelector((s) => s.app.prTableColumnsConfig) as any;
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (prEnabledConfig?.lead_time_as_sum_of_parts !== undefined) {
+      const updatedColumns = { ...prEnabledConfig };
+      updatedColumns.lead_time = updatedColumns.lead_time_as_sum_of_parts;
+      delete updatedColumns.lead_time_as_sum_of_parts;
+      dispatch(appSlice.actions.setPrTableColumnConfig(updatedColumns));
+    }
+  }, [dispatch, prEnabledConfig]);
 };
