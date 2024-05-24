@@ -26,7 +26,7 @@ export const DataStillSyncing = () => {
   }, [flickerAnimation.toggle]);
   return (
     <FlexBox col gap2>
-      <ScoreSkeleton />
+      <ScoreSkeleton animation={flickerAnimation.value} />
       <LoaderCore />
       <Divider />
       <Grid container spacing={4}>
@@ -118,6 +118,7 @@ const ScoreSkeleton: FC<{ animation?: boolean }> = ({ animation }) => {
           ml={1}
           sx={{
             filter: `brightness(${animation ? 0.7 : 1})`,
+            opacity: animation ? 0.7 : 1,
             transition: `all ${ANIMATON_DURATION}ms linear`
           }}
         >
