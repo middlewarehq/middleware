@@ -201,71 +201,60 @@ export const PullRequestsTable: FC<
                   <TableCell sx={{ p: CELL_PAD }}>
                     <PrMetaCell pr={pr} />
                   </TableCell>
-                  <TableCell sx={{ p: CELL_PAD }}>
-                    <Box width="100%" display="flex" alignItems="center">
-                      <LightTooltip arrow title={<PrChangesTooltip pr={pr} />}>
+                  {enabledColumnsSet?.has('commits') && (
+                    <TableCell sx={{ p: CELL_PAD }}>
+                      {enabledColumnsSet?.has('commits') && (
                         <Box
                           display="flex"
+                          flex={1}
+                          gap={1}
                           alignItems="center"
-                          bgcolor={theme.colors.secondary.lighter}
-                          borderRadius={1}
-                          overflow="hidden"
-                          maxWidth="220px"
-                          gap={2}
-                          py={1 / 2}
-                          px={1}
+                          color={alpha(theme.colors.secondary.main, 0.8)}
                         >
-                          {enabledColumnsSet?.has('commits') && (
-                            <Box
-                              display="flex"
-                              flex={1}
-                              gap={1}
-                              alignItems="center"
-                              justifyContent="flex-start"
-                              color={alpha(theme.colors.secondary.main, 0.8)}
-                            >
-                              <IoGitCommit />
-                              <Box fontWeight={600}>{pr.commits}</Box>
-                            </Box>
-                          )}
-                          {enabledColumnsSet?.has('lines_changed') && (
-                            <Box
-                              display="flex"
-                              flex={1}
-                              gap={1}
-                              alignItems="center"
-                              justifyContent="center"
-                              color={
-                                pr.additions + pr.deletions
-                                  ? 'warning.main'
-                                  : 'secondary.light'
-                              }
-                            >
-                              <VscRequestChanges />
-                              <Box fontWeight={600}>
-                                {pr.additions + pr.deletions}
-                              </Box>
-                            </Box>
-                          )}
-                          {enabledColumnsSet?.has('comments') && (
-                            <Box
-                              display="flex"
-                              flex={1}
-                              gap={1}
-                              alignItems="center"
-                              justifyContent="flex-end"
-                              color={
-                                pr.comments ? 'info.main' : 'secondary.light'
-                              }
-                            >
-                              <GoCommentDiscussion />
-                              <Box fontWeight={600}>{pr.comments}</Box>
-                            </Box>
-                          )}
+                          <IoGitCommit />
+                          <Box fontWeight={600}>{pr.commits}</Box>
                         </Box>
-                      </LightTooltip>
-                    </Box>
-                  </TableCell>
+                      )}
+                    </TableCell>
+                  )}
+                  {enabledColumnsSet?.has('lines_changed') && (
+                    <TableCell sx={{ p: CELL_PAD }}>
+                      {
+                        <Box
+                          display="flex"
+                          flex={1}
+                          gap={1}
+                          alignItems="center"
+                          color={
+                            pr.additions + pr.deletions
+                              ? 'warning.main'
+                              : 'secondary.light'
+                          }
+                        >
+                          <VscRequestChanges />
+                          <Box fontWeight={600}>
+                            {pr.additions + pr.deletions}
+                          </Box>
+                        </Box>
+                      }
+                    </TableCell>
+                  )}
+                  {enabledColumnsSet?.has('comments') && (
+                    <TableCell sx={{ p: CELL_PAD }}>
+                      {
+                        <Box
+                          display="flex"
+                          flex={1}
+                          gap={1}
+                          alignItems="center"
+                          color={pr.comments ? 'info.main' : 'secondary.light'}
+                        >
+                          <GoCommentDiscussion />
+                          <Box fontWeight={600}>{pr.comments}</Box>
+                        </Box>
+                      }
+                    </TableCell>
+                  )}
                   {enabledColumnsSet.has('base_branch') && (
                     <TableCell sx={{ p: CELL_PAD }}>{pr.base_branch}</TableCell>
                   )}
