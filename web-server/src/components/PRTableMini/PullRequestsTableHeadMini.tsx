@@ -80,14 +80,14 @@ export const PullRequestsTableHeadMini: FC<PullRequestsTableHeadProps> = ({
             </TableSortLabel>
           </TableCell>
         )}
-        {!hideColumns?.has('cycle_time') && (
+        {!hideColumns?.has('lead_time') && (
           <TableCell sx={{ p: CELL_PAD, py: 1.5 }}>
             <TableSortLabel
-              direction={conf.field === 'cycle_time' ? conf.order : 'asc'}
-              active={conf.field === 'cycle_time'}
-              onClick={() => updateSortConf('cycle_time')}
+              direction={conf.field === 'lead_time' ? conf.order : 'asc'}
+              active={conf.field === 'lead_time'}
+              onClick={() => updateSortConf('lead_time')}
             >
-              Cycle
+              Lead
             </TableSortLabel>
           </TableCell>
         )}
