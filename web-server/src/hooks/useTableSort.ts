@@ -28,11 +28,6 @@ export const useTableSort = <T = Record<string, any>>(
     [conf.field, conf.order, sortConfig.set]
   );
 
-  console.log('Debugging', {
-    list,
-    element: list[0]
-  });
-
   const sortedList: T[] = useMemo(
     () =>
       sort(
