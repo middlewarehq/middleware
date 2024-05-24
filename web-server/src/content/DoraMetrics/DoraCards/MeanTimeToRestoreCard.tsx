@@ -104,7 +104,7 @@ export const MeanTimeToRestoreCard = () => {
               }}
             >
               <MetricExternalRead
-                link={`https://docs.gitlab.com/ee/user/analytics/dora_metrics.html#time-to-restore-service`}
+                link={`https://www.middlewarehq.com/blog/mttr-deep-dive-a-technical-guide-for-engineering-managers-leaders`}
                 label="Mean Time to Recovery"
               />
             </FlexBox>
