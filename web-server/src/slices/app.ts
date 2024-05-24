@@ -61,7 +61,7 @@ export const DEFAULT_PR_TABLE_COLUMN_STATE_MAP = {
   rework_time: false,
   merge_time: false,
   merge_to_deploy: false,
-  lead_time_as_sum_of_parts: true,
+  lead_time: true,
   created_at: false,
   updated_at: false,
   head_branch: false,

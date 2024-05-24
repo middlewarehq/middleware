@@ -384,7 +384,7 @@ export const PullRequestsTable: FC<
                       </Line>
                     </TableCell>
                   )}
-                  {enabledColumnsSet.has('lead_time_as_sum_of_parts') && (
+                  {enabledColumnsSet.has('lead_time') && (
                     <TableCell sx={{ p: CELL_PAD }}>
                       <MiniLeadTimeStat
                         lead={pr.lead_time}
