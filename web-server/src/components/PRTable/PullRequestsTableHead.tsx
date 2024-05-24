@@ -88,9 +88,9 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
         )}
         <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
           <TableSortLabel
-            direction={conf.field === 'updated_at' ? conf.order : 'asc'}
-            active={conf.field === 'updated_at'}
-            onClick={() => updateSortConf('updated_at')}
+            direction={conf.field === 'repo_name' ? conf.order : 'asc'}
+            active={conf.field === 'repo_name'}
+            onClick={() => updateSortConf('repo_name')}
           >
             Pull Request
           </TableSortLabel>
@@ -266,14 +266,12 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             </TableSortLabel>
           </TableCell>
         )}
-        {enabledColumnsSet.has('lead_time_as_sum_of_parts') && (
+        {enabledColumnsSet.has('lead_time') && (
           <TableCell sx={{ p: CELL_PAD, py: 1.5 }}>
             <TableSortLabel
-              direction={
-                conf.field === 'lead_time_as_sum_of_parts' ? conf.order : 'asc'
-              }
-              active={conf.field === 'lead_time_as_sum_of_parts'}
-              onClick={() => updateSortConf('lead_time_as_sum_of_parts')}
+              direction={conf.field === 'lead_time' ? conf.order : 'asc'}
+              active={conf.field === 'lead_time'}
+              onClick={() => updateSortConf('lead_time')}
             >
               Lead <ClockIcon />
             </TableSortLabel>

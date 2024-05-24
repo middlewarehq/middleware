@@ -1,6 +1,5 @@
 import { ascend, descend, partition, propOr, sort } from 'ramda';
 import { useCallback, useMemo } from 'react';
-import { snakeCase } from 'voca';
 
 import { track } from '@/constants/events';
 import { useEasyState } from '@/hooks/useEasyState';
@@ -28,6 +27,11 @@ export const useTableSort = <T = Record<string, any>>(
       }),
     [conf.field, conf.order, sortConfig.set]
   );
+
+  console.log('Debugging', {
+    list,
+    element: list[0]
+  });
 
   const sortedList: T[] = useMemo(
     () =>
@@ -84,10 +88,6 @@ const EXCLUDED_HEADERS = new Set([
   'priority_order'
 ]);
 
-const headerNameOverrides: Record<string, string> = {
-  lead_time_as_sum_of_parts: 'lead_time_for_changes'
-};
-
 const getNestedValueFromCell = (cell: any) => {
   if (Array.isArray(cell) && getNestedValueFromCellItem(cell[0])) {
     const values = cell.map(getNestedValueFromCellItem).filter(Boolean);
@@ -108,10 +108,6 @@ const checkIfColumnShouldBeRemoved = (name: string, cell: any) => {
     return true;
 
   return false;
-};
-
-const renameColumns = (headers: string[]) => {
-  return headers.map((name) => snakeCase(headerNameOverrides[name] || name));
 };
 
 const createCsvFromList = (list: Record<string, any>[]) => {
@@ -144,7 +140,7 @@ const createCsvFromList = (list: Record<string, any>[]) => {
       .join(',')
   );
 
-  const headers = renameColumns([...includedSet.keys()]);
+  const headers = [...includedSet.keys()];
 
   downloadCSVFromString(
     [headers.join(','), ...rows].join('\n'),

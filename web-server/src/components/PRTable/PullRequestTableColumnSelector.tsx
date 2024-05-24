@@ -13,10 +13,7 @@ import { FlexBox } from '../FlexBox';
 
 const formatColumnName = (
   name: keyof typeof DEFAULT_PR_TABLE_COLUMN_STATE_MAP
-) => {
-  if (name === 'lead_time_as_sum_of_parts') return 'Lead Time';
-  return name.split('_').join(' ');
-};
+) => name.split('_').join(' ');
 
 export const PullRequestTableColumnSelector = () => {
   const theme = useTheme();

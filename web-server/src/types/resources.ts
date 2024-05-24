@@ -125,6 +125,7 @@ export interface BasePR {
 
 export interface PR extends BasePR {
   lead_time_as_sum_of_parts?: number;
+  lead_time?: number;
   original_reverted_pr?: BasePR;
 }
 
