@@ -20,7 +20,7 @@
 
 
 ## Introduction
-**Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the DORA (DevOps Research and Assessment) metrics. The DORA metrics are a set of four key values that provide insights into software delivery performance and operational efficiency. 
+**Middleware** is an open-source tool designed to help engineering leaders measure and analyze the effectiveness of their teams using the [DORA metrics](https://dora.dev). The DORA metrics are a set of [four key values](https://dora.dev/guides/dora-metrics-four-keys/) that provide insights into software delivery performance and operational efficiency.
 
 They are:
 - **Deployment Frequency**: The frequency of code deployments to production or an operational environment.
