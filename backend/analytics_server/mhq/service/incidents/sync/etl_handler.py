@@ -1,3 +1,4 @@
+from os import getenv
 from datetime import timedelta
 from typing import List
 
@@ -17,6 +18,11 @@ from mhq.utils.time import time_now
 
 
 class IncidentsETLHandler:
+
+    DEFAULT_SYNC_DAYS = (
+        int(getenv("DEFAULT_SYNC_DAYS")) if getenv("DEFAULT_SYNC_DAYS") else 31
+    )
+
     def __init__(
         self,
         provider: IncidentProvider,
@@ -67,7 +73,7 @@ class IncidentsETLHandler:
             return
 
     def __get_incidents_bookmark(
-        self, service: OrgIncidentService, default_sync_days: int = 31
+        self, service: OrgIncidentService, default_sync_days: int = DEFAULT_SYNC_DAYS
     ) -> IncidentsBookmark:
         bookmark = self.incident_repo_service.get_incidents_bookmark(
             str(service.id), IncidentBookmarkType.SERVICE, self.provider

@@ -1,3 +1,4 @@
+from os import getenv
 from datetime import timedelta
 from typing import List, Tuple
 from uuid import uuid4
@@ -20,6 +21,11 @@ from mhq.utils.time import time_now
 
 
 class WorkflowETLHandler:
+
+    DEFAULT_SYNC_DAYS = (
+        int(getenv("DEFAULT_SYNC_DAYS")) if getenv("DEFAULT_SYNC_DAYS") else 31
+    )
+
     def __init__(
         self,
         code_repo_service: CodeRepoService,
@@ -99,7 +105,7 @@ class WorkflowETLHandler:
             return
 
     def __get_repo_workflow_bookmark(
-        self, repo_workflow: RepoWorkflow, default_sync_days: int = 31
+        self, repo_workflow: RepoWorkflow, default_sync_days: int = DEFAULT_SYNC_DAYS
     ) -> RepoWorkflowRunsBookmark:
         repo_workflow_bookmark = (
             self.workflow_repo_service.get_repo_workflow_runs_bookmark(repo_workflow.id)
