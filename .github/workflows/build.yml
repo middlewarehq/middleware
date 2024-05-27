@@ -79,7 +79,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=false,name-canonical=true,push=true
 
-
       - name: Print build output
         run: echo "${{ toJson(steps.build.outputs) }}"
 
@@ -88,6 +87,33 @@ jobs:
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"  
+
+      - name: Update version.txt
+        run: |
+          echo "Updating version.txt"
+          TAGS="${{ steps.meta.outputs.tags }}"
+          SHA="${{ github.sha }}"
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          if [ ! -f version.txt ]; then
+            echo "tags: $TAGS" > version.txt
+            echo "sha: $SHA" >> version.txt
+            echo "date: $DATE" >> version.txt
+          else
+            sed -i 's/^tags:.*/tags: $TAGS/' version.txt
+            sed -i 's/^sha:.*/sha: $SHA/' version.txt
+            if ! grep -q '^date:' version.txt; then
+              echo "date: $DATE" >> version.txt
+            else
+              sed -i 's/^date:.*/date: $DATE/' version.txt
+            fi
+          fi
+          cat version.txt
+
+      - name: Commit version.txt
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "Update version.txt for new Docker image"
+          file_pattern: version.txt
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
