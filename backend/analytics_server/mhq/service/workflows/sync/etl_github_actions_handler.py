@@ -20,7 +20,6 @@ from mhq.store.repos.workflows import WorkflowRepoService
 from mhq.utils.log import LOG
 from mhq.utils.time import ISO_8601_DATE_FORMAT, time_now
 
-DEFAULT_WORKFLOW_SYNC_DAYS = 31
 WORKFLOW_PROCESSING_CHUNK_SIZE = 100
 
 
