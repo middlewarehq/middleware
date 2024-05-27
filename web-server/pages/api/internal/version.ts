@@ -23,9 +23,9 @@ endpoint.handle.GET(nullSchema, async (req, res) => {
 });
 
 interface ProjectVersionInfo {
-  tags: string;
-  sha: string;
-  date: string;
+  docker_image_tags: string;
+  merge_commit_sha: string;
+  docker_image_build_date: string;
 }
 
 interface CheckNewVersionResponse {
@@ -83,9 +83,9 @@ function readVersionFile(): ProjectVersionInfo {
     versionInfo[key] = value;
   });
   return {
-    tags: versionInfo['tags'],
-    sha: versionInfo['sha'],
-    date: versionInfo['date']
+    docker_image_tags: versionInfo['DOCKER_IMAGE_TAGS'],
+    merge_commit_sha: versionInfo['MERGE_COMMIT_SHA'],
+    docker_image_build_date: versionInfo['DOCKER_IMAGE_BUILD_DATE']
   };
 }
 
@@ -104,7 +104,7 @@ async function fetchDockerHubTags(): Promise<
 
 async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
   const versionInfo = readVersionFile();
-  const localDate = new Date(versionInfo.date);
+  const localDate = new Date(versionInfo.docker_image_build_date);
   const remoteTags = await fetchDockerHubTags();
 
   remoteTags.sort(
@@ -118,7 +118,7 @@ async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
   const latestDockerImageLink = `https://hub.docker.com/layers/${dockerRepoName}/${latestTag.name}/images/${latestTag.digest}`;
 
   return {
-    latest_github_commit: versionInfo.sha,
+    latest_github_commit: versionInfo.merge_commit_sha,
     latest_docker_image: latestDockerImageLink,
     is_update_available: isUpdateAvailable
   };
