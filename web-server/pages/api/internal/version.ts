@@ -28,7 +28,7 @@ interface VersionInfo {
   date: string;
 }
 
-interface CheckResult {
+interface CheckNewVersionResponse {
   latest_github_commit: string;
   latest_docker_image: string;
   is_update_available: boolean;
@@ -102,7 +102,7 @@ async function fetchDockerHubTags(): Promise<
   }));
 }
 
-async function checkNewImageRelease(): Promise<CheckResult> {
+async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
   const versionInfo = readVersionFile();
   const localDate = new Date(versionInfo.date);
   const remoteTags = await fetchDockerHubTags();
