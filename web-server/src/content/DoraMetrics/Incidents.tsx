@@ -479,11 +479,6 @@ const IncidentUserAvatar: FC<{
       title={
         <Box>
           <Box>{`@${userDetails.username}`}</Box>
-          {!userDetails.linked_user && (
-            <Line fontStyle="italic" color="secondary.dark">
-              User not added to Middleware
-            </Line>
-          )}
         </Box>
       }
     >

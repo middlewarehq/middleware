@@ -321,14 +321,6 @@ export const PullRequestsTableMini: FC<
                                       reviewer.username
                                     : `@${reviewer.username}`}
                                 </Box>
-                                {!reviewer.linked_user && (
-                                  <Box
-                                    fontStyle="italic"
-                                    color="secondary.dark"
-                                  >
-                                    User not added to Middleware
-                                  </Box>
-                                )}
                               </Box>
                             }
                             key={reviewer.username}

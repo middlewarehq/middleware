@@ -419,30 +419,6 @@ export const PullRequestsTable: FC<
   );
 };
 
-const PrChangesTooltip: FC<{ pr: PR }> = ({ pr }) => {
-  return (
-    <Box
-      display="grid"
-      gridTemplateColumns="auto 1fr"
-      columnGap={2}
-      fontSize="1.2em"
-    >
-      <Box gridArea="1 / 1 / 2 / 3" fontWeight={700} mb={1}>
-        Git changes
-      </Box>
-
-      <Box>Commits</Box>
-      <Box textAlign="right">{pr.commits}</Box>
-      <Box>Lines</Box>
-      <Box textAlign="right">{pr.additions + pr.deletions}</Box>
-      <Box>Comments</Box>
-      <Box textAlign="right">{pr.comments}</Box>
-      <Box>Files</Box>
-      <Box textAlign="right">{pr.changed_files}</Box>
-    </Box>
-  );
-};
-
 const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
   const theme = useTheme();
   return (
@@ -459,11 +435,6 @@ const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
           title={
             <Box>
               <Box>{`@${reviewer.username}`}</Box>
-              {!reviewer.linked_user && (
-                <Box fontStyle="italic" color="secondary.dark">
-                  User not added to Middleware
-                </Box>
-              )}
             </Box>
           }
           key={reviewer.username}
