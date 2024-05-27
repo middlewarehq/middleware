@@ -1,3 +1,4 @@
+from os import getenv
 from datetime import datetime, timedelta
 from typing import List
 
@@ -19,6 +20,9 @@ from mhq.utils.time import time_now
 
 
 class CodeETLHandler:
+
+    DEFAULT_SYNC_DAYS = int(getenv("DEFAULT_SYNC_DAYS")) or 31
+
     def __init__(
         self,
         code_repo_service: CodeRepoService,
@@ -92,7 +96,10 @@ class CodeETLHandler:
             LOG.error(f"Error syncing revert PRs for repo {org_repo.name}: {str(e)}")
             raise e
 
-    def __get_org_repo_bookmark(self, org_repo: OrgRepo, default_sync_days: int = 31):
+    def __get_org_repo_bookmark(
+        self, org_repo: OrgRepo, default_sync_days: int = DEFAULT_SYNC_DAYS
+    ):
+
         bookmark = self.code_repo_service.get_org_repo_bookmark(
             org_repo, BookmarkType.PR
         )
