@@ -14,8 +14,7 @@ const versionFilePath = path.join(
   'version.txt'
 );
 
-const dockerHubBaseUrl = '`https://hub.docker.com/layers/middlewareeng/middleware'
-
+const dockerRepoName = 'middlewareeng/middleware';
 
 const endpoint = new Endpoint(nullSchema);
 
@@ -93,8 +92,8 @@ function readVersionFile(): VersionInfo {
 async function fetchDockerHubTags(): Promise<
   { name: string; last_updated: string; digest: string }[]
 > {
-  const fetchTagsUrl = `${dockerHubBaseUrl}/tags/`
-  const response = await axios.get<DockerHubAPIResponse>(fetchTagsUrl);
+  const dockerHubUrl = `https://hub.docker.com/v2/repositories/${dockerRepoName}/tags/`;
+  const response = await axios.get<DockerHubAPIResponse>(dockerHubUrl);
 
   return response.data.results.map((tag) => ({
     name: tag.name,
@@ -116,8 +115,7 @@ async function checkNewImageRelease(): Promise<CheckResult> {
   const latestRemoteDate = new Date(latestTag.last_updated);
   const isUpdateAvailable = latestRemoteDate > localDate;
 
-
-  const latestDockerImageLink = `${dockerHubBaseUrl}/${latestTag.name}/images/${latestTag.digest}`;
+  const latestDockerImageLink = `https://hub.docker.com/layers/${dockerRepoName}/${latestTag.name}/images/${latestTag.digest}`;
 
   return {
     latest_github_commit: versionInfo.sha,
