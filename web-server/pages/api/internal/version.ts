@@ -22,7 +22,7 @@ endpoint.handle.GET(nullSchema, async (req, res) => {
   return res.send(await checkNewImageRelease());
 });
 
-interface VersionInfo {
+interface ProjectVersionInfo {
   tags: string;
   sha: string;
   date: string;
@@ -74,7 +74,7 @@ interface DockerImage {
   last_pushed: string;
 }
 
-function readVersionFile(): VersionInfo {
+function readVersionFile(): ProjectVersionInfo {
   const data = fs.readFileSync(versionFilePath, 'utf8');
   const lines = data.split('\n').filter(Boolean);
   const versionInfo: { [key: string]: string } = {};
