@@ -158,7 +158,7 @@ export const ImageUpdateBanner = () => {
               size="small"
               onClick={openImageUpdateInstructionsModal}
             >
-              Read Instruction
+              Read Instructions
             </Button>
           </FlexBox>
           <CloseIcon
