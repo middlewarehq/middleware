@@ -91,11 +91,11 @@ export const useTableSort = <T = Record<string, any>>(
     if (!result.some((pr) => pr?.first_response_time)) return simpleSort();
     if (conf.order === 'asc') {
       result.sort((a, b) => {
-        return (a.first_response_time || 0) - (b.first_response_time || 0);
+        return Number(a.first_response_time) - Number(b.first_response_time);
       });
     } else {
       result.sort((b, a) => {
-        return (a.first_response_time || 0) - (b.first_response_time || 0);
+        return Number(a.first_response_time) - Number(b.first_response_time);
       });
     }
     return result;
