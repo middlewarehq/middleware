@@ -22,8 +22,10 @@ import ThemeProvider from 'src/theme/ThemeProvider';
 import { AppErrors } from '@/components/AppErrors/AppErrors';
 import { AppHead } from '@/components/AppHead';
 import { ErrorBoundaryFallback } from '@/components/ErrorBoundaryFallback';
+import { ImageUpdateBanner } from '@/components/ImageUpdateBanner';
 import { MaintenanceModeDisplay } from '@/components/MaintenanceModeDisplay';
 import { OverlayPageProvider } from '@/components/OverlayPageContext';
+import { TopLevelLogicComponent } from '@/components/TopLevelLogicComponent';
 import { ModalCtxProvider } from '@/contexts/ModalContext';
 import {
   FeatureFlagsContext,
@@ -84,6 +86,8 @@ function MyApp(props: MyAppProps) {
                             <OverlayPageProvider>
                               <CssBaseline />
                               <AppErrors />
+                              <TopLevelLogicComponent />
+                              <ImageUpdateBanner />
                               <AuthConsumer>
                                 {(auth) =>
                                   !auth.isInitialized ? (
