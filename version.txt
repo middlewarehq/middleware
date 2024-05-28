@@ -1,3 +1,0 @@
-DOCKER_IMAGE_TAGS: middlewareeng/middleware:latest, middlewareeng/middleware:v1.0.0
-MERGE_COMMIT_SHA: d6e3d1a09f5b4f9c3e8d3e5e7a7c9e0b4a2d9c3a
-DOCKER_IMAGE_BUILD_DATE: 2024-09-13T12:57:39.272597Z

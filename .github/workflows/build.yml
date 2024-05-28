@@ -99,12 +99,12 @@ jobs:
             echo "MERGE_COMMIT_SHA: $MERGE_COMMIT_SHA" >> version.txt
             echo "DOCKER_IMAGE_BUILD_DATE: $DOCKER_IMAGE_BUILD_DATE" >> version.txt
           else
-            sed -i "s/^DOCKER_IMAGE_TAGS:.*/DOCKER_IMAGE_TAGS: $DOCKER_IMAGE_TAGS/" version.txt
-            sed -i "s/^MERGE_COMMIT_SHA:.*/MERGE_COMMIT_SHA: $MERGE_COMMIT_SHA/" version.txt
+            sed -i "s|^DOCKER_IMAGE_TAGS:.*|DOCKER_IMAGE_TAGS: $DOCKER_IMAGE_TAGS|" version.txt
+            sed -i "s|^MERGE_COMMIT_SHA:.*|MERGE_COMMIT_SHA: $MERGE_COMMIT_SHA|" version.txt
             if ! grep -q '^DOCKER_IMAGE_BUILD_DATE:' version.txt; then
               echo "DOCKER_IMAGE_BUILD_DATE: $DOCKER_IMAGE_BUILD_DATE" >> version.txt
             else
-              sed -i "s/^DOCKER_IMAGE_BUILD_DATE:.*/DOCKER_IMAGE_BUILD_DATE: $DOCKER_IMAGE_BUILD_DATE/" version.txt
+              sed -i "s|^DOCKER_IMAGE_BUILD_DATE:.*|DOCKER_IMAGE_BUILD_DATE: $DOCKER_IMAGE_BUILD_DATE|" version.txt
             fi
           fi
           cat version.txt
