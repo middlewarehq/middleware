@@ -14,7 +14,8 @@ import {
   ActiveBranchMode,
   TeamSettings,
   FetchTeamSettingsAPIResponse,
-  FetchTeamsResponse
+  FetchTeamsResponse,
+  ImageStatusApiResponse
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
@@ -46,6 +47,8 @@ type State = StateFetchConfig<{
   isUpdated: boolean;
   prTableColumnsConfig: typeof DEFAULT_PR_TABLE_COLUMN_STATE_MAP;
   lastSyncedAt: Date | null;
+  lastDisabledImageUpdateBannerAt: DateString | null;
+  latestImageStatus: ImageStatusApiResponse | null;
 }>;
 
 export const DEFAULT_PR_TABLE_COLUMN_STATE_MAP = {
@@ -83,7 +86,9 @@ const initialState: State = {
   isUpdated: false,
   sidebarState: {},
   prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP,
-  lastSyncedAt: null
+  lastSyncedAt: null,
+  lastDisabledImageUpdateBannerAt: null,
+  latestImageStatus: null
 };
 
 export const appSlice = createSlice({
@@ -170,6 +175,20 @@ export const appSlice = createSlice({
       action: PayloadAction<typeof DEFAULT_PR_TABLE_COLUMN_STATE_MAP>
     ): void {
       state.prTableColumnsConfig = action.payload;
+    },
+    setImageUpdateBannerAsDisabled(
+      state: State,
+      action: PayloadAction<Date | null>
+    ) {
+      state.lastDisabledImageUpdateBannerAt = action.payload
+        ? new Date(action.payload).toISOString()
+        : null;
+    },
+    setLatestImageStatus(
+      state: State,
+      action: PayloadAction<ImageStatusApiResponse | null>
+    ) {
+      state.latestImageStatus = action.payload;
     }
   },
   extraReducers: (builder) => {
