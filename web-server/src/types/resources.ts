@@ -1007,3 +1007,9 @@ export enum OnboardingStep {
 }
 
 export type IntegrationsLinkedAtMap = Record<keyof IntegrationsMap, DateString>;
+
+export type ImageStatusApiResponse = {
+  latest_github_commit: string;
+  latest_docker_image: string;
+  is_update_available: boolean;
+};
