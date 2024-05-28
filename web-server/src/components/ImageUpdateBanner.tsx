@@ -27,11 +27,7 @@ const FETCH_LATEST_IMAGE_INSTRUCTIONS = [
   `
   docker pull middlewareeng/middleware:latest
   docker rm -f middleware || true
-  docker run --name middleware \
-      -p 3333:3333 \
-      -v middleware_postgres_data:/var/lib/postgresql/data \
-      -v middleware_keys:/app/keys \
-      -d middlewareeng/middleware:latest
+  docker run --name middleware -p 3333:3333 -v middleware_postgres_data:/var/lib/postgresql/data -v middleware_keys:/app/keys -d middlewareeng/middleware:latest
   docker logs -f middleware
   `,
   `docker rm -f middleware`
