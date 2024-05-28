@@ -17,7 +17,7 @@ export const useTableSort = <T = Record<string, any>>(
 ) => {
   const sortConfig = useEasyState(defaultSortConfig);
 
-  const conf = sortConfig.value;
+  const conf = useMemo(() => sortConfig.value, [sortConfig.value]);
 
   const updateSortConf = useCallback(
     (field: keyof T) =>
@@ -29,77 +29,89 @@ export const useTableSort = <T = Record<string, any>>(
     [conf.field, conf.order, sortConfig.set]
   );
 
-  const handleReviewerSort = useCallback(
-    (list: any[]) => {
-      if (!head(list || [])?.reviewers) return list;
-
-      const result = [...list];
-      if (conf.order === 'asc') {
-        result.sort((a, b) => {
-          if (a.reviewers.length === b.reviewers.length) {
-            return head(
-              (a.reviewers as PrUser[]) || []
-            )?.username?.localeCompare(
-              head((b.reviewers as PrUser[]) || [])?.username
-            );
-          }
-          return a.reviewers.length - b.reviewers.length;
-        });
-      } else {
-        result.sort((b, a) => {
-          if (a.reviewers.length === b.reviewers.length) {
-            return head(
-              (b.reviewers as PrUser[]) || []
-            )?.username?.localeCompare(
-              head((a.reviewers as PrUser[]) || [])?.username
-            );
-          }
-          return a.reviewers.length - b.reviewers.length;
-        });
-      }
-
-      return result;
-    },
-    [conf.order]
+  const simpleSort = useCallback(
+    () =>
+      sort(
+        // @ts-ignore
+        conf.order === 'asc'
+          ? // @ts-ignore
+            ascend(propOr('', conf.field))
+          : // @ts-ignore
+            descend(propOr('', conf.field)),
+        list
+      ),
+    [conf.field, conf.order, list]
   );
 
-  const handleAuthorUsernameSort = useCallback(
-    (rawList: any[]) => {
-      if (!head(rawList || [])?.author?.username) return rawList;
+  const handleReviewerSort = useCallback(() => {
+    const result = [...list] as any[];
 
-      const result = [...rawList];
-      if (conf.order === 'asc') {
-        result.sort((a, b) => {
-          return a.author.username.localeCompare(b.author.username);
-        });
-      } else {
-        result.sort((b, a) => {
-          return a.author.username.localeCompare(b.author.username);
-        });
-      }
-      return result;
-    },
-    [conf.order]
-  );
+    if (!result.some((pr) => pr.reviewers)) return simpleSort();
+    if (conf.order === 'asc') {
+      result.sort((a, b) => {
+        if (a.reviewers.length === b.reviewers.length) {
+          return head((a.reviewers as PrUser[]) || [])?.username?.localeCompare(
+            head((b.reviewers as PrUser[]) || [])?.username
+          );
+        }
+        return a.reviewers.length - b.reviewers.length;
+      });
+    } else {
+      result.sort((b, a) => {
+        if (a.reviewers.length === b.reviewers.length) {
+          return head((b.reviewers as PrUser[]) || [])?.username?.localeCompare(
+            head((a.reviewers as PrUser[]) || [])?.username
+          );
+        }
+        return a.reviewers.length - b.reviewers.length;
+      });
+    }
+
+    return result;
+  }, [conf.order, list, simpleSort]);
+
+  const handleAuthorUsernameSort = useCallback(() => {
+    const result = [...list] as any[];
+
+    if (!result.some((pr) => pr?.author?.username)) return simpleSort();
+    if (conf.order === 'asc') {
+      result.sort((a, b) => {
+        return a?.author?.username.localeCompare(b?.author?.username);
+      });
+    } else {
+      result.sort((b, a) => {
+        return a?.author?.username.localeCompare(b?.author?.username);
+      });
+    }
+    return result;
+  }, [conf.order, list, simpleSort]);
+
+  const handleResponseTime = useCallback(() => {
+    const result = [...list] as any[];
+    if (!result.some((pr) => pr?.first_response_time)) return simpleSort();
+    if (conf.order === 'asc') {
+      result.sort((a, b) => {
+        return (a.first_response_time || 0) - (b.first_response_time || 0);
+      });
+    } else {
+      result.sort((b, a) => {
+        return (a.first_response_time || 0) - (b.first_response_time || 0);
+      });
+    }
+    return result;
+  }, [conf.order, list, simpleSort]);
 
   const sortedList: T[] = useMemo(() => {
-    if (conf.field === 'author') return handleAuthorUsernameSort(list);
-    if (conf.field === 'reviewers') return handleReviewerSort(list);
-    return sort(
-      // @ts-ignore
-      conf.order === 'asc'
-        ? // @ts-ignore
-          ascend(propOr('', conf.field))
-        : // @ts-ignore
-          descend(propOr('', conf.field)),
-      list
-    );
+    if (conf.field === 'author') return handleAuthorUsernameSort();
+    if (conf.field === 'reviewers') return handleReviewerSort();
+    if (conf.field === 'first_response_time') return handleResponseTime();
+    return simpleSort();
   }, [
     conf.field,
-    conf.order,
     handleAuthorUsernameSort,
+    handleResponseTime,
     handleReviewerSort,
-    list
+    simpleSort
   ]);
 
   const getCSV = useCallback(() => {
