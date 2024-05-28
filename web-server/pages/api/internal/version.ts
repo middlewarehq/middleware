@@ -32,6 +32,7 @@ interface CheckNewVersionResponse {
   latest_github_commit: string;
   latest_docker_image: string;
   is_update_available: boolean;
+  latest_docker_image_build_date: Date
 }
 
 interface DockerHubAPIResponse {
@@ -120,7 +121,8 @@ async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
   return {
     latest_github_commit: versionInfo.merge_commit_sha,
     latest_docker_image: latestDockerImageLink,
-    is_update_available: isUpdateAvailable
+    is_update_available: isUpdateAvailable,
+    latest_docker_image_build_date: latestRemoteDate
   };
 }
 
