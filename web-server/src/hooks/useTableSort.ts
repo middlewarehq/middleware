@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react';
 
 import { track } from '@/constants/events';
 import { useEasyState } from '@/hooks/useEasyState';
+import { PrUser } from '@/types/resources';
 import { isObj } from '@/utils/datatype';
 import { depFn } from '@/utils/fn';
 import { isUuid } from '@/utils/unistring';
@@ -28,6 +29,40 @@ export const useTableSort = <T = Record<string, any>>(
     [conf.field, conf.order, sortConfig.set]
   );
 
+  const handleReviewerSort = useCallback(
+    (list: any[]) => {
+      if (!head(list || [])?.reviewers) return list;
+
+      const result = [...list];
+      if (conf.order === 'asc') {
+        result.sort((a, b) => {
+          if (a.reviewers.length === b.reviewers.length) {
+            return head(
+              (a.reviewers as PrUser[]) || []
+            )?.username?.localeCompare(
+              head((b.reviewers as PrUser[]) || [])?.username
+            );
+          }
+          return a.reviewers.length - b.reviewers.length;
+        });
+      } else {
+        result.sort((b, a) => {
+          if (a.reviewers.length === b.reviewers.length) {
+            return head(
+              (b.reviewers as PrUser[]) || []
+            )?.username?.localeCompare(
+              head((a.reviewers as PrUser[]) || [])?.username
+            );
+          }
+          return a.reviewers.length - b.reviewers.length;
+        });
+      }
+
+      return result;
+    },
+    [conf.order]
+  );
+
   const handleAuthorUsernameSort = useCallback(
     (rawList: any[]) => {
       if (!head(rawList || [])?.author?.username) return rawList;
@@ -48,19 +83,24 @@ export const useTableSort = <T = Record<string, any>>(
   );
 
   const sortedList: T[] = useMemo(() => {
-    if (conf.field === 'author') {
-      return handleAuthorUsernameSort(list);
-    } else
-      return sort(
-        // @ts-ignore
-        conf.order === 'asc'
-          ? // @ts-ignore
-            ascend(propOr('', conf.field))
-          : // @ts-ignore
-            descend(propOr('', conf.field)),
-        list
-      );
-  }, [conf.field, conf.order, handleAuthorUsernameSort, list]);
+    if (conf.field === 'author') return handleAuthorUsernameSort(list);
+    if (conf.field === 'reviewers') return handleReviewerSort(list);
+    return sort(
+      // @ts-ignore
+      conf.order === 'asc'
+        ? // @ts-ignore
+          ascend(propOr('', conf.field))
+        : // @ts-ignore
+          descend(propOr('', conf.field)),
+      list
+    );
+  }, [
+    conf.field,
+    conf.order,
+    handleAuthorUsernameSort,
+    handleReviewerSort,
+    list
+  ]);
 
   const getCSV = useCallback(() => {
     createCsvFromList(list);
