@@ -10,7 +10,7 @@ type WorkerResponse = {
 };
 
 const IMAGE_UPDATE_STATUS_API_URL = '/api/internal/version';
-const IMAGE_UPDATE_STATUS_API_POLLING_INTERVAL = 10_000;
+const IMAGE_UPDATE_STATUS_API_POLLING_INTERVAL = 60_000;
 
 export const useImageUpdateStatusWorker = (): void => {
   const dispatch = useDispatch();
