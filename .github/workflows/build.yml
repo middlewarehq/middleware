@@ -79,6 +79,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=false,name-canonical=true,push=true
 
+
       - name: Print build output
         run: echo "${{ toJson(steps.build.outputs) }}"
 
@@ -87,33 +88,6 @@ jobs:
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
           touch "/tmp/digests/${digest#sha256:}"  
-
-      - name: Update version.txt
-        run: |
-          echo "Updating version.txt"
-          DOCKER_IMAGE_TAGS="${{ steps.meta.outputs.tags }}"
-          MERGE_COMMIT_SHA="${{ github.sha }}"
-          DOCKER_IMAGE_BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          if [ ! -f version.txt ]; then
-            echo "DOCKER_IMAGE_TAGS: $DOCKER_IMAGE_TAGS" > version.txt
-            echo "MERGE_COMMIT_SHA: $MERGE_COMMIT_SHA" >> version.txt
-            echo "DOCKER_IMAGE_BUILD_DATE: $DOCKER_IMAGE_BUILD_DATE" >> version.txt
-          else
-            sed -i "s/^DOCKER_IMAGE_TAGS:.*/DOCKER_IMAGE_TAGS: $DOCKER_IMAGE_TAGS/" version.txt
-            sed -i "s/^MERGE_COMMIT_SHA:.*/MERGE_COMMIT_SHA: $MERGE_COMMIT_SHA/" version.txt
-            if ! grep -q '^DOCKER_IMAGE_BUILD_DATE:' version.txt; then
-              echo "DOCKER_IMAGE_BUILD_DATE: $DOCKER_IMAGE_BUILD_DATE" >> version.txt
-            else
-              sed -i "s/^DOCKER_IMAGE_BUILD_DATE:.*/DOCKER_IMAGE_BUILD_DATE: $DOCKER_IMAGE_BUILD_DATE/" version.txt
-            fi
-          fi
-          cat version.txt
-
-      - name: Commit version.txt
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "Update version.txt for new Docker image"
-          file_pattern: version.txt
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
