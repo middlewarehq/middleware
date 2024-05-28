@@ -7,7 +7,8 @@ import {
   useTheme,
   Dialog,
   Slide,
-  DialogContent
+  DialogContent,
+  darken
 } from '@mui/material';
 import { TransitionProps } from '@mui/material/transitions';
 import { isToday } from 'date-fns';
@@ -21,16 +22,15 @@ import { useModal } from '@/contexts/ModalContext';
 import { useEasyState } from '@/hooks/useEasyState';
 import { appSlice } from '@/slices/app';
 import { useDispatch, useSelector } from '@/store';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 
 const FETCH_LATEST_IMAGE_INSTRUCTIONS = [
-  `docker stop middleware`,
-  `
-  docker pull middlewareeng/middleware:latest
-  docker rm -f middleware || true
-  docker run --name middleware -p 3333:3333 -v middleware_postgres_data:/var/lib/postgresql/data -v middleware_keys:/app/keys -d middlewareeng/middleware:latest
-  docker logs -f middleware
-  `,
-  `docker rm -f middleware`
+  `docker stop middleware  `,
+  `docker pull middlewareeng/middleware:latest
+docker rm -f middleware || true
+docker run --name middleware -p 3333:3333 -v middleware_postgres_data:/var/lib/postgresql/data -v middleware_keys:/app/keys -d middlewareeng/middleware:latest
+docker logs -f middleware  `,
+  `docker rm -f middleware  `
 ];
 
 export const Transition = forwardRef(function Transition(
@@ -41,6 +41,7 @@ export const Transition = forwardRef(function Transition(
 });
 
 export const ImageUpdateBanner = () => {
+  const theme = useTheme();
   const { addModal } = useModal();
   const dispatch = useDispatch();
 
@@ -75,7 +76,9 @@ export const ImageUpdateBanner = () => {
             Update your image now to get the latest features and improvements.
           </Line>
           <FlexBox col mt={2} gap2>
-            <Line bold>Instructions:</Line>
+            <Line bold big>
+              Instructions:
+            </Line>
             <Line>
               1. In case you want to stop the container, run the following
               command:
@@ -92,7 +95,7 @@ export const ImageUpdateBanner = () => {
             </Line>
             <Line>
               3. If you see an error like:{' '}
-              <Line warning>
+              <Line warning mono small>
                 Conflict. The container name "/middleware" is already in use by
                 container.
               </Line>{' '}
@@ -175,15 +178,18 @@ const CopyDockerCommandComponent: FC<{ text: string }> = ({ text }) => {
       fullWidth
       alignCenter
       gap={2}
+      p={2}
       sx={{
-        backgroundColor: 'black',
-        borderRadius: theme.spacing(1),
-        padding: theme.spacing(2 / 3)
+        backgroundColor: darken(theme.palette.background.paper, 0.2),
+        borderRadius: theme.spacing(1)
       }}
+      alignStart
+      mt={theme.spacing(2 / 3)}
     >
       <pre
         style={{
-          width: '100%'
+          width: '100%',
+          margin: '0px'
         }}
       >
         {text}
@@ -197,9 +203,12 @@ const CopyDockerCommandComponent: FC<{ text: string }> = ({ text }) => {
           });
         }}
       >
-        <Button variant="outlined" size="small">
-          Copy
-        </Button>
+        <ContentCopyRoundedIcon
+          fontSize="small"
+          sx={{
+            cursor: 'pointer'
+          }}
+        />
       </CopyToClipboard>
     </FlexBox>
   );
