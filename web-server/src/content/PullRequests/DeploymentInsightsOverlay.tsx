@@ -121,7 +121,7 @@ export const DeploymentInsightsOverlay = () => {
     sortedList: prs,
     updateSortConf,
     conf
-  } = useTableSort(statePrs, { field: 'cycle_time', order: 'desc' });
+  } = useTableSort(statePrs, { field: 'lead_time', order: 'desc' });
 
   const selectDeployment = useCallback(
     (dep: Deployment) => {
