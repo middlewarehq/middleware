@@ -103,7 +103,6 @@ export const TeamInsightsBodyRouterless: FC<{
   referrer?: 'dora_metrics';
 }> = ({ min, max, referrer }) => {
   const theme = useTheme();
-  const isLeadTimeActive = true;
 
   const cycleTimeArgs = useMemo(() => {
     if (min || max)
@@ -231,7 +230,7 @@ export const TeamInsightsBodyRouterless: FC<{
       </FlexBox>
       <Divider />
       <Title cycleTime={cycleTimeArgs?.cycle_time} />
-      <PrBreakdownAndInsights prs={prs} prUpdateCallback={prUpdateCallback} />
+      <PrBreakdownAndInsights prs={prs} />
       <Line white bold mt={2}>
         {prs.length} Pull {pluralize('request', prs.length)} submitted by the
         team
@@ -246,9 +245,7 @@ export const TeamInsightsBodyRouterless: FC<{
 
 export const PrBreakdownAndInsights: FC<{
   prs: PR[];
-  prevPrs?: PR[];
-  prUpdateCallback: () => void;
-}> = ({ prs, prevPrs, prUpdateCallback }) => {
+}> = ({ prs }) => {
   const { changeTimeDetailsArray } = useComputedPrChangeTime(prs);
 
   if (!prs.length) return null;
