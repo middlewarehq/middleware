@@ -33,7 +33,6 @@ const getSchema = yup.object().shape({
   branches: yup.string().optional().nullable(),
   from_date: yup.date().required(),
   to_date: yup.date().required(),
-  repo_filters: yup.mixed().optional().nullable(),
   branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required()
 });
 
