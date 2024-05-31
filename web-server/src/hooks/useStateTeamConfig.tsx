@@ -163,7 +163,7 @@ export const useSingleTeamConfig = () => {
 export const useStateBranchConfig = () => {
   const branchMode = useSelector((s) => s.app.branchMode);
   const branchNames = useSelector((s) => s.app.branchNames);
-  if (branchMode === ActiveBranchMode.ALL) return null;
+  if (branchMode === ActiveBranchMode.ALL) return '^';
   return branchNames;
 };
 
