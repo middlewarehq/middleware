@@ -12,11 +12,12 @@ import { PullRequestsTableMini } from '@/components/PRTableMini/PullRequestsTabl
 import Scrollbar from '@/components/Scrollbar';
 import { Line } from '@/components/Text';
 import { FetchState } from '@/constants/ui-states';
+import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import {
-  useStateBranchConfig,
   useSingleTeamConfig,
-  useCurrentDateRangeReactNode
+  useCurrentDateRangeReactNode,
+  useBranchesForPrFilters
 } from '@/hooks/useStateTeamConfig';
 import { useTableSort } from '@/hooks/useTableSort';
 import {
@@ -40,11 +41,11 @@ enum DepStatusFilter {
 const hideTableColumns = new Set<keyof PR>(['reviewers', 'rework_cycles']);
 
 export const DeploymentInsightsOverlay = () => {
+  const { orgId } = useAuth();
   const { singleTeamId, team, dates } = useSingleTeamConfig();
-  const branches = useStateBranchConfig();
   const dispatch = useDispatch();
   const depFilter = useEasyState(DepStatusFilter.All);
-
+  const branchesForPrFilters = useBranchesForPrFilters();
   useEffect(() => {
     if (!singleTeamId) return;
 
@@ -52,10 +53,19 @@ export const DeploymentInsightsOverlay = () => {
       fetchTeamDeployments({
         team_id: singleTeamId,
         from_date: dates.start,
-        to_date: dates.end
+        to_date: dates.end,
+        org_id: orgId,
+        ...branchesForPrFilters
       })
     );
-  }, [branches, dates.end, dates.start, dispatch, singleTeamId]);
+  }, [
+    branchesForPrFilters,
+    dates.end,
+    dates.start,
+    dispatch,
+    orgId,
+    singleTeamId
+  ]);
 
   const teamDeployments = useSelector((s) => s.doraMetrics.team_deployments);
   const workflowsMap = useSelector(
