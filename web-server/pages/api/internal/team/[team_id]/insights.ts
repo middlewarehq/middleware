@@ -1,6 +1,7 @@
 import { endOfDay, startOfDay } from 'date-fns';
 import * as yup from 'yup';
 
+import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
 import {
   batchPaginatedRequest,
@@ -10,11 +11,17 @@ import { adaptPr } from '@/api-helpers/pr';
 import { updatePrFilterParams } from '@/api-helpers/team';
 import { MAX_INT } from '@/constants/generic';
 import { mockTeamPullRequests } from '@/mocks/pull-requests';
-import { BasePR, Comparison, PR, RepoFilterConfig } from '@/types/resources';
+import {
+  ActiveBranchMode,
+  BasePR,
+  Comparison,
+  PR,
+  RepoFilterConfig
+} from '@/types/resources';
+import { getFilters } from '@/utils/cockpitMetricUtils';
 import { getCycleTimeForPr } from '@/utils/code';
 import { isoDateString, getDateWithComparisonRanges } from '@/utils/date';
-import { getFilters } from '@/utils/cockpitMetricUtils';
-import { handleRequest } from '@/api-helpers/axios';
+import { getBranchesAndRepoFilter } from '@/utils/filterUtils';
 
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
@@ -32,7 +39,8 @@ const getSchema = yup.object().shape({
     })
     .optional()
     .nullable(),
-  repo_filters: yup.mixed().optional().nullable()
+  repo_filters: yup.mixed().optional().nullable(),
+  branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required()
 });
 
 const endpoint = new Endpoint(pathSchema);
@@ -44,22 +52,31 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       prev: mockTeamPullRequests
     });
   }
+  const {
+    org_id,
+    team_id,
+    from_date,
+    to_date,
+    branch_mode,
+    branches,
+    cycle_time
+  } = req.payload;
 
-  const { curr } = getDateWithComparisonRanges(
-    req.payload.from_date,
-    req.payload.to_date
-  );
+  const { curr } = getDateWithComparisonRanges(from_date, to_date);
+  const branchAndRepoFilters = await getBranchesAndRepoFilter({
+    orgId: org_id,
+    teamId: team_id,
+    branchMode: branch_mode as ActiveBranchMode,
+    branches
+  });
 
-  const [currInsights] = await Promise.all([
-    getTeamPrs({
-      team_id: req.payload.team_id,
-      branches: req.payload.branches,
-      from_date: curr.from,
-      to_date: curr.to,
-      cycle_time: req.payload.cycle_time,
-      repo_filters: req.payload.repo_filters
-    })
-  ]);
+  const currInsights = await getTeamPrs({
+    team_id: team_id,
+    from_date: curr.from,
+    to_date: curr.to,
+    cycle_time: cycle_time,
+    ...branchAndRepoFilters
+  });
 
   return res.send({
     curr: currInsights,
@@ -110,34 +127,6 @@ export const getTeamPrs = async ({
       adaptPr({ ...pr, cycle_time: getCycleTimeForPr(pr) })
     )
   }));
-};
-
-export const getTeamPrsWithComparisonSegment = ({
-  team_id,
-  branches,
-  from_date,
-  to_date,
-  repo_filters
-}: GetTeamPrs): [Promise<PR[]>, Promise<PR[]>] => {
-  const { curr, prev } = getDateWithComparisonRanges(from_date, to_date);
-
-  const currentSegmentPromise = getTeamPrs({
-    team_id,
-    branches,
-    from_date: curr.from,
-    to_date: curr.to,
-    repo_filters
-  }).then((r) => r.data);
-
-  const previousSegmentPromise = getTeamPrs({
-    team_id,
-    branches,
-    from_date: prev.from,
-    to_date: prev.to,
-    repo_filters
-  }).then((r) => r.data);
-
-  return [currentSegmentPromise, previousSegmentPromise];
 };
 
 export const getTeamLeadTimePRs = (

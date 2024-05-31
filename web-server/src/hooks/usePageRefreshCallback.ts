@@ -3,21 +3,19 @@ import { useRouter } from 'next/router';
 import { ROUTES } from '@/constants/routes';
 import { useAuth } from '@/hooks/useAuth';
 import {
-  useSingleTeamConfig,
-  useStateBranchConfig
+  useBranchesForPrFilters,
+  useSingleTeamConfig
 } from '@/hooks/useStateTeamConfig';
 import { fetchTeamDoraMetrics } from '@/slices/dora_metrics';
-import { useDispatch, useSelector } from '@/store';
-import { ActiveBranchMode } from '@/types/resources';
+import { useDispatch } from '@/store';
 
 export const usePageRefreshCallback = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { orgId } = useAuth();
   const { dates, singleTeamId } = useSingleTeamConfig();
-  const activeBranchMode = useSelector((s) => s.app.branchMode);
+  const branchPayloadForPrFilters = useBranchesForPrFilters();
 
-  const branches = useStateBranchConfig();
   switch (router.pathname) {
     case ROUTES.DORA_METRICS.PATH:
       return () =>
@@ -27,12 +25,7 @@ export const usePageRefreshCallback = () => {
             teamId: singleTeamId,
             fromDate: dates.start,
             toDate: dates.end,
-            branches:
-              activeBranchMode === ActiveBranchMode.PROD
-                ? null
-                : activeBranchMode === ActiveBranchMode.ALL
-                ? '^'
-                : branches
+            ...branchPayloadForPrFilters
           })
         );
     default:

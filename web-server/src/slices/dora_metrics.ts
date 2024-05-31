@@ -4,6 +4,7 @@ import { omit } from 'ramda';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import { Row } from '@/constants/db';
+import { useBranchesForPrFilters } from '@/hooks/useStateTeamConfig';
 import { StateFetchConfig } from '@/types/redux';
 import {
   Deployment,
@@ -11,9 +12,9 @@ import {
   TeamDeploymentsApiResponse,
   DeploymentWithIncidents,
   IncidentsWithDeploymentResponseType,
-  RepoFilterConfig,
   IncidentApiResponseType,
-  ChangeTimeModes
+  ChangeTimeModes,
+  ActiveBranchMode
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
@@ -146,9 +147,7 @@ type DoraMetricsApiParamsType = {
   team_id: ID;
   from_date: Date;
   to_date: Date;
-  branches?: string;
-  repo_filters?: RepoFilterConfig;
-};
+} & ReturnType<typeof useBranchesForPrFilters>;
 
 export const fetchTeamDoraMetrics = createAsyncThunk(
   'dora_metrics/fetchTeamDoraMetrics',
@@ -158,6 +157,7 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
     fromDate: Date;
     toDate: Date;
     branches: string;
+    branch_mode: ActiveBranchMode;
   }) => {
     return await handleApi<TeamDoraMetricsApiResponseType>(
       `internal/team/${params.teamId}/dora_metrics`,
@@ -166,7 +166,8 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
           org_id: params.orgId,
           from_date: params.fromDate,
           to_date: params.toDate,
-          branches: params.branches
+          branches: params.branches,
+          branch_mode: params.branch_mode
         }
       }
     );
