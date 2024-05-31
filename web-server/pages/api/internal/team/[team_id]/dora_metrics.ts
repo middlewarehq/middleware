@@ -4,13 +4,12 @@ import * as yup from 'yup';
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { getUnsyncedRepos } from '@/api/resources/teams/[team_id]/unsynced_repos';
 import { Endpoint } from '@/api-helpers/global';
-import {
-  repoFiltersFromTeamProdBranches,
-  updatePrFilterParams,
-  workFlowFiltersFromTeamProdBranches
-} from '@/api-helpers/team';
+import { updatePrFilterParams } from '@/api-helpers/team';
 import { mockDoraMetrics } from '@/mocks/dora_metrics';
-import { TeamDoraMetricsApiResponseType } from '@/types/resources';
+import {
+  ActiveBranchMode,
+  TeamDoraMetricsApiResponseType
+} from '@/types/resources';
 import {
   fetchLeadTimeStats,
   fetchChangeFailureRateStats,
@@ -18,9 +17,12 @@ import {
   fetchDeploymentFrequencyStats
 } from '@/utils/cockpitMetricUtils';
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
+import {
+  getBranchesAndRepoFilter,
+  getWorkFlowFiltersAsPayloadForSingleTeam
+} from '@/utils/filterUtils';
 
 import { getTeamLeadTimePRs } from './insights';
-import { getAllTeamsReposProdBranchesForOrgAsMap } from './repo_branches';
 
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
@@ -31,7 +33,8 @@ const getSchema = yup.object().shape({
   branches: yup.string().optional().nullable(),
   from_date: yup.date().required(),
   to_date: yup.date().required(),
-  repo_filters: yup.mixed().optional().nullable()
+  repo_filters: yup.mixed().optional().nullable(),
+  branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required()
 });
 
 const endpoint = new Endpoint(pathSchema);
@@ -46,33 +49,31 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     team_id: teamId,
     from_date: rawFromDate,
     to_date: rawToDate,
-    branches
+    branches,
+    branch_mode
   } = req.payload;
-
-  const [teamProdBranchesMap, unsyncedRepos] = await Promise.all([
-    getAllTeamsReposProdBranchesForOrgAsMap(org_id),
-    getUnsyncedRepos(teamId)
-  ]);
-  const teamRepoFiltersMap =
-    repoFiltersFromTeamProdBranches(teamProdBranchesMap);
 
   const from_date = isoDateString(startOfDay(new Date(rawFromDate)));
   const to_date = isoDateString(endOfDay(new Date(rawToDate)));
-
-  const [prFilters, workflowFilters] = await Promise.all([
-    updatePrFilterParams(
+  const [branchAndRepoFilters, unsyncedRepos] = await Promise.all([
+    getBranchesAndRepoFilter({
+      orgId: org_id,
       teamId,
-      {},
-      {
-        branches: branches,
-        repo_filters: !branches ? teamRepoFiltersMap[teamId] : null
-      }
-    ).then(({ pr_filter }) => ({
-      pr_filter
-    })),
-    Object.fromEntries(
-      Object.entries(workFlowFiltersFromTeamProdBranches(teamProdBranchesMap))
-    )[teamId]
+      branchMode: branch_mode as ActiveBranchMode,
+      branches
+    }),
+    getUnsyncedRepos(teamId)
+  ]);
+  const [prFilters, workflowFilters] = await Promise.all([
+    updatePrFilterParams(teamId, {}, branchAndRepoFilters).then(
+      ({ pr_filter }) => ({
+        pr_filter
+      })
+    ),
+    getWorkFlowFiltersAsPayloadForSingleTeam({
+      orgId: org_id,
+      teamId: teamId
+    })
   ]);
 
   const {
