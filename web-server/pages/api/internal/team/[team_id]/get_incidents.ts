@@ -2,19 +2,17 @@ import { endOfDay, startOfDay } from 'date-fns';
 import { isNil, reject } from 'ramda';
 import * as yup from 'yup';
 
-import { getAllTeamsReposProdBranchesForOrgAsMap } from '@/api/internal/team/[team_id]/repo_branches';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
-import {
-  updatePrFilterParams,
-  repoFiltersFromTeamProdBranches
-} from '@/api-helpers/team';
+import { updatePrFilterParams } from '@/api-helpers/team';
 import { mockDeploymentsWithIncidents } from '@/mocks/incidents';
 import {
   DeploymentWithIncidents,
-  IncidentApiResponseType
+  IncidentApiResponseType,
+  ActiveBranchMode
 } from '@/types/resources';
 import { getWeekStartAndEndInterval } from '@/utils/date';
+import { getBranchesAndRepoFilter } from '@/utils/filterUtils';
 
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
@@ -25,7 +23,8 @@ const getSchema = yup.object().shape({
   to_date: yup.date().required(),
   branches: yup.string().optional().nullable(),
   repo_filters: yup.mixed().optional().nullable(),
-  org_id: yup.string().uuid().required()
+  org_id: yup.string().uuid().required(),
+  branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required()
 });
 
 const endpoint = new Endpoint(pathSchema);
@@ -39,22 +38,22 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     from_date: rawFromDate,
     to_date: rawToDate,
     branches,
-    org_id
+    org_id,
+    branch_mode
   } = req.payload;
   const from_date = startOfDay(new Date(rawFromDate));
   const to_date = endOfDay(new Date(rawToDate));
 
-  const teamProdBranchesMap =
-    await getAllTeamsReposProdBranchesForOrgAsMap(org_id);
-  const teamRepoFiltersMap =
-    repoFiltersFromTeamProdBranches(teamProdBranchesMap);
+  const branchAndRepoFilters = await getBranchesAndRepoFilter({
+    orgId: org_id,
+    teamId: team_id,
+    branchMode: branch_mode as ActiveBranchMode,
+    branches
+  });
   const prFilter = await updatePrFilterParams(
     team_id,
     {},
-    {
-      branches: branches,
-      repo_filters: !branches ? teamRepoFiltersMap[team_id] : null
-    }
+    branchAndRepoFilters
   ).then(({ pr_filter }) => ({
     pr_filter
   }));
