@@ -17,12 +17,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { usePageRefreshCallback } from '@/hooks/usePageRefreshCallback';
 import {
-  useSingleTeamConfig,
-  useStateBranchConfig
+  useBranchesForPrFilters,
+  useSingleTeamConfig
 } from '@/hooks/useStateTeamConfig';
 import { fetchTeamDoraMetrics, getUnyncedRepos } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
-import { ActiveBranchMode } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 import { getRandomLoadMsg } from '@/utils/loading-messages';
 
@@ -40,7 +39,7 @@ export const DoraMetricsBody = () => {
     integrations: { github: isGithubIntegrated }
   } = useAuth();
   const { singleTeamId, dates } = useSingleTeamConfig();
-  const branches = useStateBranchConfig();
+  const branchPayloadForPrFilters = useBranchesForPrFilters();
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.metrics_summary === FetchState.REQUEST
   );
@@ -49,8 +48,6 @@ export const DoraMetricsBody = () => {
   );
 
   const firstLoadDone = useSelector((s) => s.doraMetrics.firstLoadDone);
-
-  const activeBranchMode = useSelector((s) => s.app.branchMode);
 
   const isTeamInsightsEmpty = useSelector(
     (s) =>
@@ -72,23 +69,17 @@ export const DoraMetricsBody = () => {
         teamId: singleTeamId,
         fromDate: dates.start,
         toDate: dates.end,
-        branches:
-          activeBranchMode === ActiveBranchMode.PROD
-            ? null
-            : activeBranchMode === ActiveBranchMode.ALL
-            ? '^'
-            : branches
+        ...branchPayloadForPrFilters
       })
     );
   }, [
-    branches,
     dates.end,
     dates.start,
     dispatch,
     orgId,
     singleTeamId,
-    activeBranchMode,
-    isGithubIntegrated
+    isGithubIntegrated,
+    branchPayloadForPrFilters
   ]);
 
   const stats = useDoraStats();
