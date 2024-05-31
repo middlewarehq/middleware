@@ -200,7 +200,7 @@ export const fetchAllResolvedIncidents = createAsyncThunk(
 
 export const fetchTeamDeployments = createAsyncThunk(
   'dora_metrics/fetchTeamDeployments',
-  async (params: DoraMetricsApiParamsType) => {
+  async (params: DoraMetricsApiParamsType & { org_id: ID }) => {
     return await handleApi<TeamDeploymentsApiResponse>(
       `/internal/team/${params.team_id}/deployment_analytics`,
       { params }
