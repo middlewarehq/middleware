@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
 import { useEasyState } from '@/hooks/useEasyState';
 import {
+  useBranchesForPrFilters,
   useCurrentDateRangeReactNode,
   useSingleTeamConfig
 } from '@/hooks/useStateTeamConfig';
@@ -36,7 +37,7 @@ export const ResolvedIncidentsBody = () => {
   const dispatch = useDispatch();
   const { orgId } = useAuth();
   const { singleTeamId, dates, team } = useSingleTeamConfig();
-
+  const branchPayloadForPrFilters = useBranchesForPrFilters();
   const dateRangeLabel = useCurrentDateRangeReactNode();
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.resolved_incidents === FetchState.REQUEST
@@ -72,10 +73,18 @@ export const ResolvedIncidentsBody = () => {
       fetchAllResolvedIncidents({
         team_id: singleTeamId,
         from_date: dates.start,
-        to_date: dates.end
+        to_date: dates.end,
+        ...branchPayloadForPrFilters
       })
     );
-  }, [dates.end, dates.start, dispatch, orgId, singleTeamId]);
+  }, [
+    branchPayloadForPrFilters,
+    dates.end,
+    dates.start,
+    dispatch,
+    orgId,
+    singleTeamId
+  ]);
 
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isTrendsSeriesDataAvailable = head(
