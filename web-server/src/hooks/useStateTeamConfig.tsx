@@ -167,6 +167,19 @@ export const useStateBranchConfig = () => {
   return branchNames;
 };
 
+export const useBranchesForPrFilters = () => {
+  const branches = useStateBranchConfig();
+  const activeBranchMode = useSelector((s) => s.app.branchMode);
+
+  return useMemo(
+    () => ({
+      branches: activeBranchMode === ActiveBranchMode.CUSTOM ? branches : null,
+      branch_mode: activeBranchMode
+    }),
+    [activeBranchMode, branches]
+  );
+};
+
 export const useCurrentDateRangeReactNode = () => {
   const { start, end, partiallyUnselected } = useStateDateConfig();
   return !partiallyUnselected ? (
