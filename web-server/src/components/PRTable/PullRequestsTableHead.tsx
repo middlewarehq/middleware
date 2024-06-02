@@ -87,9 +87,9 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
         )}
         <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
           <TableSortLabel
-            direction={conf.field === 'title' ? conf.order : 'asc'}
-            active={conf.field === 'title'}
-            onClick={() => updateSortConf('title')}
+            direction={conf.field === 'number' ? conf.order : 'asc'}
+            active={conf.field === 'number'}
+            onClick={() => updateSortConf('number')}
           >
             Pull Request
           </TableSortLabel>
