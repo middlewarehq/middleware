@@ -14,8 +14,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import {
   useCurrentDateRangeLabel,
-  useStateDateConfig,
-  useCurrentDateRangeReactNode
+  useStateDateConfig
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
