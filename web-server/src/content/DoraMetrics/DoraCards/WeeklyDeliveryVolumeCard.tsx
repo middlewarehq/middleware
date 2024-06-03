@@ -14,7 +14,8 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import {
   useCurrentDateRangeLabel,
-  useStateDateConfig
+  useStateDateConfig,
+  useCurrentDateRangeReactNode
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
@@ -93,6 +94,10 @@ export const WeeklyDeliveryVolumeCard = () => {
   );
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
+
+  const dateRangeLabelString = `${
+    weeksCovered ? `${weeksCovered} ${pluralize('week', weeksCovered)}` : ''
+  } ${daysCovered ? `${daysCovered} ${pluralize('day', daysCovered)}` : ''}`;
 
   return (
     <CardRoot
@@ -266,14 +271,7 @@ export const WeeklyDeliveryVolumeCard = () => {
                       title={`${totalDeployments} ${pluralize(
                         'deployment',
                         totalDeployments
-                      )} over ${weeksCovered} ${pluralize(
-                        'week',
-                        weeksCovered
-                      )} ${
-                        daysCovered
-                          ? `${daysCovered} ${pluralize('day', daysCovered)}`
-                          : ''
-                      }`}
+                      )} over ${dateRangeLabelString}`}
                     >
                       <Line
                         small
