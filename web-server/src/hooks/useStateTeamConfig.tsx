@@ -1,10 +1,4 @@
-import {
-  differenceInDays,
-  differenceInWeeks,
-  endOfWeek,
-  format,
-  startOfWeek
-} from 'date-fns';
+import { differenceInDays, differenceInWeeks, format } from 'date-fns';
 import { daysInWeek } from 'date-fns/constants';
 import { useCallback, useMemo } from 'react';
 
@@ -41,9 +35,8 @@ export const useStateDateConfig = (): DateRangeMap & {
   return useMemo(() => {
     const start = startDate ? new Date(startDate) : new Date();
     const end = endDate ? new Date(endDate) : new Date();
-    const weeksCovered = differenceInWeeks(endOfWeek(end), startOfWeek(start));
-    const daysCovered =
-      differenceInDays(endOfWeek(end), startOfWeek(start)) % daysInWeek;
+    const weeksCovered = differenceInWeeks(end, start);
+    const daysCovered = differenceInDays(end, start) % daysInWeek;
 
     return {
       start,
