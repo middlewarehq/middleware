@@ -178,7 +178,7 @@ export const useSyncedRepos = () => {
   const dispatch = useDispatch();
   const reposMap = useSelector((s) => s.team.teamReposMaps);
   const { singleTeamId } = useSingleTeamConfig();
-  const isSyncing = useSelector((s) => s.doraMetrics?.unsyncedRepos?.length);
+  const isSyncing = !!useSelector((s) => s.doraMetrics?.unsyncedRepos?.length);
 
   useEffect(() => {
     if (!isSyncing || !singleTeamId) return;
@@ -225,14 +225,15 @@ export const Syncing = () => {
         transition: `opacity ${ANIMATON_DURATION}ms linear, height 300ms ease, margin 300ms ease`
       }}
     >
-      <LoaderCore animation={flickerAnimation.value} />
+      <LoaderCore animation={flickerAnimation.value} loading={isSyncing} />
     </FlexBox>
   );
 };
 
 export const LoaderCore: FC<{
   animation?: boolean;
-}> = ({ animation }) => {
+  loading?: boolean;
+}> = ({ animation, loading = true }) => {
   return (
     <FlexBox
       fullWidth
@@ -262,7 +263,7 @@ export const LoaderCore: FC<{
           height={'100%'}
         />
         <FlexBox height={'25px'} centered>
-          {<LoadingWrapper />}
+          {loading && <LoadingWrapper />}
         </FlexBox>
         <Line color={'#1AE579'} medium big>
           Calculating Dora
