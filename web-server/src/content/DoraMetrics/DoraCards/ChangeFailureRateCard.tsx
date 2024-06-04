@@ -255,10 +255,14 @@ export const ChangeFailureRateCard = () => {
                       title={`${totalFailureIncidents} ${pluralize(
                         'incident',
                         totalFailureIncidents
-                      )} over ${weeksCovered} ${pluralize(
-                        'week',
+                      )} over ${
                         weeksCovered
-                      )} ${
+                          ? ` ${weeksCovered} ${pluralize(
+                              'week',
+                              weeksCovered
+                            )}`
+                          : ''
+                      } ${
                         daysCovered
                           ? `${daysCovered} ${pluralize('day', daysCovered)}`
                           : ''

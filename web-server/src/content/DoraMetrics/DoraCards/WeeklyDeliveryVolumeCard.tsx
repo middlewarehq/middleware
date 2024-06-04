@@ -266,10 +266,11 @@ export const WeeklyDeliveryVolumeCard = () => {
                       title={`${totalDeployments} ${pluralize(
                         'deployment',
                         totalDeployments
-                      )} over ${weeksCovered} ${pluralize(
-                        'week',
+                      )} over ${
                         weeksCovered
-                      )} ${
+                          ? `${weeksCovered} ${pluralize('week', weeksCovered)}`
+                          : ''
+                      } ${
                         daysCovered
                           ? `${daysCovered} ${pluralize('day', daysCovered)}`
                           : ''
