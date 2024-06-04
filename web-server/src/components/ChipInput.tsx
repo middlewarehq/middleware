@@ -65,7 +65,7 @@ export const ChipInput: FC<{
       onInputChange={handleInputChange}
       onChange={(_, newValue: string[]) => {
         updateValue(uniq(newValue));
-        onSubmit(newValue);
+        onSubmit(uniq(newValue));
       }}
       fullWidth
       renderInput={(params) => (
