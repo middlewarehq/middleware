@@ -1,5 +1,4 @@
-import { useRouter } from 'next/router';
-import { FC, useMemo, useEffect } from 'react';
+import { FC, useEffect } from 'react';
 
 import { PullRequestsTableHeadProps } from '@/components/PRTable/PullRequestsTableHead';
 import { useEasyState } from '@/hooks/useEasyState';
@@ -17,27 +16,13 @@ export const PrTableWithPrExclusionMenu: FC<
   >
 > = ({ propPrs }) => {
   const dispatch = useDispatch();
-  const router = useRouter();
 
   const teamId = useSingleTeamConfig().singleTeamId;
   const selectedPrIds = useEasyState<ID[]>([]);
-
-  const isUserRoute = router.pathname.includes('/user');
-  const isPrExclusionEnabled = false;
-  const enablePrSelection = useMemo(
-    () => !isUserRoute && isPrExclusionEnabled,
-    [isPrExclusionEnabled, isUserRoute]
-  );
 
   useEffect(() => {
     dispatch(fetchExcludedPrs({ teamId }));
   }, [dispatch, teamId]);
 
-  return (
-    <PullRequestsTable
-      propPrs={propPrs}
-      selectedPrIds={selectedPrIds}
-      isPrSelectionEnabled={enablePrSelection}
-    />
-  );
+  return <PullRequestsTable propPrs={propPrs} selectedPrIds={selectedPrIds} />;
 };

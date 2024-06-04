@@ -8,7 +8,6 @@ import {
   Box,
   BoxProps,
   Button,
-  Checkbox,
   Divider,
   Link,
   Pagination,
@@ -25,17 +24,17 @@ import { format } from 'date-fns';
 import { secondsInDay } from 'date-fns/constants';
 import pluralize from 'pluralize';
 import { filter, keys } from 'ramda';
-import { FC, ReactNode, useEffect, useMemo } from 'react';
+import { FC, useEffect, useMemo } from 'react';
 import { GoCommentDiscussion } from 'react-icons/go';
 import { IoGitCommit } from 'react-icons/io5';
 import { VscRequestChanges } from 'react-icons/vsc';
 
 import { FlexBox } from '@/components/FlexBox';
 import { PullRequestTableColumnSelector } from '@/components/PRTable/PullRequestTableColumnSelector';
-import { DarkTooltip, LightTooltip } from '@/components/Shared';
+import { LightTooltip } from '@/components/Shared';
 import { Line } from '@/components/Text';
 import { SearchInput } from '@/components/TicketsTableAddons/SearchInput';
-import { EasyState, useEasyState } from '@/hooks/useEasyState';
+import { useEasyState } from '@/hooks/useEasyState';
 import { useTableSort } from '@/hooks/useTableSort';
 import { DEFAULT_PR_TABLE_COLUMN_STATE_MAP, appSlice } from '@/slices/app';
 import { useDispatch, useSelector } from '@/store';
@@ -57,14 +56,13 @@ const PAGE_SIZE = 10;
 export const PullRequestsTable: FC<
   {
     propPrs: PR[];
-    selectionMenu?: ReactNode;
-    selectedPrIds: EasyState<ID[]>;
   } & Omit<PullRequestsTableHeadProps, 'conf' | 'updateSortConf' | 'count'>
-> = ({ propPrs, selectionMenu, selectedPrIds, isPrSelectionEnabled }) => {
+> = ({ propPrs, selectedPrIds }) => {
   const theme = useTheme();
   const prTableColumnConfig = useSelector(
     (s) => s.app.prTableColumnsConfig || DEFAULT_PR_TABLE_COLUMN_STATE_MAP
   );
+
   const searchInput = useEasyState<string>('');
 
   const enabledColumnsSet = useMemo(() => {
@@ -100,15 +98,16 @@ export const PullRequestsTable: FC<
       filteredPrs.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE),
     [page.value, filteredPrs]
   );
-  const pageCount = Math.ceil(filteredPrs.length / PAGE_SIZE);
+  const pageCount = useMemo(
+    () => Math.ceil(filteredPrs.length / PAGE_SIZE),
+    [filteredPrs.length]
+  );
 
   useEffect(() => {
     if (pageCount < page.value) {
       page.set(Math.max(pageCount, 1));
     }
   }, [page, pageCount]);
-
-  const enableCsv = true;
 
   useLeadTimeMigration();
 
@@ -130,23 +129,7 @@ export const PullRequestsTable: FC<
         </FlexBox>
 
         <FlexBox gap1>
-          {selectionMenu}
-          {!!propPrs.length && enableCsv && (
-            <Button
-              sx={{
-                maxWidth: 'fit-content',
-                border: `1px solid ${theme.colors.secondary.light}`
-              }}
-              onClick={getCSV}
-            >
-              <Line primary>
-                <FlexBox gap1 alignCenter>
-                  <VerticalAlignBottomRounded fontSize="inherit" />
-                  Download CSV
-                </FlexBox>
-              </Line>
-            </Button>
-          )}
+          {Boolean(propPrs.length) && <DownloadCSV getCSV={getCSV} />}
           <PullRequestTableColumnSelector />
         </FlexBox>
       </FlexBox>
@@ -165,39 +148,11 @@ export const PullRequestsTable: FC<
             conf={conf}
             updateSortConf={updateSortConf}
             enabledColumnsSet={enabledColumnsSet}
-            isPrSelectionEnabled={isPrSelectionEnabled}
           />
           <TableBody>
             {pagedPrs.map((pr) => {
               return (
                 <TableRow key={pr.pr_link}>
-                  {isPrSelectionEnabled && (
-                    <TableCell>
-                      <DarkTooltip title="Select to exclude this from all PR analysis via the button above the table">
-                        <Checkbox
-                          checked={Boolean(
-                            selectedPrIds.value.find(
-                              (selectedPr) => selectedPr === pr.id
-                            )
-                          )}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              selectedPrIds.set([
-                                ...selectedPrIds.value,
-                                pr.id
-                              ]);
-                              return;
-                            }
-                            selectedPrIds.set(
-                              selectedPrIds.value.filter(
-                                (selectedPr) => selectedPr !== pr.id
-                              )
-                            );
-                          }}
-                        />
-                      </DarkTooltip>
-                    </TableCell>
-                  )}
                   <TableCell sx={{ p: CELL_PAD }}>
                     <PrMetaCell pr={pr} />
                   </TableCell>
@@ -918,4 +873,24 @@ const useLeadTimeMigration = () => {
       dispatch(appSlice.actions.setPrTableColumnConfig(updatedColumns));
     }
   }, [dispatch, prEnabledConfig]);
+};
+
+const DownloadCSV: FC<{ getCSV: () => void }> = ({ getCSV }) => {
+  const theme = useTheme();
+  return (
+    <Button
+      sx={{
+        maxWidth: 'fit-content',
+        border: `1px solid ${theme.colors.secondary.light}`
+      }}
+      onClick={getCSV}
+    >
+      <Line primary>
+        <FlexBox gap1 alignCenter>
+          <VerticalAlignBottomRounded fontSize="inherit" />
+          Download CSV
+        </FlexBox>
+      </Line>
+    </Button>
+  );
 };
