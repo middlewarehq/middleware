@@ -1,6 +1,6 @@
 <br /><br />
 <p align="center">
-<a href="https://www.middlewarehq.com/"><img src="media_files/logo.png" alt="Middleware Logo" width=300px></a>
+<a href="https://www.middlewarehq.com/"><img src="/media_files/logo.png" alt="Middleware Logo" width=300px></a>
 </p>
 
 <p align="center"><b>Open-source engineering management that unlocks developer potential</b></p>
@@ -16,7 +16,7 @@
 
 <!-- [Join our Engineering Leaders Community]() -->
 
-![Middleware Opensource](media_files/banner.gif)
+![Middleware Opensource](/media_files/banner.gif)
 
 
 ## Introduction
@@ -320,7 +320,7 @@ To set up middleware locally, follow these steps:
 
 # 🚀 Usage
 
-![Product Demo](media_files/product_demo_1.gif)
+![Product Demo](/media_files/product_demo_1.gif)
 
 - Setup the project by following the [steps mentioned above](#-quick-start).
 - Generate and Add your PAT token from code provider.
@@ -384,4 +384,4 @@ This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/
 
 
 
-![Banner](media_files/banner.png)
+![Banner](/media_files/banner.png)
