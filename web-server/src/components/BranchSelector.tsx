@@ -48,7 +48,7 @@ export const BranchSelector: FC = () => {
     (state) => state.app.teamsProdBranchMap?.[singleTeamId]
   );
 
-  const localBranchNames = useEasyState<string[]>([]);
+  const localBranchNames = useEasyState<string[]>([...names]);
 
   const { enqueueSnackbar } = useSnackbar();
 
