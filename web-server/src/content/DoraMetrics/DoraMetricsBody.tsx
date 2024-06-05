@@ -14,7 +14,7 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useDoraStats } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
-import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { useBoolState } from '@/hooks/useEasyState';
 import { usePageRefreshCallback } from '@/hooks/usePageRefreshCallback';
 import {
   useBranchesForPrFilters,
@@ -276,19 +276,12 @@ export const LoaderCore: FC<{
 };
 
 const LoadingWrapper = () => {
-  const rotation = useEasyState(0);
-  useEffect(() => {
-    const interval = setInterval(() => {
-      rotation.set((r) => r + 1);
-    }, 10);
-    return () => clearInterval(interval);
-  }, [rotation]);
   return (
     <FlexBox
       sx={{
-        transform: `rotate(${rotation.value}deg)`,
         transition: 'transform 100ms linear',
-        borderRadius: '50%'
+        borderRadius: '50%',
+        animation: 'spin 2s linear infinite'
       }}
     >
       <svg
