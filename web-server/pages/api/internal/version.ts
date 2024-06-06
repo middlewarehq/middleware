@@ -107,8 +107,8 @@ async function fetchDockerHubTags(): Promise<TagCompressed[]> {
 
 async function fetchLatestGitHubCommit(): Promise<GitHubCommit> {
   const apiUrl = `https://api.github.com/repos/${githubOrgName}/${githubRepoName}/commits/${defaultBranch}`;
-  const response = await axios.get<GitHubCommit[]>(apiUrl);
-  const latestCommit = response.data[0];
+  const response = await axios.get<GitHubCommit>(apiUrl);
+  const latestCommit = response.data;
   return latestCommit;
 }
 
