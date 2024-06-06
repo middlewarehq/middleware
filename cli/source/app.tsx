@@ -361,7 +361,6 @@ const CliUi = () => {
                     </Text>
                     {isUpdateAvailable && (
                       <>
-                        <Newline />
                         <Text bold color="yellow">
                           (main branch is behind remote. pull and rebase)
                         </Text>
