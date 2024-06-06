@@ -5,6 +5,9 @@ ARG REDIS_ENABLED=true
 ARG BACKEND_ENABLED=true
 ARG FRONTEND_ENABLED=true
 ARG CRON_ENABLED=true
+ARG BUILD_DATE
+ARG MERGE_COMMIT_SHA
+
 
 # Build the backend
 FROM python:3.9-slim as backend-build
@@ -26,6 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Final image
 FROM python:3.9-slim
 
+ARG BUILD_DATE
+ARG MERGE_COMMIT_SHA
+
 ENV ENVIRONMENT=prod
 ENV DB_HOST=localhost
 ENV DB_NAME=mhq-oss
@@ -40,6 +46,8 @@ ENV SYNC_SERVER_PORT=9697
 ENV INTERNAL_API_BASE_URL=http://localhost:9696
 ENV INTERNAL_SYNC_API_BASE_URL=http://localhost:9697
 ENV NEXT_PUBLIC_APP_ENVIRONMENT="prod"
+ENV BUILD_DATE=$BUILD_DATE
+ENV MERGE_COMMIT_SHA=$MERGE_COMMIT_SHA
 
 WORKDIR /app
 COPY --from=backend-build /opt/venv /opt/venv
@@ -103,6 +111,8 @@ ENV REDIS_ENABLED=true
 ENV BACKEND_ENABLED=true
 ENV FRONTEND_ENABLED=true
 ENV CRON_ENABLED=true
+ENV BUILD_DATE=$BUILD_DATE
+ENV MERGE_COMMIT_SHA=$MERGE_COMMIT_SHA
 
 ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:/usr/local/bin:$PATH"
 
