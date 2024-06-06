@@ -11,28 +11,28 @@ endpoint.handle.GET(nullSchema, async (req, res) => {
   return res.send(await checkNewImageRelease());
 });
 
-interface ProjectVersionInfo {
+type ProjectVersionInfo = {
   merge_commit_sha: string;
   current_build_date: string;
-}
+};
 
-interface CheckNewVersionResponse {
+type CheckNewVersionResponse = {
   latest_github_commit: string;
   latest_docker_image: string;
   github_repo: string;
   current_github_commit: string;
   is_update_available: boolean;
   latest_docker_image_build_date: Date;
-}
+};
 
-interface DockerHubAPIResponse {
+type DockerHubAPIResponse = {
   count: number;
   next: string | null;
   previous: string | null;
   results: TagResult[];
-}
+};
 
-interface TagResult {
+type TagResult = {
   creator: number;
   id: number;
   images: DockerImage[];
@@ -49,9 +49,9 @@ interface TagResult {
   media_type: string;
   content_type: string;
   digest: string;
-}
+};
 
-interface DockerImage {
+type DockerImage = {
   architecture: string;
   features: string;
   variant: string | null;
@@ -63,15 +63,15 @@ interface DockerImage {
   status: string;
   last_pulled: string | null;
   last_pushed: string;
-}
+};
 
-interface TagCompressed {
+type TagCompressed = {
   name: string;
   last_updated: string;
   digest: string;
-}
+};
 
-interface GitHubCommit {
+type GitHubCommit = {
   sha: string;
   commit: {
     author: {
@@ -81,7 +81,7 @@ interface GitHubCommit {
     };
     message: string;
   };
-}
+};
 
 function getProjectVersionInfo(): ProjectVersionInfo {
   const merge_commit_sha = process.env.MERGE_COMMIT_SHA;
