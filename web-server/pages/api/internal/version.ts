@@ -1,20 +1,9 @@
 import { Endpoint, nullSchema } from '@/api-helpers/global';
-import * as fs from 'fs';
-import * as path from 'path';
 import axios from 'axios';
 
-const versionFilePath = path.join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  '..',
-  '..',
-  '..',
-  'version.txt'
-);
-
 const dockerRepoName = 'middlewareeng/middleware';
+const githubOrgName = 'middlewarehq';
+const githubRepoName = 'middleware';
 
 const endpoint = new Endpoint(nullSchema);
 
@@ -23,16 +12,17 @@ endpoint.handle.GET(nullSchema, async (req, res) => {
 });
 
 interface ProjectVersionInfo {
-  docker_image_tags: string;
   merge_commit_sha: string;
-  docker_image_build_date: string;
+  current_build_date: string;
 }
 
 interface CheckNewVersionResponse {
   latest_github_commit: string;
   latest_docker_image: string;
+  github_repo: string;
+  current_github_commit: string;
   is_update_available: boolean;
-  latest_docker_image_build_date: Date
+  latest_docker_image_build_date: Date;
 }
 
 interface DockerHubAPIResponse {
@@ -75,24 +65,35 @@ interface DockerImage {
   last_pushed: string;
 }
 
-function readVersionFile(): ProjectVersionInfo {
-  const data = fs.readFileSync(versionFilePath, 'utf8');
-  const lines = data.split('\n').filter(Boolean);
-  const versionInfo: { [key: string]: string } = {};
-  lines.forEach((line) => {
-    const [key, value] = line.split(': ');
-    versionInfo[key] = value;
-  });
-  return {
-    docker_image_tags: versionInfo['DOCKER_IMAGE_TAGS'],
-    merge_commit_sha: versionInfo['MERGE_COMMIT_SHA'],
-    docker_image_build_date: versionInfo['DOCKER_IMAGE_BUILD_DATE']
+interface TagCompressed {
+  name: string;
+  last_updated: string;
+  digest: string;
+}
+
+interface GitHubCommit {
+  sha: string;
+  commit: {
+    author: {
+      name: string;
+      email: string;
+      date: string;
+    };
+    message: string;
   };
 }
 
-async function fetchDockerHubTags(): Promise<
-  { name: string; last_updated: string; digest: string }[]
-> {
+function getProjectVersionInfo(): ProjectVersionInfo {
+  const merge_commit_sha = process.env.MERGE_COMMIT_SHA;
+  const build_date = process.env.BUILD_DATE;
+
+  return {
+    merge_commit_sha: merge_commit_sha,
+    current_build_date: build_date
+  };
+}
+
+async function fetchDockerHubTags(): Promise<TagCompressed[]> {
   const dockerHubUrl = `https://hub.docker.com/v2/repositories/${dockerRepoName}/tags/`;
   const response = await axios.get<DockerHubAPIResponse>(dockerHubUrl);
 
@@ -103,25 +104,62 @@ async function fetchDockerHubTags(): Promise<
   }));
 }
 
-async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
-  const versionInfo = readVersionFile();
-  const localDate = new Date(versionInfo.docker_image_build_date);
-  const remoteTags = await fetchDockerHubTags();
+async function fetchLatestGitHubCommit(): Promise<GitHubCommit> {
+  const apiUrl = `https://api.github.com/repos/${githubOrgName}/${githubRepoName}/commits`;
+  const response = await axios.get<GitHubCommit[]>(apiUrl);
+  const latestCommit = response.data[0];
+  return latestCommit;
+}
 
-  remoteTags.sort(
+function isUpdateAvailable(
+  localVersionInfo: ProjectVersionInfo,
+  dockerLatestRemoteTag: TagCompressed,
+  githubLatestCommit: GitHubCommit
+): boolean {
+  const env = process.env.NEXT_PUBLIC_APP_ENVIRONMENT;
+
+  if (env == 'development') {
+    const localBuildDate = new Date(localVersionInfo.current_build_date);
+    const latestRemoteCommitDate = new Date(
+      githubLatestCommit.commit.author.date
+    );
+
+    console.log(latestRemoteCommitDate);
+    return latestRemoteCommitDate > localBuildDate;
+  } else {
+    const localBuildDate = new Date(localVersionInfo.current_build_date);
+    const latestRemoteDate = new Date(dockerLatestRemoteTag.last_updated);
+    return latestRemoteDate > localBuildDate;
+  }
+}
+
+async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
+  const versionInfo = getProjectVersionInfo();
+
+  const dockerRemoteTags = await fetchDockerHubTags();
+  const githubLatestCommit = await fetchLatestGitHubCommit();
+
+  dockerRemoteTags.sort(
     (a, b) =>
       new Date(b.last_updated).getTime() - new Date(a.last_updated).getTime()
   );
-  const latestTag = remoteTags[0];
+  const latestTag = dockerRemoteTags[0];
   const latestRemoteDate = new Date(latestTag.last_updated);
-  const isUpdateAvailable = latestRemoteDate > localDate;
 
   const latestDockerImageLink = `https://hub.docker.com/layers/${dockerRepoName}/${latestTag.name}/images/${latestTag.digest}`;
 
+  const githubRepLink = `https://github.com/${githubOrgName}/${githubRepoName}`;
+
   return {
-    latest_github_commit: versionInfo.merge_commit_sha,
+    latest_github_commit: githubLatestCommit.sha,
     latest_docker_image: latestDockerImageLink,
-    is_update_available: isUpdateAvailable,
+    github_repo: githubRepLink,
+    current_github_commit: versionInfo.merge_commit_sha,
+    is_update_available: isUpdateAvailable(
+      versionInfo,
+      latestTag,
+      githubLatestCommit
+    ),
     latest_docker_image_build_date: latestRemoteDate
   };
 }
