@@ -125,11 +125,11 @@ function isUpdateAvailable(
     );
 
     return latestRemoteCommitDate > localBuildDate;
-  } else {
-    const localBuildDate = new Date(localVersionInfo.current_build_date);
-    const latestRemoteDate = new Date(dockerLatestRemoteTag.last_updated);
-    return latestRemoteDate > localBuildDate;
   }
+
+  const localBuildDate = new Date(localVersionInfo.current_build_date);
+  const latestRemoteDate = new Date(dockerLatestRemoteTag.last_updated);
+  return latestRemoteDate > localBuildDate;
 }
 
 async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
