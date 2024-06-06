@@ -111,11 +111,15 @@ async function fetchLatestGitHubCommit(): Promise<GitHubCommit> {
   return latestCommit;
 }
 
-function isUpdateAvailable(
-  localVersionInfo: ProjectVersionInfo,
-  dockerLatestRemoteTag: TagCompressed,
-  githubLatestCommit: GitHubCommit
-): boolean {
+function isUpdateAvailable({
+  localVersionInfo,
+  dockerLatestRemoteTag,
+  githubLatestCommit
+}: {
+  localVersionInfo: ProjectVersionInfo;
+  dockerLatestRemoteTag: TagCompressed;
+  githubLatestCommit: GitHubCommit;
+}): boolean {
   const env = process.env.NEXT_PUBLIC_APP_ENVIRONMENT;
 
   if (env == 'development') {
@@ -156,11 +160,11 @@ async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
     latest_docker_image: latestDockerImageLink,
     github_repo: githubRepLink,
     current_github_commit: versionInfo.merge_commit_sha,
-    is_update_available: isUpdateAvailable(
-      versionInfo,
-      latestTag,
-      githubLatestCommit
-    ),
+    is_update_available: isUpdateAvailable({
+      dockerLatestRemoteTag: latestTag,
+      githubLatestCommit: githubLatestCommit,
+      localVersionInfo: versionInfo
+    }),
     latest_docker_image_build_date: latestRemoteDate
   };
 }
