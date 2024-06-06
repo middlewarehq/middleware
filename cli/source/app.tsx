@@ -33,7 +33,7 @@ const CliUi = () => {
   useLogsFromAllSources();
 
   const [retryToggle, setRetryToggle] = useState<Boolean>(false);
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState<Boolean>(false);
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState<string>("");
 
   const { exit } = useApp();
 
@@ -359,10 +359,10 @@ const CliUi = () => {
                       </Text>{' '}
                       exit
                     </Text>
-                    {isUpdateAvailable && (
+                    {Boolean(isUpdateAvailable) && (
                       <>
                         <Text bold color="yellow">
-                          (main branch is behind remote. pull and rebase)
+                          {isUpdateAvailable}
                         </Text>
                       </>
                     )}
