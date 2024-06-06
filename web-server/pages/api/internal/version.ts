@@ -124,7 +124,6 @@ function isUpdateAvailable(
       githubLatestCommit.commit.author.date
     );
 
-    console.log(latestRemoteCommitDate);
     return latestRemoteCommitDate > localBuildDate;
   } else {
     const localBuildDate = new Date(localVersionInfo.current_build_date);
