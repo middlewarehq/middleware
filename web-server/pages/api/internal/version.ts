@@ -135,8 +135,10 @@ function isUpdateAvailable(
 async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
   const versionInfo = getProjectVersionInfo();
 
-  const dockerRemoteTags = await fetchDockerHubTags();
-  const githubLatestCommit = await fetchLatestGitHubCommit();
+  const [dockerRemoteTags, githubLatestCommit] = await Promise.all([
+    fetchDockerHubTags(),
+    fetchLatestGitHubCommit()
+  ]);
 
   dockerRemoteTags.sort(
     (a, b) =>
