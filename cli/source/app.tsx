@@ -21,6 +21,7 @@ import { useSelector, store, useDispatch } from './store/index.js';
 import { getLineLimit } from './utils/line-limit.js';
 import { runCommand } from './utils/run-command.js';
 import CircularBuffer from './utils/circularBuffer.js';
+import { isLocalBranchBehindRemote } from './utils/update-checker.js';
 
 const CliUi = () => {
   const dispatch = useDispatch();
@@ -32,6 +33,7 @@ const CliUi = () => {
   useLogsFromAllSources();
 
   const [retryToggle, setRetryToggle] = useState<Boolean>(false);
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState<Boolean>(false);
 
   const { exit } = useApp();
 
@@ -90,6 +92,12 @@ const CliUi = () => {
     }, 200);
   }, [dispatch, runCommandOpts]);
 
+  const handleVersionUpdates = useCallback(async () => {
+    await isLocalBranchBehindRemote().then((res) => {
+      setIsUpdateAvailable(res);
+    });
+  }, [setIsUpdateAvailable]);
+
   useEffect(() => {
     if (appState !== AppStates.TERMINATED) return;
     exit();
@@ -118,6 +126,10 @@ const CliUi = () => {
       handleExit();
     }
   });
+
+  useEffect(() => {
+    handleVersionUpdates();
+  }, [handleVersionUpdates]);
 
   useEffect(() => {
     const { process, promise } = runCommand(
@@ -347,6 +359,14 @@ const CliUi = () => {
                       </Text>{' '}
                       exit
                     </Text>
+                    {isUpdateAvailable && (
+                      <>
+                        <Newline />
+                        <Text bold color="yellow">
+                          (main branch is behind remote. pull and rebase)
+                        </Text>
+                      </>
+                    )}
                   </Box>
                 );
               case AppStates.TEARDOWN:
