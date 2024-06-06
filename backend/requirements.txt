@@ -4,11 +4,11 @@ stringcase==1.2.0
 SQLAlchemy==2.0.29
 pytz==2022.1
 PyGithub==1.55
-pycryptodome==3.14.1
-aiohttp==3.8.4
+pycryptodome==3.19.1
+aiohttp==3.9.4
 redis==5.0.3
 python-redis-lock==4.0.0
 psycopg2==2.9.3
 python-dotenv==1.0.1
-gunicorn==21.0.1
+gunicorn==22.0.0
 Flask-SQLAlchemy==3.1.1
