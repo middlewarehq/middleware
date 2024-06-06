@@ -82,5 +82,7 @@ declare namespace NodeJS {
     DB_PASS: string;
     DB_PORT: string;
     DB_USER: string;
+    MERGE_COMMIT_SHA: string;
+    BUILD_DATE: string;
   }
 }
