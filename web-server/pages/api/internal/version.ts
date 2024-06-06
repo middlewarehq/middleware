@@ -4,7 +4,7 @@ import axios from 'axios';
 const dockerRepoName = 'middlewareeng/middleware';
 const githubOrgName = 'middlewarehq';
 const githubRepoName = 'middleware';
-const defaultBranch = 'main'
+const defaultBranch = 'main';
 
 const endpoint = new Endpoint(nullSchema);
 
@@ -114,22 +114,19 @@ async function fetchLatestGitHubCommit(): Promise<GitHubCommit> {
 
 function isUpdateAvailable({
   localVersionInfo,
-  dockerLatestRemoteTag,
-  githubLatestCommit
+  dockerLatestRemoteTag
 }: {
   localVersionInfo: ProjectVersionInfo;
   dockerLatestRemoteTag: TagCompressed;
-  githubLatestCommit: GitHubCommit;
 }): boolean {
   const env = process.env.NEXT_PUBLIC_APP_ENVIRONMENT;
 
   if (env == 'development') {
-    const localBuildDate = new Date(localVersionInfo.current_build_date);
-    const latestRemoteCommitDate = new Date(
-      githubLatestCommit.commit.author.date
-    );
-
-    return latestRemoteCommitDate > localBuildDate;
+    const behindCommitsCount = process.env.BEHIND_COMMITS_COUNT
+      ? Number(process.env.BEHIND_COMMITS_COUNT)
+      : 0;
+    console.log('behindCommitsCount', behindCommitsCount);
+    return behindCommitsCount > 0;
   }
 
   const localBuildDate = new Date(localVersionInfo.current_build_date);
@@ -163,7 +160,6 @@ async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
     current_github_commit: versionInfo.merge_commit_sha,
     is_update_available: isUpdateAvailable({
       dockerLatestRemoteTag: latestTag,
-      githubLatestCommit: githubLatestCommit,
       localVersionInfo: versionInfo
     }),
     latest_docker_image_build_date: latestRemoteDate
