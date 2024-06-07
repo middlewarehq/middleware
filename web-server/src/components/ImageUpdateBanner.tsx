@@ -137,9 +137,10 @@ export const ImageUpdateBanner = () => {
         }
       }}
       hideBackdrop
+      disableEnforceFocus
     >
       <DialogContent>
-        <FlexBox fullWidth justifyBetween gap={2} alignCenter component={Card}>
+        <FlexBox fullWidth justifyBetween gap={2} alignCenter>
           <FlexBox gap={2} alignCenter>
             <FlexBox gap1 alignCenter>
               <InfoRoundedIcon />
