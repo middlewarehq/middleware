@@ -12,7 +12,9 @@ module.exports = {
   },
   testPathIgnorePatterns: ['/node_modules/', 'auth.spec.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1', // Example alias for modules under 'src'
+    '^@/public/(.*)$': '<rootDir>/public/$1',
+    '^@/api/(.*)$': '<rootDir>/pages/api/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
     '^uuid$': require.resolve('uuid')
   },
   moduleDirectories: ['node_modules', 'src']
