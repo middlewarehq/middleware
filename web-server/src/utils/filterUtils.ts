@@ -61,7 +61,7 @@ export const getBranchesAndRepoFilterAsPayload = async (params: {
           repo_filters: useProdBranches ? teamRepoFiltersMap[teamId] : null
         }
       ).then(({ pr_filter }) => ({
-        pr_filter
+        pr_filter: pr_filter || null
       }))
     )
   );
@@ -69,7 +69,7 @@ export const getBranchesAndRepoFilterAsPayload = async (params: {
   return teamsPrFilters;
 };
 
-export const getWorkFlowFilters = async (params: {
+export const getWorkFlowFilters = (params: {
   teamProdBranchesMap: Record<ID, TeamRepoBranchDetails[]>;
   teamIds: ID[];
 }) => {
