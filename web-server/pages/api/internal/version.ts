@@ -125,7 +125,6 @@ function isUpdateAvailable({
     const behindCommitsCount = process.env.BEHIND_COMMITS_COUNT
       ? Number(process.env.BEHIND_COMMITS_COUNT)
       : 0;
-    console.log('behindCommitsCount', behindCommitsCount);
     return behindCommitsCount > 0;
   }
 
