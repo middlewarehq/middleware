@@ -196,3 +196,4 @@ export const defaultDate = {
 };
 
 export const DATE_RANGE_MAX_DIFF = 95;
+export const DATE_RANGE_MIN_DIFF = 6;

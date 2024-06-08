@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 
 import { DateRange } from './index';
 
-import { DATE_RANGE_MAX_DIFF } from './utils';
+import { DATE_RANGE_MAX_DIFF, DATE_RANGE_MIN_DIFF } from './utils';
 
 export const useDateRangeUpdateHandler = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -24,6 +24,25 @@ export const useDateRangeUpdateHandler = () => {
           <Box>
             <Typography>
               {`The max date range has been restricted to ${DATE_RANGE_MAX_DIFF} days`}
+            </Typography>
+            <Typography variant="h4" fontSize="small">
+              Effective Dates: {format(newRange[0], 'do MMM')} -{' '}
+              {format(newRange[1], 'do MMM')}
+            </Typography>
+          </Box>,
+          {
+            variant: 'info'
+          }
+        );
+      }
+      if (difference < DATE_RANGE_MIN_DIFF) {
+        newRange[0] = subDays(newRange[1], DATE_RANGE_MIN_DIFF);
+        enqueueSnackbar(
+          <Box>
+            <Typography>
+              {`The min date range has been restricted to ${
+                DATE_RANGE_MIN_DIFF + 1
+              } days`}
             </Typography>
             <Typography variant="h4" fontSize="small">
               Effective Dates: {format(newRange[0], 'do MMM')} -{' '}
