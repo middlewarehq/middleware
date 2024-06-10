@@ -48,12 +48,13 @@ export const BranchSelector: FC = () => {
     (state) => state.app.teamsProdBranchMap?.[singleTeamId]
   );
 
-  const localBranchNames = useEasyState<string[]>([...names]);
-
   const { enqueueSnackbar } = useSnackbar();
-
   const isAllMode = mode === ActiveBranchMode.ALL;
   const isProdMode = mode === ActiveBranchMode.PROD;
+
+  const localBranchNames = useEasyState<string[]>(
+    isAllMode || isProdMode ? [] : [...names]
+  );
 
   const updateStateBranchNames = useCallback(
     (values: string[]) => {
@@ -78,6 +79,7 @@ export const BranchSelector: FC = () => {
             .join(',') || ''
       })
     );
+    depFn(localBranchNames.set, []);
   }, [dispatch, teamReposProdBranchArray]);
 
   const openProductionBranchSelectorModal = useCallback(async () => {
@@ -252,14 +254,15 @@ export const BranchSelector: FC = () => {
           <Option>
             <OptionTitle
               selected={isAllMode}
-              onSelect={() =>
+              onSelect={() => {
                 dispatch(
                   appSlice.actions.setBranchState({
                     mode: ActiveBranchMode.ALL,
                     names: ''
                   })
-                )
-              }
+                );
+                depFn(localBranchNames.set, []);
+              }}
             >
               All Branches
             </OptionTitle>
