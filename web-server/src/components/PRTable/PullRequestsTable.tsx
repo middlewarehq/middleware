@@ -421,6 +421,8 @@ export const PullRequestsTable: FC<
 
 const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
   const theme = useTheme();
+  const sortedReviewers = [...pr.reviewers].sort((a, b) => a.username.localeCompare(b.username));
+
   return (
     <FlexBox
       alignCenter
@@ -430,7 +432,7 @@ const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
       flexWrap="wrap"
       maxWidth="60px"
     >
-      {pr.reviewers.map((reviewer) => (
+      {sortedReviewers.map((reviewer) => (
         <FlexBox
           title={
             <Box>
