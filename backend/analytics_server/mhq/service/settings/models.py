@@ -39,3 +39,6 @@ class IncidentTypesSetting(BaseSetting):
 @dataclass
 class IncidentSourcesSetting(BaseSetting):
     incident_sources: List[IncidentSource]
+
+
+# ADD NEW SETTING CLASS HERE

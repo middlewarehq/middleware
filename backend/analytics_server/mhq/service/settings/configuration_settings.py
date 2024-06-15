@@ -57,6 +57,8 @@ class SettingsService:
                 for incident_type in data.get("incident_types") or []
             ]
         )
+        
+    # ADD NEW DICT TO DATACLASS ADAPTERS HERE
 
     def _handle_config_setting_from_db_setting(
         self, setting_type: SettingType, setting_data
@@ -75,6 +77,8 @@ class SettingsService:
         if setting_type == SettingType.INCIDENT_SOURCES_SETTING:
             return self._adapt_incident_source_setting_from_setting_data(setting_data)
 
+        # ADD NEW HANDLE FROM DB SETTINGS HERE
+        
         raise Exception(f"Invalid Setting Type: {setting_type}")
 
     def _adapt_config_setting_from_db_setting(self, setting: Settings):
@@ -146,6 +150,8 @@ class SettingsService:
                 for incident_type in data.get("incident_types") or []
             ]
         )
+        
+    # ADD NEW DICT TO API ADAPTERS HERE
 
     def _handle_config_setting_from_json_data(
         self, setting_type: SettingType, setting_data
@@ -163,6 +169,8 @@ class SettingsService:
 
         if setting_type == SettingType.INCIDENT_TYPES_SETTING:
             return self._adapt_incident_types_setting_from_json(setting_data)
+        
+        # ADD NEW HANDLE FROM JSON DATA HERE
 
         raise Exception(f"Invalid Setting Type: {setting_type}")
 
@@ -194,6 +202,8 @@ class SettingsService:
                 incident_type.value for incident_type in specific_setting.incident_types
             ]
         }
+        
+    # ADD NEW DATACLASS TO JSON DATA ADAPTERS HERE
 
     def _handle_config_setting_to_db_setting(
         self, setting_type: SettingType, specific_setting
@@ -219,6 +229,8 @@ class SettingsService:
         ):
             return self._adapt_incident_source_setting_json_data(specific_setting)
 
+        # ADD NEW HANDLE TO DB SETTINGS HERE
+        
         raise Exception(f"Invalid Setting Type: {setting_type}")
 
     def _adapt_specific_setting_data_from_json(

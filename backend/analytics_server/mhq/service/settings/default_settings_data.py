@@ -25,5 +25,7 @@ def get_default_setting_data(setting_type: SettingType):
         return {
             "incident_types": [incident_type.value for incident_type in incident_types]
         }
+        
+    # ADD NEW DEFAULT SETTING HERE
 
     raise Exception(f"Invalid Setting Type: {setting_type}")

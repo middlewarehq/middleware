@@ -24,7 +24,6 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
 
     def _add_setting_data(config_settings: ConfigurationSettings, response):
 
-        # Add new if statements to add settings response for new settings
         if isinstance(config_settings.specific_settings, IncidentSettings):
             response["setting"] = {
                 "title_includes": config_settings.specific_settings.title_filters
@@ -49,6 +48,8 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
                     for source in config_settings.specific_settings.incident_sources
                 ]
             }
+            
+        # ADD NEW API ADAPTER HERE
 
         return response
 
