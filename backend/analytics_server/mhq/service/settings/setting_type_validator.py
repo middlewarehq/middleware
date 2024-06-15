@@ -15,7 +15,7 @@ def settings_type_validator(setting_type: str):
 
     if setting_type == SettingType.INCIDENT_SOURCES_SETTING.value:
         return SettingType.INCIDENT_SOURCES_SETTING
-    
+
     # ADD NEW VALIDATOR HERE
 
     raise BadRequest(f"Invalid Setting Type: {setting_type}")
