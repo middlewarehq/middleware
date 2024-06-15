@@ -43,7 +43,7 @@ They are:
   - [How we Calculate DORA](#-how-we-calculate-dora)
   - [Roadmap](#%EF%B8%8F-roadmap)
   - [Contributing guidelines](#%EF%B8%8F-contributing-guidelines)
-  - [Developer Automations](#-dev-automations)
+  - [Developer Automations](#-developer-automations)
   - [Security guidelines](#%EF%B8%8F-security-guidelines)
   - [License](#license)
 
@@ -372,12 +372,6 @@ To get started contributing to middleware check out our [CONTRIBUTING.md](https:
 
 We appreciate your contributions and look forward to working together to make Middleware even better!
 
-# ⛓️ Security guidelines
-
-To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
-
-We look forward to your part in keeping Middleware secure!
-
 ## 👨‍💻 Developer Automations
 
 This sections contains some automation scripts that can generate boilder plate code to extend certain features and ship faster 🚀
@@ -400,6 +394,12 @@ python ./backend/dev_scripts/make_new_setting.py
 
 
 https://github.com/middlewarehq/middleware/assets/70485812/f0529fa7-a2cb-44b1-ae07-2a7c97f56bef
+
+# ⛓️ Security guidelines
+
+To get started contributing to middleware check out our [SECURITY.md](https://github.com/middlewarehq/middleware/blob/main/SECURITY.md).
+
+We look forward to your part in keeping Middleware secure!
 
 
 ## License
