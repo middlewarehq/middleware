@@ -48,7 +48,7 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
                     for source in config_settings.specific_settings.incident_sources
                 ]
             }
-            
+
         # ADD NEW API ADAPTER HERE
 
         return response
