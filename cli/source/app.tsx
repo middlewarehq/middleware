@@ -84,7 +84,9 @@ const CliUi = () => {
       processRef.current.stdout.destroy();
       processRef.current.stderr.destroy();
 
-      runCommand('docker-compose', ['down'], runCommandOpts).promise.finally(
+      runCommand('docker', ['compose','down'], runCommandOpts).promise.catch(async (err:any) => {
+        await runCommand('docker-compose', ['down']).promise;
+      }).finally(
         async () => {
           await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
         }
@@ -133,24 +135,46 @@ const CliUi = () => {
 
   useEffect(() => {
     const { process, promise } = runCommand(
-      'docker-compose',
-      ['watch'],
+      'docker',
+      ['compose','watch'],
       runCommandOpts
     );
 
     promise.catch((err) => {
-      handleExit();
-      dispatch(
-        appSlice.actions.addLog({
-          type: 'default',
-          line: `docker watch failed: ${err}`,
-          time: new Date()
-        })
-      );
+      if(err.errno == -2){
+          const { process, promise } = runCommand(
+            'docker-compose',
+            ['watch'],
+            runCommandOpts
+          );
+            
+          promise.catch((err) => {
+            handleExit();
+            dispatch(
+              appSlice.actions.addLog({
+                type: 'default',
+                line: `docker watch failed: ${err}`,
+                time: new Date()
+              })
+            );
+          })
+          
+          processRef.current = process;
+          process?.stdout.on('data', lineListener);
+          process?.stderr.on('data', lineListener);
+      } else{
+          handleExit();
+          dispatch(
+            appSlice.actions.addLog({
+              type: 'default',
+              line: `docker watch failed: ${err}`,
+              time: new Date()
+            })
+          );
+        }
     });
 
     processRef.current = process;
-
     const lineListener = async (data: Buffer) => {
       let watch_logs = String(data);
 
@@ -199,7 +223,7 @@ const CliUi = () => {
 
     process?.stdout.on('data', lineListener);
     process?.stderr.on('data', lineListener);
-
+              
     globalThis.process.on('exit', handleExit);
     return () => {
       globalThis.process.off('exit', handleExit);

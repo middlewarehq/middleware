@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker-compose down
+docker compose down
 
 cat env.example > .env
 
