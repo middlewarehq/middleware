@@ -18,9 +18,9 @@ import {
 } from './hooks/useLogsFromAllSources.js';
 import { appSlice } from './slices/app.js';
 import { useSelector, store, useDispatch } from './store/index.js';
+import CircularBuffer from './utils/circularBuffer.js';
 import { getLineLimit } from './utils/line-limit.js';
 import { runCommand } from './utils/run-command.js';
-import CircularBuffer from './utils/circularBuffer.js';
 import { isLocalBranchBehindRemote } from './utils/update-checker.js';
 
 const CliUi = () => {
@@ -33,7 +33,7 @@ const CliUi = () => {
   useLogsFromAllSources();
 
   const [retryToggle, setRetryToggle] = useState<Boolean>(false);
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState<string>("");
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState<string>('');
 
   const { exit } = useApp();
 
@@ -84,13 +84,13 @@ const CliUi = () => {
       processRef.current.stdout.destroy();
       processRef.current.stderr.destroy();
 
-      runCommand('docker', ['compose','down'], runCommandOpts).promise.catch(async (err:any) => {
-        await runCommand('docker-compose', ['down']).promise;
-      }).finally(
-        async () => {
+      runCommand('docker', ['compose', 'down'], runCommandOpts)
+        .promise.catch(async () => {
+          await runCommand('docker-compose', ['down']).promise;
+        })
+        .finally(async () => {
           await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
-        }
-      );
+        });
     }, 200);
   }, [dispatch, runCommandOpts]);
 
@@ -136,33 +136,19 @@ const CliUi = () => {
   useEffect(() => {
     const { process, promise } = runCommand(
       'docker',
-      ['compose','watch'],
+      ['compose', 'watch'],
       runCommandOpts
     );
 
     promise.catch((err) => {
-      if(err.errno == -2){
-          const { process, promise } = runCommand(
-            'docker-compose',
-            ['watch'],
-            runCommandOpts
-          );
-            
-          promise.catch((err) => {
-            handleExit();
-            dispatch(
-              appSlice.actions.addLog({
-                type: 'default',
-                line: `docker watch failed: ${err}`,
-                time: new Date()
-              })
-            );
-          })
-          
-          processRef.current = process;
-          process?.stdout.on('data', lineListener);
-          process?.stderr.on('data', lineListener);
-      } else{
+      if (err.errno == -2) {
+        const { process, promise } = runCommand(
+          'docker-compose',
+          ['watch'],
+          runCommandOpts
+        );
+
+        promise.catch((err) => {
           handleExit();
           dispatch(
             appSlice.actions.addLog({
@@ -171,7 +157,21 @@ const CliUi = () => {
               time: new Date()
             })
           );
-        }
+        });
+
+        processRef.current = process;
+        process?.stdout.on('data', lineListener);
+        process?.stderr.on('data', lineListener);
+      } else {
+        handleExit();
+        dispatch(
+          appSlice.actions.addLog({
+            type: 'default',
+            line: `docker watch failed: ${err}`,
+            time: new Date()
+          })
+        );
+      }
     });
 
     processRef.current = process;
@@ -210,11 +210,7 @@ const CliUi = () => {
             })
           );
 
-          const { process, promise } = runCommand(
-            'kill',
-            ['-9', pid!],
-            runCommandOpts
-          );
+          const { promise } = runCommand('kill', ['-9', pid!], runCommandOpts);
           await promise;
           setRetryToggle(true);
         }
@@ -223,7 +219,7 @@ const CliUi = () => {
 
     process?.stdout.on('data', lineListener);
     process?.stderr.on('data', lineListener);
-              
+
     globalThis.process.on('exit', handleExit);
     return () => {
       globalThis.process.off('exit', handleExit);
