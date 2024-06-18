@@ -67,9 +67,9 @@ def get_pull_request(
         merge_time=merge_time,
         cycle_time=cycle_time,
         merge_to_deploy=merge_to_deploy,
-        reviewers=reviewers
-        if reviewers is not None
-        else ["randomuser1", "randomuser2"],
+        reviewers=(
+            reviewers if reviewers is not None else ["randomuser1", "randomuser2"]
+        ),
         meta=meta or {},
         url=url,
         merge_commit_sha=merge_commit_sha,
@@ -91,13 +91,15 @@ def get_pull_request_event(
         id=id or uuid4(),
         pull_request_id=pull_request_id or uuid4(),
         type=type or PullRequestEventType.REVIEW.value,
-        data={
-            "user": {"login": reviewer or "User"},
-            "state": state or "APPROVED",
-            "author_association": "NONE",
-        }
-        if not data
-        else data,
+        data=(
+            {
+                "user": {"login": reviewer or "User"},
+                "state": state or "APPROVED",
+                "author_association": "NONE",
+            }
+            if not data
+            else data
+        ),
         created_at=created_at or time_now(),
         idempotency_key=idempotency_key or str(randint(10, 100)),
         org_repo_id=org_repo_id or uuid4(),

@@ -17,10 +17,10 @@ class IncidentsIntegrationService:
         self.settings_service = settings_service
 
     def get_org_providers(self, org_id: str) -> List[str]:
-        integrations: List[
-            Integration
-        ] = self.core_repo_service.get_org_integrations_for_names(
-            org_id, self._get_possible_incident_providers(org_id)
+        integrations: List[Integration] = (
+            self.core_repo_service.get_org_integrations_for_names(
+                org_id, self._get_possible_incident_providers(org_id)
+            )
         )
         if not integrations:
             return []

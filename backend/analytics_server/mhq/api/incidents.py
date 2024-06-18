@@ -92,9 +92,9 @@ def get_deployments_with_related_incidents(
 
     incidents: List[Incident] = incident_service.get_team_incidents(team_id, interval)
 
-    deployment_incidents_map: Dict[
-        Deployment, List[Incident]
-    ] = incident_service.get_deployment_incidents_map(deployments, incidents)
+    deployment_incidents_map: Dict[Deployment, List[Incident]] = (
+        incident_service.get_deployment_incidents_map(deployments, incidents)
+    )
 
     return list(
         map(
@@ -238,10 +238,10 @@ def get_team_cfr_trends(
 
     incidents: List[Incident] = incident_service.get_team_incidents(team_id, interval)
 
-    team_weekly_change_failure_rate: Dict[
-        datetime, ChangeFailureRateMetrics
-    ] = incident_service.get_weekly_change_failure_rate(
-        interval, deployments, incidents
+    team_weekly_change_failure_rate: Dict[datetime, ChangeFailureRateMetrics] = (
+        incident_service.get_weekly_change_failure_rate(
+            interval, deployments, incidents
+        )
     )
 
     return {

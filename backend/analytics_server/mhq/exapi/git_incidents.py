@@ -40,10 +40,10 @@ class GitIncidentsAPIService:
     def get_repo_revert_prs_in_interval(
         self, repo_id: str, from_time: datetime, to_time: datetime
     ) -> List[RevertPRMap]:
-        revert_pr_mappings: List[
-            PullRequestRevertPRMapping
-        ] = self.code_repo_service.get_repo_revert_prs_mappings_updated_in_interval(
-            repo_id, from_time, to_time
+        revert_pr_mappings: List[PullRequestRevertPRMapping] = (
+            self.code_repo_service.get_repo_revert_prs_mappings_updated_in_interval(
+                repo_id, from_time, to_time
+            )
         )
 
         revert_pr_ids = [str(pr.pr_id) for pr in revert_pr_mappings]

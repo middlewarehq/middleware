@@ -22,10 +22,10 @@ class PRDeploymentsService(DeploymentsFactoryService):
     def get_repos_successful_deployments_in_interval(
         self, repo_ids: List[str], interval: Interval, pr_filter: PRFilter
     ) -> List[Deployment]:
-        pull_requests: List[
-            PullRequest
-        ] = self.code_repo_service.get_prs_merged_in_interval(
-            repo_ids, interval, pr_filter=pr_filter
+        pull_requests: List[PullRequest] = (
+            self.code_repo_service.get_prs_merged_in_interval(
+                repo_ids, interval, pr_filter=pr_filter
+            )
         )
 
         return self.deployments_adapter.adapt_many(pull_requests)

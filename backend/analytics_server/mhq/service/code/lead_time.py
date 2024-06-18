@@ -54,15 +54,15 @@ class LeadTimeService:
             set(self._get_team_repos_lead_time_metrics(team_repos, interval, pr_filter))
         )
 
-        weekly_lead_time_metrics_map: Dict[
-            datetime, List[LeadTimeMetrics]
-        ] = generate_expanded_buckets(
-            lead_time_metrics, interval, "merged_at", "weekly"
+        weekly_lead_time_metrics_map: Dict[datetime, List[LeadTimeMetrics]] = (
+            generate_expanded_buckets(
+                lead_time_metrics, interval, "merged_at", "weekly"
+            )
         )
 
-        weekly_lead_time_metrics_avg_map: Dict[
-            datetime, LeadTimeMetrics
-        ] = self.get_avg_lead_time_metrics_from_map(weekly_lead_time_metrics_map)
+        weekly_lead_time_metrics_avg_map: Dict[datetime, LeadTimeMetrics] = (
+            self.get_avg_lead_time_metrics_from_map(weekly_lead_time_metrics_map)
+        )
 
         weekly_lead_time_metrics_avg_map = fill_missing_week_buckets(
             weekly_lead_time_metrics_avg_map, interval, LeadTimeMetrics
@@ -176,10 +176,10 @@ class LeadTimeService:
         pr_filter: PRFilter = None,
     ) -> List[PullRequest]:
 
-        team_repos_with_workflow_deployments_configured: List[
-            TeamRepos
-        ] = self._deployments_service.get_filtered_team_repos_with_workflow_configured_deployments(
-            team_repos
+        team_repos_with_workflow_deployments_configured: List[TeamRepos] = (
+            self._deployments_service.get_filtered_team_repos_with_workflow_configured_deployments(
+                team_repos
+            )
         )
 
         repo_ids = [
@@ -214,9 +214,11 @@ class LeadTimeService:
 
     def _get_lead_time_metrics_for_pr(self, pr: PullRequest) -> LeadTimeMetrics:
         return LeadTimeMetrics(
-            first_commit_to_open=pr.first_commit_to_open
-            if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
-            else 0,
+            first_commit_to_open=(
+                pr.first_commit_to_open
+                if pr.first_commit_to_open is not None and pr.first_commit_to_open > 0
+                else 0
+            ),
             first_response_time=pr.first_response_time if pr.first_response_time else 0,
             rework_time=pr.rework_time if pr.rework_time else 0,
             merge_time=pr.merge_time if pr.merge_time else 0,

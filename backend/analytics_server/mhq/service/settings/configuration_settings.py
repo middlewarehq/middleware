@@ -311,10 +311,10 @@ class SettingsService:
         settings: List[Settings] = self._settings_repo.get_settings(
             entity_id=entity_id, setting_types=setting_types, entity_type=entity_type
         )
-        setting_type_to_setting_map: Dict[
-            SettingType, Any
-        ] = self._get_setting_type_to_setting_map(
-            setting_types, settings, ignore_default_setting_type
+        setting_type_to_setting_map: Dict[SettingType, Any] = (
+            self._get_setting_type_to_setting_map(
+                setting_types, settings, ignore_default_setting_type
+            )
         )
 
         return setting_type_to_setting_map
@@ -331,9 +331,9 @@ class SettingsService:
 
         setting_type_to_setting_map: Dict[SettingType, Any] = {}
         for setting in settings:
-            setting_type_to_setting_map[
-                setting.setting_type
-            ] = self._adapt_config_setting_from_db_setting(setting).specific_settings
+            setting_type_to_setting_map[setting.setting_type] = (
+                self._adapt_config_setting_from_db_setting(setting).specific_settings
+            )
 
         for setting_type in setting_types:
             if (setting_type not in setting_type_to_setting_map) and (

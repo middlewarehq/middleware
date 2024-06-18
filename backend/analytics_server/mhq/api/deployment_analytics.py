@@ -127,9 +127,9 @@ def get_prs_included_in_deployment(deployment_id: str):
 
     repo: OrgRepo = pr_analytics_service.get_repo_by_id(deployment.repo_id)
 
-    prs: List[
-        PullRequest
-    ] = deployments_service.get_pull_requests_related_to_deployment(deployment)
+    prs: List[PullRequest] = (
+        deployments_service.get_pull_requests_related_to_deployment(deployment)
+    )
     repo_id_map = {repo.id: repo}
 
     return get_non_paginated_pr_response(
@@ -204,10 +204,10 @@ def get_team_deployment_frequency_trends(
 
     deployments_analytics_service = get_deployment_analytics_service()
 
-    week_to_deployments_count_map: Dict[
-        datetime, int
-    ] = deployments_analytics_service.get_weekly_deployment_frequency_trends(
-        team_id, interval, pr_filter, workflow_filter
+    week_to_deployments_count_map: Dict[datetime, int] = (
+        deployments_analytics_service.get_weekly_deployment_frequency_trends(
+            team_id, interval, pr_filter, workflow_filter
+        )
     )
 
     return {

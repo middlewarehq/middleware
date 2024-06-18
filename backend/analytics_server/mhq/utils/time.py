@@ -261,9 +261,9 @@ def fill_missing_week_buckets(
                 callable_class() if callable_class else None
             )
         else:
-            week_start_to_object_map_with_weeks_in_interval[
-                curr_day
-            ] = week_start_to_object_map[curr_day]
+            week_start_to_object_map_with_weeks_in_interval[curr_day] = (
+                week_start_to_object_map[curr_day]
+            )
 
         curr_day = curr_day + timedelta(days=7)
 

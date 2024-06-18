@@ -91,9 +91,9 @@ class IncidentsETLHandler:
 
 
 def sync_org_incidents(org_id: str):
-    incident_providers: List[
-        str
-    ] = get_incidents_integration_service().get_org_providers(org_id)
+    incident_providers: List[str] = (
+        get_incidents_integration_service().get_org_providers(org_id)
+    )
     if not incident_providers:
         LOG.info(f"No incident providers found for org {org_id}")
         return

@@ -64,19 +64,19 @@ class DeploymentsService:
         Get team repos with workflow deployments configured.
         That is the repo has a workflow configured and team repo has deployment type as workflow.
         """
-        filtered_team_repos: List[
-            TeamRepos
-        ] = self._filter_team_repos_using_workflow_deployments(team_repos)
+        filtered_team_repos: List[TeamRepos] = (
+            self._filter_team_repos_using_workflow_deployments(team_repos)
+        )
 
         repo_ids = [str(tr.org_repo_id) for tr in filtered_team_repos]
         repo_id_to_team_repo_map = {
             str(tr.org_repo_id): tr for tr in filtered_team_repos
         }
 
-        repo_workflows: List[
-            RepoWorkflow
-        ] = self.workflow_repo_service.get_repo_workflow_by_repo_ids(
-            repo_ids, RepoWorkflowType.DEPLOYMENT
+        repo_workflows: List[RepoWorkflow] = (
+            self.workflow_repo_service.get_repo_workflow_by_repo_ids(
+                repo_ids, RepoWorkflowType.DEPLOYMENT
+            )
         )
         workflows_repo_ids = list(
             set([str(workflow.org_repo_id) for workflow in repo_workflows])
