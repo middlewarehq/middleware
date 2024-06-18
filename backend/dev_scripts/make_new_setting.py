@@ -1,6 +1,7 @@
 """
 This script can be used to generate code for a new setting.
 """
+
 import re
 from typing import List, Tuple
 
