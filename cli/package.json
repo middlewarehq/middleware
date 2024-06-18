@@ -13,7 +13,7 @@
 		"test": "yarn link-fix && ava",
 		"lint": "eslint",
 		"lint-fix": "eslint --fix ./source/**/*",
-		"start": "node dist/cli.js"
+		"start": "[ -e ../.env ] && set -a && . ../.env; node dist/cli.js"
 	},
 	"files": [
 		"dist"

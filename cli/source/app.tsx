@@ -41,6 +41,17 @@ const CliUi = () => {
 
   const processRef = useRef<ChildProcessWithoutNullStreams | null>();
 
+  const frontend_port = process.env['PORT'];
+  const sync_server_port = process.env['SYNC_SERVER_PORT'];
+  const analytics_server_port = process.env['ANALYTICS_SERVER_PORT'];
+  const db_port = process.env['DB_PORT'];
+  const db_host = process.env['DB_HOST'];
+  const db_name = process.env['DB_NAME'];
+  const db_user = process.env['DB_USER'];
+  const db_pass = process.env['DB_PASS'];
+  const redis_port = process.env['REDIS_PORT'];
+  const redis_host = process.env['REDIS_HOST'];
+
   const runCommandOpts = useMemo<Parameters<typeof runCommand>['2']>(
     () => ({
       onData: (line) =>
@@ -69,7 +80,10 @@ const CliUi = () => {
               })
             )
           ),
-      log_buffer: new CircularBuffer<string>(10)
+      log_buffer: new CircularBuffer<string>(10),
+      options: {
+        env: process.env
+      }
     }),
 
     [dispatch, lineLimit]
@@ -419,14 +433,16 @@ const CliUi = () => {
             <Text bold underline color="#7e57c2">
               Access Info
             </Text>
-            <Text bold>http://localhost:3333</Text>
-            <Text bold>http://localhost:9696</Text>
-            <Text bold>http://localhost:6380</Text>
-            <Text bold>http://localhost:5434</Text>
+            <Text bold>{`http://localhost:${frontend_port}`}</Text>
+            <Text bold>{`http://localhost:${analytics_server_port}`}</Text>
+            <Text bold>{`redis://${redis_host}:${redis_port}/0`}</Text>
+            <Text
+              bold
+            >{`postgresql://${db_user}:${db_pass}@${db_host}:${db_port}/${db_name}`}</Text>
             <Text bold color="grey">
               --
             </Text>
-            <Text bold>http://localhost:9697</Text>
+            <Text bold>{`http://localhost:${sync_server_port}`}</Text>
           </Box>
         )}
       </Box>
