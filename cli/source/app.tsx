@@ -33,7 +33,7 @@ const CliUi = () => {
   useLogsFromAllSources();
 
   const [retryToggle, setRetryToggle] = useState<Boolean>(false);
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState<string>("");
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState<string>('');
 
   const { exit } = useApp();
 
@@ -130,6 +130,27 @@ const CliUi = () => {
   useEffect(() => {
     handleVersionUpdates();
   }, [handleVersionUpdates]);
+
+  useEffect(() => {
+    const { process, promise } = runCommand(
+      'docker',
+      ['compose', 'build'],
+      runCommandOpts
+    );
+
+    processRef.current = process;
+
+    promise.catch((err) => {
+      handleExit();
+      dispatch(
+        appSlice.actions.addLog({
+          type: 'default',
+          line: `docker compose build failed: ${err}`,
+          time: new Date()
+        })
+      );
+    });
+  }, [dispatch, exit, handleExit, runCommandOpts]);
 
   useEffect(() => {
     const { process, promise } = runCommand(
