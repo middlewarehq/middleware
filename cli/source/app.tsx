@@ -150,7 +150,7 @@ const CliUi = () => {
         })
       );
     });
-  }, [dispatch, exit, handleExit, runCommandOpts]);
+  }, []);
 
   useEffect(() => {
     const { process, promise } = runCommand(
