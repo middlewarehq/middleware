@@ -22,12 +22,14 @@ def adapt_incident(
         "provider": incident.provider,
         "status": incident.status,
         "creation_date": incident.creation_date.isoformat(),
-        "resolved_date": incident.resolved_date.isoformat()
-        if incident.resolved_date
-        else None,
-        "acknowledged_date": incident.acknowledged_date.isoformat()
-        if incident.acknowledged_date
-        else None,
+        "resolved_date": (
+            incident.resolved_date.isoformat() if incident.resolved_date else None
+        ),
+        "acknowledged_date": (
+            incident.acknowledged_date.isoformat()
+            if incident.acknowledged_date
+            else None
+        ),
         "assigned_to": adapt_user_info(incident.assigned_to, username_user_map),
         "assignees": list(
             map(

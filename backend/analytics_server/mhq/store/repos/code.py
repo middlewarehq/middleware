@@ -63,9 +63,11 @@ class CodeRepoService:
                 team_repo = TeamRepos(
                     team_id=team.id,
                     org_repo_id=str(repo.id),
-                    prod_branches=["^" + repo.default_branch + "$"]
-                    if repo.default_branch
-                    else None,
+                    prod_branches=(
+                        ["^" + repo.default_branch + "$"]
+                        if repo.default_branch
+                        else None
+                    ),
                 )
 
             updated_team_repos.append(team_repo)

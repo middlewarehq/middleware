@@ -166,9 +166,9 @@ class GithubETLHandler(CodeProviderETLHandler):
         pr_model: Optional[PullRequest] = self.code_repo_service.get_repo_pr_by_number(
             repo_id, pr.number
         )
-        pr_event_model_list: List[
-            PullRequestEvent
-        ] = self.code_repo_service.get_pr_events(pr_model)
+        pr_event_model_list: List[PullRequestEvent] = (
+            self.code_repo_service.get_pr_events(pr_model)
+        )
         pr_commits_model_list: List = []
 
         reviews: List[GithubPullRequestReview] = list(self._api.get_pr_reviews(pr))
@@ -340,9 +340,11 @@ class GithubETLHandler(CodeProviderETLHandler):
                     url=commit["html_url"],
                     data=commit,
                     message=commit["commit"]["message"],
-                    author=commit["author"]["login"]
-                    if commit.get("author")
-                    else commit["commit"].get("committer", {}).get("email", ""),
+                    author=(
+                        commit["author"]["login"]
+                        if commit.get("author")
+                        else commit["commit"].get("committer", {}).get("email", "")
+                    ),
                     created_at=self._dt_from_github_dt_string(
                         commit["commit"]["committer"]["date"]
                     ),

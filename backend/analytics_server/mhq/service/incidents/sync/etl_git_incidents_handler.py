@@ -92,10 +92,10 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
         from_time: datetime = bookmark.bookmark
         to_time: datetime = time_now()
 
-        revert_pr_incidents: List[
-            RevertPRMap
-        ] = self.git_incidents_api_service.get_repo_revert_prs_in_interval(
-            incident_service.key, from_time, to_time
+        revert_pr_incidents: List[RevertPRMap] = (
+            self.git_incidents_api_service.get_repo_revert_prs_in_interval(
+                incident_service.key, from_time, to_time
+            )
         )
         if not revert_pr_incidents:
             LOG.warning(
@@ -152,12 +152,12 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
         self, org_incident_service: OrgIncidentService, revert_pr_map: RevertPRMap
     ) -> Tuple[Incident, IncidentOrgIncidentServiceMap]:
         incident_unique_id = str(revert_pr_map.original_pr.id)
-        existing_incident: Optional[
-            Incident
-        ] = self.incidents_repo_service.get_incident_by_key_type_and_provider(
-            incident_unique_id,
-            IncidentType.REVERT_PR,
-            IncidentProvider(org_incident_service.provider),
+        existing_incident: Optional[Incident] = (
+            self.incidents_repo_service.get_incident_by_key_type_and_provider(
+                incident_unique_id,
+                IncidentType.REVERT_PR,
+                IncidentProvider(org_incident_service.provider),
+            )
         )
         incident_id = existing_incident.id if existing_incident else uuid4_str()
 
@@ -180,9 +180,9 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
                 "created_at": revert_pr_map.revert_pr.created_at.isoformat(),
                 "updated_at": revert_pr_map.revert_pr.updated_at.isoformat(),
             },
-            created_at=existing_incident.created_at
-            if existing_incident
-            else time_now(),
+            created_at=(
+                existing_incident.created_at if existing_incident else time_now()
+            ),
             updated_at=time_now(),
             incident_type=IncidentType.REVERT_PR,
         )
@@ -206,9 +206,9 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
             name=org_repo.name,
             key=str(org_repo.id),
             meta={},
-            created_at=org_incident_service.created_at
-            if org_incident_service
-            else time_now(),
+            created_at=(
+                org_incident_service.created_at if org_incident_service else time_now()
+            ),
             updated_at=time_now(),
             source_type=IncidentSource.GIT_REPO,
         )
@@ -226,9 +226,9 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
             "url": pr.url,
             "base_branch": pr.base_branch,
             "head_branch": pr.head_branch,
-            "state_changed_at": pr.state_changed_at.isoformat()
-            if pr.state_changed_at
-            else None,
+            "state_changed_at": (
+                pr.state_changed_at.isoformat() if pr.state_changed_at else None
+            ),
             "commits": pr.commits,
             "comments": pr.comments,
             "provider": pr.provider,

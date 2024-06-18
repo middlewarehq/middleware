@@ -76,9 +76,9 @@ class IncidentService:
             current_deployment_incidents = []
 
             if incidents_pointer >= len(incidents):
-                deployment_incidents_map[
-                    current_deployment
-                ] = current_deployment_incidents
+                deployment_incidents_map[current_deployment] = (
+                    current_deployment_incidents
+                )
                 continue
 
             while incidents_pointer < len(incidents):
@@ -197,10 +197,10 @@ class IncidentService:
         self, resolved_incidents: List[Incident], interval: Interval
     ) -> Dict[datetime, MeanTimeToRecoveryMetrics]:
 
-        weekly_resolved_team_incidents: Dict[
-            datetime, List[Incident]
-        ] = generate_expanded_buckets(
-            resolved_incidents, interval, "resolved_date", "weekly"
+        weekly_resolved_team_incidents: Dict[datetime, List[Incident]] = (
+            generate_expanded_buckets(
+                resolved_incidents, interval, "resolved_date", "weekly"
+            )
         )
 
         weekly_mean_time_to_recovery: Dict[datetime, MeanTimeToRecoveryMetrics] = {}
@@ -208,9 +208,9 @@ class IncidentService:
         for week, incidents in weekly_resolved_team_incidents.items():
 
             if incidents:
-                weekly_mean_time_to_recovery[
-                    week
-                ] = self._get_incidents_mean_time_to_recovery(incidents)
+                weekly_mean_time_to_recovery[week] = (
+                    self._get_incidents_mean_time_to_recovery(incidents)
+                )
             else:
                 weekly_mean_time_to_recovery[week] = MeanTimeToRecoveryMetrics()
 

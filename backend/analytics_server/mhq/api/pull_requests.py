@@ -159,9 +159,9 @@ def get_team_lead_time_trends(
 
     lead_time_service = get_lead_time_service()
 
-    weekly_lead_time_metrics_avg_map: Dict[
-        datetime, LeadTimeMetrics
-    ] = lead_time_service.get_team_lead_time_metrics_trends(team, interval, pr_filter)
+    weekly_lead_time_metrics_avg_map: Dict[datetime, LeadTimeMetrics] = (
+        lead_time_service.get_team_lead_time_metrics_trends(team, interval, pr_filter)
+    )
 
     return {
         week.isoformat(): adapt_lead_time_metrics(average_lead_time_metrics)

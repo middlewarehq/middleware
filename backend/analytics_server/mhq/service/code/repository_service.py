@@ -194,9 +194,9 @@ class RepositoryService:
             name=org_repo.name,
             key=str(org_repo.id),
             meta={},
-            created_at=org_incident_service.created_at
-            if org_incident_service
-            else time_now(),
+            created_at=(
+                org_incident_service.created_at if org_incident_service else time_now()
+            ),
             updated_at=time_now(),
             source_type=IncidentSource.GIT_REPO,
         )

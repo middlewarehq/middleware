@@ -92,9 +92,11 @@ class CodeETLAnalyticsService:
             cycle_time = cycle_time.total_seconds()
 
         return PRPerformance(
-            first_review_time=(first_review.created_at - pr.created_at).total_seconds()
-            if first_review
-            else -1,
+            first_review_time=(
+                (first_review.created_at - pr.created_at).total_seconds()
+                if first_review
+                else -1
+            ),
             rework_time=rework_time,
             merge_time=merge_time,
             cycle_time=cycle_time if pr.state == PullRequestState.MERGED else -1,

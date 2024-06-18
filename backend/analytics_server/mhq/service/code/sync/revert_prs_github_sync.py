@@ -70,10 +70,10 @@ class RevertPRsGitHubSyncHandler:
         if len(pr_numbers_match_strings) == 0:
             return []
 
-        revert_prs: List[
-            PullRequest
-        ] = self.code_repo_service.get_prs_by_head_branch_match_strings(
-            list(repo_ids), pr_numbers_match_strings
+        revert_prs: List[PullRequest] = (
+            self.code_repo_service.get_prs_by_head_branch_match_strings(
+                list(repo_ids), pr_numbers_match_strings
+            )
         )
 
         revert_pr_mappings: List[PullRequestRevertPRMapping] = []
@@ -136,10 +136,10 @@ class RevertPRsGitHubSyncHandler:
         if len(revert_pr_numbers) == 0:
             return []
 
-        reverted_prs: List[
-            PullRequest
-        ] = self.code_repo_service.get_reverted_prs_by_numbers(
-            list(repo_ids), revert_pr_numbers
+        reverted_prs: List[PullRequest] = (
+            self.code_repo_service.get_reverted_prs_by_numbers(
+                list(repo_ids), revert_pr_numbers
+            )
         )
 
         revert_pr_mappings: List[PullRequestRevertPRMapping] = []

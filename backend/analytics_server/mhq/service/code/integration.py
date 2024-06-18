@@ -13,10 +13,10 @@ class CodeIntegrationService:
         self.core_repo_service = core_repo_service
 
     def get_org_providers(self, org_id: str) -> List[str]:
-        integrations: List[
-            Integration
-        ] = self.core_repo_service.get_org_integrations_for_names(
-            org_id, CODE_INTEGRATION_BUCKET
+        integrations: List[Integration] = (
+            self.core_repo_service.get_org_integrations_for_names(
+                org_id, CODE_INTEGRATION_BUCKET
+            )
         )
         if not integrations:
             return []

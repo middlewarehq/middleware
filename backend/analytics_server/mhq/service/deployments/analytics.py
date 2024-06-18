@@ -43,27 +43,27 @@ class DeploymentAnalyticsService:
         related pull requests. Each deployment is associated with a list of pull requests that contributed to it.
         """
 
-        deployments: List[
-            Deployment
-        ] = self.deployments_service.get_team_all_deployments_in_interval(
-            team_id, interval, pr_filter, workflow_filter
+        deployments: List[Deployment] = (
+            self.deployments_service.get_team_all_deployments_in_interval(
+                team_id, interval, pr_filter, workflow_filter
+            )
         )
 
         team_repos: List[TeamRepos] = self._get_team_repos_by_team_id(team_id)
         repo_ids: List[str] = [str(team_repo.org_repo_id) for team_repo in team_repos]
 
-        pull_requests: List[
-            PullRequest
-        ] = self.code_repo_service.get_prs_merged_in_interval(
-            repo_ids, interval, pr_filter
+        pull_requests: List[PullRequest] = (
+            self.code_repo_service.get_prs_merged_in_interval(
+                repo_ids, interval, pr_filter
+            )
         )
 
-        repo_id_branch_to_pr_list_map: Dict[
-            Tuple[str, str], List[PullRequest]
-        ] = self._map_prs_to_repo_id_and_base_branch(pull_requests)
-        repo_id_branch_to_deployments_map: Dict[
-            Tuple[str, str], List[Deployment]
-        ] = self._map_deployments_to_repo_id_and_head_branch(deployments)
+        repo_id_branch_to_pr_list_map: Dict[Tuple[str, str], List[PullRequest]] = (
+            self._map_prs_to_repo_id_and_base_branch(pull_requests)
+        )
+        repo_id_branch_to_deployments_map: Dict[Tuple[str, str], List[Deployment]] = (
+            self._map_deployments_to_repo_id_and_head_branch(deployments)
+        )
 
         repo_id_to_deployments_with_pr_map: Dict[
             str, Dict[Deployment, List[PullRequest]]
@@ -76,9 +76,9 @@ class DeploymentAnalyticsService:
             relevant_prs: List[PullRequest] = repo_id_branch_to_pr_list_map.get(
                 (repo_id, base_branch), []
             )
-            deployments_pr_map: Dict[
-                Deployment, List[PullRequest]
-            ] = self._map_prs_to_deployments(relevant_prs, deployments)
+            deployments_pr_map: Dict[Deployment, List[PullRequest]] = (
+                self._map_prs_to_deployments(relevant_prs, deployments)
+            )
 
             repo_id_to_deployments_with_pr_map[repo_id].update(deployments_pr_map)
 
@@ -137,9 +137,9 @@ class DeploymentAnalyticsService:
     def _map_deployments_to_repo_id_and_head_branch(
         self, deployments: List[Deployment]
     ) -> Dict[Tuple[str, str], List[Deployment]]:
-        repo_id_branch_deployments_map: Dict[
-            Tuple[str, str], List[Deployment]
-        ] = defaultdict(list)
+        repo_id_branch_deployments_map: Dict[Tuple[str, str], List[Deployment]] = (
+            defaultdict(list)
+        )
         for deployment in deployments:
             repo_id = str(deployment.repo_id)
             head_branch = deployment.head_branch
@@ -182,9 +182,9 @@ class DeploymentAnalyticsService:
         This method takes a dict of datetime representing (day/week/month) to Deployments and returns avg deployment frequency
         """
 
-        date_to_deployment_count_map: Dict[
-            datetime, int
-        ] = get_key_to_count_map_from_key_to_list_map(date_to_deployment_map)
+        date_to_deployment_count_map: Dict[datetime, int] = (
+            get_key_to_count_map_from_key_to_list_map(date_to_deployment_map)
+        )
 
         return get_average_of_dict_values(date_to_deployment_count_map)
 

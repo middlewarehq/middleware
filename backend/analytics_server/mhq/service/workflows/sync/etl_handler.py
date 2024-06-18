@@ -37,9 +37,9 @@ class WorkflowETLHandler:
         self.etl_factory = etl_factory
 
     def sync_org_workflows(self, org_id: str):
-        active_repo_workflows: List[
-            Tuple[OrgRepo, RepoWorkflow]
-        ] = self._get_active_repo_workflows(org_id)
+        active_repo_workflows: List[Tuple[OrgRepo, RepoWorkflow]] = (
+            self._get_active_repo_workflows(org_id)
+        )
 
         for org_repo, repo_workflow in active_repo_workflows:
             try:
@@ -56,9 +56,9 @@ class WorkflowETLHandler:
         code_providers: List[str] = get_code_integration_service().get_org_providers(
             org_id
         )
-        workflow_providers: List[
-            str
-        ] = get_workflows_integrations_service().get_org_providers(org_id)
+        workflow_providers: List[str] = (
+            get_workflows_integrations_service().get_org_providers(org_id)
+        )
         if not code_providers or not workflow_providers:
             LOG.info(f"No workflow integrations found for org {org_id}")
             return []
@@ -66,11 +66,11 @@ class WorkflowETLHandler:
         org_repos: List[OrgRepo] = self.code_repo_service.get_active_org_repos(org_id)
         repo_ids = [str(repo.id) for repo in org_repos]
         repo_id_org_repo_map = {str(repo.id): repo for repo in org_repos}
-        active_repo_workflows: List[
-            RepoWorkflow
-        ] = self.workflow_repo_service.get_active_repo_workflows_by_repo_ids_and_providers(
-            repo_ids,
-            [RepoWorkflowProviders(provider) for provider in workflow_providers],
+        active_repo_workflows: List[RepoWorkflow] = (
+            self.workflow_repo_service.get_active_repo_workflows_by_repo_ids_and_providers(
+                repo_ids,
+                [RepoWorkflowProviders(provider) for provider in workflow_providers],
+            )
         )
         org_repo_workflows: List[Tuple[OrgRepo, RepoWorkflow]] = []
         for repo_workflow in active_repo_workflows:
@@ -126,9 +126,9 @@ class WorkflowETLHandler:
 
 
 def sync_org_workflows(org_id: str):
-    workflow_providers: List[
-        str
-    ] = get_workflows_integrations_service().get_org_providers(org_id)
+    workflow_providers: List[str] = (
+        get_workflows_integrations_service().get_org_providers(org_id)
+    )
     if not workflow_providers:
         LOG.info(f"No workflow integrations found for org {org_id}")
         return

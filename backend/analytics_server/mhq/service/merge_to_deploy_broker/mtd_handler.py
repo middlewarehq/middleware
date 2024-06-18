@@ -54,9 +54,9 @@ class MergeToDeployCacheHandler:
         if not org_repo:
             Exception(f"Repo with {repo_id} not found")
 
-        repo_workflows: List[
-            RepoWorkflow
-        ] = self.workflow_repo_service.get_repo_workflows_by_repo_id(repo_id)
+        repo_workflows: List[RepoWorkflow] = (
+            self.workflow_repo_service.get_repo_workflows_by_repo_id(repo_id)
+        )
         if not repo_workflows:
             return
 
@@ -68,10 +68,10 @@ class MergeToDeployCacheHandler:
 
         bookmark_time: datetime = broker_bookmark.bookmark_date
 
-        repo_workflow_runs: List[
-            RepoWorkflowRuns
-        ] = self.workflow_repo_service.get_repo_workflow_runs_conducted_after_time(
-            repo_id, bookmark_time, DEPLOYMENTS_TO_PROCESS
+        repo_workflow_runs: List[RepoWorkflowRuns] = (
+            self.workflow_repo_service.get_repo_workflow_runs_conducted_after_time(
+                repo_id, bookmark_time, DEPLOYMENTS_TO_PROCESS
+            )
         )
 
         if not repo_workflow_runs:
@@ -99,15 +99,15 @@ class MergeToDeployCacheHandler:
             return
 
         conducted_at: datetime = repo_workflow_run.conducted_at
-        relevant_prs: List[
-            PullRequest
-        ] = self.code_repo_service.get_prs_in_repo_merged_before_given_date_with_merge_to_deploy_as_null(
-            repo_id, conducted_at
+        relevant_prs: List[PullRequest] = (
+            self.code_repo_service.get_prs_in_repo_merged_before_given_date_with_merge_to_deploy_as_null(
+                repo_id, conducted_at
+            )
         )
-        prs_to_update: List[
-            PullRequest
-        ] = self.deployment_pr_mapper_service.get_all_prs_deployed(
-            relevant_prs, repo_workflow_run
+        prs_to_update: List[PullRequest] = (
+            self.deployment_pr_mapper_service.get_all_prs_deployed(
+                relevant_prs, repo_workflow_run
+            )
         )
 
         for pr in prs_to_update:
