@@ -2,7 +2,7 @@
 
 docker-compose down
 
-cat env.example > .env
+[ ! -f .env ] && cp env.example .env
 
 check_internet_connection() {
   curl -s https://www.google.com > /dev/null 2>&1
@@ -41,7 +41,7 @@ update_or_add_env_var "BUILD_DATE" "$GIT_COMMIT_DATE"
 update_or_add_env_var "MERGE_COMMIT_SHA" "$GIT_COMMIT_HASH"
 update_or_add_env_var "BEHIND_COMMITS_COUNT" "$BEHIND_COMMITS_COUNT"
 
-
+set -o allexport; source .env; set +o allexport
 cd ./cli || exit
 
 { yarn && yarn build; } > /dev/null 2>&1
