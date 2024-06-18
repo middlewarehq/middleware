@@ -27,7 +27,7 @@ jobs:
           python-version: "3.11.6"
 
       - name: Install Black
-        run: python -m pip install black==22.3.0
+        run: python -m pip install black==24.3.0
 
       - name: Run Black Check
         run: black . --check
