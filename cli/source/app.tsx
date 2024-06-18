@@ -18,9 +18,9 @@ import {
 } from './hooks/useLogsFromAllSources.js';
 import { appSlice } from './slices/app.js';
 import { useSelector, store, useDispatch } from './store/index.js';
+import CircularBuffer from './utils/circularBuffer.js';
 import { getLineLimit } from './utils/line-limit.js';
 import { runCommand } from './utils/run-command.js';
-import CircularBuffer from './utils/circularBuffer.js';
 import { isLocalBranchBehindRemote } from './utils/update-checker.js';
 
 const CliUi = () => {
@@ -116,6 +116,12 @@ const CliUi = () => {
     if (appState !== AppStates.TERMINATED) return;
     exit();
   }, [appState, exit]);
+
+  useEffect(() => {
+    console.log('Debugging log stream', {
+      logsStreamElement: logsStream[logsStream.length - 1]
+    });
+  }, [logsStream]);
 
   useInput((input) => {
     if (appState === AppStates.DOCKER_READY) {
@@ -241,15 +247,18 @@ const CliUi = () => {
     };
   }, [dispatch, exit, handleExit, runCommandOpts, retryToggle]);
 
-  const logsStreamNodes = useMemo(
-    () => logsStream.map((l) => transformLogToNode(l)),
-    [logsStream]
-  );
+  const logsStreamNodes = logsStream.map((l) => transformLogToNode(l));
+
+  console.log('Debugging logsStreamNodes', {
+    logsStreamNodesElement:
+      logsStreamNodes[logsStreamNodes.length - 1]?.props.children
+  });
+
   return (
     <>
       <Static items={logsStreamNodes} style={{ flexDirection: 'column' }}>
         {(log, i) => (
-          <Box key={i}>
+          <Box key={Math.random().toString()}>
             {typeof log === 'string' ? <Text>{log}</Text> : log}
           </Box>
         )}

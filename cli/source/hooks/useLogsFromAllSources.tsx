@@ -1,4 +1,5 @@
 import { Box, Newline, Text } from 'ink';
+import { tail } from 'ramda';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useLogs } from './useLogs.js';
@@ -19,6 +20,7 @@ export const useLogsFromAllSources = () => {
   const dispatch = useDispatch();
   const appState = useSelector((state) => state.app.appState);
   const logSource = useSelector((state) => state.app.logSource);
+  const logsStream = useSelector((state) => state.app.logsStream);
   const [allLogs, setAllLogs] = useState<LogEntry[]>([]);
   const logSourceRef = useRef(logSource);
   logSourceRef.current = logSource;
@@ -68,12 +70,22 @@ export const useLogsFromAllSources = () => {
     if (appState !== AppStates.DOCKER_READY) return;
     const newLogs: LogEntry[] = [];
 
+
     switch (logSource) {
       case LogSource.WebServer:
         newLogs.push(...webLogsRef.current.slice(-HIST_LIMIT));
+        console.log('Debugging',{
+          webLogsValue:webLogsRef.current.slice(-HIST_LIMIT).length,
+          newLogsValue:newLogs.length
+        })
         break;
       case LogSource.ApiServer:
         newLogs.push(...apiLogsRef.current.slice(-HIST_LIMIT));
+        console.log('Debugging',{
+          apiLogsValue:apiLogsRef.current.slice(-HIST_LIMIT).length,
+          newLogsValue:newLogs.length
+        })
+
         break;
       case LogSource.SyncServer:
         newLogs.push(...syncLogsRef.current.slice(-HIST_LIMIT));
@@ -93,6 +105,10 @@ export const useLogsFromAllSources = () => {
       case LogSource.All:
       default:
         newLogs.push(...allLogsRef.current.slice(-HIST_LIMIT));
+        console.log('Debugging',{
+          allLogsValue:allLogsRef.current.slice(-HIST_LIMIT).length,
+          newLogsValue:newLogs.length
+        })
         break;
     }
 
@@ -108,6 +124,12 @@ export const useLogsFromAllSources = () => {
       line: keysForLogSource[logSource],
       time: new Date()
     });
+
+    console.log('Debugging',{
+      logsStreamElement: (logsStream[logsStream.length-1]),
+      newLogElement: (newLogs[newLogs.length-1])
+    })
+
     dispatch(appSlice.actions.setLogsStream(newLogs));
   }, [appState, dispatch, logSource]);
 };
