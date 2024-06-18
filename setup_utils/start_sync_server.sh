@@ -21,7 +21,7 @@ wait_for_message
 
 cd /app/backend/analytics_server || exit
 if [ "$ENVIRONMENT" == "prod" ]; then
-  /opt/venv/bin/gunicorn -w 2 -b 127.0.0.1:$SYNC_SERVER_PORT --timeout 0 --access-logfile '-' --error-logfile '-' sync_app:app
+  /opt/venv/bin/gunicorn -w 2 -b 0.0.0.0:$SYNC_SERVER_PORT --timeout 0 --access-logfile '-' --error-logfile '-' sync_app:app
 else
-  /opt/venv/bin/gunicorn -w 2 -b 127.0.0.1:$SYNC_SERVER_PORT --timeout 0 --access-logfile '-' --error-logfile '-' --reload sync_app:app
+  /opt/venv/bin/gunicorn -w 2 -b 0.0.0.0:$SYNC_SERVER_PORT --timeout 0 --access-logfile '-' --error-logfile '-' --reload sync_app:app
 fi
