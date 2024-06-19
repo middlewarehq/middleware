@@ -5,6 +5,7 @@ import {
 } from 'child_process';
 
 import CircularBuffer from './circularBuffer.js';
+
 import { LogSource, READY_MESSAGES } from '../constants.js';
 
 export function runCommand(
