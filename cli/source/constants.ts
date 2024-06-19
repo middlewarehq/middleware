@@ -32,6 +32,10 @@ export enum LogSource {
   DockerWatchProcessIdLock
 }
 
+export enum ErrorCodes {
+  SpawnProcessCommandNotFound = '-2'
+}
+
 export type LogEntry = {
   type:
     | 'data'
