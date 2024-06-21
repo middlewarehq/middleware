@@ -1,10 +1,15 @@
+from collections import defaultdict
 from flask import Blueprint
 from typing import Any, Dict, List
 from voluptuous import Required, Schema, Optional, All, Coerce
 from werkzeug.exceptions import BadRequest
-from mhq.store.models.code.repository import TeamRepos
+from mhq.store.models.code.repository import OrgRepo, TeamRepos
 from mhq.service.code.models.org_repo import RawOrgRepo
-from mhq.api.resources.code_resouces import adapt_org_repo, adapt_team_repos
+from mhq.api.resources.code_resouces import (
+    adapt_org_repo,
+    adapt_team_repos,
+    adapt_team_repo_and_org_repo,
+)
 from mhq.service.code.repository_service import get_repository_service
 from mhq.api.resources.core_resources import adapt_team
 from mhq.store.models.core.teams import Team
@@ -90,9 +95,17 @@ def fetch_team_repos(team_id: str):
     query_validator = get_query_validator()
     team: Team = query_validator.team_validator(team_id)
 
-    team_repos = get_repository_service().get_team_repos(team)
+    team_repos_service = get_repository_service()
+    team_org_repos: List[OrgRepo] = team_repos_service.get_team_repos(team)
+    team_repos: List[TeamRepos] = team_repos_service.get_team_repos_by_team_id(team)
+    team_id_team_repos_map: Dict[str, TeamRepos] = {
+        str(repo.org_repo_id): repo for repo in team_repos
+    }
 
-    return [adapt_org_repo(repo) for repo in team_repos]
+    return [
+        adapt_team_repo_and_org_repo(repo, team_id_team_repos_map.get(str(repo.id)))
+        for repo in team_org_repos
+    ]
 
 
 @app.route("/teams/<team_id>/repos", methods={"PUT"})
