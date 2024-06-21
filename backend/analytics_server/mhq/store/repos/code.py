@@ -347,7 +347,6 @@ class CodeRepoService:
             .filter(and_(TeamRepos.team_id == team_id, TeamRepos.is_active == True))
             .all()
         )
-        
 
     @rollback_on_exc
     def get_merge_to_deploy_broker_bookmark(
