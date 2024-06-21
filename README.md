@@ -374,11 +374,11 @@ We appreciate your contributions and look forward to working together to make Mi
 
 ## 👨‍💻 Developer Automations
 
-This sections contains some automation scripts that can generate boilder plate code to extend certain features and ship faster 🚀
+This sections contains some automation scripts that can generate boilerplate code to extend certain features and ship faster 🚀
 
 ### 1. Adding New Settings in Backend
 
-- Context: Adding a new setting required context of the Settings System, changes across some files and making adpater and defaults based on the new setting class structure.
+- Context: Initially, adding a new setting required context of the settings system, changes across some files and making adapater and defaults based on the new setting class structure.
 - This can now be done by running the `python make_new_setting.py` scripts in the `./backend/dev_scripts` directory
 
 If you are in the root directory, you can run:
@@ -386,11 +386,11 @@ If you are in the root directory, you can run:
 python ./backend/dev_scripts/make_new_setting.py
 ```
 
-- Enter the Setting name in the consitent format.
-- Add the required keys and thier types. Enter `done` once you have added all the fields.
-- Update Imports and Linting.
+- Enter the setting name in the consitent format.
+- Add the required keys and their types. Enter `done` once you have added all the fields.
+- Update imports and linting.
 - You are good to go :tada"
-- Note: For more non primite types in the setting such as uuid, enums etc, you will have to make changes to the generated adpaters.
+- Note: For more non primitive types in the setting such as uuid, enums etc, you will have to make changes to the generated adaptors.
 
 
 https://github.com/middlewarehq/middleware/assets/70485812/f0529fa7-a2cb-44b1-ae07-2a7c97f56bef
