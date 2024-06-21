@@ -139,6 +139,27 @@ def adapt_org_repo(org_repo: OrgRepo) -> Dict[str, any]:
     }
 
 
+def adapt_team_repo_and_org_repo(
+    org_repo: OrgRepo, team_repo: TeamRepos
+) -> Dict[str, any]:
+    return {
+        "id": str(org_repo.id),
+        "org_id": str(org_repo.org_id),
+        "name": org_repo.name,
+        "org_name": org_repo.org_name,
+        "provider": org_repo.provider,
+        "is_active": org_repo.is_active,
+        "default_branch": org_repo.default_branch,
+        "language": org_repo.language,
+        "contributors": org_repo.contributors,
+        "idempotency_key": org_repo.idempotency_key,
+        "slug": org_repo.slug,
+        "created_at": org_repo.created_at.isoformat(),
+        "updated_at": org_repo.updated_at.isoformat(),
+        "deployment_type": team_repo.deployment_type.value,
+    }
+
+
 def adapt_team_repos(team_repos: List[TeamRepos]) -> List[Dict[str, any]]:
     return [
         {

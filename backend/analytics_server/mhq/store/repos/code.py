@@ -341,6 +341,14 @@ class CodeRepoService:
         return self.get_repos_by_ids(team_repo_ids)
 
     @rollback_on_exc
+    def get_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
+        return (
+            self._db.session.query(TeamRepos)
+            .filter(and_(TeamRepos.team_id == team_id, TeamRepos.is_active == True))
+            .all()
+        )
+
+    @rollback_on_exc
     def get_merge_to_deploy_broker_bookmark(
         self, repo_id: str
     ) -> BookmarkMergeToDeployBroker:
