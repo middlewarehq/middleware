@@ -390,7 +390,7 @@ python ./backend/dev_scripts/make_new_setting.py
 - Add the required keys and their types. Enter `done` once you have added all the fields.
 - Update imports and linting.
 - You are good to go :tada"
-- Note: For more non primitive types in the setting such as uuid, enums etc, you will have to make changes to the generated adaptors.
+- Note: For more non primitive-types in the setting such as uuid, enums etc, you will have to make changes to the generated adaptors.
 
 
 https://github.com/middlewarehq/middleware/assets/70485812/f0529fa7-a2cb-44b1-ae07-2a7c97f56bef
