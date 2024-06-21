@@ -101,21 +101,6 @@ export const useTableSort = <T = Record<string, any>>(
     return result;
   }, [conf.order, list, simpleSort]);
 
-  const handleCommitSort = useCallback(() => {
-    const result = [...list] as any[];
-    if (!result.some((pr) => pr?.commits)) return simpleSort();
-    if (conf.order === 'asc') {
-      result.sort((a, b) => {
-        return Number(a.commits) - Number(b.commits);
-      });
-    } else {
-      result.sort((b, a) => {
-        return Number(a.commits) - Number(b.commits);
-      });
-    }
-    return result;
-  }, [conf.order, list, simpleSort]);
-
   const handleLinesSort = useCallback(() => {
     const result = [...list] as any[];
     if (!result.some((pr) => pr?.additions)) return simpleSort();
@@ -137,7 +122,6 @@ export const useTableSort = <T = Record<string, any>>(
     if (conf.field === 'author') return handleAuthorUsernameSort();
     if (conf.field === 'reviewers') return handleReviewerSort();
     if (conf.field === 'first_response_time') return handleResponseTime();
-    if (conf.field === 'commits') return handleCommitSort();
     if (conf.field === 'additions') return handleLinesSort();
     return simpleSort();
   }, [
@@ -145,6 +129,7 @@ export const useTableSort = <T = Record<string, any>>(
     handleAuthorUsernameSort,
     handleResponseTime,
     handleReviewerSort,
+    handleLinesSort,
     simpleSort
   ]);
 
