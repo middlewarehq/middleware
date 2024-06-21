@@ -379,7 +379,7 @@ This sections contains some automation scripts that can generate boilerplate cod
 ### 1. Adding New Settings in Backend
 
 - Context: Initially, adding a new setting required context of the settings system, changes across some files and making adapters and defaults based on the new setting class structure.
-- This can now be done by running the `python make_new_setting.py` scripts in the `./backend/dev_scripts` directory
+- This can now be done by running the `python make_new_setting.py` script in the `./backend/dev_scripts` directory
 
 If you are in the root directory, you can run:
 ```
