@@ -97,7 +97,7 @@ def fetch_team_repos(team_id: str):
 
     team_repos_service = get_repository_service()
     team_org_repos: List[OrgRepo] = team_repos_service.get_team_repos(team)
-    team_repos: List[TeamRepos] = team_repos_service.get_team_repos_by_team_id(team)
+    team_repos: List[TeamRepos] = team_repos_service.get_team_repos_by_team(team)
     team_id_team_repos_map: Dict[str, TeamRepos] = {
         str(repo.org_repo_id): repo for repo in team_repos
     }

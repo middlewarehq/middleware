@@ -22,7 +22,7 @@ class RepositoryService:
     def get_team_repos(self, team: Team) -> List[OrgRepo]:
         return self._code_repo_service.get_team_repos(team_id=str(team.id))
 
-    def get_team_repos_by_team_id(self, team: Team) -> List[TeamRepos]:
+    def get_team_repos_by_team(self, team: Team) -> List[TeamRepos]:
         return self._code_repo_service.get_team_repos_by_team_id(team_id=str(team.id))
 
     def update_team_repos(
