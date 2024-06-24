@@ -260,7 +260,7 @@ To set up middleware locally, follow these steps:
       pip install -r requirements.txt -r dev-requirements.txt
       ```
 
-    - Create a `.env.local` file in the `/backend` directory and add the following environment variables, replacing the values with your own if needed:
+    - Create a `.env` file in the root directory and add the following environment variables, replacing the values with your own if needed:
 
       ```text
       DB_HOST=localhost
