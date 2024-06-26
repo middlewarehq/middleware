@@ -1,10 +1,11 @@
-from typing import List
+from typing import Dict, List
+from mhq.store.models.code.enums import TeamReposDeploymentType
 from mhq.store.models.incidents.services import TeamIncidentService
 from mhq.store.repos.incidents import IncidentsRepoService
 from mhq.store.models.incidents import OrgIncidentService, IncidentSource
 from mhq.utils.time import time_now
 from mhq.utils.string import uuid4_str
-from mhq.service.code.models.org_repo import RawOrgRepo
+from mhq.service.code.models.org_repo import RawTeamOrgRepo
 from mhq.store.models.code import OrgRepo
 from mhq.store.models.core import Team
 from mhq.store.repos.code import CodeRepoService, TeamRepos
@@ -25,16 +26,77 @@ class RepositoryService:
     def get_team_repos_by_team(self, team: Team) -> List[TeamRepos]:
         return self._code_repo_service.get_team_repos_by_team_id(team_id=str(team.id))
 
+    def get_repo_id_team_repos_map(
+        self, team: Team, org_repos: List[OrgRepo]
+    ) -> Dict[str, TeamRepos]:
+        repo_ids = [str(repo.id) for repo in org_repos]
+        team_repos: List[TeamRepos] = (
+            self._code_repo_service.get_team_repos_by_repo_id_for_team(
+                team.id, repo_ids
+            )
+        )
+
+        return {str(repo.org_repo_id): repo for repo in team_repos}
+
     def update_team_repos(
-        self, team: Team, raw_org_repos: List[RawOrgRepo]
+        self, team: Team, raw_org_repos: List[RawTeamOrgRepo]
     ) -> List[OrgRepo]:
 
         updated_repos = self.update_org_repos(team.org_id, raw_org_repos)
-        self._code_repo_service.update_team_repos(team, updated_repos)
+        self._update_team_repos(team, updated_repos, raw_org_repos)
         self.set_unused_repos_as_inactive(team.org_id)
         self._update_team_incident_services(team, updated_repos)
 
         return updated_repos
+
+    def _update_team_repos(
+        self,
+        team: Team,
+        updated_org_repos: List[OrgRepo],
+        raw_repos_data: List[RawTeamOrgRepo],
+    ):
+        existing_team_repos = self._code_repo_service.get_existing_team_repos(team)
+        for team_repo in existing_team_repos:
+            team_repo.is_active = False
+
+        repo_id_to_team_repos_map = {
+            str(team_repo.org_repo_id): team_repo for team_repo in existing_team_repos
+        }
+
+        idempotency_key_raw_org_repo_map = {
+            str(repo.idempotency_key): repo for repo in raw_repos_data
+        }
+
+        updated_team_repos = []
+        for repo in updated_org_repos:
+            team_repo = repo_id_to_team_repos_map.get(str(repo.id))
+            raw_org_repo = idempotency_key_raw_org_repo_map.get(repo.idempotency_key)
+            if team_repo:
+                team_repo.is_active = True
+                team_repo.deployment_type = (
+                    raw_org_repo.deployment_type
+                    if raw_org_repo
+                    else team_repo.deployment_type
+                )
+            else:
+                team_repo = TeamRepos(
+                    team_id=team.id,
+                    org_repo_id=str(repo.id),
+                    prod_branches=(
+                        ["^" + repo.default_branch + "$"]
+                        if repo.default_branch
+                        else None
+                    ),
+                    deployment_type=(
+                        raw_org_repo.deployment_type
+                        if raw_org_repo
+                        else TeamReposDeploymentType.PR_MERGE
+                    ),
+                )
+
+            updated_team_repos.append(team_repo)
+
+        self._code_repo_service.update_team_repos(updated_team_repos)
 
     def set_unused_repos_as_inactive(self, org_id: str) -> List[OrgRepo]:
 
@@ -54,7 +116,7 @@ class RepositoryService:
         return self._code_repo_service.update_org_repos(active_repos)
 
     def update_org_repos(
-        self, org_id: str, raw_org_repos: List[RawOrgRepo]
+        self, org_id: str, raw_org_repos: List[RawTeamOrgRepo]
     ) -> List[OrgRepo]:
 
         idempotency_keys = [repo.idempotency_key for repo in raw_org_repos]

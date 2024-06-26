@@ -1,15 +1,14 @@
 from functools import wraps
-from typing import Any, Dict, List
+from typing import Dict, List
 from uuid import UUID
-from datetime import datetime
 
+from mhq.store.models.code.enums import TeamReposDeploymentType
 from flask import request
 from stringcase import snakecase
 from voluptuous import Invalid
 from werkzeug.exceptions import BadRequest
-from mhq.utils.time import time_now
 from mhq.store.models.code.repository import TeamRepos
-from mhq.service.code.models.org_repo import RawOrgRepo
+from mhq.service.code.models.org_repo import RawTeamOrgRepo
 from mhq.store.models.code import WorkflowFilter, CodeProvider
 
 from mhq.service.workflows.workflow_filter import get_workflow_filter_processor
@@ -82,18 +81,24 @@ def coerce_workflow_filter(filter_data: str) -> WorkflowFilter:
     )
 
 
-def coerce_org_repo(repo: Dict[str, str]) -> RawOrgRepo:
-    return RawOrgRepo(
+def coerce_org_repo(repo: Dict[str, str]) -> RawTeamOrgRepo:
+    return RawTeamOrgRepo(
+        team_id=repo.get("team_id"),
         provider=CodeProvider(repo.get("provider")),
         name=repo.get("name"),
         org_name=repo.get("org"),
         slug=repo.get("slug"),
         idempotency_key=repo.get("idempotency_key"),
         default_branch=repo.get("default_branch"),
+        deployment_type=(
+            TeamReposDeploymentType(repo.get("deployment_type"))
+            if repo.get("deployment_type")
+            else TeamReposDeploymentType.PR_MERGE
+        ),
     )
 
 
-def coerce_org_repos(repos: List[Dict[str, str]]) -> List[RawOrgRepo]:
+def coerce_org_repos(repos: List[Dict[str, str]]) -> List[RawTeamOrgRepo]:
     return [coerce_org_repo(repo) for repo in repos]
 
 
