@@ -10,6 +10,7 @@ import {
   AppStates,
   ErrorCodes,
   LogSource,
+  PreCheckStates,
   READY_MESSAGES,
   terminatedText
 } from './constants.js';
@@ -17,6 +18,7 @@ import {
   useLogsFromAllSources,
   transformLogToNode
 } from './hooks/useLogsFromAllSources.js';
+import { usePreCheck } from "./hooks/usePreCheck.js"
 import { appSlice } from './slices/app.js';
 import { useSelector, store, useDispatch } from './store/index.js';
 import CircularBuffer from './utils/circularBuffer.js';
@@ -37,6 +39,7 @@ const CliUi = () => {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState<string>('');
 
   const { exit } = useApp();
+  const preCheck = usePreCheck();
 
   const lineLimit = getLineLimit();
 
@@ -150,6 +153,14 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
+    if(preCheck.daemon === PreCheckStates.FAILED){
+      handleExit();
+      return;
+    }
+    if(preCheck.daemon !== PreCheckStates.SUCCESS){
+      return;
+    }
+    dispatch(appSlice.actions.setAppState(AppStates.INIT));
     const { process, promise } = runCommand(
       'docker',
       ['compose', 'build'],
@@ -168,9 +179,12 @@ const CliUi = () => {
         })
       );
     });
-  }, []);
+  }, [preCheck.daemon]);
 
   useEffect(() => {
+    if(appState !== AppStates.INIT){
+      return;
+    }
     const { process, promise } = runCommand(
       'docker',
       ['compose', 'watch'],
@@ -265,8 +279,13 @@ const CliUi = () => {
     return () => {
       globalThis.process.off('exit', handleExit);
     };
-  }, [dispatch, exit, handleExit, runCommandOpts, retryToggle]);
+  }, [dispatch, exit, handleExit, runCommandOpts, retryToggle, appState]);
 
+
+  useEffect(() => {
+    preCheck.callChecks();
+  }, []);
+  
   const logsStreamNodes = useMemo(
     () => logsStream.map((l) => transformLogToNode(l)),
     [logsStream]
@@ -290,6 +309,20 @@ const CliUi = () => {
         <Box>
           {(() => {
             switch (appState) {
+              case AppStates.PREREQ_CHECK:
+                return (
+                  <Box>
+                  <Text color="blue">
+                    Status: Running prerequisites check... [Press X to abort]{' '}
+                    <Text bold color="green">
+                      <Spinner type="material" />
+                    </Text>
+                  </Text>
+                  <Text>
+                    <Spinner type="dots" /> Checking docker daemon
+                  </Text>
+                </Box>
+                )
               case AppStates.INIT:
                 return (
                   <Box flexDirection="column">
