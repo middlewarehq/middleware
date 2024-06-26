@@ -1,4 +1,3 @@
-from collections import defaultdict
 from flask import Blueprint
 from typing import Any, Dict, List
 from voluptuous import Required, Schema, Optional, All, Coerce

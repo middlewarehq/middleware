@@ -1,9 +1,7 @@
 from datetime import datetime
 from operator import and_
-from typing import Dict, Optional, List
+from typing import Optional, List
 
-from mhq.store.models.code.enums import TeamReposDeploymentType
-from mhq.service.code.models.org_repo import RawTeamOrgRepo
 from sqlalchemy import or_
 from sqlalchemy.orm import defer
 from mhq.store.models.core import Team
