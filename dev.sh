@@ -1,7 +1,5 @@
 #!/bin/bash
 
-docker compose down
-
 [ ! -f .env ] && cp env.example .env
 
 check_internet_connection() {
