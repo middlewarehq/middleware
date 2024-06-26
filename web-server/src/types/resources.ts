@@ -4,7 +4,6 @@ import { ReactChild, ReactFragment, ReactPortal } from 'react';
 
 import { Row } from '@/constants/db';
 import { CIProvider, Integration } from '@/constants/integrations';
-import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Team } from '@/types/api/teams';
 
 export type DeepPartial<T> = {
@@ -204,7 +203,11 @@ export type RepoWorkflow = {
   name: string;
   html_url: string | null;
   ci_provider: CIProvider;
+  provider_workflow_id: string;
+  value: string;
 };
+
+export type AdaptedRepoWorkflow = Pick<RepoWorkflow, 'name' | 'value'>;
 
 export type SelectedRepo = Row<'OrgRepo'> & {
   repo_workflow: Row<'RepoWorkflow'>;
@@ -245,6 +248,8 @@ export type BaseRepo = {
   web_url: string;
   language: string;
   branch: string;
+  deployment_type: DeploymentSources;
+  repo_workflows: AdaptedRepoWorkflow[];
 };
 
 export enum NotificationType {
@@ -444,18 +449,20 @@ export type RepoWithSingleWorkflow = {
   contributors: RepoContributors;
   idempotency_key: string;
   slug: string;
+  deployment_type: DeploymentSources;
   repo_workflow: Row<'RepoWorkflow'>;
+  team_id: ID;
 };
-
-export type RepoUniqueDetails = Pick<
-  RepoWithSingleWorkflow,
-  'name' | 'slug' | 'default_branch' | 'idempotency_key'
->;
 
 export type RepoWithMultipleWorkflows = Omit<
   RepoWithSingleWorkflow,
   'repo_workflow'
-> & { repo_workflows: Row<'RepoWorkflow'>[] };
+> & { repo_workflows: RepoWorkflow[] };
+
+export type RepoUniqueDetails = Pick<
+  RepoWithMultipleWorkflows,
+  'name' | 'slug' | 'default_branch' | 'idempotency_key' | 'deployment_type'
+> & { repo_workflows: AdaptedRepoWorkflow[] };
 
 export type RepoContributors = {
   contributions: Array<Array<number | string>>;
@@ -962,6 +969,8 @@ export type ReqRepo = {
   idempotency_key: string;
   name: string;
   slug: string;
+  deployment_type: DeploymentSources;
+  repo_workflows: RepoWorkflow[];
 };
 
 export type ReqRepoWithProvider = ReqRepo & { provider: Integration };
@@ -1012,4 +1021,22 @@ export type ImageStatusApiResponse = {
   latest_github_commit: string;
   latest_docker_image: string;
   is_update_available: boolean;
+};
+
+export type DB_OrgRepo = {
+  id: string;
+  org_id: string;
+  name: string;
+  provider: Integration;
+  org_name: string;
+  is_active: boolean;
+  contributors?: null;
+  default_branch: string;
+  language: string;
+  created_at: Date;
+  updated_at: Date;
+  idempotency_key: string;
+  slug: string;
+  deployment_type: 'PR_MERGE' | 'WORKFLOW';
+  repo_workflows: RepoWorkflow[];
 };
