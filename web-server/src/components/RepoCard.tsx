@@ -2,8 +2,8 @@ import { DataObjectRounded } from '@mui/icons-material';
 import { Typography, styled } from '@mui/material';
 
 import GitBranch from '@/assets/git-merge-line.svg';
-import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Repo } from '@/types/github';
+import { DB_OrgRepo } from '@/types/resources';
 
 export const RepoTitle = styled(Typography)(() => ({
   textOverflow: 'ellipsis',

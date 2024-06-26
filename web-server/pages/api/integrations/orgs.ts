@@ -9,8 +9,7 @@ import {
   WorkflowType
 } from '@/constants/integrations';
 import { selectedDBReposMock } from '@/mocks/github';
-import { DB_OrgRepo } from '@/types/api/org_repo';
-import { ReqOrgRepo, ReqRepo } from '@/types/resources';
+import { DB_OrgRepo, ReqOrgRepo, ReqRepo } from '@/types/resources';
 import { db } from '@/utils/db';
 import groupBy from '@/utils/objectArray';
 

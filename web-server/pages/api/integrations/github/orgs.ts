@@ -4,7 +4,7 @@ import * as yup from 'yup';
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { Row, Table } from '@/constants/db';
 import { selectedDBReposMock } from '@/mocks/github';
-import { DB_OrgRepo } from '@/types/api/org_repo';
+import { DB_OrgRepo } from '@/types/resources';
 import { db } from '@/utils/db';
 
 const patchSchema = yup.object().shape({

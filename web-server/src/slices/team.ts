@@ -4,7 +4,6 @@ import { createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
-import { DB_OrgRepo } from '@/types/api/org_repo';
 import { BaseTeam, Team } from '@/types/api/teams';
 import { StateFetchConfig } from '@/types/redux';
 import {
@@ -14,7 +13,8 @@ import {
   IncidentSettings,
   PR,
   BaseRepo,
-  RepoUniqueDetails
+  RepoUniqueDetails,
+  DB_OrgRepo
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 import { getUrlParam } from '@/utils/url';
