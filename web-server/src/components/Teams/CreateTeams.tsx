@@ -1,12 +1,21 @@
 import { Close } from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   Autocomplete,
   Button,
   Card,
   CircularProgress,
-  Divider,
+  MenuItem,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
-  Tooltip
+  Tooltip,
+  TableContainer,
+  useTheme
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { FC } from 'react';
@@ -15,8 +24,9 @@ import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
-import { useEasyState } from '@/hooks/useEasyState';
-import { BaseRepo } from '@/types/resources';
+import { DeploymentWorkflowSelector } from '@/components/WorkflowSelector';
+import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { BaseRepo, DeploymentSources } from '@/types/resources';
 
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
@@ -228,7 +238,6 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
               >
                 <FlexBox col sx={{ maxWidth: '200px', overflow: 'hidden' }}>
                   {option.parent && <Line tiny>{option.parent}</Line>}
-
                   {option.name.length > MAX_LENGTH_REPO_NAME ? (
                     <Tooltip title={option.name}>
                       <Line>{`${option.name.substring(
@@ -246,8 +255,8 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
           )}
           renderTags={() => null}
         />
-        <DisplayRepos hideCardComponents={hideCardComponents} />
       </FlexBox>
+      <DisplayRepos />
     </FlexBox>
   );
 };
@@ -312,58 +321,88 @@ const ActionTray: FC<CRUDProps> = ({
   );
 };
 
-const DisplayRepos: FC<{ hideCardComponents?: boolean }> = ({
-  hideCardComponents
-}) => {
+const DisplayRepos: FC = () => {
   const { selectedRepos } = useTeamCRUD();
+  const theme = useTheme();
+  if (!selectedRepos.length) return;
   return (
-    <FlexBox gap2 ml={2} minHeight={hideCardComponents ? '54px' : '49px'}>
-      {!!selectedRepos.length && <Divider flexItem orientation="vertical" />}
-      <FlexBox flexWrap={'wrap'} gap2>
-        {selectedRepos.map((repo) => (
-          <RepoItem
-            hideCardComponents={hideCardComponents}
-            repo={repo}
-            key={repo.id}
-          />
-        ))}
-      </FlexBox>
-    </FlexBox>
+    <TableContainer
+      sx={{
+        border: `2px solid ${theme.colors.secondary.light}`,
+        borderRadius: 1
+      }}
+    >
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ px: 2 }}>Repo</TableCell>
+            <TableCell align="center" sx={{ p: 1 }}>
+              Deployed Via
+            </TableCell>
+            <TableCell align="center" sx={{ p: 1 }}>
+              Action
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {selectedRepos.map((repo) => (
+            <TableRow key={repo.id}>
+              <TableCell sx={{ px: 2 }}>{repo.name}</TableCell>
+              <TableCell align="center" sx={{ p: 1 }}>
+                <FlexBox gap2 justifyCenter>
+                  <DeploymentSourceSelector repo={repo} />{' '}
+                  {repo.deployment_type === DeploymentSources.WORKFLOW && (
+                    <DeploymentWorkflowSelector repo={repo} />
+                  )}
+                </FlexBox>
+              </TableCell>
+              <TableCell align="center" sx={{ p: 1 }}>
+                <DeleteIcon fontSize="small" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 };
 
-const RepoItem: FC<{ repo: BaseRepo; hideCardComponents?: boolean }> = ({
-  repo,
-  hideCardComponents
-}) => {
-  const { unselectRepo } = useTeamCRUD();
+const options = [
+  {
+    label: 'PR Merge',
+    value: DeploymentSources.PR_MERGE,
+    title: 'This repo considers merges as deployments for this team'
+  },
+  {
+    label: 'Workflow',
+    value: DeploymentSources.WORKFLOW,
+    title: 'This repo is deployed via CI for this team'
+  }
+];
+
+const DeploymentSourceSelector: FC<{ repo: BaseRepo }> = ({ repo }) => {
+  const open = useBoolState(false);
+  const deploySource = repo.deployment_type;
+  const { updateDeploymentTypeForRepo } = useTeamCRUD();
   return (
-    <FlexBox
-      height={hideCardComponents ? '54px' : '49px'}
-      border={hideCardComponents && '1px solid'}
-      borderColor={hideCardComponents && '#353552'}
-      borderRadius={'10px'}
-      component={!hideCardComponents && Card}
-      gap={2}
-      alignCenter
-      px={2}
-    >
-      {repo.name}{' '}
-      <FlexBox
-        pointer
-        onClick={() => {
-          unselectRepo(repo.id);
-        }}
-        title="Remove repo"
-        sx={{
-          '&:hover': {
-            filter: 'brightness(0.7)'
-          },
-          transition: 'filter 0.2s'
-        }}
-      >
-        <Close fontSize="small" />
-      </FlexBox>
+    <FlexBox>
+      <Select value={deploySource} label="" onChange={() => {}} size="small">
+        {options.map((source) => {
+          return (
+            <MenuItem
+              value={source.value}
+              key={source.value}
+              onClick={async () => {
+                updateDeploymentTypeForRepo(repo.id, source.value);
+
+                open.false();
+              }}
+            >
+              <Line fontSize={'14px'}>{source.label}</Line>
+            </MenuItem>
+          );
+        })}
+      </Select>
     </FlexBox>
   );
 };
