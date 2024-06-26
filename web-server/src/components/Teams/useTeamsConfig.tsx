@@ -18,9 +18,14 @@ import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { updateTeamBranchesMap } from '@/slices/app';
 import { fetchTeams, createTeam, updateTeam } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
-import { DB_OrgRepo } from '@/types/api/org_repo';
 import { Team } from '@/types/api/teams';
-import { BaseRepo, RepoUniqueDetails } from '@/types/resources';
+import {
+  BaseRepo,
+  DB_OrgRepo,
+  DeploymentSources,
+  RepoUniqueDetails,
+  AdaptedRepoWorkflow
+} from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
 interface TeamsCRUDContextType {
@@ -41,6 +46,14 @@ interface TeamsCRUDContextType {
   onSave: (callBack?: AnyFunction) => void;
   isSaveLoading: boolean;
   unselectRepo: (id: BaseRepo['id']) => void;
+  updateWorkflowsForTeam: (
+    repo: BaseRepo,
+    repoWorkflows: AdaptedRepoWorkflow[]
+  ) => void;
+  updateDeploymentTypeForRepo: (
+    id: BaseRepo['id'],
+    deployment_type: DeploymentSources
+  ) => void;
   isPageLoading: boolean;
   onDiscard: (callBack?: AnyFunction) => void;
   isEditing: boolean;
@@ -129,12 +142,31 @@ export const TeamsCRUDProvider: React.FC<{
       depFn(teamRepoError.false);
     }
   }, [selections.value.length, teamRepoError.false, teamRepoError.true]);
+
   const handleRepoSelectionChange = useCallback(
     (_: SyntheticEvent<Element, Event>, value: BaseRepo[]) => {
-      depFn(selections.set, value);
+      const reposWithDeploymentType = value.map((r) => ({
+        ...r,
+        deployment_type: DeploymentSources.PR_MERGE
+      }));
+      depFn(selections.set, reposWithDeploymentType);
       depFn(teamRepoError.false);
     },
     [selections.set, teamRepoError.false]
+  );
+
+  const updateWorkflowsForTeam = useCallback(
+    (repo: BaseRepo, repoWorkflows: AdaptedRepoWorkflow[]) => {
+      const updatedRepos = selections.value.map((r) => {
+        return {
+          ...r,
+          repo_workflows: r.id === repo.id ? repoWorkflows : r.repo_workflows
+        };
+      });
+      depFn(selections.set, updatedRepos);
+    },
+
+    [selections.set, selections.value]
   );
   const unselectRepo = useCallback(
     (id: BaseRepo['id']) => {
@@ -147,6 +179,19 @@ export const TeamsCRUDProvider: React.FC<{
       );
     },
     [selections.set, selections.value, teamRepoError.true]
+  );
+
+  const updateDeploymentTypeForRepo = useCallback(
+    (id: BaseRepo['id'], deployment_type: DeploymentSources) => {
+      const updatedRepos = selections.value.map((r) => {
+        return {
+          ...r,
+          deployment_type: id === r.id ? deployment_type : r.deployment_type
+        };
+      });
+      depFn(selections.set, updatedRepos);
+    },
+    [selections.set, selections.value]
   );
 
   // editing logic
@@ -343,11 +388,13 @@ export const TeamsCRUDProvider: React.FC<{
     repoOptions: repoSearchResult,
     selectedRepos,
     handleRepoSelectionChange,
+    updateWorkflowsForTeam,
     teamRepoError: teamRepoError.value,
     raiseTeamRepoError,
     onSave,
     isSaveLoading: isSaveLoading.value,
     unselectRepo,
+    updateDeploymentTypeForRepo,
     isPageLoading,
     onDiscard,
     isEditing,
@@ -371,7 +418,9 @@ const repoToPayload = (repos: BaseRepo[]) => {
       idempotency_key: String(repo.id),
       name: repo.name,
       slug: repo.slug,
-      default_branch: repo.branch
+      default_branch: repo.branch,
+      deployment_type: repo.deployment_type,
+      repo_workflows: repo.repo_workflows
     };
     const orgName = repo.parent;
 
@@ -451,5 +500,7 @@ const adaptBaseRepo = (repo: DB_OrgRepo): BaseRepo =>
     name: repo.name,
     slug: repo.slug,
     branch: repo.default_branch,
-    parent: repo.org_name
-  }) as BaseRepo;
+    parent: repo.org_name,
+    deployment_type: repo.deployment_type,
+    repo_workflows: repo.repo_workflows
+  }) as unknown as BaseRepo;
