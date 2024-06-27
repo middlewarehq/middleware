@@ -250,15 +250,17 @@ const updateReposWorkflows = async (
   const repoWorkflows = orgReposList.reduce(
     (prev, curr) => ({
       ...prev,
-      [curr.name]: curr.repo_workflows.map((w) => ({
-        value: String(w.value),
-        name: w.name
-      }))
+      [curr.name]:
+        curr.repo_workflows?.map((w) => ({
+          value: String(w.value),
+          name: w.name
+        })) || []
     }),
     {} as Record<string, { name: string; value: string }[]>
   );
 
   const reposForWorkflows = Object.keys(repoWorkflows);
+
   if (
     reposForWorkflows.length &&
     (provider === Integration.GITHUB || provider === Integration.BITBUCKET)
@@ -282,28 +284,30 @@ const updateReposWorkflows = async (
       )
       .andWhere('type', WorkflowType.DEPLOYMENT);
 
-    await db('RepoWorkflow')
-      .insert(
-        Object.entries(repoWorkflows)
-          .filter(([repoName]) => groupedRepos[repoName]?.id)
-          .flatMap(([repoName, workflows]) =>
-            workflows.map((workflow) => ({
-              is_active: true,
-              name: workflow.name,
-              provider:
-                provider === Integration.GITHUB
-                  ? CIProvider.GITHUB_ACTIONS
-                  : provider === Integration.BITBUCKET
-                  ? CIProvider.CIRCLE_CI
-                  : null,
-              provider_workflow_id: String(workflow.value),
-              type: WorkflowType.DEPLOYMENT,
-              org_repo_id: groupedRepos[repoName]?.id
-            }))
-          )
-      )
-      .onConflict(['org_repo_id', 'provider_workflow_id'])
-      .merge()
-      .returning('*');
+    const newWorkflows = Object.entries(repoWorkflows)
+      .filter(([repoName]) => groupedRepos[repoName]?.id)
+      .flatMap(([repoName, workflows]) =>
+        workflows.map((workflow) => ({
+          is_active: true,
+          name: workflow.name,
+          provider:
+            provider === Integration.GITHUB
+              ? CIProvider.GITHUB_ACTIONS
+              : provider === Integration.BITBUCKET
+              ? CIProvider.CIRCLE_CI
+              : null,
+          provider_workflow_id: String(workflow.value),
+          type: WorkflowType.DEPLOYMENT,
+          org_repo_id: groupedRepos[repoName]?.id
+        }))
+      );
+
+    if (newWorkflows.length) {
+      await db('RepoWorkflow')
+        .insert(newWorkflows)
+        .onConflict(['org_repo_id', 'provider_workflow_id'])
+        .merge()
+        .returning('*');
+    }
   }
 };
