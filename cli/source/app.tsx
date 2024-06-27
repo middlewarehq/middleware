@@ -39,12 +39,11 @@ const CliUi = () => {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState<string>('');
 
   const { exit } = useApp();
-  const preCheck = usePreCheck();
-
+  
   const lineLimit = getLineLimit();
-
+  
   const processRef = useRef<ChildProcessWithoutNullStreams | null>();
-
+  
   const frontend_port = process.env['PORT'];
   const sync_server_port = process.env['SYNC_SERVER_PORT'];
   const analytics_server_port = process.env['ANALYTICS_SERVER_PORT'];
@@ -55,6 +54,8 @@ const CliUi = () => {
   const db_pass = process.env['DB_PASS'];
   const redis_port = process.env['REDIS_PORT'];
   const redis_host = process.env['REDIS_HOST'];
+  
+  const preCheck = usePreCheck({db: Number(db_port), redis: Number(redis_port), fe: Number(frontend_port), ss: Number(sync_server_port)});
 
   const runCommandOpts = useMemo<Parameters<typeof runCommand>['2']>(
     () => ({
@@ -94,6 +95,9 @@ const CliUi = () => {
   );
 
   const handleExit = useCallback(async () => {
+    if(!preCheck.daemon){
+      exit();
+    }
     await dispatch(appSlice.actions.setAppState(AppStates.TEARDOWN));
     setTimeout(() => {
       if (!processRef.current) return;
@@ -153,11 +157,9 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
-    if(preCheck.daemon === PreCheckStates.FAILED){
-      handleExit();
-      return;
-    }
-    if(preCheck.daemon !== PreCheckStates.SUCCESS){
+    if(preCheck.daemon !== PreCheckStates.SUCCESS || preCheck.ports !== PreCheckStates.SUCCESS){
+      if(preCheck.daemon === PreCheckStates.FAILED || preCheck.ports === PreCheckStates.FAILED)
+        handleExit();
       return;
     }
     dispatch(appSlice.actions.setAppState(AppStates.INIT));
@@ -179,7 +181,7 @@ const CliUi = () => {
         })
       );
     });
-  }, [preCheck.daemon]);
+  }, [preCheck.daemon, preCheck.ports]);
 
   useEffect(() => {
     if(appState !== AppStates.INIT){
@@ -311,7 +313,7 @@ const CliUi = () => {
             switch (appState) {
               case AppStates.PREREQ_CHECK:
                 return (
-                  <Box>
+                  <Box flexDirection="column">
                   <Text color="blue">
                     Status: Running prerequisites check... [Press X to abort]{' '}
                     <Text bold color="green">
@@ -319,7 +321,16 @@ const CliUi = () => {
                     </Text>
                   </Text>
                   <Text>
-                    <Spinner type="dots" /> Checking docker daemon
+                    {preCheck.daemon === PreCheckStates.RUNNING ? 
+                      <Spinner type="dots" /> : 
+                       preCheck.daemon === PreCheckStates.SUCCESS ? <Text color="green">✓</Text> : 
+                       <Text color="red">x</Text>} Checking docker daemon
+                  </Text>
+                  <Text>
+                    {preCheck.ports === PreCheckStates.RUNNING ? 
+                      <Spinner type="dots" /> : 
+                       preCheck.ports === PreCheckStates.SUCCESS ? <Text color="green">✓</Text> : 
+                       <Text color="red">x</Text>} Checking ports
                   </Text>
                 </Box>
                 )
