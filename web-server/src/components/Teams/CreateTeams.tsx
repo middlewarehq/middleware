@@ -15,7 +15,10 @@ import {
   TextField,
   Tooltip,
   TableContainer,
-  useTheme
+  useTheme,
+  InputLabel,
+  FormControl,
+  OutlinedInput
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { FC } from 'react';
@@ -348,7 +351,7 @@ const DisplayRepos: FC = () => {
           {selectedRepos.map((repo) => (
             <TableRow key={repo.id}>
               <TableCell sx={{ px: 2 }}>{repo.name}</TableCell>
-              <TableCell align="center" sx={{ p: 1 }}>
+              <TableCell align="center" sx={{ px: 2 }}>
                 <FlexBox gap2 justifyCenter>
                   <DeploymentSourceSelector repo={repo} />{' '}
                   {repo.deployment_type === DeploymentSources.WORKFLOW && (
@@ -356,7 +359,7 @@ const DisplayRepos: FC = () => {
                   )}
                 </FlexBox>
               </TableCell>
-              <TableCell align="center" sx={{ p: 1 }}>
+              <TableCell align="center" sx={{ px: 2 }}>
                 <DeleteIcon fontSize="small" />
               </TableCell>
             </TableRow>
@@ -385,8 +388,14 @@ const DeploymentSourceSelector: FC<{ repo: BaseRepo }> = ({ repo }) => {
   const deploySource = repo.deployment_type;
   const { updateDeploymentTypeForRepo } = useTeamCRUD();
   return (
-    <FlexBox>
-      <Select value={deploySource} label="" onChange={() => {}} size="small">
+    <FormControl>
+      <InputLabel>Source</InputLabel>
+      <Select
+        value={deploySource}
+        onChange={() => {}}
+        size="small"
+        input={<OutlinedInput label="Source" margin="dense" />}
+      >
         {options.map((source) => {
           return (
             <MenuItem
@@ -403,6 +412,6 @@ const DeploymentSourceSelector: FC<{ repo: BaseRepo }> = ({ repo }) => {
           );
         })}
       </Select>
-    </FlexBox>
+    </FormControl>
   );
 };
