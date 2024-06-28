@@ -55,7 +55,13 @@ const CliUi = () => {
   const redis_port = process.env['REDIS_PORT'];
   const redis_host = process.env['REDIS_HOST'];
   
-  const preCheck = usePreCheck({db: Number(db_port), redis: Number(redis_port), fe: Number(frontend_port), ss: Number(sync_server_port)});
+  const preCheck = usePreCheck({
+    db: Number(db_port), 
+    redis: Number(redis_port), 
+    frontend: Number(frontend_port), 
+    sync_server: Number(sync_server_port),
+    analytics_server: Number(analytics_server_port)
+  });
 
   const runCommandOpts = useMemo<Parameters<typeof runCommand>['2']>(
     () => ({
