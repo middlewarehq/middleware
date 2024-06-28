@@ -1,6 +1,6 @@
 import { Box, Newline, Static, Text, useApp, useInput } from 'ink';
 import Spinner from 'ink-spinner';
-import { splitEvery } from 'ramda';
+import { prop, splitEvery } from 'ramda';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Provider as ReduxProvider } from 'react-redux';
 
@@ -101,7 +101,7 @@ const CliUi = () => {
   );
 
   const handleExit = useCallback(async () => {
-    if(!preCheck.daemon){
+    if(appState === AppStates.PREREQ_CHECK){
       exit();
     }
     await dispatch(appSlice.actions.setAppState(AppStates.TEARDOWN));
@@ -163,8 +163,9 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
-    if(preCheck.daemon !== PreCheckStates.SUCCESS || preCheck.ports !== PreCheckStates.SUCCESS){
-      if(preCheck.daemon === PreCheckStates.FAILED || preCheck.ports === PreCheckStates.FAILED)
+    if(preCheck.daemon !== PreCheckStates.SUCCESS || preCheck.ports !== PreCheckStates.SUCCESS || preCheck.composeFile !== PreCheckStates.SUCCESS
+      || preCheck.dockerFile !== PreCheckStates.SUCCESS){
+      if(preCheck.daemon === PreCheckStates.FAILED || preCheck.ports === PreCheckStates.FAILED || preCheck.composeFile === PreCheckStates.FAILED || preCheck.dockerFile === PreCheckStates.FAILED)
         handleExit();
       return;
     }
@@ -298,6 +299,20 @@ const CliUi = () => {
     () => logsStream.map((l) => transformLogToNode(l)),
     [logsStream]
   );
+
+  const PreCheckDisplayElement = ({value, property} : {
+    value: PreCheckStates,
+    property: string
+  }) => {
+    return     (             
+     <Text>
+    {value === PreCheckStates.RUNNING ? 
+      <Spinner type="dots" /> : 
+       value === PreCheckStates.SUCCESS ? <Text color="green">✓</Text> : 
+       <Text color="red">x</Text>} Checking {property}
+  </Text>
+    )
+  }
   return (
     <>
       <Static items={logsStreamNodes} style={{ flexDirection: 'column' }}>
@@ -326,18 +341,10 @@ const CliUi = () => {
                       <Spinner type="material" />
                     </Text>
                   </Text>
-                  <Text>
-                    {preCheck.daemon === PreCheckStates.RUNNING ? 
-                      <Spinner type="dots" /> : 
-                       preCheck.daemon === PreCheckStates.SUCCESS ? <Text color="green">✓</Text> : 
-                       <Text color="red">x</Text>} Checking docker daemon
-                  </Text>
-                  <Text>
-                    {preCheck.ports === PreCheckStates.RUNNING ? 
-                      <Spinner type="dots" /> : 
-                       preCheck.ports === PreCheckStates.SUCCESS ? <Text color="green">✓</Text> : 
-                       <Text color="red">x</Text>} Checking ports
-                  </Text>
+                  <PreCheckDisplayElement value={preCheck.daemon} property="daemon"/>
+                  <PreCheckDisplayElement value={preCheck.ports} property="ports" />
+                  <PreCheckDisplayElement value={preCheck.composeFile} property="compose file" />
+                  <PreCheckDisplayElement value={preCheck.dockerFile} property="docker file" />
                 </Box>
                 )
               case AppStates.INIT:
