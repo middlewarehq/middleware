@@ -2,7 +2,8 @@ import { useState } from "react";
 import { runCommand } from "../utils/run-command.js";
 import { PreCheckStates } from "../constants.js";
 import { isFreePort } from "find-free-ports";
-
+import fs from "fs"
+ 
 export const usePreCheck = ({db, redis, frontend, sync_server, analytics_server} : {
     db: number,
     redis: number,
@@ -12,6 +13,9 @@ export const usePreCheck = ({db, redis, frontend, sync_server, analytics_server}
 }) => {
     const [daemon, setDaemon] = useState<PreCheckStates>(PreCheckStates.RUNNING);
     const [ports, setPorts] = useState<PreCheckStates>(PreCheckStates.RUNNING);
+    const [composeFile, setComposeFile] = useState<PreCheckStates>(PreCheckStates.RUNNING);
+    const [dockerFile, setDockerFile] = useState<PreCheckStates>(PreCheckStates.RUNNING);
+
     const callChecks = async () => {
         // For Docker daemon
         runCommand("docker", ["info"]).promise.then(() => {
@@ -35,8 +39,18 @@ export const usePreCheck = ({db, redis, frontend, sync_server, analytics_server}
                 setPorts(PreCheckStates.SUCCESS);
             }
         }
-            
+        
+        // For files
+        fs.promises.access("../docker-compose.yml")
+        .then(() => {setComposeFile(PreCheckStates.SUCCESS)})
+        .catch(err => {
+            setComposeFile(PreCheckStates.FAILED);
+        });
+
+        fs.promises.access("../Dockerfile.dev")
+        .then(() => setDockerFile(PreCheckStates.SUCCESS))
+        .catch(() => setDockerFile(PreCheckStates.FAILED));
     }
 
-    return { daemon, ports, callChecks };
+    return { daemon, ports, composeFile, dockerFile, callChecks };
 }
