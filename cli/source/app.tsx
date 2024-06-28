@@ -120,7 +120,7 @@ const CliUi = () => {
           await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
         });
     }, 200);
-  }, [dispatch, runCommandOpts]);
+  }, [appState, dispatch, runCommandOpts]);
 
   const handleVersionUpdates = useCallback(async () => {
     await isLocalBranchBehindRemote().then((res) => {
@@ -170,25 +170,31 @@ const CliUi = () => {
       return;
     }
     dispatch(appSlice.actions.setAppState(AppStates.INIT));
-    const { process, promise } = runCommand(
-      'docker',
-      ['compose', 'build'],
-      runCommandOpts
-    );
-
-    processRef.current = process;
-
-    promise.catch((err) => {
-      handleExit();
-      dispatch(
-        appSlice.actions.addLog({
-          type: 'default',
-          line: `docker compose build failed: ${err}`,
-          time: new Date()
-        })
+    runCommand('docker', ['compose', 'down'], runCommandOpts).promise
+    .then(() => {
+      const { process, promise } = runCommand(
+        'docker',
+        ['compose', 'build'],
+        runCommandOpts
       );
-    });
-  }, [preCheck.daemon, preCheck.ports]);
+  
+      processRef.current = process;
+  
+      promise.catch((err) => {
+        handleExit();
+        dispatch(
+          appSlice.actions.addLog({
+            type: 'default',
+            line: `docker compose build failed: ${err}`,
+            time: new Date()
+          })
+        );
+      });
+    })
+    .catch(async (err: any) => {
+      await runCommand('docker-compose', ['down']).promise;
+    })
+  }, [preCheck.daemon, preCheck.ports, preCheck.dockerFile, preCheck.composeFile]);
 
   useEffect(() => {
     if(appState !== AppStates.INIT){
