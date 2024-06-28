@@ -21,9 +21,9 @@ export enum AppStates {
 }
 
 export enum PreCheckStates {
-  FAILED = -1,
-  RUNNING = 0,
-  SUCCESS = 1
+  FAILED,
+  RUNNING,
+  SUCCESS
 }
 
 export enum LogSource {
