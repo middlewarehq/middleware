@@ -100,10 +100,7 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
       value: w.id
     }));
 
-    depFn(options.set, union(options.value, workflowOpts));
-
-    // can't add options.value to dependency array as it will cause infinite loop
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    depFn(options.set, (prev) => union(prev, workflowOpts));
   }, [orgId, repo, loading.trackAsync, nextPageToken, options.set, provider]);
 
   const alreadySelectedWorkflowIds = useMemo(
