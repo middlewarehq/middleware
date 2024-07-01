@@ -43,8 +43,8 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
   const selectedOptions = useMemo(
     () =>
       repo.repo_workflows?.map((val) => ({
-        label: val?.name,
-        value: val?.value
+        label: val.name,
+        value: val.value
       })) || [],
     [repo.repo_workflows]
   );
@@ -83,11 +83,7 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
         >
           {w.name}
           <Chip
-            label={
-              w.ci_provider === CIProvider.GITHUB_ACTIONS
-                ? 'Github Actions'
-                : 'Circle CI'
-            }
+            label="Github Actions"
             size="small"
             color="default"
             sx={{
