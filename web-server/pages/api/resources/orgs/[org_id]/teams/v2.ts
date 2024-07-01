@@ -26,6 +26,19 @@ import { OnboardingStep, ReqRepoWithProvider } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
 import groupBy from '@/utils/objectArray';
 
+const repoSchema = yup.object().shape({
+  idempotency_key: yup.string().required(),
+  deployment_type: yup.string().required(),
+  slug: yup.string().required(),
+  name: yup.string().required(),
+  repo_workflows: yup.array().of(
+    yup.object().shape({
+      name: yup.string().required(),
+      value: yup.string().required()
+    })
+  )
+});
+
 const getSchema = yup.object().shape({
   provider: yup.string().oneOf(Object.values(Integration)).required()
 });
@@ -34,26 +47,7 @@ const postSchema = yup.object().shape({
   name: yup.string().required(),
   provider: yup.string().oneOf(Object.values(Integration)).required(),
   org_repos: yup.lazy((obj) =>
-    yup.object(
-      mapObjIndexed(
-        () =>
-          yup.array().of(
-            yup.object().shape({
-              idempotency_key: yup.string().required(),
-              deployment_type: yup.string().required(),
-              slug: yup.string().required(),
-              name: yup.string().required(),
-              repo_workflows: yup.array().of(
-                yup.object().shape({
-                  name: yup.string().required(),
-                  value: yup.string().required()
-                })
-              )
-            })
-          ),
-        obj
-      )
-    )
+    yup.object(mapObjIndexed(() => yup.array().of(repoSchema), obj))
   )
 });
 
@@ -62,26 +56,7 @@ const patchSchema = yup.object().shape({
   name: yup.string().nullable().optional(),
   provider: yup.string().oneOf(Object.values(Integration)).required(),
   org_repos: yup.lazy((obj) =>
-    yup.object(
-      mapObjIndexed(
-        () =>
-          yup.array().of(
-            yup.object().shape({
-              idempotency_key: yup.string().required(),
-              deployment_type: yup.string().required(),
-              slug: yup.string().required(),
-              name: yup.string().required(),
-              repo_workflows: yup.array().of(
-                yup.object().shape({
-                  name: yup.string().required(),
-                  value: yup.string().required()
-                })
-              )
-            })
-          ),
-        obj
-      )
-    )
+    yup.object(mapObjIndexed(() => yup.array().of(repoSchema), obj))
   )
 });
 
