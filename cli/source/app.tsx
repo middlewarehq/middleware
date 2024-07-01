@@ -10,6 +10,7 @@ import {
   AppStates,
   ErrorCodes,
   LogSource,
+  PreCheckStates,
   READY_MESSAGES,
   terminatedText
 } from './constants.js';
@@ -17,6 +18,7 @@ import {
   useLogsFromAllSources,
   transformLogToNode
 } from './hooks/useLogsFromAllSources.js';
+import { usePreCheck } from './hooks/usePreCheck.js';
 import { appSlice } from './slices/app.js';
 import { useSelector, store, useDispatch } from './store/index.js';
 import CircularBuffer from './utils/circularBuffer.js';
@@ -52,6 +54,14 @@ const CliUi = () => {
   const db_pass = process.env['DB_PASS'];
   const redis_port = process.env['REDIS_PORT'];
   const redis_host = process.env['REDIS_HOST'];
+
+  const preCheck = usePreCheck({
+    db: Number(db_port),
+    redis: Number(redis_port),
+    frontend: Number(frontend_port),
+    sync_server: Number(sync_server_port),
+    analytics_server: Number(analytics_server_port)
+  });
 
   const runCommandOpts = useMemo<Parameters<typeof runCommand>['2']>(
     () => ({
@@ -91,6 +101,9 @@ const CliUi = () => {
   );
 
   const handleExit = useCallback(async () => {
+    if (appState === AppStates.PREREQ_CHECK) {
+      exit();
+    }
     await dispatch(appSlice.actions.setAppState(AppStates.TEARDOWN));
     setTimeout(() => {
       if (!processRef.current) return;
@@ -107,7 +120,7 @@ const CliUi = () => {
           await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
         });
     }, 200);
-  }, [dispatch, runCommandOpts]);
+  }, [appState, dispatch, runCommandOpts]);
 
   const handleVersionUpdates = useCallback(async () => {
     await isLocalBranchBehindRemote().then((res) => {
@@ -149,27 +162,57 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
-    const { process, promise } = runCommand(
-      'docker',
-      ['compose', 'build'],
-      runCommandOpts
-    );
+    if (
+      preCheck.daemon !== PreCheckStates.SUCCESS ||
+      preCheck.ports !== PreCheckStates.SUCCESS ||
+      preCheck.composeFile !== PreCheckStates.SUCCESS ||
+      preCheck.dockerFile !== PreCheckStates.SUCCESS
+    ) {
+      if (
+        preCheck.daemon === PreCheckStates.FAILED ||
+        preCheck.ports === PreCheckStates.FAILED ||
+        preCheck.composeFile === PreCheckStates.FAILED ||
+        preCheck.dockerFile === PreCheckStates.FAILED
+      )
+        handleExit();
+      return;
+    }
+    dispatch(appSlice.actions.setAppState(AppStates.INIT));
+    runCommand('docker', ['compose', 'down'], runCommandOpts)
+      .promise.then(() => {
+        const { process, promise } = runCommand(
+          'docker',
+          ['compose', 'build'],
+          runCommandOpts
+        );
 
-    processRef.current = process;
+        processRef.current = process;
 
-    promise.catch((err) => {
-      handleExit();
-      dispatch(
-        appSlice.actions.addLog({
-          type: 'default',
-          line: `docker compose build failed: ${err}`,
-          time: new Date()
-        })
-      );
-    });
-  }, []);
+        promise.catch((err) => {
+          handleExit();
+          dispatch(
+            appSlice.actions.addLog({
+              type: 'default',
+              line: `docker compose build failed: ${err}`,
+              time: new Date()
+            })
+          );
+        });
+      })
+      .catch(async (err: any) => {
+        await runCommand('docker-compose', ['down']).promise;
+      });
+  }, [
+    preCheck.daemon,
+    preCheck.ports,
+    preCheck.dockerFile,
+    preCheck.composeFile
+  ]);
 
   useEffect(() => {
+    if (appState !== AppStates.INIT) {
+      return;
+    }
     const { process, promise } = runCommand(
       'docker',
       ['compose', 'watch'],
@@ -264,12 +307,37 @@ const CliUi = () => {
     return () => {
       globalThis.process.off('exit', handleExit);
     };
-  }, [dispatch, exit, handleExit, runCommandOpts, retryToggle]);
+  }, [dispatch, exit, handleExit, runCommandOpts, retryToggle, appState]);
+
+  useEffect(() => {
+    preCheck.callChecks();
+  }, []);
 
   const logsStreamNodes = useMemo(
     () => logsStream.map((l) => transformLogToNode(l)),
     [logsStream]
   );
+
+  const PreCheckDisplayElement = ({
+    value,
+    property
+  }: {
+    value: PreCheckStates;
+    property: string;
+  }) => {
+    return (
+      <Text>
+        {value === PreCheckStates.RUNNING ? (
+          <Spinner type="dots" />
+        ) : value === PreCheckStates.SUCCESS ? (
+          <Text color="green">✓</Text>
+        ) : (
+          <Text color="red">x</Text>
+        )}{' '}
+        Checking {property}
+      </Text>
+    );
+  };
   return (
     <>
       <Static items={logsStreamNodes} style={{ flexDirection: 'column' }}>
@@ -289,6 +357,33 @@ const CliUi = () => {
         <Box>
           {(() => {
             switch (appState) {
+              case AppStates.PREREQ_CHECK:
+                return (
+                  <Box flexDirection="column">
+                    <Text color="blue">
+                      Status: Running prerequisites check... [Press X to abort]{' '}
+                      <Text bold color="green">
+                        <Spinner type="material" />
+                      </Text>
+                    </Text>
+                    <PreCheckDisplayElement
+                      value={preCheck.daemon}
+                      property="daemon"
+                    />
+                    <PreCheckDisplayElement
+                      value={preCheck.ports}
+                      property="ports"
+                    />
+                    <PreCheckDisplayElement
+                      value={preCheck.composeFile}
+                      property="compose file"
+                    />
+                    <PreCheckDisplayElement
+                      value={preCheck.dockerFile}
+                      property="docker file"
+                    />
+                  </Box>
+                );
               case AppStates.INIT:
                 return (
                   <Box flexDirection="column">

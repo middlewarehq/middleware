@@ -11,7 +11,7 @@ type State = {
 
 const initialState: State = {
   logSource: LogSource.All,
-  appState: AppStates.INIT,
+  appState: AppStates.PREREQ_CHECK,
   readyServices: [] as Omit<LogSource, LogSource.All>[],
   logsStream: [
     {

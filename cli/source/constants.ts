@@ -13,10 +13,17 @@ export const terminatedText = `
                                          `;
 
 export enum AppStates {
+  PREREQ_CHECK = 'PREREQ_CHECK',
   INIT = 'INIT',
   DOCKER_READY = 'DOCKER_READY',
   TEARDOWN = 'TEARDOWN',
   TERMINATED = 'TERMINATED'
+}
+
+export enum PreCheckStates {
+  FAILED,
+  RUNNING,
+  SUCCESS
 }
 
 export enum LogSource {
