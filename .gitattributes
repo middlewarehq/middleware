@@ -1,2 +1,12 @@
 # Treat all text files without a CR (as we have Docker)
 * text eol=lf
+
+# Denote all files that are truly binary and should not be modified.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.gz binary
+*.zip binary
+*.ttf binary
