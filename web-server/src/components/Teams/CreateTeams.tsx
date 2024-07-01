@@ -338,10 +338,8 @@ const DisplayRepos: FC = () => {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ px: 2 }}>Repo</TableCell>
-            <TableCell align="center" sx={{ p: 1 }}>
-              Deployed Via
-            </TableCell>
+            <TableCell sx={{ px: 2, minWidth: 200 }}>Repo</TableCell>
+            <TableCell sx={{ p: 1 }}>Deployed Via</TableCell>
             <TableCell align="center" sx={{ p: 1 }}>
               Action
             </TableCell>
@@ -351,8 +349,8 @@ const DisplayRepos: FC = () => {
           {selectedRepos.map((repo) => (
             <TableRow key={repo.id}>
               <TableCell sx={{ px: 2 }}>{repo.name}</TableCell>
-              <TableCell align="center" sx={{ px: 2 }}>
-                <FlexBox gap2 justifyCenter>
+              <TableCell sx={{ px: 1, minWidth: 200 }}>
+                <FlexBox gap2 alignCenter>
                   <DeploymentSourceSelector repo={repo} />{' '}
                   {repo.deployment_type === DeploymentSources.WORKFLOW && (
                     <DeploymentWorkflowSelector repo={repo} />
