@@ -281,8 +281,7 @@ export const TeamPopover: FC<{
                                             title: 'Edit team',
                                             ui: 'team_edit',
                                             props: {
-                                              teamId: apiTeam.id,
-                                              hideCardComponents: true
+                                              teamId: apiTeam.id
                                             }
                                           }
                                         });

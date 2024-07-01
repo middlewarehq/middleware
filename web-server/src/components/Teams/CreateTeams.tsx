@@ -1,12 +1,25 @@
 import { Close } from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import InfoIcon from '@mui/icons-material/Info';
 import {
   Autocomplete,
   Button,
   Card,
   CircularProgress,
-  Divider,
+  MenuItem,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
-  Tooltip
+  Tooltip,
+  TableContainer,
+  useTheme,
+  InputLabel,
+  FormControl,
+  OutlinedInput
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
 import { FC } from 'react';
@@ -15,8 +28,9 @@ import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
-import { useEasyState } from '@/hooks/useEasyState';
-import { BaseRepo } from '@/types/resources';
+import { DeploymentWorkflowSelector } from '@/components/WorkflowSelector';
+import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { BaseRepo, DeploymentSources } from '@/types/resources';
 
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
@@ -25,7 +39,6 @@ export type CRUDProps = {
   onSave?: AnyFunction;
   onDiscard?: AnyFunction;
   teamId?: ID;
-  hideCardComponents?: boolean;
 };
 
 const MAX_LENGTH_REPO_NAME = 25;
@@ -33,26 +46,16 @@ const MAX_LENGTH_REPO_NAME = 25;
 export const CreateEditTeams: FC<CRUDProps> = ({
   onSave,
   onDiscard,
-  teamId,
-  hideCardComponents
+  teamId
 }) => {
   return (
     <TeamsCRUDProvider teamId={teamId}>
-      <TeamsCRUD
-        hideCardComponents={hideCardComponents}
-        teamId={teamId}
-        onDiscard={onDiscard}
-        onSave={onSave}
-      />
+      <TeamsCRUD teamId={teamId} onDiscard={onDiscard} onSave={onSave} />
     </TeamsCRUDProvider>
   );
 };
 
-const TeamsCRUD: FC<CRUDProps> = ({
-  onSave,
-  onDiscard,
-  hideCardComponents
-}) => {
+const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
   const { isPageLoading, editingTeam, isEditing } = useTeamCRUD();
   return (
     <>
@@ -63,7 +66,7 @@ const TeamsCRUD: FC<CRUDProps> = ({
           gap={4}
           col
           justifyBetween
-          component={!hideCardComponents && Card}
+          component={Card}
           p={2}
           width={'900px'}
         >
@@ -73,7 +76,7 @@ const TeamsCRUD: FC<CRUDProps> = ({
             <>
               <Heading />
               <TeamName />
-              <TeamRepos hideCardComponents={hideCardComponents} />
+              <TeamRepos />
               <ActionTray onDiscard={onDiscard} onSave={onSave} />
             </>
           )}
@@ -147,9 +150,7 @@ const TeamName = () => {
   );
 };
 
-const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
-  hideCardComponents
-}) => {
+const TeamRepos: FC = () => {
   const {
     repoOptions,
     teamRepoError,
@@ -228,7 +229,6 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
               >
                 <FlexBox col sx={{ maxWidth: '200px', overflow: 'hidden' }}>
                   {option.parent && <Line tiny>{option.parent}</Line>}
-
                   {option.name.length > MAX_LENGTH_REPO_NAME ? (
                     <Tooltip title={option.name}>
                       <Line>{`${option.name.substring(
@@ -246,8 +246,8 @@ const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
           )}
           renderTags={() => null}
         />
-        <DisplayRepos hideCardComponents={hideCardComponents} />
       </FlexBox>
+      <DisplayRepos />
     </FlexBox>
   );
 };
@@ -312,58 +312,113 @@ const ActionTray: FC<CRUDProps> = ({
   );
 };
 
-const DisplayRepos: FC<{ hideCardComponents?: boolean }> = ({
-  hideCardComponents
-}) => {
-  const { selectedRepos } = useTeamCRUD();
+const DisplayRepos: FC = () => {
+  const { selectedRepos, showWorkflowChangeWarning } = useTeamCRUD();
+
+  const theme = useTheme();
+  if (!selectedRepos.length) return;
   return (
-    <FlexBox gap2 ml={2} minHeight={hideCardComponents ? '54px' : '49px'}>
-      {!!selectedRepos.length && <Divider flexItem orientation="vertical" />}
-      <FlexBox flexWrap={'wrap'} gap2>
-        {selectedRepos.map((repo) => (
-          <RepoItem
-            hideCardComponents={hideCardComponents}
-            repo={repo}
-            key={repo.id}
-          />
-        ))}
-      </FlexBox>
-    </FlexBox>
+    <TableContainer
+      sx={{
+        border: `2px solid ${theme.colors.secondary.light}`,
+        borderRadius: 1
+      }}
+    >
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ px: 2, minWidth: 200 }}>Repo</TableCell>
+            <TableCell sx={{ p: 1 }}>Deployed Via</TableCell>
+            <TableCell align="center" sx={{ p: 1 }}>
+              Action
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {selectedRepos.map((repo) => (
+            <TableRow key={repo.id}>
+              <TableCell sx={{ px: 2 }}>{repo.name}</TableCell>
+              <TableCell sx={{ px: 1, minWidth: 200 }}>
+                <FlexBox gap2 alignCenter>
+                  <DeploymentSourceSelector repo={repo} />{' '}
+                  {repo.deployment_type === DeploymentSources.WORKFLOW && (
+                    <DeploymentWorkflowSelector repo={repo} />
+                  )}
+                </FlexBox>
+              </TableCell>
+              <TableCell>
+                <FlexBox
+                  title="Delete repo"
+                  sx={{ px: 1 }}
+                  justifyCenter
+                  alignCenter
+                >
+                  <DeleteIcon fontSize="small" color="error" />
+                </FlexBox>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+        {showWorkflowChangeWarning && (
+          <TableRow>
+            <TableCell colSpan={3}>
+              <FlexBox alignCenter gap={1 / 2}>
+                <InfoIcon color="primary" fontSize="small" />
+                <Line color="primary" italic>
+                  Workflow selection for any repositories will apply to all
+                  teams where they are assigned.
+                </Line>
+              </FlexBox>
+            </TableCell>
+          </TableRow>
+        )}
+      </Table>
+    </TableContainer>
   );
 };
 
-const RepoItem: FC<{ repo: BaseRepo; hideCardComponents?: boolean }> = ({
-  repo,
-  hideCardComponents
-}) => {
-  const { unselectRepo } = useTeamCRUD();
+const options = [
+  {
+    label: 'PR Merge',
+    value: DeploymentSources.PR_MERGE,
+    title: 'This repo considers merges as deployments for this team'
+  },
+  {
+    label: 'Workflow',
+    value: DeploymentSources.WORKFLOW,
+    title: 'This repo is deployed via CI for this team'
+  }
+];
+
+const DeploymentSourceSelector: FC<{ repo: BaseRepo }> = ({ repo }) => {
+  const open = useBoolState(false);
+  const deploySource = repo.deployment_type;
+  const { updateDeploymentTypeForRepo } = useTeamCRUD();
   return (
-    <FlexBox
-      height={hideCardComponents ? '54px' : '49px'}
-      border={hideCardComponents && '1px solid'}
-      borderColor={hideCardComponents && '#353552'}
-      borderRadius={'10px'}
-      component={!hideCardComponents && Card}
-      gap={2}
-      alignCenter
-      px={2}
-    >
-      {repo.name}{' '}
-      <FlexBox
-        pointer
-        onClick={() => {
-          unselectRepo(repo.id);
-        }}
-        title="Remove repo"
-        sx={{
-          '&:hover': {
-            filter: 'brightness(0.7)'
-          },
-          transition: 'filter 0.2s'
-        }}
+    <FormControl>
+      <InputLabel>Source</InputLabel>
+      <Select
+        value={deploySource}
+        onChange={() => {}}
+        size="small"
+        input={<OutlinedInput label="Source" margin="dense" />}
       >
-        <Close fontSize="small" />
-      </FlexBox>
-    </FlexBox>
+        {options.map((source) => {
+          return (
+            <MenuItem
+              value={source.value}
+              key={source.value}
+              onClick={async () => {
+                updateDeploymentTypeForRepo(repo.id, source.value);
+
+                open.false();
+              }}
+            >
+              <Line fontSize={'14px'}>{source.label}</Line>
+            </MenuItem>
+          );
+        })}
+      </Select>
+    </FormControl>
   );
 };

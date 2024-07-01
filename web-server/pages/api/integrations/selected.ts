@@ -1,8 +1,8 @@
-import { groupBy, mapObjIndexed, prop } from 'ramda';
+import { groupBy, mapObjIndexed, prop, uniqBy } from 'ramda';
 import * as yup from 'yup';
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
-import { Table } from '@/constants/db';
+import { Table, Row } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { selectedDBReposMock } from '@/mocks/github';
 import {
@@ -40,28 +40,50 @@ export const getSelectedReposForOrg = async (
         dbRaw.raw(true)
       );
     })
+    .leftJoin({ tr: Table.TeamRepos }, function () {
+      this.on('OrgRepo.id', 'tr.org_repo_id');
+    })
     .select('OrgRepo.*')
     .select(dbRaw.raw('to_json(rw) as repo_workflow'))
+    .select('tr.deployment_type', 'tr.team_id')
     .from('OrgRepo')
     .where({ org_id, 'OrgRepo.provider': provider })
     .andWhereNot('OrgRepo.is_active', false);
 
-  const reposGroupedById = mapObjIndexed((repos: RepoWithSingleWorkflow[]) => {
-    return repos.reduce((map, repo) => {
-      const updatedRepo = {
-        ...repo,
-        repo_workflows: [
-          ...(map.repo_workflows || []),
-          repo.repo_workflow
-        ].filter(Boolean)
+  const repoToWorkflowMap = dbRepos.reduce(
+    (map, repo) => {
+      return {
+        ...map,
+        [repo.id]: uniqBy(
+          prop('id'),
+          [...(map[repo.id] || []), repo.repo_workflow].filter(Boolean)
+        )
       };
+    },
+    {} as Record<ID, Row<'RepoWorkflow'>[]>
+  );
 
-      delete updatedRepo.repo_workflow;
+  const reposGroupedById = mapObjIndexed(
+    (repos: RepoWithSingleWorkflow[]) => {
+      return repos.reduce((_, repo) => {
+        const updatedRepo = {
+          ...repo,
+          repo_workflows: repoToWorkflowMap[repo.id]
+            .map((workflow) => {
+              return {
+                name: workflow.name,
+                value: workflow.provider_workflow_id
+              };
+            })
+            .filter((workflow) => workflow.value)
+        };
+        delete updatedRepo.repo_workflow;
 
-      return updatedRepo;
-    }, {} as RepoWithMultipleWorkflows);
-  }, groupBy(prop('id'), dbRepos));
-
+        return updatedRepo as any as RepoWithMultipleWorkflows;
+      }, {} as RepoWithMultipleWorkflows);
+    },
+    groupBy(prop('id'), dbRepos)
+  );
   return Object.values(reposGroupedById);
 };
 

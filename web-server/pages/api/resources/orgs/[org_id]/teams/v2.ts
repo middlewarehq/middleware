@@ -1,20 +1,43 @@
-import { groupBy, prop, mapObjIndexed, forEachObjIndexed } from 'ramda';
+import {
+  groupBy as ramdaGroupBy,
+  prop,
+  mapObjIndexed,
+  forEachObjIndexed
+} from 'ramda';
 import * as yup from 'yup';
 
+import { getSelectedReposForOrg } from '@/api/integrations/selected';
 import { syncReposForOrg } from '@/api/internal/[org_id]/sync_repos';
 import {
   getOnBoardingState,
   updateOnBoardingState
 } from '@/api/resources/orgs/[org_id]/onboarding';
-import { getTeamRepos } from '@/api/resources/team_repos';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
-import { Row } from '@/constants/db';
-import { Integration } from '@/constants/integrations';
+import { Row, Table } from '@/constants/db';
+import {
+  CIProvider,
+  Integration,
+  WorkflowType
+} from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
 import { OnboardingStep, ReqRepoWithProvider } from '@/types/resources';
 import { db, getFirstRow } from '@/utils/db';
+import groupBy from '@/utils/objectArray';
+
+const repoSchema = yup.object().shape({
+  idempotency_key: yup.string().required(),
+  deployment_type: yup.string().required(),
+  slug: yup.string().required(),
+  name: yup.string().required(),
+  repo_workflows: yup.array().of(
+    yup.object().shape({
+      name: yup.string().required(),
+      value: yup.string().required()
+    })
+  )
+});
 
 const getSchema = yup.object().shape({
   provider: yup.string().oneOf(Object.values(Integration)).required()
@@ -24,19 +47,7 @@ const postSchema = yup.object().shape({
   name: yup.string().required(),
   provider: yup.string().oneOf(Object.values(Integration)).required(),
   org_repos: yup.lazy((obj) =>
-    yup.object(
-      mapObjIndexed(
-        () =>
-          yup.array().of(
-            yup.object().shape({
-              idempotency_key: yup.string().required(),
-              slug: yup.string().required(),
-              name: yup.string().required()
-            })
-          ),
-        obj
-      )
-    )
+    yup.object(mapObjIndexed(() => yup.array().of(repoSchema), obj))
   )
 });
 
@@ -45,19 +56,7 @@ const patchSchema = yup.object().shape({
   name: yup.string().nullable().optional(),
   provider: yup.string().oneOf(Object.values(Integration)).required(),
   org_repos: yup.lazy((obj) =>
-    yup.object(
-      mapObjIndexed(
-        () =>
-          yup.array().of(
-            yup.object().shape({
-              idempotency_key: yup.string().required(),
-              slug: yup.string().required(),
-              name: yup.string().required()
-            })
-          ),
-        obj
-      )
-    )
+    yup.object(mapObjIndexed(() => yup.array().of(repoSchema), obj))
   )
 });
 
@@ -84,14 +83,14 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     .orderBy('name', 'asc');
 
   const teams = await getQuery;
-
-  const repos = (
-    await Promise.all(teams.map((team) => getTeamRepos(team.id)))
-  ).flat();
-
+  const reposWithWorkflows = await getSelectedReposForOrg(
+    org_id,
+    provider as Integration
+  );
   res.send({
     teams: teams,
-    teamReposMap: groupBy(prop('team_id'), repos)
+    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows),
+    reposWithWorkflows
   });
 });
 
@@ -132,7 +131,10 @@ endpoint.handle.POST(postSchema, async (req, res) => {
   updateOnBoardingState(org_id, updatedOnboardingState);
   syncReposForOrg();
 
-  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
+  res.send({
+    team,
+    teamReposMap: ramdaGroupBy(prop('team_id'), teamRepos)
+  });
 });
 
 endpoint.handle.PATCH(patchSchema, async (req, res) => {
@@ -140,7 +142,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { id, name, org_repos, provider } = req.payload;
+  const { org_id, id, name, org_repos, provider } = req.payload;
   const orgReposList: ReqRepoWithProvider[] = [];
   forEachObjIndexed((repos, org) => {
     repos.forEach((repo) => {
@@ -159,10 +161,15 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
       data: {
         repos: orgReposList
       }
-    }).then((repos) => repos.map((r) => ({ ...r, team_id: id })))
+    }).then((repos) => repos.map((r) => ({ ...r, team_id: id }))),
+    updateReposWorkflows(org_id, provider as Integration, orgReposList)
   ]);
+
   syncReposForOrg();
-  res.send({ team, teamReposMap: groupBy(prop('team_id'), teamRepos) });
+  res.send({
+    team,
+    teamReposMap: ramdaGroupBy(prop('team_id'), teamRepos)
+  });
 });
 
 endpoint.handle.DELETE(deleteSchema, async (req, res) => {
@@ -208,4 +215,74 @@ const createTeam = async (
       member_ids
     }
   });
+};
+
+const updateReposWorkflows = async (
+  org_id: ID,
+  provider: Integration,
+  orgReposList: ReqRepoWithProvider[]
+) => {
+  const repoWorkflows = orgReposList.reduce(
+    (prev, curr) => ({
+      ...prev,
+      [curr.name]:
+        curr.repo_workflows?.map((w) => ({
+          value: String(w.value),
+          name: w.name
+        })) || []
+    }),
+    {} as Record<string, { name: string; value: string }[]>
+  );
+
+  const reposForWorkflows = Object.keys(repoWorkflows);
+
+  if (
+    reposForWorkflows.length &&
+    (provider === Integration.GITHUB || provider === Integration.BITBUCKET)
+  ) {
+    // Step 1: Get all repos for the workflows
+    const dbReposForWorkflows = await db(Table.OrgRepo)
+      .select('*')
+      .whereIn('name', reposForWorkflows)
+      .where('org_id', org_id)
+      .andWhere('is_active', true)
+      .andWhere('provider', provider);
+
+    const groupedRepos = groupBy(dbReposForWorkflows, 'name');
+
+    // Step 2: Disable all workflows for the above db repos
+    await db('RepoWorkflow')
+      .update('is_active', false)
+      .whereIn(
+        'org_repo_id',
+        dbReposForWorkflows.map((r) => r.id)
+      )
+      .andWhere('type', WorkflowType.DEPLOYMENT);
+
+    const newWorkflows = Object.entries(repoWorkflows)
+      .filter(([repoName]) => groupedRepos[repoName]?.id)
+      .flatMap(([repoName, workflows]) =>
+        workflows.map((workflow) => ({
+          is_active: true,
+          name: workflow.name,
+          provider:
+            provider === Integration.GITHUB
+              ? CIProvider.GITHUB_ACTIONS
+              : provider === Integration.BITBUCKET
+              ? CIProvider.CIRCLE_CI
+              : null,
+          provider_workflow_id: String(workflow.value),
+          type: WorkflowType.DEPLOYMENT,
+          org_repo_id: groupedRepos[repoName]?.id
+        }))
+      );
+
+    if (newWorkflows.length) {
+      await db('RepoWorkflow')
+        .insert(newWorkflows)
+        .onConflict(['org_repo_id', 'provider_workflow_id'])
+        .merge()
+        .returning('*');
+    }
+  }
 };

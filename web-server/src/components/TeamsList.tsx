@@ -396,8 +396,7 @@ const EditTeam = ({ teamId, onEdit }: { teamId: ID; onEdit: () => void }) => {
               title: 'Edit team',
               ui: 'team_edit',
               props: {
-                teamId,
-                hideCardComponents: true
+                teamId
               }
             }
           });
