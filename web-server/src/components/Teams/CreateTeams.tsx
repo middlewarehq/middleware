@@ -363,7 +363,8 @@ const DisplayRepos: FC = () => {
             <FlexBox alignCenter gap={1 / 2}>
               <InfoIcon color="primary" fontSize="small" />
               <Line color="primary" italic>
-                Any change done in repos would affect the repo organization-wide
+                Workflow selection for any repositories will apply to all teams
+                where they are assigned.
               </Line>
             </FlexBox>
           </TableCell>
