@@ -344,8 +344,15 @@ const DisplayRepos: FC = () => {
                   )}
                 </FlexBox>
               </TableCell>
-              <TableCell align="center" sx={{ px: 2 }}>
-                <DeleteIcon fontSize="small" />
+              <TableCell>
+                <FlexBox
+                  title="Delete repo"
+                  sx={{ px: 1 }}
+                  justifyCenter
+                  alignCenter
+                >
+                  <DeleteIcon fontSize="small" color="error" />
+                </FlexBox>
               </TableCell>
             </TableRow>
           ))}
