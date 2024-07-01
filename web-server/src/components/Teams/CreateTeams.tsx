@@ -32,6 +32,7 @@ import { DeploymentWorkflowSelector } from '@/components/WorkflowSelector';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { BaseRepo, DeploymentSources } from '@/types/resources';
 
+import AnimatedInputWrapper from '../AnimatedInputWrapper/AnimatedInputWrapper';
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
 
@@ -162,6 +163,7 @@ const TeamRepos: FC = () => {
   } = useTeamCRUD();
 
   const searchQuery = useEasyState('');
+  const searchFocus = useBoolState(false);
 
   return (
     <FlexBox col gap={2}>
@@ -191,15 +193,21 @@ const TeamRepos: FC = () => {
           getOptionLabel={(option) => `${option.parent}/${option.name}`}
           renderInput={(params) => (
             <TextField
+              onFocus={searchFocus.true}
+              onBlur={searchFocus.false}
               onChange={(e) => {
                 handleReposSearch(e as React.ChangeEvent<HTMLInputElement>);
                 searchQuery.set(e.target.value);
               }}
               {...params}
               label={
-                selectedRepos.length
-                  ? `${selectedRepos.length} selected`
-                  : `Search repositories`
+                selectedRepos.length ? (
+                  `${selectedRepos.length} selected`
+                ) : !searchFocus.value ? (
+                  <AnimatedInputWrapper />
+                ) : (
+                  'org/repo'
+                )
               }
               error={teamRepoError}
               InputProps={{

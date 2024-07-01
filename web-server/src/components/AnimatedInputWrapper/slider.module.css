@@ -1,0 +1,29 @@
+.animationWrapper{
+    position: absolute;
+    top: 50%;
+    transform: translate(0%, -50%);
+    font-size: 1em;
+    display: flex;
+    gap: 4px;
+}
+
+.placeholder{
+    border: none;
+    outline: none;
+    right: 0px;
+}
+
+.repo{
+    height: 1.4em;
+}
+
+.text{
+    position: relative;
+    transition: all 0.5s ease;
+}
+
+.textslide{
+    display: flex;
+    height: 1.4em;
+    align-items: flex-start;
+}
