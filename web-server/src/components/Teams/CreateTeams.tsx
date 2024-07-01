@@ -313,7 +313,8 @@ const ActionTray: FC<CRUDProps> = ({
 };
 
 const DisplayRepos: FC = () => {
-  const { selectedRepos } = useTeamCRUD();
+  const { selectedRepos, showWorkflowChangeWarning } = useTeamCRUD();
+
   const theme = useTheme();
   if (!selectedRepos.length) return;
   return (
@@ -358,17 +359,19 @@ const DisplayRepos: FC = () => {
             </TableRow>
           ))}
         </TableBody>
-        <TableRow>
-          <TableCell colSpan={3}>
-            <FlexBox alignCenter gap={1 / 2}>
-              <InfoIcon color="primary" fontSize="small" />
-              <Line color="primary" italic>
-                Workflow selection for any repositories will apply to all teams
-                where they are assigned.
-              </Line>
-            </FlexBox>
-          </TableCell>
-        </TableRow>
+        {showWorkflowChangeWarning && (
+          <TableRow>
+            <TableCell colSpan={3}>
+              <FlexBox alignCenter gap={1 / 2}>
+                <InfoIcon color="primary" fontSize="small" />
+                <Line color="primary" italic>
+                  Workflow selection for any repositories will apply to all
+                  teams where they are assigned.
+                </Line>
+              </FlexBox>
+            </TableCell>
+          </TableRow>
+        )}
       </Table>
     </TableContainer>
   );

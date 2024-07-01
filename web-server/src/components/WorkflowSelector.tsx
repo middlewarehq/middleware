@@ -15,7 +15,7 @@ import { FC, useCallback, useMemo } from 'react';
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
-import { CIProvider, Integration } from '@/constants/integrations';
+import { Integration } from '@/constants/integrations';
 import { useAuth } from '@/hooks/useAuth';
 import { useEasyState, useBoolState } from '@/hooks/useEasyState';
 import {

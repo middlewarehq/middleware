@@ -59,6 +59,7 @@ interface TeamsCRUDContextType {
   isEditing: boolean;
   editingTeam: Team | null;
   saveDisabled: boolean;
+  showWorkflowChangeWarning: boolean;
   loadingRepos: boolean;
   handleReposSearch: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -378,6 +379,27 @@ export const TeamsCRUDProvider: React.FC<{
     teamName.value
   ]);
 
+  const showWorkflowChangeWarning = useMemo(() => {
+    if (!isEditing) return false;
+    const repoWorkflowsMap = selections.value.reduce(
+      (acc, repo) => {
+        acc[repo.id] = repo.repo_workflows;
+        return acc;
+      },
+      {} as Record<ID, AdaptedRepoWorkflow[]>
+    );
+
+    const initialRepoWorkflowsMap = initState.repos.reduce(
+      (acc, repo) => {
+        acc[repo.id] = repo.repo_workflows;
+        return acc;
+      },
+      {} as Record<ID, AdaptedRepoWorkflow[]>
+    );
+
+    return !equals(repoWorkflowsMap, initialRepoWorkflowsMap);
+  }, [initState.repos, isEditing, selections.value]);
+
   const contextValue: TeamsCRUDContextType = {
     teamName: teamName.value,
     showTeamNameError: teamNameError.value,
@@ -400,6 +422,7 @@ export const TeamsCRUDProvider: React.FC<{
     isEditing,
     editingTeam,
     saveDisabled,
+    showWorkflowChangeWarning,
     loadingRepos,
     handleReposSearch
   };
