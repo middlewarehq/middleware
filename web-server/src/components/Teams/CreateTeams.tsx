@@ -1,5 +1,6 @@
 import { Close } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import InfoIcon from '@mui/icons-material/Info';
 import {
   Autocomplete,
   Button,
@@ -357,6 +358,16 @@ const DisplayRepos: FC = () => {
             </TableRow>
           ))}
         </TableBody>
+        <TableRow>
+          <TableCell colSpan={3}>
+            <FlexBox alignCenter gap={1 / 2}>
+              <InfoIcon color="primary" fontSize="small" />
+              <Line color="primary" italic>
+                Any change done in repos would affect the repo organization-wide
+              </Line>
+            </FlexBox>
+          </TableCell>
+        </TableRow>
       </Table>
     </TableContainer>
   );
