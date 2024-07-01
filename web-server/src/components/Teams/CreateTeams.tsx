@@ -38,7 +38,6 @@ export type CRUDProps = {
   onSave?: AnyFunction;
   onDiscard?: AnyFunction;
   teamId?: ID;
-  hideCardComponents?: boolean;
 };
 
 const MAX_LENGTH_REPO_NAME = 25;
@@ -46,26 +45,16 @@ const MAX_LENGTH_REPO_NAME = 25;
 export const CreateEditTeams: FC<CRUDProps> = ({
   onSave,
   onDiscard,
-  teamId,
-  hideCardComponents
+  teamId
 }) => {
   return (
     <TeamsCRUDProvider teamId={teamId}>
-      <TeamsCRUD
-        hideCardComponents={hideCardComponents}
-        teamId={teamId}
-        onDiscard={onDiscard}
-        onSave={onSave}
-      />
+      <TeamsCRUD teamId={teamId} onDiscard={onDiscard} onSave={onSave} />
     </TeamsCRUDProvider>
   );
 };
 
-const TeamsCRUD: FC<CRUDProps> = ({
-  onSave,
-  onDiscard,
-  hideCardComponents
-}) => {
+const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
   const { isPageLoading, editingTeam, isEditing } = useTeamCRUD();
   return (
     <>
@@ -76,7 +65,7 @@ const TeamsCRUD: FC<CRUDProps> = ({
           gap={4}
           col
           justifyBetween
-          component={!hideCardComponents && Card}
+          component={Card}
           p={2}
           width={'900px'}
         >
@@ -86,7 +75,7 @@ const TeamsCRUD: FC<CRUDProps> = ({
             <>
               <Heading />
               <TeamName />
-              <TeamRepos hideCardComponents={hideCardComponents} />
+              <TeamRepos />
               <ActionTray onDiscard={onDiscard} onSave={onSave} />
             </>
           )}
@@ -160,9 +149,7 @@ const TeamName = () => {
   );
 };
 
-const TeamRepos: FC<{ hideCardComponents?: boolean }> = ({
-  hideCardComponents
-}) => {
+const TeamRepos: FC = () => {
   const {
     repoOptions,
     teamRepoError,

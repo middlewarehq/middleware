@@ -7,7 +7,7 @@ import { FlexBox } from '../FlexBox';
 import { useOverlayPage } from '../OverlayPageContext';
 import { CreateEditTeams } from '../Teams/CreateTeams';
 
-export const TeamEdit: FC<CRUDProps> = ({ teamId, hideCardComponents }) => {
+export const TeamEdit: FC<CRUDProps> = ({ teamId }) => {
   const { removeAll } = useOverlayPage();
   const pageRefreshCallback = usePageRefreshCallback();
 
@@ -15,7 +15,6 @@ export const TeamEdit: FC<CRUDProps> = ({ teamId, hideCardComponents }) => {
     <FlexBox>
       <CreateEditTeams
         teamId={teamId}
-        hideCardComponents={hideCardComponents}
         onDiscard={removeAll}
         onSave={() => {
           removeAll();
