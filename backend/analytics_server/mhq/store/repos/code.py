@@ -387,6 +387,28 @@ class CodeRepoService:
 
         return query.all()
 
+    @rollback_on_exc
+    def get_reverted_prs_by_merge_commit_hash(
+        self, repo_ids: List[str], merge_commit_hashes: List[str]
+    ) -> List[PullRequest]:
+        query = (
+            self._db.session.query(PullRequest)
+            .options(defer(PullRequest.data))
+            .filter(
+                and_(
+                    PullRequest.repo_id.in_(repo_ids),
+                    or_(
+                        *[
+                            PullRequest.merge_commit_sha.ilike(f"{merge_hash}%")
+                            for merge_hash in merge_commit_hashes
+                        ]
+                    ),
+                )
+            )
+        )
+
+        return query.all()
+
     def _filter_prs_by_repo_ids(self, query, repo_ids: List[str]):
         return query.filter(PullRequest.repo_id.in_(repo_ids))
 
