@@ -321,7 +321,8 @@ const ActionTray: FC<CRUDProps> = ({
 };
 
 const DisplayRepos: FC = () => {
-  const { selectedRepos, showWorkflowChangeWarning } = useTeamCRUD();
+  const { selectedRepos, showWorkflowChangeWarning, unselectRepo } =
+    useTeamCRUD();
 
   const theme = useTheme();
   if (!selectedRepos.length) return;
@@ -357,9 +358,12 @@ const DisplayRepos: FC = () => {
               <TableCell>
                 <FlexBox
                   title="Delete repo"
-                  sx={{ px: 1 }}
+                  sx={{ px: 1, cursor: 'pointer' }}
                   justifyCenter
                   alignCenter
+                  onClick={() => {
+                    unselectRepo(repo.id);
+                  }}
                 >
                   <DeleteIcon fontSize="small" color="error" />
                 </FlexBox>
