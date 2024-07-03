@@ -126,14 +126,14 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
         sx={{ textAlign: 'start' }}
       >
         {loading.value ? (
-          <FlexBox alignCenter gap2>
+          <FlexBox alignCenter gap2 sx={{ p: 2 }}>
             <CircularProgress size="20px" />
             <Line>Loading...</Line>
           </FlexBox>
         ) : (
           options.value.map((o) => {
             return (
-              <MenuItem key={o.value}>
+              <MenuItem key={o.value} sx={{ p: 0.5 }}>
                 <Checkbox
                   checked={alreadySelectedWorkflowIds.includes(String(o.value))}
                   onChange={(e) => {
