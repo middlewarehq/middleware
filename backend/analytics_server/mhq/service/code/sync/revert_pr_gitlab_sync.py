@@ -52,7 +52,7 @@ class RevertPRsGitlabSyncHandler:
         """
 
         repo_ids: Set[str] = set()
-        repo_id_to_pr_merge_hash_to_id_map: Dict[str, Dict[str, str]] = {}
+        repo_id_to_pr_merge_hash_to_revert_pr_id_map: Dict[str, Dict[str, str]] = {}
         pr_merge_hash_match_strings: List[str] = []
 
         for pr in prs:
@@ -62,10 +62,10 @@ class RevertPRsGitlabSyncHandler:
             pr_merge_hash_match_strings.append(f"revert-{pr.merge_commit_sha[:8]}")
             repo_ids.add(str(pr.repo_id))
 
-            if str(pr.repo_id) not in repo_id_to_pr_merge_hash_to_id_map:
-                repo_id_to_pr_merge_hash_to_id_map[str(pr.repo_id)] = {}
+            if str(pr.repo_id) not in repo_id_to_pr_merge_hash_to_revert_pr_id_map:
+                repo_id_to_pr_merge_hash_to_revert_pr_id_map[str(pr.repo_id)] = {}
 
-            repo_id_to_pr_merge_hash_to_id_map[str(pr.repo_id)][
+            repo_id_to_pr_merge_hash_to_revert_pr_id_map[str(pr.repo_id)][
                 str(pr.merge_commit_sha[:8])
             ] = pr.id
 
@@ -85,13 +85,13 @@ class RevertPRsGitlabSyncHandler:
             if merge_commit_hash is None:
                 continue
 
-            repo_key_exists = repo_id_to_pr_merge_hash_to_id_map.get(
+            repo_key_exists = repo_id_to_pr_merge_hash_to_revert_pr_id_map.get(
                 str(rev_pr.repo_id)
             )
             if repo_key_exists is None:
                 continue
 
-            original_pr_id = repo_id_to_pr_merge_hash_to_id_map[
+            original_pr_id = repo_id_to_pr_merge_hash_to_revert_pr_id_map[
                 str(rev_pr.repo_id)
             ].get(merge_commit_hash)
             if original_pr_id is None:
@@ -118,7 +118,7 @@ class RevertPRsGitlabSyncHandler:
         """
         revert_pr_hashes: List[str] = []
         repo_ids: Set[str] = set()
-        repo_id_to_pr_merge_hash_to_id_map: Dict[str, Dict[str, str]] = {}
+        repo_id_to_pr_merge_hash_to_revert_pr_id_map: Dict[str, Dict[str, str]] = {}
 
         for pr in prs:
             revert_pr_merge_commit_hash = self.get_revert_merge_commit_hash(
@@ -130,10 +130,10 @@ class RevertPRsGitlabSyncHandler:
             revert_pr_hashes.append(revert_pr_merge_commit_hash)
             repo_ids.add(str(pr.repo_id))
 
-            if str(pr.repo_id) not in repo_id_to_pr_merge_hash_to_id_map:
-                repo_id_to_pr_merge_hash_to_id_map[str(pr.repo_id)] = {}
+            if str(pr.repo_id) not in repo_id_to_pr_merge_hash_to_revert_pr_id_map:
+                repo_id_to_pr_merge_hash_to_revert_pr_id_map[str(pr.repo_id)] = {}
 
-            repo_id_to_pr_merge_hash_to_id_map[str(pr.repo_id)][
+            repo_id_to_pr_merge_hash_to_revert_pr_id_map[str(pr.repo_id)][
                 str(revert_pr_merge_commit_hash)
             ] = pr.id
 
@@ -148,14 +148,14 @@ class RevertPRsGitlabSyncHandler:
 
         revert_pr_mappings: List[PullRequestRevertPRMapping] = []
         for rev_pr in reverted_prs:
-            repo_key_exists = repo_id_to_pr_merge_hash_to_id_map.get(
+            repo_key_exists = repo_id_to_pr_merge_hash_to_revert_pr_id_map.get(
                 str(rev_pr.repo_id)
             )
             if repo_key_exists is None:
                 continue
 
             commit_hash = rev_pr.merge_commit_sha[:8]
-            original_pr_id = repo_id_to_pr_merge_hash_to_id_map[
+            original_pr_id = repo_id_to_pr_merge_hash_to_revert_pr_id_map[
                 str(rev_pr.repo_id)
             ].get(commit_hash)
             if original_pr_id is None:
