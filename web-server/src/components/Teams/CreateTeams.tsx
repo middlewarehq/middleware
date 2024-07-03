@@ -206,7 +206,7 @@ const TeamRepos: FC = () => {
                 ) : !searchFocus.value ? (
                   <AnimatedInputWrapper />
                 ) : (
-                  'org/repo'
+                  'Search for org/repo'
                 )
               }
               error={teamRepoError}
