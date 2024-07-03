@@ -8,9 +8,9 @@
 }
 
 .placeholder{
-    border: none;
-    outline: none;
-    right: 0px;
+    height: 1.4em;
+    width: 10rem;
+    position: relative;
 }
 
 .repo{

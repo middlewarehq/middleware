@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react';
 
-import { themeColors } from '@/theme/schemes/theme';
-
 import styles from './slider.module.css';
 
 const AnimatedInputWrapper = () => {
   return (
-    <div>
+    <div className={styles.placeholder}>
       <AnimatedPlaceHolderWrapper />
-      <input
-        className={styles.placeholder}
-        style={{ backgroundColor: themeColors.primaryAlt }}
-      />
     </div>
   );
 };
@@ -28,7 +22,6 @@ const AnimatedPlaceHolderWrapper = () => {
 
 const AnimatedRepos = () => {
   const [animationIndex, setAnimationIndex] = useState(0);
-  const [repos] = useState(popRepos);
   useEffect(() => {
     const interval = setInterval(() => {
       if (animationIndex < popRepos.length - 1) {
@@ -45,7 +38,7 @@ const AnimatedRepos = () => {
         className={styles.text}
         style={{ bottom: animationIndex * 1.4 + 'em' }}
       >
-        {repos.map((item) => (
+        {popRepos.map((item) => (
           <div key={item} className={styles.repo}>
             <span>{item}</span>
           </div>
