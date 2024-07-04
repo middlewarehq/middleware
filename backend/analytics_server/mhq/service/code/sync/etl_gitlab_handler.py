@@ -362,8 +362,26 @@ class GitlabETLHandler(CodeProviderETLHandler):
 
 
 def get_gitlab_etl_handler(org_id: str) -> GitlabETLHandler:
-    def _get_custom_gitlab_domain() -> str:
-        pass
+    def _get_custom_gitlab_domain() -> Optional[str]:
+        DEFAULT_DOMAIN = "gitlab.com"
+        core_repo_service = CoreRepoService()
+        integrations = core_repo_service.get_org_integrations_for_names(
+            org_id, [UserIdentityProvider.GITLAB.value]
+        )
+
+        gitlab_domain = (
+            integrations[0].provider_meta.get("custom_domain")
+            if integrations[0].provider_meta
+            else None
+        )
+
+        if not gitlab_domain:
+            LOG.warn(
+                f"Custom domain not found for intergration for org {org_id} and provider {UserIdentityProvider.GITLAB.value}"
+            )
+            return DEFAULT_DOMAIN
+
+        return gitlab_domain
 
     def _get_access_token():
         core_repo_service = CoreRepoService()
@@ -378,7 +396,7 @@ def get_gitlab_etl_handler(org_id: str) -> GitlabETLHandler:
 
     return GitlabETLHandler(
         org_id,
-        GitlabApiService(_get_access_token()),
+        GitlabApiService(_get_access_token(), _get_custom_gitlab_domain()),
         CodeRepoService(),
         CodeETLAnalyticsService(),
         get_revert_prs_gitlab_sync_handler(),
