@@ -120,20 +120,29 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
         multiple
         value={selectedOptions}
         onOpen={loadWorkflows}
+        MenuProps={{
+          MenuListProps: {
+            'aria-labelledby': 'simple-menu',
+            disablePadding: true,
+            sx: {
+              padding: 0
+            }
+          }
+        }}
         input={<OutlinedInput label="Choose workflow" margin="dense" />}
         renderValue={(selected) => selected.map((w) => w.label).join(', ')}
         size="small"
         sx={{ textAlign: 'start' }}
       >
         {loading.value ? (
-          <FlexBox alignCenter gap2 sx={{ p: 2 }}>
+          <FlexBox alignCenter gap2>
             <CircularProgress size="20px" />
             <Line>Loading...</Line>
           </FlexBox>
         ) : (
           options.value.map((o) => {
             return (
-              <MenuItem key={o.value} sx={{ p: 0.5 }}>
+              <MenuItem key={o.value}>
                 <Checkbox
                   checked={alreadySelectedWorkflowIds.includes(String(o.value))}
                   onChange={(e) => {

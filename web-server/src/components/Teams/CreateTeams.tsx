@@ -358,7 +358,8 @@ const DisplayRepos: FC = () => {
               <TableCell>
                 <FlexBox
                   title="Delete repo"
-                  sx={{ px: 1, cursor: 'pointer' }}
+                  pointer
+                  sx={{ px: 1 }}
                   justifyCenter
                   alignCenter
                   onClick={() => {
