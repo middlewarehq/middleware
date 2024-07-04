@@ -1,5 +1,6 @@
 import asyncio
 from typing import List, Dict, Optional, Tuple, Set, Any
+from uuid import uuid4
 from mhq.utils.diffparser import parse_gitlab_diffs
 from mhq.exapi.models.gitlab import (
     GitlabCommit,
@@ -246,7 +247,7 @@ class GitlabETLHandler(CodeProviderETLHandler):
         pr_model: Optional[PullRequest],
         repo_id: str,
     ):
-        pr_id = pr_model.id if pr_model else uuid4_str()
+        pr_id = pr_model.id if pr_model else uuid4()
         return PullRequest(
             id=pr_id,
             number=pr.number,
@@ -342,7 +343,7 @@ class GitlabETLHandler(CodeProviderETLHandler):
                     data=review.data,
                     created_at=review.created_at,
                     idempotency_key=str(review.idempotency_key),
-                    org_repo_id=str(pr_model.repo_id),
+                    org_repo_id=pr_model.repo_id,
                     actor_username=review.actor_username,
                 )
             )
