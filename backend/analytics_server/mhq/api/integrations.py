@@ -1,7 +1,9 @@
+from typing import List
 from flask import Blueprint, jsonify
 from github import GithubException
 from voluptuous import Schema, Optional, Coerce, Range, All, Required
 
+from mhq.exapi.models.gitlab import GitlabRepo
 from mhq.api.request_utils import queryschema
 from mhq.service.external_integrations_service import get_external_integrations_service
 from mhq.service.query_validator import get_query_validator
@@ -111,7 +113,7 @@ def get_user_repos(org_id: str, page_size: int, page: int):
     "/orgs/<org_id>/integrations/github/<gh_org_name>/<gh_org_repo_name>/workflows",
     methods={"GET"},
 )
-def get_prs_for_repo(org_id: str, gh_org_name: str, gh_org_repo_name: str):
+def get_workflows_for_repo(org_id: str, gh_org_name: str, gh_org_repo_name: str):
     query_validator = get_query_validator()
     query_validator.org_validator(org_id)
 
@@ -135,4 +137,113 @@ def get_prs_for_repo(org_id: str, gh_org_name: str, gh_org_repo_name: str):
             "html_url": github_workflow.html_url,
         }
         for github_workflow in workflows_list
+    ]
+
+
+@app.route("/orgs/<org_id>/integrations/gitlab/groups", methods={"GET"})
+def get_gitlab_orgs(org_id: str):
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    try:
+        external_integrations_service = get_external_integrations_service(
+            org_id, UserIdentityProvider.GITLAB
+        )
+        groups = external_integrations_service.get_gitlab_groups()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return {
+        "orgs": [
+            {
+                "login": group.get("path"),
+                "name": group.get("name"),
+                "avatar_url": group.get("avatar_url"),
+                "web_url": group.get("web_url"),
+                "internal_id": group.get("id"),
+            }
+            for group in groups
+        ]
+    }
+
+
+@app.route(
+    "/orgs/<org_id>/integrations/gitlab/groups/<group_id>/repos", methods={"GET"}
+)
+@queryschema(
+    Schema(
+        {
+            Optional("page_size", default="20"): All(
+                str, Coerce(int), Range(min=1, max=100)
+            ),
+            Optional("page", default="1"): All(str, Coerce(int), Range(min=1)),
+        }
+    ),
+)
+def get_gitlab_projects(org_id: str, group_id: str, page_size: int, page: int):
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    try:
+        external_integrations_service = get_external_integrations_service(
+            org_id, UserIdentityProvider.GITLAB
+        )
+        projects: List[GitlabRepo] = (
+            external_integrations_service.get_gitlab_group_projects(
+                group_id, page_size, page
+            )
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return [
+        {
+            "name": project.name,
+            "org_name": project.org_name,
+            "default_branch": project.default_branch,
+            "idempotency_key": project.idempotency_key,
+            "slug": project.slug,
+            "description": project.description,
+            "web_url": project.web_url,
+        }
+        for project in projects
+    ]
+
+
+@app.route("/orgs/<org_id>/integrations/gitlab/user/repos", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Optional("page_size", default="20"): All(
+                str, Coerce(int), Range(min=1, max=100)
+            ),
+            Optional("page", default="1"): All(str, Coerce(int), Range(min=1)),
+        }
+    ),
+)
+def get_gitlab_user_projects(org_id: str, page_size: int, page: int):
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    try:
+        external_integrations_service = get_external_integrations_service(
+            org_id, UserIdentityProvider.GITLAB
+        )
+        projects: List[GitlabRepo] = (
+            external_integrations_service.get_gitlab_user_projects(page_size, page)
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    return [
+        {
+            "name": project.name,
+            "org_name": project.org_name,
+            "default_branch": project.default_branch,
+            "idempotency_key": project.idempotency_key,
+            "slug": project.slug,
+            "description": project.description,
+            "web_url": project.web_url,
+        }
+        for project in projects
     ]

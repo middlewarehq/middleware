@@ -1,6 +1,10 @@
+from typing import Dict, List, Optional
 from github import GithubException
 from github.Organization import Organization as GithubOrganization
 
+from mhq.exapi.models.gitlab import GitlabRepo, GitlabUser
+from mhq.exapi.gitlab import GitlabApiService
+from mhq.utils.log import LOG
 from mhq.exapi.github import GithubApiService
 from mhq.store.models import UserIdentityProvider
 from mhq.store.repos.core import CoreRepoService
@@ -14,10 +18,12 @@ class ExternalIntegrationsService:
         org_id: str,
         user_identity_provider: UserIdentityProvider,
         access_token: str,
+        custom_domain: Optional[str] = None,
     ):
         self.org_id = org_id
         self.user_identity_provider = user_identity_provider
         self.access_token = access_token
+        self.custom_domain = custom_domain
 
     def get_github_organizations(self):
         github_api_service = GithubApiService(self.access_token)
@@ -57,10 +63,66 @@ class ExternalIntegrationsService:
         except GithubException as e:
             raise e
 
+    def get_gitlab_groups(self) -> List[Dict]:
+        gitlab_api_service = GitlabApiService(self.access_token, self.custom_domain)
+        try:
+            groups: List[Dict] = gitlab_api_service.get_groups()
+        except Exception as e:
+            raise e
+
+        return groups
+
+    def get_gitlab_group_projects(
+        self, group_id: str, page_size: int, page: int
+    ) -> List[GitlabRepo]:
+        gitlab_api_service = GitlabApiService(self.access_token, self.custom_domain)
+        try:
+            projects: List[Dict] = gitlab_api_service.get_group_projects(
+                group_id, page_size, page
+            )
+        except Exception as e:
+            raise e
+
+        return projects
+
+    def get_gitlab_user_projects(self, page_size: int, page: int) -> List[GitlabRepo]:
+        gitlab_api_service = GitlabApiService(self.access_token, self.custom_domain)
+        try:
+            user: GitlabUser = gitlab_api_service.get_authenticated_user()
+            user_id: str = user.meta.get("id")
+            projects: List[GitlabRepo] = gitlab_api_service.get_user_projects(
+                user_id, page, page_size
+            )
+        except Exception as e:
+            raise e
+
+        return projects
+
 
 def get_external_integrations_service(
     org_id: str, user_identity_provider: UserIdentityProvider
 ):
+    def _get_custom_gitlab_domain() -> Optional[str]:
+        DEFAULT_DOMAIN = "gitlab.com"
+        core_repo_service = CoreRepoService()
+        integrations = core_repo_service.get_org_integrations_for_names(
+            org_id, [UserIdentityProvider.GITLAB.value]
+        )
+
+        gitlab_domain = (
+            integrations[0].provider_meta.get("custom_domain")
+            if integrations[0].provider_meta
+            else None
+        )
+
+        if not gitlab_domain:
+            LOG.warn(
+                f"Custom domain not found for intergration for org {org_id} and provider {UserIdentityProvider.GITLAB.value}"
+            )
+            return DEFAULT_DOMAIN
+
+        return gitlab_domain
+
     def _get_access_token() -> str:
         access_token = CoreRepoService().get_access_token(
             org_id, user_identity_provider
@@ -72,5 +134,5 @@ def get_external_integrations_service(
         return access_token
 
     return ExternalIntegrationsService(
-        org_id, user_identity_provider, _get_access_token()
+        org_id, user_identity_provider, _get_access_token(), _get_custom_gitlab_domain()
     )
