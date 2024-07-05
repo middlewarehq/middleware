@@ -70,7 +70,7 @@ class GitlabApiService:
         return groups
 
     def get_group_projects(
-        self, group_id, page_size: int = 20, page: int = 1
+        self, group_id: str, page_size: int = 20, page: int = 1
     ) -> List[GitlabRepo]:
         url = f"{self.base_url}/groups/{group_id}/projects"
         params = {"page": page, "per_page": page_size}
