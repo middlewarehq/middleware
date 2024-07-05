@@ -3,6 +3,7 @@ from enum import Enum
 
 class CodeProvider(Enum):
     GITHUB = "github"
+    GITLAB = "gitlab"
 
 
 class BookmarkType(Enum):

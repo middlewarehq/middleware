@@ -268,3 +268,10 @@ def fill_missing_week_buckets(
         curr_day = curr_day + timedelta(days=7)
 
     return sort_dict_by_datetime_keys(week_start_to_object_map_with_weeks_in_interval)
+
+
+def dt_from_iso_time_string(j_str_dt) -> Optional[datetime]:
+    if not j_str_dt:
+        return None
+    dt_without_timezone = datetime.strptime(j_str_dt, "%Y-%m-%dT%H:%M:%S.%f%z")
+    return dt_without_timezone.astimezone(pytz.UTC)

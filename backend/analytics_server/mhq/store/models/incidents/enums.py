@@ -3,6 +3,7 @@ from enum import Enum
 
 class IncidentProvider(Enum):
     GITHUB = "github"
+    GITLAB = "gitlab"
 
 
 class IncidentSource(Enum):

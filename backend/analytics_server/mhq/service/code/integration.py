@@ -5,6 +5,7 @@ from mhq.store.repos.core import CoreRepoService
 
 CODE_INTEGRATION_BUCKET = [
     UserIdentityProvider.GITHUB.value,
+    UserIdentityProvider.GITLAB.value,
 ]
 
 

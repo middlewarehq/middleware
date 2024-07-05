@@ -18,6 +18,20 @@ class GitlabApiService:
         self.base_url = f"https://{domain}/api/v4"
         self.headers = {"Authorization": f"Bearer {self._token}"}
 
+    def check_pat(self) -> bool:
+        """
+        Checks if PAT is Valid
+        :returns:
+        :raises HTTPError: If the request fails and status code is not 200
+        """
+        url = f"{self.base_url}/user"
+        try:
+            response = requests.get(url, headers=self.headers)
+        except Exception as e:
+            raise Exception(f"Error in PAT validation, Error: {e.data}")
+
+        return response.status_code == 200
+
     def _handle_error(self, response):
         if response.status_code != 200:
             error = response.json().get("error", "")

@@ -12,4 +12,8 @@ class IncidentsETLFactory:
     def __call__(self, provider: str) -> IncidentsProviderETLHandler:
         if provider == IncidentProvider.GITHUB.value:
             return get_incidents_sync_etl_handler(self.org_id)
+
+        if provider == IncidentProvider.GITLAB.value:
+            return get_incidents_sync_etl_handler(self.org_id)
+
         raise NotImplementedError(f"Unknown provider - {provider}")
