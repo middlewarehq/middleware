@@ -104,6 +104,7 @@ def get_external_integrations_service(
 ):
     def _get_custom_gitlab_domain() -> Optional[str]:
         DEFAULT_DOMAIN = "gitlab.com"
+
         core_repo_service = CoreRepoService()
         integrations = core_repo_service.get_org_integrations_for_names(
             org_id, [UserIdentityProvider.GITLAB.value]
@@ -133,6 +134,17 @@ def get_external_integrations_service(
             )
         return access_token
 
-    return ExternalIntegrationsService(
-        org_id, user_identity_provider, _get_access_token(), _get_custom_gitlab_domain()
-    )
+    if user_identity_provider == UserIdentityProvider.GITHUB:
+        return ExternalIntegrationsService(
+            org_id,
+            user_identity_provider,
+            _get_access_token(),
+        )
+
+    if user_identity_provider == UserIdentityProvider.GITLAB:
+        return ExternalIntegrationsService(
+            org_id,
+            user_identity_provider,
+            _get_access_token(),
+            _get_custom_gitlab_domain(),
+        )
