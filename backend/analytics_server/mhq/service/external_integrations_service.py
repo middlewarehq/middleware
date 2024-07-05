@@ -134,17 +134,13 @@ def get_external_integrations_service(
             )
         return access_token
 
-    if user_identity_provider == UserIdentityProvider.GITHUB:
-        return ExternalIntegrationsService(
-            org_id,
-            user_identity_provider,
-            _get_access_token(),
-        )
-
+    custom_domain_name = None
     if user_identity_provider == UserIdentityProvider.GITLAB:
-        return ExternalIntegrationsService(
-            org_id,
-            user_identity_provider,
-            _get_access_token(),
-            _get_custom_gitlab_domain(),
-        )
+        custom_domain_name = _get_custom_gitlab_domain()
+
+    return ExternalIntegrationsService(
+        org_id,
+        user_identity_provider,
+        _get_access_token(),
+        custom_domain_name,
+    )
