@@ -163,21 +163,13 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
-    if (
-      preCheck.daemon !== PreCheckStates.SUCCESS ||
-      preCheck.ports !== PreCheckStates.SUCCESS ||
-      preCheck.composeFile !== PreCheckStates.SUCCESS ||
-      preCheck.dockerFile !== PreCheckStates.SUCCESS
-    ) {
-      if (
-        preCheck.daemon === PreCheckStates.FAILED ||
-        preCheck.ports === PreCheckStates.FAILED ||
-        preCheck.composeFile === PreCheckStates.FAILED ||
-        preCheck.dockerFile === PreCheckStates.FAILED
-      )
-        handleExit();
+    if (Object.values(preCheck).includes(PreCheckStates.FAILED)) {
+      handleExit();
       return;
     }
+
+    if (Object.values(preCheck).includes(PreCheckStates.RUNNING)) return;
+
     dispatch(appSlice.actions.setAppState(AppStates.INIT));
     runCommand('docker', ['compose', 'down'], runCommandOpts)
       .promise.then(() => {
