@@ -1532,6 +1532,11 @@ fill-range@^7.0.1:
   dependencies:
     to-regex-range "^5.0.1"
 
+find-free-ports@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/find-free-ports/-/find-free-ports-3.1.1.tgz#39582f6e4e8acd4c4a2bbb6a94c784e08a950002"
+  integrity sha512-hQebewth9i5qkf0a0u06iFaxQssk5ZnPBBggsa1vk8zCYaZoz9IZXpoRLTbEOrYdqfrjvcxU00gYoCPgmXugKA==
+
 find-up@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/find-up/-/find-up-5.0.0.tgz#4c92819ecb7083561e4f4a240a86be5198f536fc"
