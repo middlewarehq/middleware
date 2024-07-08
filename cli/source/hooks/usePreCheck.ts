@@ -1,5 +1,5 @@
 import { isFreePort } from 'find-free-ports';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import fs from 'fs';
 
@@ -27,17 +27,19 @@ export const usePreCheck = ({
   const [dockerFile, setDockerFile] = useState<PreCheckStates>(
     PreCheckStates.RUNNING
   );
-
-  const callChecks = async () => {
+  
+  const callDaemonCheck = useCallback(() => {
     // For Docker daemon
     runCommand('docker', ['info'])
-      .promise.then(() => {
-        setDaemon(PreCheckStates.SUCCESS);
-      })
-      .catch((err) => {
-        setDaemon(PreCheckStates.FAILED);
-      });
+    .promise.then(() => {
+      setDaemon(PreCheckStates.SUCCESS);
+    })
+    .catch((err) => {
+    setDaemon(PreCheckStates.FAILED);
+    });
+  }, []);
 
+  const callPortsCheck = useCallback(async () => {
     // For ports
     if (
       isNaN(db) ||
@@ -59,7 +61,10 @@ export const usePreCheck = ({
         setPorts(PreCheckStates.SUCCESS);
       }
     }
+  }, [])
 
+
+  const callFilesCheck = useCallback(() => {
     // For files
     fs.promises
       .access('../docker-compose.yml')
@@ -74,7 +79,7 @@ export const usePreCheck = ({
       .access('../Dockerfile.dev')
       .then(() => setDockerFile(PreCheckStates.SUCCESS))
       .catch(() => setDockerFile(PreCheckStates.FAILED));
-  };
+  }, []);
 
-  return { daemon, ports, composeFile, dockerFile, callChecks };
+  return { daemon, ports, composeFile, dockerFile, callDaemonCheck, callPortsCheck, callFilesCheck };
 };
