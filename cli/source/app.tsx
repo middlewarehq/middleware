@@ -304,7 +304,9 @@ const CliUi = () => {
   }, [dispatch, exit, handleExit, runCommandOpts, retryToggle, appState]);
 
   useEffect(() => {
-    preCheck.callChecks();
+    preCheck.callDaemonCheck();
+    preCheck.callPortsCheck();
+    preCheck.callFilesCheck();
   }, []);
 
   const logsStreamNodes = useMemo(
@@ -356,7 +358,7 @@ const CliUi = () => {
                   <Box flexDirection="column">
                     <Text color="blue">
                       Status: Running prerequisites check... [Press X to abort]{' '}
-                      <Text bold color="green">
+                      <Text bold color={Object.values(preCheck).includes(PreCheckStates.FAILED) ? "red" : "green"}>
                         <Spinner type="material" />
                       </Text>
                     </Text>
