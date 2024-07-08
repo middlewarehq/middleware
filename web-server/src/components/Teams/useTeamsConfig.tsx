@@ -148,7 +148,7 @@ export const TeamsCRUDProvider: React.FC<{
     (_: SyntheticEvent<Element, Event>, value: BaseRepo[]) => {
       const reposWithDeploymentType = value.map((r) => ({
         ...r,
-        deployment_type: DeploymentSources.PR_MERGE
+        deployment_type: r.deployment_type ?? DeploymentSources.PR_MERGE
       }));
       depFn(selections.set, reposWithDeploymentType);
       depFn(teamRepoError.false);
