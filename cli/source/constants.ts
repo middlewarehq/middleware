@@ -26,6 +26,13 @@ export enum PreCheckStates {
   SUCCESS
 }
 
+export enum PreCheckProperties {
+  DAEMON = 'daemon',
+  PORTS = 'ports',
+  COMPOSE_FILE = 'compose file',
+  DOCKER_FILE = 'docker file'
+}
+
 export enum LogSource {
   All,
   WebServer,
