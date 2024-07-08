@@ -27,16 +27,16 @@ export const usePreCheck = ({
   const [dockerFile, setDockerFile] = useState<PreCheckStates>(
     PreCheckStates.RUNNING
   );
-  
+
   const callDaemonCheck = useCallback(() => {
     // For Docker daemon
     runCommand('docker', ['info'])
-    .promise.then(() => {
-      setDaemon(PreCheckStates.SUCCESS);
-    })
-    .catch((err) => {
-    setDaemon(PreCheckStates.FAILED);
-    });
+      .promise.then(() => {
+        setDaemon(PreCheckStates.SUCCESS);
+      })
+      .catch((err) => {
+        setDaemon(PreCheckStates.FAILED);
+      });
   }, []);
 
   const callPortsCheck = useCallback(async () => {
@@ -55,14 +55,19 @@ export const usePreCheck = ({
       const frontend_check = await isFreePort(frontend);
       const sync_server_check = await isFreePort(sync_server);
       const analytics_server_check = await isFreePort(analytics_server);
-      if (!db_check || !redis_check || !frontend_check || !sync_server_check || !analytics_server_check) {
+      if (
+        !db_check ||
+        !redis_check ||
+        !frontend_check ||
+        !sync_server_check ||
+        !analytics_server_check
+      ) {
         setPorts(PreCheckStates.FAILED);
       } else {
         setPorts(PreCheckStates.SUCCESS);
       }
     }
-  }, [])
-
+  }, []);
 
   const callFilesCheck = useCallback(() => {
     // For files
@@ -81,5 +86,13 @@ export const usePreCheck = ({
       .catch(() => setDockerFile(PreCheckStates.FAILED));
   }, []);
 
-  return { daemon, ports, composeFile, dockerFile, callDaemonCheck, callPortsCheck, callFilesCheck };
+  return {
+    daemon,
+    ports,
+    composeFile,
+    dockerFile,
+    callDaemonCheck,
+    callPortsCheck,
+    callFilesCheck
+  };
 };
