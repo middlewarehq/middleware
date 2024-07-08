@@ -25,7 +25,8 @@ import { useEasyState } from '@/hooks/useEasyState';
 import {
   useCurrentDateRangeReactNode,
   useSingleTeamConfig,
-  useStateBranchConfig
+  useStateBranchConfig,
+  useBranchesForPrFilters
 } from '@/hooks/useStateTeamConfig';
 import { fetchAllDeploymentsWithIncidents } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
@@ -56,7 +57,7 @@ export const AllIncidentsBody = () => {
   );
   const allPrs = useSelector((s) => s.doraMetrics.summary_prs);
   const revertedPrs = useSelector((s) => s.doraMetrics.revert_prs);
-
+  const branchPayloadForPrFilters = useBranchesForPrFilters();
   const selectedDeploymentId = useEasyState<ID>(null);
   const setSelectedDeploymentId = useCallback(
     (selectedDeployment: DeploymentWithIncidents) => {
@@ -85,19 +86,17 @@ export const AllIncidentsBody = () => {
         team_id: singleTeamId,
         from_date: dates.start,
         to_date: dates.end,
-        branches,
-        repo_filters: singleTeamProdBranchesConfig,
-        org_id: orgId
+        org_id: orgId,
+        ...branchPayloadForPrFilters
       })
     );
   }, [
-    branches,
+    branchPayloadForPrFilters,
     dates.end,
     dates.start,
     dispatch,
     orgId,
-    singleTeamId,
-    singleTeamProdBranchesConfig
+    singleTeamId
   ]);
 
   useEffect(() => {
