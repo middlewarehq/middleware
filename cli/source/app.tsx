@@ -164,12 +164,15 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
-    if (Object.values(preCheck).includes(PreCheckStates.FAILED)) {
-      handleExit();
+    // Check if all processes have finished running
+    if (Object.values(preCheck).every((item) => (item !== PreCheckStates.RUNNING))) {
+      if(Object.values(preCheck).includes(PreCheckStates.FAILED)){
+        handleExit();
+        return;
+      }
+    } else if(Object.values(preCheck).includes(PreCheckStates.RUNNING)){
       return;
     }
-
-    if (Object.values(preCheck).includes(PreCheckStates.RUNNING)) return;
 
     dispatch(appSlice.actions.setAppState(AppStates.INIT));
     runCommand('docker', ['compose', 'down'], runCommandOpts)
