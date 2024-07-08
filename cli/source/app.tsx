@@ -10,6 +10,7 @@ import {
   AppStates,
   ErrorCodes,
   LogSource,
+  PreCheckProperties,
   PreCheckStates,
   READY_MESSAGES,
   terminatedText
@@ -316,7 +317,7 @@ const CliUi = () => {
     property
   }: {
     value: PreCheckStates;
-    property: string;
+    property: PreCheckProperties;
   }) => {
     return (
       <Text>
@@ -326,8 +327,8 @@ const CliUi = () => {
           <Text color="green">✓</Text>
         ) : (
           <Text color="red">x</Text>
-        )}{' '}
-        Checking {property}
+        )}
+        {' '} Checking {property}
       </Text>
     );
   };
@@ -361,19 +362,19 @@ const CliUi = () => {
                     </Text>
                     <PreCheckDisplayElement
                       value={preCheck.daemon}
-                      property="daemon"
+                      property={PreCheckProperties.DAEMON}
                     />
                     <PreCheckDisplayElement
                       value={preCheck.ports}
-                      property="ports"
+                      property={PreCheckProperties.PORTS}
                     />
                     <PreCheckDisplayElement
                       value={preCheck.composeFile}
-                      property="compose file"
+                      property={PreCheckProperties.COMPOSE_FILE}
                     />
                     <PreCheckDisplayElement
                       value={preCheck.dockerFile}
-                      property="docker file"
+                      property={PreCheckProperties.DOCKER_FILE}
                     />
                   </Box>
                 );
