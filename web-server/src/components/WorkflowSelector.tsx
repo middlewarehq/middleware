@@ -125,7 +125,12 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
             'aria-labelledby': 'simple-menu',
             disablePadding: true,
             sx: {
-              padding: 0
+              padding: 0,
+              maxHeight: '350px',
+              overflowY: 'auto',
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none',
+              '&::-webkit-scrollbar': { display: 'none' }
             }
           }
         }}
