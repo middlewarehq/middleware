@@ -50,10 +50,10 @@ export const usePreCheck = ({
     } else {
       const db_check = await isFreePort(db);
       const redis_check = await isFreePort(redis);
-      const fe_check = await isFreePort(frontend);
-      const ss_check = await isFreePort(sync_server);
-      const as_check = await isFreePort(analytics_server);
-      if (!db_check || !redis_check || !fe_check || !ss_check || !as_check) {
+      const frontend_check = await isFreePort(frontend);
+      const sync_server_check = await isFreePort(sync_server);
+      const analytics_server_check = await isFreePort(analytics_server);
+      if (!db_check || !redis_check || !frontend_check || !sync_server_check || !analytics_server_check) {
         setPorts(PreCheckStates.FAILED);
       } else {
         setPorts(PreCheckStates.SUCCESS);
