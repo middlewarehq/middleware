@@ -165,12 +165,14 @@ const CliUi = () => {
 
   useEffect(() => {
     // Check if all processes have finished running
-    if (Object.values(preCheck).every((item) => (item !== PreCheckStates.RUNNING))) {
-      if(Object.values(preCheck).includes(PreCheckStates.FAILED)){
+    if (
+      Object.values(preCheck).every((item) => item !== PreCheckStates.RUNNING)
+    ) {
+      if (Object.values(preCheck).includes(PreCheckStates.FAILED)) {
         handleExit();
         return;
       }
-    } else if(Object.values(preCheck).includes(PreCheckStates.RUNNING)){
+    } else if (Object.values(preCheck).includes(PreCheckStates.RUNNING)) {
       return;
     }
 
@@ -332,8 +334,8 @@ const CliUi = () => {
           <Text color="green">✓</Text>
         ) : (
           <Text color="red">x</Text>
-        )}
-        {' '} Checking {property}
+        )}{' '}
+        Checking {property}
       </Text>
     );
   };
@@ -361,7 +363,16 @@ const CliUi = () => {
                   <Box flexDirection="column">
                     <Text color="blue">
                       Status: Running prerequisites check... [Press X to abort]{' '}
-                      <Text bold color={Object.values(preCheck).includes(PreCheckStates.FAILED) ? "red" : "green"}>
+                      <Text
+                        bold
+                        color={
+                          Object.values(preCheck).includes(
+                            PreCheckStates.FAILED
+                          )
+                            ? 'red'
+                            : 'green'
+                        }
+                      >
                         <Spinner type="material" />
                       </Text>
                     </Text>
