@@ -164,16 +164,15 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
-    // Check if all processes have finished running
     if (
-      Object.values(preCheck).every((item) => item !== PreCheckStates.RUNNING)
+      !Object.values(preCheck).every((item) => item !== PreCheckStates.RUNNING)
     ) {
+      return;
+    } else {
       if (Object.values(preCheck).includes(PreCheckStates.FAILED)) {
         handleExit();
         return;
       }
-    } else if (Object.values(preCheck).includes(PreCheckStates.RUNNING)) {
-      return;
     }
 
     dispatch(appSlice.actions.setAppState(AppStates.INIT));
