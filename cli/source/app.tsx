@@ -164,9 +164,7 @@ const CliUi = () => {
   }, [handleVersionUpdates]);
 
   useEffect(() => {
-    if (
-      !Object.values(preCheck).every((item) => item !== PreCheckStates.RUNNING)
-    ) {
+    if (Object.values(preCheck).includes(PreCheckStates.RUNNING)) {
       return;
     } else {
       if (Object.values(preCheck).includes(PreCheckStates.FAILED)) {
