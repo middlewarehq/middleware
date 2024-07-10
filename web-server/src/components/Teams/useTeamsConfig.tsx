@@ -16,6 +16,7 @@ import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { updateTeamBranchesMap } from '@/slices/app';
+import { fetchCurrentOrg } from '@/slices/auth';
 import { fetchTeams, createTeam, updateTeam } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { Team } from '@/types/api/teams';
@@ -92,7 +93,9 @@ export const TeamsCRUDProvider: React.FC<{
   );
 
   const fetchTeamsAndRepos = useCallback(() => {
-    return dispatch(
+    // refetch session to update the  onboarding state of org
+    dispatch(fetchCurrentOrg());
+    dispatch(
       fetchTeams({
         org_id: orgId,
         provider: Integration.GITHUB
