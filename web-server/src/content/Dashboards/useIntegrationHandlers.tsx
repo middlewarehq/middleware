@@ -152,6 +152,7 @@ const ConfigureGithubModalBody: FC<{
               handleChange(e.currentTarget.value);
             }}
             label="Github Personal Access Token"
+            type="password"
           />
           <Line error tiny mt={1}>
             {showError.value}
