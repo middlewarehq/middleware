@@ -411,14 +411,7 @@ const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
   );
 
   return (
-    <FlexBox
-      alignCenter
-      margin="auto"
-      gap={1}
-      width="100%"
-      flexWrap="wrap"
-      maxWidth="60px"
-    >
+    <FlexBox alignCenter gap={1} width="100%" flexWrap="wrap" maxWidth="60px">
       {sortedReviewers.map((reviewer) => (
         <FlexBox
           title={
