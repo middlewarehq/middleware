@@ -79,13 +79,13 @@ export const useLogsFromAllSources = () => {
         newLogs.push(...syncLogsRef.current.slice(-HIST_LIMIT));
         break;
       case LogSource.Postgres:
-        newLogs.push(...redisLogsRef.current.slice(-HIST_LIMIT));
+        newLogs.push(...pgLogsRef.current.slice(-HIST_LIMIT));
         break;
       case LogSource.InitDb:
         newLogs.push(...initDbLogsRef.current.slice(-HIST_LIMIT));
         break;
       case LogSource.Redis:
-        newLogs.push(...pgLogsRef.current.slice(-HIST_LIMIT));
+        newLogs.push(...redisLogsRef.current.slice(-HIST_LIMIT));
         break;
       case LogSource.Cron:
         newLogs.push(...cronLogsRef.current.slice(-HIST_LIMIT));
