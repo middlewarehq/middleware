@@ -1,4 +1,4 @@
-import { lighten, rgbToHex } from '@mui/material';
+import { darken, lighten, rgbToHex } from '@mui/material';
 import { useMemo } from 'react';
 
 import { useSelector } from '@/store';
@@ -102,8 +102,8 @@ export const useDoraMetricsGraph = () => {
   const trendsSeriesMap = useMemo(
     () => ({
       firstCommitToPrTrends: {
-        id: `First Commit to Pr Time`,
-        color: rgbToHex(lighten(brandColors.ticketState.todo, 0.5)),
+        id: `First Commit to PR Time`,
+        color: rgbToHex(darken(brandColors.ticketState.todo, 0.2)),
         data: firstCommitToOpenTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
           y: point.y || 0
@@ -111,7 +111,7 @@ export const useDoraMetricsGraph = () => {
       },
       firstResponseTimeTrends: {
         id: `First Response Time`,
-        color: rgbToHex(lighten(brandColors.pr.firstResponseTime, 0.5)),
+        color: rgbToHex(lighten(brandColors.pr.firstResponseTime, 0.1)),
         data: firstResponseTimeTrendsData.map((point, index) => ({
           x: yAxisLabels[index],
           y: point.y || 0

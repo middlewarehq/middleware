@@ -287,44 +287,29 @@ export const PullRequestsTable: FC<
                   )}
                   {enabledColumnsSet.has('author') && (
                     <TableCell sx={{ p: CELL_PAD }}>
-                      <LightTooltip
-                        arrow
-                        title={
-                          <Box>
-                            <Box>{`@${pr.author.username}`}</Box>
-                          </Box>
-                        }
+                      <FlexBox
+                        component={Link}
+                        href={getGHAvatar(pr.author.username)}
+                        target="_blank"
+                        fontWeight={500}
+                        alignCenter
                       >
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          gap={1}
-                          width="100%"
-                        >
-                          <Box
-                            component={Link}
-                            href={getGHAvatar(pr.author.username)}
-                            target="_blank"
-                            fontWeight={500}
-                            display="flex"
-                            alignItems="center"
-                          >
-                            <Avatar
-                              {...stringAvatar(
-                                (
-                                  pr.author.linked_user?.name ||
-                                  pr.author.username
-                                ).toUpperCase(),
-                                {
-                                  size: '2.4em',
-                                  boxShadow: `0 0 0 2px ${theme.colors.info.main}`
-                                }
-                              )}
-                              src={getGHAvatar(pr.author.username)}
-                            />
-                          </Box>
-                        </Box>
-                      </LightTooltip>
+                        <FlexBox title={`@${pr.author.username}`}>
+                          <Avatar
+                            {...stringAvatar(
+                              (
+                                pr.author.linked_user?.name ||
+                                pr.author.username
+                              ).toUpperCase(),
+                              {
+                                size: '2.4em',
+                                boxShadow: `0 0 0 2px ${theme.colors.info.main}`
+                              }
+                            )}
+                            src={getGHAvatar(pr.author.username)}
+                          />
+                        </FlexBox>
+                      </FlexBox>
                     </TableCell>
                   )}
                   {enabledColumnsSet.has('reviewers') && (
@@ -421,17 +406,12 @@ export const PullRequestsTable: FC<
 
 const PrReviewersCell: FC<{ pr: PR }> = ({ pr }) => {
   const theme = useTheme();
-  const sortedReviewers = [...pr.reviewers].sort((a, b) => a.username.localeCompare(b.username));
+  const sortedReviewers = [...pr.reviewers].sort((a, b) =>
+    a.username.localeCompare(b.username)
+  );
 
   return (
-    <FlexBox
-      alignCenter
-      margin="auto"
-      gap={1}
-      width="100%"
-      flexWrap="wrap"
-      maxWidth="60px"
-    >
+    <FlexBox alignCenter gap={1} width="100%" flexWrap="wrap" maxWidth="60px">
       {sortedReviewers.map((reviewer) => (
         <FlexBox
           title={
