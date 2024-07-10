@@ -102,6 +102,11 @@ They are:
    docker rm -f middleware
    ```
 
+4. If you wish to delete all the data saved in the container, you can delete the volumes created by running the following command:
+   ```bash
+   docker volume rm middleware_postgres_data middleware_keys
+   ```
+
 
 ## 👩‍💻 Developer Setup
 
