@@ -18,7 +18,6 @@ type ProjectVersionInfo = {
 };
 
 type CheckNewVersionResponse = {
-  latest_github_commit: string;
   latest_docker_image: string;
   github_repo: string;
   current_github_commit: string;
@@ -153,7 +152,6 @@ async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
   const githubRepLink = `https://github.com/${githubOrgName}/${githubRepoName}`;
 
   return {
-    latest_github_commit: githubLatestCommit.sha,
     latest_docker_image: latestDockerImageLink,
     github_repo: githubRepLink,
     current_github_commit: versionInfo.merge_commit_sha,
