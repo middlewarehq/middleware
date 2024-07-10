@@ -118,7 +118,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
   const updatedOnboardingState = Array.from(
     new Set(onboardingState.onboarding_state).add(OnboardingStep.TEAM_CREATED)
   );
-  const teamRepos = await handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
+  await handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(
     `/teams/${team.id}/repos`,
     {
       method: 'PUT',
@@ -126,14 +126,18 @@ endpoint.handle.POST(postSchema, async (req, res) => {
         repos: orgReposList
       }
     }
-  ).then((repos) => repos.map((r) => ({ ...r, team_id: team.id })));
-
+  );
+  await updateReposWorkflows(org_id, provider as Integration, orgReposList);
+  const reposWithWorkflows = await getSelectedReposForOrg(
+    org_id,
+    provider as Integration
+  );
   updateOnBoardingState(org_id, updatedOnboardingState);
   syncReposForOrg();
 
   res.send({
     team,
-    teamReposMap: ramdaGroupBy(prop('team_id'), teamRepos)
+    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows)
   });
 });
 
@@ -154,21 +158,24 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
     });
   }, org_repos);
 
-  const [team, teamRepos] = await Promise.all([
+  const [team] = await Promise.all([
     updateTeam(id, name, []),
     handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(`/teams/${id}/repos`, {
       method: 'PUT',
       data: {
         repos: orgReposList
       }
-    }).then((repos) => repos.map((r) => ({ ...r, team_id: id }))),
-    updateReposWorkflows(org_id, provider as Integration, orgReposList)
+    }).then((repos) => repos.map((r) => ({ ...r, team_id: id })))
   ]);
-
+  await updateReposWorkflows(org_id, provider as Integration, orgReposList);
+  const reposWithWorkflows = await getSelectedReposForOrg(
+    org_id,
+    provider as Integration
+  );
   syncReposForOrg();
   res.send({
     team,
-    teamReposMap: ramdaGroupBy(prop('team_id'), teamRepos)
+    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows)
   });
 });
 
