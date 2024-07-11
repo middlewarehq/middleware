@@ -41,27 +41,13 @@ export const usePreCheck = ({
 
   const callPortsCheck = useCallback(async () => {
     // For ports
-    if (
-      isNaN(db) ||
-      isNaN(redis) ||
-      isNaN(frontend) ||
-      isNaN(sync_server) ||
-      isNaN(analytics_server)
-    ) {
+    const ports_array = [db, redis, frontend, sync_server, analytics_server];
+    if (ports_array.some((port) => isNaN(port))) {
       setPorts(PreCheckStates.FAILED);
     } else {
-      const db_check = await isFreePort(db);
-      const redis_check = await isFreePort(redis);
-      const frontend_check = await isFreePort(frontend);
-      const sync_server_check = await isFreePort(sync_server);
-      const analytics_server_check = await isFreePort(analytics_server);
-      if (
-        !db_check ||
-        !redis_check ||
-        !frontend_check ||
-        !sync_server_check ||
-        !analytics_server_check
-      ) {
+      const portPromises = ports_array.map(isFreePort);
+      const checks = await Promise.allSettled(portPromises);
+      if (checks.some((item) => item.status === 'rejected')) {
         setPorts(PreCheckStates.FAILED);
       } else {
         setPorts(PreCheckStates.SUCCESS);
