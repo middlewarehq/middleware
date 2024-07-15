@@ -15,11 +15,45 @@ on:
 
 env:
   REGISTRY_IMAGE: middlewareeng/middleware
+  AWS_REGION: ap-south-1
+  RUNNER_SUBNET: subnet-05eb3ca8a4876820c
+  RUNNER_SG: sg-0805fa13c0f7f6e2c
 
 jobs:
 
+  start-runner-arm:
+    name: Start self-hosted ARM EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Start EC2 runner arm
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-0320ed14e1a3a07f0
+          ec2-instance-type: t4g.medium
+          subnet-id: ${{ env.RUNNER_SUBNET }}
+          security-group-id: ${{ env.RUNNER_SG }}
+          aws-resource-tags: >
+            [
+              {"Key": "Name", "Value": "ec2-github-runner-arm"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+            ]
+
   build:
     name: Build and Push Docker Image
+    needs: start-runner-arm
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -27,7 +61,7 @@ jobs:
           - platform: linux/amd64
             runner: ubuntu-latest
           - platform: linux/arm64
-            runner: self-hosted-arm-64
+            runner: ${{ needs.start-runner-arm.outputs.label }}
 
     steps:
       - name: Prepare
@@ -149,4 +183,27 @@ jobs:
 
       - name: Inspect image
         run: docker buildx imagetools inspect $(echo "${{ env.DOCKER_TAG }}" | sed 's/-t //g')
+
+  stop-runner-arm:
+    name: Stop self-hosted EC2 arm runner
+    needs:
+      - start-runner-arm 
+      - build
+      - merge
+    runs-on: ubuntu-latest
+    if: ${{ always() }} 
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner-arm.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner-arm.outputs.ec2-instance-id }}
 
