@@ -16,7 +16,7 @@ on:
 env:
   REGISTRY_IMAGE: middlewareeng/middleware
   AWS_REGION: ap-south-1
-  RUNNER_SUBNET: subnet-05eb3ca8a4876820c
+  RUNNER_SUBNET: subnet-0551adcc31939391b
   RUNNER_SG: sg-0805fa13c0f7f6e2c
 
 jobs:
@@ -41,13 +41,13 @@ jobs:
         with:
           mode: start
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          ec2-image-id: ami-0320ed14e1a3a07f0
+          ec2-image-id: ami-07c3226e40486ca7f
           ec2-instance-type: t4g.medium
           subnet-id: ${{ env.RUNNER_SUBNET }}
           security-group-id: ${{ env.RUNNER_SG }}
           aws-resource-tags: >
             [
-              {"Key": "Name", "Value": "ec2-github-runner-arm"},
+              {"Key": "Name", "Value": "ec2-github-runner-arm64"},
               {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
             ]
 
