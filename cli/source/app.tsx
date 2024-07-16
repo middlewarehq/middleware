@@ -318,24 +318,34 @@ const CliUi = () => {
 
   const PreCheckDisplayElement = ({
     value,
-    property
+    property,
+    errHelp
   }: {
     value: PreCheckStates;
     property: PreCheckProperties;
+    errHelp: String;
   }) => {
     return (
-      <Text>
-        {value === PreCheckStates.RUNNING ? (
-          <Spinner type="dots" />
-        ) : value === PreCheckStates.SUCCESS ? (
-          <Text color="green">✓</Text>
+      <>
+        <Text>
+          {value === PreCheckStates.RUNNING ? (
+            <Spinner type="dots" />
+          ) : value === PreCheckStates.SUCCESS ? (
+            <Text color="green">✓</Text>
+          ) : (
+            <Text color="red">x</Text>
+          )}{' '}
+          Checking {property}
+        </Text>
+        {value === PreCheckStates.FAILED ? (
+          <Text color="redBright">{errHelp}</Text>
         ) : (
-          <Text color="red">x</Text>
-        )}{' '}
-        Checking {property}
-      </Text>
+          ''
+        )}
+      </>
     );
   };
+
   return (
     <>
       <Static items={logsStreamNodes} style={{ flexDirection: 'column' }}>
@@ -364,10 +374,14 @@ const CliUi = () => {
                         bold
                         color={
                           Object.values(preCheck).includes(
-                            PreCheckStates.FAILED
+                            PreCheckStates.RUNNING
                           )
-                            ? 'red'
-                            : 'green'
+                            ? 'yellow'
+                            : Object.values(preCheck).includes(
+                                  PreCheckStates.FAILED
+                                )
+                              ? 'red'
+                              : 'green'
                         }
                       >
                         <Spinner type="material" />
@@ -376,18 +390,30 @@ const CliUi = () => {
                     <PreCheckDisplayElement
                       value={preCheck.daemon}
                       property={PreCheckProperties.DAEMON}
+                      errHelp={
+                        'Docker daemon is not running, please ensure it is running. To check if your docker daemon is running, use the command: \ndocker info'
+                      }
                     />
                     <PreCheckDisplayElement
                       value={preCheck.ports}
                       property={PreCheckProperties.PORTS}
+                      errHelp={
+                        'One of the ports is not free. Please ensure that all the specified ports in dockerfile.dev are free.'
+                      }
                     />
                     <PreCheckDisplayElement
                       value={preCheck.composeFile}
                       property={PreCheckProperties.COMPOSE_FILE}
+                      errHelp={
+                        'docker-compose.yml not found in the root directory. Please ensure that the file exists with the given name.'
+                      }
                     />
                     <PreCheckDisplayElement
                       value={preCheck.dockerFile}
                       property={PreCheckProperties.DOCKER_FILE}
+                      errHelp={
+                        'Dockerfile.dev not found in the root directory. Please ensure that the file exists with the given name.'
+                      }
                     />
                   </Box>
                 );
