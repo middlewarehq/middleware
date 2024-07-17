@@ -122,7 +122,7 @@ const CliUi = () => {
 
   useInput((input) => {
     if (appState === AppStates.DOCKER_READY) {
-      dispatch(appSlice.actions.setLogSource([]));
+      dispatch(appSlice.actions.setLogsStream([]));
       if (input === 'q') {
         dispatch(appSlice.actions.setLogSource(LogSource.WebServer));
       } else if (input === 'w') {
