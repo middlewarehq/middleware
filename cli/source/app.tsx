@@ -346,6 +346,13 @@ const CliUi = () => {
     );
   };
 
+  const preCheckFailed: boolean = useMemo(
+    () =>
+      !Object.values(preCheck).includes(PreCheckStates.RUNNING) &&
+      Object.values(preCheck).includes(PreCheckStates.FAILED),
+    [preCheck]
+  );
+
   return (
     <>
       <Static items={logsStreamNodes} style={{ flexDirection: 'column' }}>
@@ -368,8 +375,10 @@ const CliUi = () => {
               case AppStates.PREREQ_CHECK:
                 return (
                   <Box flexDirection="column">
-                    <Text color="blue">
-                      Status: Running prerequisites check... [Press X to abort]{' '}
+                    <Text color={preCheckFailed ? 'red' : 'blue'}>
+                      {preCheckFailed
+                        ? 'Status: Preqrequisites check has failed '
+                        : 'Status: Running prerequisites check... [Press X to abort] '}
                       <Text
                         bold
                         color={
