@@ -47,7 +47,11 @@ export const usePreCheck = ({
     } else {
       const portPromises = ports_array.map(isFreePort);
       const checks = await Promise.allSettled(portPromises);
-      if (checks.some((item) => item.status === 'rejected')) {
+      if (
+        checks.some(
+          (item) => item.status === 'rejected' || item.value === false
+        )
+      ) {
         setPorts(PreCheckStates.FAILED);
       } else {
         setPorts(PreCheckStates.SUCCESS);
