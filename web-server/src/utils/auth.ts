@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isNil, reject } from 'ramda';
 
 import { Integration } from '@/constants/integrations';
 
@@ -11,12 +12,17 @@ export const unlinkProvider = async (orgId: string, provider: Integration) => {
 export const linkProvider = async (
   stuff: string,
   orgId: string,
-  provider: Integration
+  provider: Integration,
+  meta?: Record<string, any>
 ) => {
-  return await axios.post(`/api/resources/orgs/${orgId}/integration`, {
-    provider,
-    the_good_stuff: stuff
-  });
+  return await axios.post(
+    `/api/resources/orgs/${orgId}/integration`,
+    reject(isNil, {
+      provider,
+      the_good_stuff: stuff,
+      meta_data: meta
+    })
+  );
 };
 
 // GitHub functions
