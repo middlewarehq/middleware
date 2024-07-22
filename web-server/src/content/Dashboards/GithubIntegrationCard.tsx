@@ -8,7 +8,7 @@ import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import { FetchState } from '@/constants/ui-states';
-import { integrationsDisplay } from '@/content/Dashboards/githubIntegration';
+import { githubIntegrationsDisplay } from '@/content/Dashboards/githubIntegration';
 import { useIntegrationHandlers } from '@/content/Dashboards/useIntegrationHandlers';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';
@@ -55,7 +55,7 @@ export const GithubIntegrationCard = () => {
       <FlexBox
         p={`${cardBorder}px`}
         corner={getRadiusWithPadding(cardRadius, cardBorder)}
-        sx={{ background: integrationsDisplay.bg }}
+        sx={{ background: githubIntegrationsDisplay.bg }}
         relative
         overflow={'unset'}
       >
@@ -73,14 +73,14 @@ export const GithubIntegrationCard = () => {
             fill
             top={0}
             left={0}
-            sx={{ opacity: 0.2, background: integrationsDisplay.bg }}
+            sx={{ opacity: 0.2, background: githubIntegrationsDisplay.bg }}
           />
           <FlexBox alignCenter gap1 fit>
-            <FlexBox fit color={integrationsDisplay.color}>
-              {integrationsDisplay.icon}
+            <FlexBox fit color={githubIntegrationsDisplay.color}>
+              {githubIntegrationsDisplay.icon}
             </FlexBox>
             <Line big medium white>
-              {integrationsDisplay.name}
+              {githubIntegrationsDisplay.name}
             </Line>
           </FlexBox>
           <FlexBox alignCenter gap1 mt="auto">
@@ -90,7 +90,7 @@ export const GithubIntegrationCard = () => {
                   isGithubIntegrated
                     ? 'INTEGRATION_UNLINK_TRIGGERED'
                     : 'INTEGRATION_LINK_TRIGGERED',
-                  { integration_name: integrationsDisplay.name }
+                  { integration_name: githubIntegrationsDisplay.name }
                 );
                 if (!isGithubIntegrated) {
                   link.github();
@@ -162,7 +162,7 @@ const IntegrationActionsButton: FC<{
       sx={{
         p: '1px',
         minWidth: 0,
-        background: integrationsDisplay.bg,
+        background: githubIntegrationsDisplay.bg,
         position: 'relative',
         borderRadius: getRadiusWithPadding(6, 1),
         fontSize: '0.9em'
@@ -176,7 +176,7 @@ const IntegrationActionsButton: FC<{
         left={0}
         sx={{
           opacity: bgOpacity,
-          background: integrationsDisplay.bg,
+          background: githubIntegrationsDisplay.bg,
           transition: 'all 0.2s',
           ':hover': {
             opacity: bgOpacity * 0.6

@@ -10,7 +10,7 @@ import { Line } from '@/components/Text';
 import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
-import { GithubIntegrationCard } from '@/content/Dashboards/IntegrationCards';
+import { GithubIntegrationCard } from '@/content/Dashboards/GithubIntegrationCard';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
@@ -186,7 +186,7 @@ const Content = () => {
         </FlexBox>
       )}
 
-      <FlexBox>
+      <FlexBox gap={2}>
         <GithubIntegrationCard />
       </FlexBox>
       {showCreationCTA && (
