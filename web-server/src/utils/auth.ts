@@ -19,6 +19,8 @@ export const linkProvider = async (
   });
 };
 
+// GitHub functions
+
 export async function checkGitHubValidity(
   good_stuff: string
 ): Promise<boolean> {
@@ -51,4 +53,29 @@ export const getMissingPATScopes = async (pat: string) => {
   } catch (error) {
     throw new Error('Failed to get missing PAT scopes', error);
   }
+};
+
+// Gitlab functions
+
+export const checkGitLabValidity = async (accessToken: string) => {
+  const url = 'https://gitlab.com/api/v4/personal_access_tokens/self';
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'PRIVATE-TOKEN': accessToken
+      }
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error('Invalid access token', error);
+  }
+};
+
+const GITLAB_SCOPES = ['api', 'read_api', 'read_user'];
+
+export const getMissingGitLabScopes = (scopes: string[]): string[] => {
+  const missingScopes = GITLAB_SCOPES.filter(
+    (scope) => !scopes.includes(scope)
+  );
+  return missingScopes;
 };
