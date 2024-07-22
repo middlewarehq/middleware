@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { Integration } from '@/constants/integrations';
+import { ConfigureGitlabModalBody } from '@/content/Dashboards/ConfigureGitlabModalBody';
 import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { unlinkProvider } from '@/utils/auth';
@@ -20,10 +21,17 @@ export const useIntegrationHandlers = () => {
             title: 'Configure Github',
             body: <ConfigureGithubModalBody onClose={closeAllModals} />,
             showCloseIcon: true
+          }),
+        gitlab: () =>
+          addModal({
+            title: 'Configure Gitlab',
+            body: <ConfigureGitlabModalBody onClose={closeAllModals} />,
+            showCloseIcon: true
           })
       },
       unlink: {
-        github: () => unlinkProvider(orgId, Integration.GITHUB)
+        github: () => unlinkProvider(orgId, Integration.GITHUB),
+        gitlab: () => unlinkProvider(orgId, Integration.GITLAB)
       }
     };
 
