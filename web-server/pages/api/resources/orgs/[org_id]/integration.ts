@@ -15,7 +15,8 @@ const deleteSchema = yup.object().shape({
 
 const postSchema = yup.object().shape({
   the_good_stuff: yup.string().required(),
-  provider: yup.string().oneOf(Object.values(Integration)).required()
+  provider: yup.string().oneOf(Object.values(Integration)).required(),
+  meta_data: yup.object().optional()
 });
 
 const endpoint = new Endpoint(pathnameSchema);
@@ -55,14 +56,15 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     return res.send({ status: 'OK' });
   }
 
-  const { org_id, provider, the_good_stuff } = req.payload;
+  const { org_id, provider, the_good_stuff, meta_data } = req.payload;
 
   await db('Integration')
     .insert({
       access_token_enc_chunks: enc(the_good_stuff),
       updated_at: new Date(),
       name: provider,
-      org_id
+      org_id,
+      provider_meta: meta_data
     })
     .onConflict(INTEGRATION_CONFLICT_COLUMNS)
     .merge();
