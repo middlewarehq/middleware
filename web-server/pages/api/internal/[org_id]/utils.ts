@@ -200,15 +200,3 @@ export const searchGitlabRepos = async (
       }) as BaseRepo
   );
 };
-
-// Usage example
-const accessToken = '<your_access_token>';
-const searchQuery = 'example';
-
-searchGitlabRepos(accessToken, searchQuery)
-  .then((data) => {
-    console.log('GitLab Repositories:', data);
-  })
-  .catch((error) => {
-    console.error('Error:', error);
-  });
