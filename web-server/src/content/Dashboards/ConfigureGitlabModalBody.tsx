@@ -23,31 +23,61 @@ export const ConfigureGitlabModalBody: FC<{
   onClose: () => void;
 }> = ({ onClose }) => {
   const token = useEasyState('');
+  const customDomain = useEasyState('');
   const { orgId } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const isLoading = useBoolState();
 
-  const showError = useEasyState<string>('');
+  const showScopeError = useEasyState<string>('');
+  const showDomainError = useEasyState<string>('');
 
-  const setError = useCallback(
+  const setScopeError = useCallback(
     (error: string) => {
-      console.error(error);
-      depFn(showError.set, error);
+      depFn(showScopeError.set, error);
     },
-    [showError.set]
+    [showScopeError.set]
   );
 
-  const handleChange = (e: string) => {
+  const setDomainError = useCallback(
+    (error: string) => {
+      depFn(showDomainError.set, error);
+    },
+    [showDomainError.set]
+  );
+
+  const checkDomainWithRegex = (domain: string) => {
+    const regex =
+      /^(https:\/\/)?[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(\/.*)?$/;
+    return regex.test(domain);
+  };
+
+  const handleTokenChange = (e: string) => {
     token.set(e);
-    showError.set('');
+    showScopeError.set('');
+  };
+
+  const handleDomainChange = (e: string) => {
+    customDomain.set(e);
+    showDomainError.set('');
   };
 
   const handleSubmission = useCallback(async () => {
-    if (!token.value) {
-      setError('Please enter a valid token');
+    try {
+      if (!token.value) {
+        setScopeError('Please enter a valid token');
+        throw Error('Empty token');
+      }
+
+      if (customDomain.value && !checkDomainWithRegex(customDomain.value)) {
+        setDomainError('Please enter a valid domain');
+        throw Error('Invalid domain');
+      }
+    } catch (e) {
+      console.error(e);
       return;
     }
+
     depFn(isLoading.true);
     await checkGitLabValidity(token.value)
       .then(async (res) => {
@@ -86,25 +116,40 @@ export const ConfigureGitlabModalBody: FC<{
         onClose();
       })
       .catch((e) => {
-        setError(e.message);
+        setScopeError(e.message);
         console.error(`Error while linking token: ${e.message}`, e);
       })
       .finally(isLoading.false);
   }, [
+    customDomain.value,
     dispatch,
     enqueueSnackbar,
     isLoading.false,
     isLoading.true,
     onClose,
     orgId,
-    setError,
+    setDomainError,
+    setScopeError,
     token.value
   ]);
+
+  const isDomainInputFocus = useBoolState(false);
+
+  const focusDomainInput = useCallback(() => {
+    if (!customDomain.value)
+      document.getElementById('gitlab-custom-domain')?.focus();
+    else handleSubmission();
+  }, [customDomain.value, handleSubmission]);
 
   return (
     <FlexBox gap2>
       <FlexBox gap={2} minWidth={'400px'} col>
-        <FlexBox>Enter you Gitlab token below.</FlexBox>
+        <FlexBox>
+          Enter your Gitlab token below{' '}
+          <Line bigish ml={1 / 2} error>
+            *
+          </Line>
+        </FlexBox>
         <FlexBox fullWidth minHeight={'80px'} col>
           <TextField
             onKeyDown={(e) => {
@@ -112,21 +157,55 @@ export const ConfigureGitlabModalBody: FC<{
                 e.preventDefault();
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
-                handleSubmission();
+                focusDomainInput();
                 return;
               }
             }}
-            error={!!showError.value}
+            error={!!showScopeError.value}
             sx={{ width: '100%' }}
             value={token.value}
             onChange={(e) => {
-              handleChange(e.currentTarget.value);
+              handleTokenChange(e.currentTarget.value);
             }}
             label="Gitlab Personal Access Token"
             type="password"
           />
           <Line error tiny mt={1}>
-            {showError.value}
+            {showScopeError.value}
+          </Line>
+        </FlexBox>
+
+        <FlexBox fullWidth minHeight={'80px'} col>
+          <FlexBox gap2 col>
+            <FlexBox alignBase gap1>
+              Custom domain
+            </FlexBox>
+            <TextField
+              id="gitlab-custom-domain"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  handleSubmission();
+                  return;
+                }
+              }}
+              error={!!showDomainError.value}
+              sx={{ width: '100%' }}
+              value={customDomain.value}
+              onChange={(e) => handleDomainChange(e.currentTarget.value)}
+              label={
+                isDomainInputFocus.value || customDomain.value
+                  ? 'Custom Domain'
+                  : '(Optional)'
+              }
+              onFocus={isDomainInputFocus.true}
+              onBlur={isDomainInputFocus.false}
+            />
+          </FlexBox>
+          <Line error tiny mt={1} minHeight={'18px'}>
+            {showDomainError.value}
           </Line>
           <FlexBox>
             <Line tiny mt={1} primary sx={{ cursor: 'pointer' }}>
