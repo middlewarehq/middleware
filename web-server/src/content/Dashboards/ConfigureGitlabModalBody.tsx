@@ -265,34 +265,28 @@ const TokenPermissions = () => {
 
   const expandedStyles = useMemo(() => {
     const baseStyles = {
-      border: `2px solid ${alpha('rgb(256,0,0)', 0.4)}`,
+      border: `2px solid ${alpha('rgb(256,0,0)', 0.6)}`,
       transition: 'all 0.8s ease',
-      borderRadius: '12px',
+      borderRadius: '8px',
       opacity: 1,
-      width: '240px',
+      width: '126px',
       position: 'absolute',
       maxWidth: 'calc(100% - 48px)',
-      left: '24px'
+      left: '12px'
     };
 
     return [
       {
-        height: '170px',
-        top: '58px'
+        height: '32px',
+        top: '298px'
       },
       {
-        height: '42px',
-        top: '230px'
+        height: '32px',
+        top: '360px'
       },
       {
-        height: '120px',
-
-        top: '378px'
-      },
-      {
-        height: '120px',
-
-        top: '806px'
+        height: '32px',
+        top: '425px'
       }
     ].map((item) => ({ ...item, ...baseStyles }));
   }, []);
@@ -304,12 +298,12 @@ const TokenPermissions = () => {
           overflow: 'hidden',
           borderRadius: '12px',
           height: 'calc(100vh - 300px)',
-          maxHeight: '1257px',
+          maxHeight: '976px',
           overflowY: 'auto',
           transition: 'all 0.8s ease',
           position: 'relative',
           maxWidth: '100%',
-          background: '#0D1017'
+          background: '#FEFEFE'
         }}
       >
         <Image
@@ -319,9 +313,9 @@ const TokenPermissions = () => {
             transition: 'all 0.8s ease',
             opacity: !imageLoaded.value ? 0 : 1
           }}
-          src="/assets/PAT_permissions.png"
+          src="/assets/gitlabPAT.png"
           width={816}
-          height={1257}
+          height={976}
           alt="PAT_permissions"
         />
 
