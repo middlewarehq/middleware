@@ -1,8 +1,12 @@
 import * as yup from 'yup';
 
-import { searchGithubRepos } from '@/api/internal/[org_id]/utils';
+import {
+  searchGithubRepos,
+  searchGitlabRepos
+} from '@/api/internal/[org_id]/utils';
 import { Endpoint } from '@/api-helpers/global';
 import { Integration } from '@/constants/integrations';
+import { BaseRepo } from '@/types/resources';
 import { dec } from '@/utils/auth-supplementary';
 import { db, getFirstRow } from '@/utils/db';
 
@@ -25,10 +29,21 @@ const endpoint = new Endpoint(pathSchema);
 endpoint.handle.GET(getSchema, async (req, res) => {
   const { org_id, search_text } = req.payload;
 
-  const token = await getGithubToken(org_id);
-  const repos = await searchGithubRepos(token, search_text);
+  const [ghToken, glToken] = await Promise.all([
+    getGithubToken(org_id),
+    getGitlabToken(org_id)
+  ]);
 
-  return res.status(200).send(repos);
+  const [ghRepos, glRepos] = await Promise.all([
+    searchGithubRepos(ghToken, search_text).then((res) =>
+      addProvider(res, Integration.GITHUB)
+    ),
+    searchGitlabRepos(glToken, search_text).then((res) =>
+      addProvider(res, Integration.GITLAB)
+    )
+  ]);
+
+  return res.status(200).send([...ghRepos, ...glRepos]);
 });
 
 export default endpoint.serve();
@@ -44,3 +59,18 @@ const getGithubToken = async (org_id: ID) => {
     .then(getFirstRow)
     .then((r) => dec(r.access_token_enc_chunks));
 };
+
+const getGitlabToken = async (org_id: ID) => {
+  return await db('Integration')
+    .select()
+    .where({
+      org_id,
+      name: Integration.GITLAB
+    })
+    .returning('*')
+    .then(getFirstRow)
+    .then((r) => dec(r.access_token_enc_chunks));
+};
+
+const addProvider = (repo: BaseRepo[], provider: Integration) =>
+  repo.map((r) => ({ ...r, provider }));
