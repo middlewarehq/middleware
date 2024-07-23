@@ -92,7 +92,7 @@ export const ConfigureGitlabModalBody: FC<{
       .then(async () => {
         try {
           return await linkProvider(token.value, orgId, Integration.GITLAB, {
-            custom_domain: 'https://gitlab.middlewarehq.com'
+            custom_domain: customDomain.value
           });
         } catch (e: any) {
           throw new Error(
