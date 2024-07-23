@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 import { BaseRepo } from '@/types/resources';
 
 const GITHUB_API_URL = 'https://api.github.com/graphql';
@@ -93,3 +95,120 @@ export const searchGithubRepos = async (
       }) as BaseRepo
   );
 };
+
+// Gitlab functions
+
+// Define types for the response
+
+interface RepoNode {
+  id: string;
+  name: string;
+  webUrl: string;
+  description: string | null;
+  path: string;
+  group: {
+    fullName: string;
+  };
+  namespace: {
+    fullName: string;
+  };
+  nameWithNamespace: string;
+  languages: {
+    nodes: {
+      name: string;
+    }[];
+  };
+  repository: {
+    rootRef: string;
+  };
+}
+
+interface RepoResponse {
+  data: {
+    projects: {
+      nodes: RepoNode[];
+    };
+  };
+  errors?: { message: string }[];
+}
+
+const GITLAB_API_URL = 'https://gitlab.com/api/graphql';
+
+export const searchGitlabRepos = async (
+  pat: string,
+  searchString: string
+): Promise<BaseRepo[]> => {
+  const query = `
+  query($searchString: String!) {
+      projects(search: $searchString, first: 50) {
+          nodes {
+              id
+              group {
+                  fullName
+              }
+              namespace {
+                  fullName
+              }
+              name
+              nameWithNamespace
+              webUrl
+              description
+              path
+              languages {
+                  name
+              }
+              repository {
+                  rootRef
+              }
+          }
+      }
+  }
+`;
+
+  const response = await fetch(GITLAB_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${pat}`
+    },
+    body: JSON.stringify({ query, variables: { searchString } })
+  });
+
+  const responseBody = (await response.json()) as RepoResponse;
+
+  if (responseBody.errors) {
+    throw new Error(
+      `GitLab API error: ${responseBody.errors
+        .map((e) => e.message)
+        .join(', ')}`
+    );
+  }
+
+  const repositories = responseBody.data.projects.nodes;
+
+  return repositories.map(
+    (repo) =>
+      ({
+        id: repo.id,
+        name: repo.name,
+        desc: repo.description,
+        slug: repo.path,
+        web_url: repo.webUrl,
+        branch: repo.repository?.rootRef || null,
+        // TODO: fix this
+        parent: repo.nameWithNamespace.split(' / ')[0]
+      }) as BaseRepo
+  );
+};
+
+// Usage example
+const accessToken = '<your_access_token>';
+const searchQuery = 'example';
+
+searchGitlabRepos(accessToken, searchQuery)
+  .then((data) => {
+    console.log('GitLab Repositories:', data);
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+  });
