@@ -38,6 +38,11 @@ class MergeToDeployBrokerUtils:
                 repo_id=repo_id, bookmark=min_merged_time.isoformat()
             )
 
+        merge_to_deploy_broker_bookmark.bookmark = min(
+            datetime.fromisoformat(merge_to_deploy_broker_bookmark.bookmark),
+            min_merged_time,
+        )
+
         self.code_repo_service.update_merge_to_deploy_broker_bookmark(
             merge_to_deploy_broker_bookmark
         )
