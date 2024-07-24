@@ -14,7 +14,7 @@
 <img src="https://img.shields.io/github/stars/middlewarehq/middleware?style=for-the-badge" alt="Stars" />
 </p>
 
-<p align="center"><a href="https://join.slack.com/t/middle-out-group/shared_invite/zt-2gprfu1g3-MenEylfKe8FrmWde4TwfIg">Join our Engineering Leaders Community</a></p>
+<p align="center"><a href="https://mhq.link/oss-community">Join our Engineering Leaders Community</a></p>
 
 ![Middleware Opensource](https://github.com/middlewarehq/middleware/blob/main/media_files/banner.gif)
 
