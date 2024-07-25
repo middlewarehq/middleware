@@ -1,4 +1,4 @@
-import { Close } from '@mui/icons-material';
+import { Close, GitHub } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoIcon from '@mui/icons-material/Info';
 import {
@@ -14,7 +14,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  Tooltip,
   TableContainer,
   useTheme,
   InputLabel,
@@ -22,14 +21,16 @@ import {
   OutlinedInput
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { FC } from 'react';
+import { FC, useCallback } from 'react';
 
 import {
   useTeamCRUD,
   TeamsCRUDProvider
 } from '@/components/Teams/useTeamsConfig';
 import { DeploymentWorkflowSelector } from '@/components/WorkflowSelector';
+import { Integration } from '@/constants/integrations';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import GitlabIcon from '@/mocks/icons/gitlab.svg';
 import { BaseRepo, DeploymentSources } from '@/types/resources';
 
 import AnimatedInputWrapper from '../AnimatedInputWrapper/AnimatedInputWrapper';
@@ -43,6 +44,7 @@ export type CRUDProps = {
 };
 
 const MAX_LENGTH_REPO_NAME = 25;
+const MAX_LENGTH_PARENT_NAME = 25;
 
 export const CreateEditTeams: FC<CRUDProps> = ({
   onSave,
@@ -165,6 +167,30 @@ const TeamRepos: FC = () => {
   const searchQuery = useEasyState('');
   const searchFocus = useBoolState(false);
 
+  const checkOverflow = useCallback(
+    (option: BaseRepo) =>
+      option.name?.length > MAX_LENGTH_REPO_NAME ||
+      option.parent?.length > MAX_LENGTH_PARENT_NAME,
+    []
+  );
+
+  const addEllipsis = (text: string, maxLength: number) =>
+    text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+
+  const OverFlowTooltip = ({
+    parent,
+    name
+  }: {
+    parent: string;
+    name: string;
+  }) => {
+    return (
+      <FlexBox>
+        {parent} / {name}
+      </FlexBox>
+    );
+  };
+
   return (
     <FlexBox col gap={2}>
       <FlexBox col>
@@ -240,18 +266,30 @@ const TeamRepos: FC = () => {
                   overflow: 'hidden'
                 }}
               >
-                <FlexBox col sx={{ maxWidth: '200px', overflow: 'hidden' }}>
-                  {option.parent && <Line tiny>{option.parent}</Line>}
-                  {option.name.length > MAX_LENGTH_REPO_NAME ? (
-                    <Tooltip title={option.name}>
-                      <Line>{`${option.name.substring(
-                        0,
-                        MAX_LENGTH_REPO_NAME
-                      )}...`}</Line>
-                    </Tooltip>
-                  ) : (
-                    <Line>{option.name}</Line>
-                  )}
+                <FlexBox
+                  col
+                  sx={{ maxWidth: '200px', overflow: 'hidden' }}
+                  tooltipPlacement="right"
+                  title={
+                    checkOverflow(option) ? (
+                      <OverFlowTooltip
+                        parent={option.parent}
+                        name={option.name}
+                      />
+                    ) : undefined
+                  }
+                >
+                  <FlexBox gap={1 / 2} alignCenter>
+                    {option.provider === Integration.GITHUB ? (
+                      <GitHub sx={{ fontSize: '14px' }} />
+                    ) : (
+                      <GitlabIcon height={12} width={12} />
+                    )}
+                    <Line tiny>
+                      {addEllipsis(option.parent, MAX_LENGTH_PARENT_NAME)}
+                    </Line>
+                  </FlexBox>
+                  <Line>{addEllipsis(option.name, MAX_LENGTH_REPO_NAME)}</Line>
                 </FlexBox>
                 {selected ? <Close fontSize="small" /> : null}
               </FlexBox>
@@ -351,7 +389,16 @@ const DisplayRepos: FC = () => {
         <TableBody>
           {selectedRepos.map((repo) => (
             <TableRow key={repo.id}>
-              <TableCell sx={{ px: 2 }}>{repo.name}</TableCell>
+              <TableCell sx={{ px: 2 }}>
+                <FlexBox gap1 alignCenter>
+                  {repo.provider === Integration.GITHUB ? (
+                    <GitHub sx={{ fontSize: '16px' }} />
+                  ) : (
+                    <GitlabIcon height={14} width={14} />
+                  )}
+                  {repo.name}
+                </FlexBox>
+              </TableCell>
               <TableCell sx={{ px: 1, minWidth: 200 }}>
                 <FlexBox gap2 alignCenter>
                   <DeploymentSourceSelector repo={repo} />{' '}
@@ -414,29 +461,41 @@ const DeploymentSourceSelector: FC<{ repo: BaseRepo }> = ({ repo }) => {
   const { updateDeploymentTypeForRepo } = useTeamCRUD();
   return (
     <FormControl>
-      <InputLabel>Source</InputLabel>
-      <Select
-        value={deploySource}
-        onChange={() => {}}
-        size="small"
-        input={<OutlinedInput label="Source" margin="dense" />}
+      <FlexBox
+        col
+        title={
+          repo.provider === Integration.GITLAB ? (
+            <Line>Gitlab repos only support PR merge deployments</Line>
+          ) : (
+            ''
+          )
+        }
       >
-        {options.map((source) => {
-          return (
-            <MenuItem
-              value={source.value}
-              key={source.value}
-              onClick={async () => {
-                updateDeploymentTypeForRepo(repo.id, source.value);
+        <InputLabel>Source</InputLabel>
+        <Select
+          disabled={repo.provider === Integration.GITLAB}
+          value={deploySource}
+          onChange={() => {}}
+          size="small"
+          input={<OutlinedInput label="Source" margin="dense" />}
+        >
+          {options.map((source) => {
+            return (
+              <MenuItem
+                value={source.value}
+                key={source.value}
+                onClick={async () => {
+                  updateDeploymentTypeForRepo(repo.id, source.value);
 
-                open.false();
-              }}
-            >
-              <Line fontSize={'14px'}>{source.label}</Line>
-            </MenuItem>
-          );
-        })}
-      </Select>
+                  open.false();
+                }}
+              >
+                <Line fontSize={'14px'}>{source.label}</Line>
+              </MenuItem>
+            );
+          })}
+        </Select>
+      </FlexBox>
     </FormControl>
   );
 };
