@@ -20,9 +20,9 @@ app = Blueprint("dora_ai", __name__)
     ),
 )
 def get_ai_dora_score(data: dict, access_token: str, model: LLM):
-    
+
     ai_service = AIAnalyticsService(model, access_token)
-    return ai_service.get_dora_metrics_score(data)
+    return {"dora_metrics_score": ai_service.get_dora_metrics_score(data)}
 
 
 @app.route("/ai/available_models", methods={"GET"})
@@ -33,3 +33,19 @@ def get_ai_models():
         LLM.LLAMA3p1450B.value: LLM.LLAMA3p1450B.value,
         LLM.LLAMA3p170B.value: LLM.LLAMA3p170B.value,
     }
+
+
+@app.route("/ai/lead_time_trends", methods={"POST"})
+@dataschema(
+    Schema(
+        {
+            Required("data"): dict,
+            Required("access_token"): str,
+            Required("model"): All(str, Coerce(LLM)),
+        }
+    ),
+)
+def get_ai_dora_lead_time_trends(data: dict, access_token: str, model: LLM):
+
+    ai_service = AIAnalyticsService(model, access_token)
+    return {"lead_time_trends_summary": ai_service.get_lead_time_trend_summary(data)}

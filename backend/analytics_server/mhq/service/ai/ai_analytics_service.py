@@ -92,7 +92,9 @@ class AIAnalyticsService:
 
         raise Exception(f"Invalid AI provider {self._ai_provider}")
 
-    def get_dora_metrics_score(self, four_keys_data: Dict[str, float]) -> Dict[str, str]:
+    def get_dora_metrics_score(
+        self, four_keys_data: Dict[str, float]
+    ) -> Dict[str, str]:
         """
         Calculate the DORA metrics score using input data and an LLM (Language Learning Model).
 
@@ -107,9 +109,16 @@ class AIAnalyticsService:
         - Dict[str, str]: A dictionary containing the calculated DORA metrics scores.
            - dora_metrics_score (float)
         """
-        
+
         base_prompt = 'SYSTEM PROMPT: You are a DORA Metrics expert. You will be a given a json object of the 4 keys of DORA metrics for a team. You have to assign a score to the team based on the DORA metrics document by google.\nThe input will be in the format {"lead_time": value, "mean_time_to_recovery":value, "deployment_frequency": value,  change_failure_rate: value}.  lead_time value will be time in seconds. change_failure_rate will be a float percentage,  mean_time_to_recovery will be time in seconds, deployment_frequency will be the deployment frequency in integers.\nThe response should be a number, indicating the DORA metrics score the format {"dora_metrics_score":  value}. There should be no other reasoning or data in the your response.\n\nexample1: \ndata: {"lead_time": 2, "mean_time_to_recovery":3, "deployment_frequency":3,  change_failure_rate:20}.\nresponse{"dora_metrics_score":  number_between_1_to_10}\nexample1: \ndata: {"lead_time": 4, "mean_time_to_recovery":5, "deployment_frequency":89,  change_failure_rate:20}.\nresponse{"dora_metrics_score":  number_between_1_to_10}\nprompt start:\n'
 
         message = self._get_message(base_prompt + json.dumps(four_keys_data))
 
-        return json.loads(self._fetch_completion([message]))
+        return json.loads(self._fetch_completion([message]))["dora_metrics_score"]
+
+    def get_lead_time_trend_summary(self, lead_time_trends: Dict[str, float]) -> str:
+        base_prompt = 'SYSTEM PROMPT: You are a DORA Metrics expert. You will be given a JSON object of weekly lead time trends for a team. You need to derive inferences from the data and analyze the trend.\n\nThe input will be in the format {\week_start_date\: { \first_commit_to_open\: value, \first_response_time\: value, \lead_time\: value, \merge_time\: value, \merge_to_deploy\: value, \pr_count\: value, \rework_time\: value }}. first_commit_to_open is the time from the first commit to when the PR was opened. first_response_time is the time from when the PR was opened to when it was first reviewed. rework_time is the time spent in resolving changes and rework in the PR. merge_time is the time taken from PR approval to PR merge. merge_to_deploy is the time taken for the PR to be deployed after it was merged. lead time is the sum of first_commit_to_open, first_response_time, merge_time, merge_to_deploy and rework_time.\n\nThe response should have two sections: "Trend Summary" and "Suggestions for Improvement". The Trend Summary should go through the changes in the trends of all the lead time and other lead time components as per the DORA Metrics Case Studies. The Suggestions for Improvement section should contain suggestions for the team to improve the lead time and its components based on the input data if any of the components is too high. Suggestions should be pointed towards the first_commit_to_open, first_response_time, lead_time, merge_time, merge_to_deploy, rework_time components from the trends data.\n\nExample:\ndata: {\n  \2024-05-27\: {\n    \first_commit_to_open\: 1,\n    \first_response_time\: 3,\n    \lead_time\: 221,\n    \merge_time\: 100,\n    \merge_to_deploy\: 0,\n    \pr_count\: 6,\n    \rework_time\: 111\n  },\n  \2024-06-03\: {\n    \first_commit_to_open\: 1,\n    \first_response_time\: 3,\n    \lead_time\: 207,\n    \merge_time\: 100,\n    \merge_to_deploy\: 0,\n    \pr_count\: 3,\n    \rework_time\: 100\n  },\n  \2024-06-10\: {\n    \first_commit_to_open\: 90,\n    \first_response_time\: 3020,\n    \lead_time\: 3690,\n    \merge_time\: 100,\n    \merge_to_deploy\: 0,\n    \pr_count\: 3,\n    \rework_time\: 500\n  }\n}\n\nexample response:\n# Trend Summary\n- There has been an increase in lead time across the weeks.\n- The Week of 2024-06-10 witnessed a very high lead time which was due to a very high first_response_time\n- [Add More points about the trends]\n\n# Suggestions for Improvement\n- There was an unusually high first response time in week of 2024-06-10, this means PRs are taking longer time to review. Add a tool that enables faster PR reviews or distribute ownerships of PR reviews.\n- There was a high rework time in week of 2024-06-10, this can be improved by improving on the planning process before coding to reduce rework.\n-  [Add More suggestions]\nPrompt Start: data:'
+
+        message = self._get_message(base_prompt + json.dumps(lead_time_trends))
+
+        return self._fetch_completion([message])
