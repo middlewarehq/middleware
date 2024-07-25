@@ -92,8 +92,22 @@ class AIAnalyticsService:
 
         raise Exception(f"Invalid AI provider {self._ai_provider}")
 
-    def get_dora_metrics_score(self, four_keys_data: Dict[str, str]) -> Dict[str, str]:
+    def get_dora_metrics_score(self, four_keys_data: Dict[str, float]) -> Dict[str, str]:
+        """
+        Calculate the DORA metrics score using input data and an LLM (Language Learning Model).
 
+        Parameters:
+        - four_keys_data (Dict[str, str]): A dictionary containing the following key-value pairs:
+            - "lead_time" (float): The time taken from code committed to code successfully running in production, in seconds.
+            - "mean_time_to_recovery" (float): The average time it takes to recover from a failure, in seconds.
+            - "change_failure_rate" (float): The percentage of changes that result in a failure.
+            - "deployment_frequency" (float): The frequency of code deployments, per unit time.
+
+        Returns:
+        - Dict[str, str]: A dictionary containing the calculated DORA metrics scores.
+           - dora_metrics_score (float)
+        """
+        
         base_prompt = 'SYSTEM PROMPT: You are a DORA Metrics expert. You will be a given a json object of the 4 keys of DORA metrics for a team. You have to assign a score to the team based on the DORA metrics document by google.\nThe input will be in the format {"lead_time": value, "mean_time_to_recovery":value, "deployment_frequency": value,  change_failure_rate: value}.  lead_time value will be time in seconds. change_failure_rate will be a float percentage,  mean_time_to_recovery will be time in seconds, deployment_frequency will be the deployment frequency in integers.\nThe response should be a number, indicating the DORA metrics score the format {"dora_metrics_score":  value}. There should be no other reasoning or data in the your response.\n\nexample1: \ndata: {"lead_time": 2, "mean_time_to_recovery":3, "deployment_frequency":3,  change_failure_rate:20}.\nresponse{"dora_metrics_score":  number_between_1_to_10}\nexample1: \ndata: {"lead_time": 4, "mean_time_to_recovery":5, "deployment_frequency":89,  change_failure_rate:20}.\nresponse{"dora_metrics_score":  number_between_1_to_10}\nprompt start:\n'
 
         message = self._get_message(base_prompt + json.dumps(four_keys_data))
