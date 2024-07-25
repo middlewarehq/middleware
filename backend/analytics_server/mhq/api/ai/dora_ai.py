@@ -9,7 +9,7 @@ from mhq.service.ai.ai_analytics_service import AIAnalyticsService, LLM
 app = Blueprint("dora_ai", __name__)
 
 
-@app.route("/ai/dora", methods={"POST"})
+@app.route("/ai/dora_score", methods={"POST"})
 @dataschema(
     Schema(
         {
@@ -109,3 +109,23 @@ def get_ai_mean_time_to_recovery_trends(data: dict, access_token: str, model: LL
             data
         )
     }
+
+@app.route("/ai/dora_trends", methods={"POST"})
+@dataschema(
+    Schema(
+        {
+            Required("data"): dict,
+            Required("access_token"): str,
+            Required("model"): All(str, Coerce(LLM)),
+        }
+    ),
+)
+def get_ai_dora_trends_summary(data: dict, access_token: str, model: LLM):
+
+    ai_service = AIAnalyticsService(model, access_token)
+    return {
+        "dora_trend_summary": ai_service.get_dora_trends_summary(
+            data
+        )
+    }
+
