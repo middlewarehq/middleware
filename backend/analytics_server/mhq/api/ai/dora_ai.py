@@ -110,6 +110,7 @@ def get_ai_mean_time_to_recovery_trends(data: dict, access_token: str, model: LL
         )
     }
 
+
 @app.route("/ai/dora_trends", methods={"POST"})
 @dataschema(
     Schema(
@@ -123,9 +124,4 @@ def get_ai_mean_time_to_recovery_trends(data: dict, access_token: str, model: LL
 def get_ai_dora_trends_summary(data: dict, access_token: str, model: LLM):
 
     ai_service = AIAnalyticsService(model, access_token)
-    return {
-        "dora_trend_summary": ai_service.get_dora_trends_summary(
-            data
-        )
-    }
-
+    return {"dora_trend_summary": ai_service.get_dora_trends_summary(data)}
