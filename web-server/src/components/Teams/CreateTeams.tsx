@@ -32,6 +32,7 @@ import { Integration } from '@/constants/integrations';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import GitlabIcon from '@/mocks/icons/gitlab.svg';
 import { BaseRepo, DeploymentSources } from '@/types/resources';
+import { trimWithEllipsis } from '@/utils/stringFormatting';
 
 import AnimatedInputWrapper from '../AnimatedInputWrapper/AnimatedInputWrapper';
 import { FlexBox } from '../FlexBox';
@@ -387,42 +388,49 @@ const DisplayRepos: FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {selectedRepos.map((repo) => (
-            <TableRow key={repo.id}>
-              <TableCell sx={{ px: 2 }}>
-                <FlexBox gap1 alignCenter>
-                  {repo.provider === Integration.GITHUB ? (
-                    <GitHub sx={{ fontSize: '16px' }} />
-                  ) : (
-                    <GitlabIcon height={14} width={14} />
-                  )}
-                  {repo.name}
-                </FlexBox>
-              </TableCell>
-              <TableCell sx={{ px: 1, minWidth: 200 }}>
-                <FlexBox gap2 alignCenter>
-                  <DeploymentSourceSelector repo={repo} />{' '}
-                  {repo.deployment_type === DeploymentSources.WORKFLOW && (
-                    <DeploymentWorkflowSelector repo={repo} />
-                  )}
-                </FlexBox>
-              </TableCell>
-              <TableCell>
-                <FlexBox
-                  title="Delete repo"
-                  pointer
-                  sx={{ px: 1 }}
-                  justifyCenter
-                  alignCenter
-                  onClick={() => {
-                    unselectRepo(repo.id);
-                  }}
-                >
-                  <DeleteIcon fontSize="small" color="error" />
-                </FlexBox>
-              </TableCell>
-            </TableRow>
-          ))}
+          {selectedRepos.map((repo) => {
+            const shortenedName = trimWithEllipsis(repo.name, 40);
+            return (
+              <TableRow key={repo.id}>
+                <TableCell sx={{ px: 2 }}>
+                  <FlexBox
+                    title={shortenedName === repo.name ? null : repo.name}
+                    gap1
+                    alignCenter
+                  >
+                    {repo.provider === Integration.GITHUB ? (
+                      <GitHub sx={{ fontSize: '16px' }} />
+                    ) : (
+                      <GitlabIcon height={14} width={14} />
+                    )}
+                    {shortenedName}
+                  </FlexBox>
+                </TableCell>
+                <TableCell sx={{ px: 1, minWidth: 200 }}>
+                  <FlexBox gap2 alignCenter>
+                    <DeploymentSourceSelector repo={repo} />{' '}
+                    {repo.deployment_type === DeploymentSources.WORKFLOW && (
+                      <DeploymentWorkflowSelector repo={repo} />
+                    )}
+                  </FlexBox>
+                </TableCell>
+                <TableCell>
+                  <FlexBox
+                    title="Delete repo"
+                    pointer
+                    sx={{ px: 1 }}
+                    justifyCenter
+                    alignCenter
+                    onClick={() => {
+                      unselectRepo(repo.id);
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" color="error" />
+                  </FlexBox>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
         {showWorkflowChangeWarning && (
           <TableRow>
