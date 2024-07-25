@@ -15,6 +15,7 @@ from mhq.api.integrations import app as integrations_api
 from mhq.api.deployment_analytics import app as deployment_analytics_api
 from mhq.api.teams import app as teams_api
 from mhq.api.bookmark import app as bookmark_api
+from mhq.api.ai.dora_ai import app as ai_api
 
 from mhq.store.initialise_db import initialize_database
 
@@ -30,6 +31,7 @@ app.register_blueprint(deployment_analytics_api)
 app.register_blueprint(integrations_api)
 app.register_blueprint(teams_api)
 app.register_blueprint(bookmark_api)
+app.register_blueprint(ai_api)
 
 configure_db_with_app(app)
 initialize_database(app)
