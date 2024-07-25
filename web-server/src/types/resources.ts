@@ -250,6 +250,7 @@ export type BaseRepo = {
   branch: string;
   deployment_type: DeploymentSources;
   repo_workflows: AdaptedRepoWorkflow[];
+  provider?: Integration;
 };
 
 export enum NotificationType {
