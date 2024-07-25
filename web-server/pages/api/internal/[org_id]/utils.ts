@@ -106,12 +106,7 @@ interface RepoNode {
   webUrl: string;
   description: string | null;
   path: string;
-  group: {
-    fullName: string;
-  };
-  namespace: {
-    fullName: string;
-  };
+  fullPath: string;
   nameWithNamespace: string;
   languages: {
     nodes: {
@@ -143,14 +138,8 @@ export const searchGitlabRepos = async (
       projects(search: $searchString, first: 50) {
           nodes {
               id
-              group {
-                  fullName
-              }
-              namespace {
-                  fullName
-              }
+              fullPath
               name
-              nameWithNamespace
               webUrl
               description
               path
@@ -189,14 +178,13 @@ export const searchGitlabRepos = async (
   return repositories.map(
     (repo) =>
       ({
-        id: repo.id,
+        id: Number(repo.id.replace('gid://gitlab/Project/', '')),
         name: repo.name,
         desc: repo.description,
         slug: repo.path,
         web_url: repo.webUrl,
         branch: repo.repository?.rootRef || null,
-        // TODO: fix this
-        parent: repo.nameWithNamespace.split(' / ')[0]
+        parent: repo.fullPath.replace('https://gitlab.com/', '').split('/')[0]
       }) as BaseRepo
   );
 };
