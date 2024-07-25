@@ -25,7 +25,7 @@ def get_ai_dora_score(data: dict, access_token: str, model: LLM):
     return {"dora_metrics_score": ai_service.get_dora_metrics_score(data)}
 
 
-@app.route("/ai/available_models", methods={"GET"})
+@app.route("/ai/models", methods={"GET"})
 def get_ai_models():
 
     return {
