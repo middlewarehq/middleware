@@ -382,9 +382,7 @@ const DisplayRepos: FC = () => {
           <TableRow>
             <TableCell sx={{ px: 2, minWidth: 200 }}>Repo</TableCell>
             <TableCell sx={{ p: 1 }}>Deployed Via</TableCell>
-            <TableCell align="center" sx={{ p: 1 }}>
-              Action
-            </TableCell>
+            <TableCell align="right">Action</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -416,16 +414,17 @@ const DisplayRepos: FC = () => {
                 </TableCell>
                 <TableCell>
                   <FlexBox
+                    fit
+                    ml={'auto'}
                     title="Delete repo"
                     pointer
-                    sx={{ px: 1 }}
-                    justifyCenter
+                    justifyEnd
                     alignCenter
                     onClick={() => {
                       unselectRepo(repo.id);
                     }}
                   >
-                    <DeleteIcon fontSize="small" color="error" />
+                    <DeleteIcon fontSize="small" color="warning" />
                   </FlexBox>
                 </TableCell>
               </TableRow>
@@ -473,7 +472,7 @@ const DeploymentSourceSelector: FC<{ repo: BaseRepo }> = ({ repo }) => {
         col
         title={
           repo.provider === Integration.GITLAB ? (
-            <Line>Gitlab repos only support PR merge deployments</Line>
+            <Line>Gitlab repos only support PR merge deployments for now</Line>
           ) : (
             ''
           )
