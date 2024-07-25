@@ -89,3 +89,23 @@ def get_ai_change_failure_rate_trends(data: dict, access_token: str, model: LLM)
             data
         )
     }
+
+
+@app.route("/ai/mean_time_to_recovery_trends", methods={"POST"})
+@dataschema(
+    Schema(
+        {
+            Required("data"): dict,
+            Required("access_token"): str,
+            Required("model"): All(str, Coerce(LLM)),
+        }
+    ),
+)
+def get_ai_mean_time_to_recovery_trends(data: dict, access_token: str, model: LLM):
+
+    ai_service = AIAnalyticsService(model, access_token)
+    return {
+        "mean_time_to_recovery_trends_summary": ai_service.get_mean_time_to_recovery_trends_summary(
+            data
+        )
+    }
