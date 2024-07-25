@@ -69,3 +69,23 @@ def get_ai_dora_deployment_frequency_trends(data: dict, access_token: str, model
             data
         )
     }
+
+
+@app.route("/ai/change_failure_rate_trends", methods={"POST"})
+@dataschema(
+    Schema(
+        {
+            Required("data"): dict,
+            Required("access_token"): str,
+            Required("model"): All(str, Coerce(LLM)),
+        }
+    ),
+)
+def get_ai_change_failure_rate_trends(data: dict, access_token: str, model: LLM):
+
+    ai_service = AIAnalyticsService(model, access_token)
+    return {
+        "change_failure_rate_trends_summary": ai_service.get_change_failure_rate_trend_summary(
+            data
+        )
+    }
