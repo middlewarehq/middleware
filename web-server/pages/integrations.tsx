@@ -1,13 +1,14 @@
 import { Add } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
 import { Button, Divider, Card } from '@mui/material';
+import { differenceInMilliseconds } from 'date-fns';
+import { millisecondsInMinute } from 'date-fns/constants';
 import { useEffect, useMemo } from 'react';
 import { Authenticated } from 'src/components/Authenticated';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
-import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/GithubIntegrationCard';
@@ -19,10 +20,10 @@ import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
 import { appSlice } from '@/slices/app';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
-import { PageLayout, IntegrationGroup } from '@/types/resources';
+import { PageLayout } from '@/types/resources';
 import { depFn } from '@/utils/fn';
 
-const TIME_LIMIT_FOR_FORCE_SYNC = 600000;
+const TIME_LIMIT_FOR_FORCE_SYNC = 10 * millisecondsInMinute;
 
 function Integrations() {
   const isLoading = useSelector(
@@ -57,14 +58,8 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
-  const {
-    orgId,
-    integrations,
-    integrationSet,
-    activeCodeProvider,
-    integrationList
-  } = useAuth();
-  const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
+  const { orgId, integrations, integrationList } = useAuth();
+  const hasCodeProviderLinked = integrationList.length > 0;
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
   const loadedTeams = useBoolState(false);
@@ -72,29 +67,42 @@ const Content = () => {
   const localLastForceSyncedAt = useEasyState<Date | null>(null);
   const showCreationCTA =
     hasCodeProviderLinked && !teamCount && loadedTeams.value;
+
+  const lastSyncMap = useMemo(() => {
+    return integrationList
+      .map((item) => {
+        // @ts-ignore
+        const linkedAt = integrations[item].linked_at;
+        if (!linkedAt) return null;
+        const codeProviderLinkedAt = new Date(linkedAt);
+        const currentDate = new Date();
+        const diff = differenceInMilliseconds(
+          currentDate,
+          codeProviderLinkedAt
+        );
+        return diff;
+      })
+      .filter(Boolean);
+  }, [integrationList, integrations]);
+
   const showForceSyncBtn = useMemo(() => {
     if (!hasCodeProviderLinked) return false;
-    const githubLinkedAt = new Date(integrations[Integration.GITHUB].linked_at);
-    const currentDate = new Date();
-    if (githubLinkedAt) {
-      const diffMilliseconds = currentDate.getTime() - githubLinkedAt.getTime();
-      return diffMilliseconds >= TIME_LIMIT_FOR_FORCE_SYNC;
-    }
-  }, [hasCodeProviderLinked, integrations]);
+    if (!lastSyncMap.length) return true;
+    return lastSyncMap.every((diff) => diff >= TIME_LIMIT_FOR_FORCE_SYNC);
+  }, [hasCodeProviderLinked, lastSyncMap]);
 
   const enableForceSyncBtn = useMemo(() => {
-    if (!integrations[activeCodeProvider]?.last_synced_at) return true;
-    const lastForceSyncedAt = Math.max(
-      new Date(integrations[activeCodeProvider]?.last_synced_at).getTime(),
-      localLastForceSyncedAt.value?.getTime()
+    const diff = differenceInMilliseconds(
+      new Date(),
+      localLastForceSyncedAt.value
     );
-    const currentDate = new Date();
-    const diffMilliseconds = currentDate.getTime() - lastForceSyncedAt;
-    return diffMilliseconds >= TIME_LIMIT_FOR_FORCE_SYNC;
-  }, [activeCodeProvider, integrations, localLastForceSyncedAt.value]);
+    if (diff >= TIME_LIMIT_FOR_FORCE_SYNC) return true;
+    if (!lastSyncMap.length) return true;
+    return lastSyncMap.some((diff) => diff >= TIME_LIMIT_FOR_FORCE_SYNC);
+  }, [lastSyncMap, localLastForceSyncedAt.value]);
 
   useEffect(() => {
-    if (!orgId || !activeCodeProvider) return;
+    if (!orgId || !integrationList.length) return;
     if (!hasCodeProviderLinked) {
       dispatch(appSlice.actions.setSingleTeam([]));
       return;
@@ -108,7 +116,6 @@ const Content = () => {
       ).finally(loadedTeams.true);
     }
   }, [
-    activeCodeProvider,
     dispatch,
     hasCodeProviderLinked,
     integrationList,
@@ -142,7 +149,7 @@ const Content = () => {
             transition: 'all 0.2s ease'
           }}
         >
-          Integrate your Github to fetch DORA for your team
+          Integrate your Code Providers to fetch DORA for your team
         </Line>
         {showDoraCTA && (
           <Button href={ROUTES.DORA_METRICS.PATH} variant="contained">
