@@ -125,3 +125,19 @@ def get_ai_dora_trends_summary(data: dict, access_token: str, model: LLM):
 
     ai_service = AIAnalyticsService(model, access_token)
     return {"dora_trend_summary": ai_service.get_dora_trends_summary(data)}
+
+
+@app.route("/ai/dora_data/compiled_summary", methods={"POST"})
+@dataschema(
+    Schema(
+        {
+            Required("data"): dict,
+            Required("access_token"): str,
+            Required("model"): All(str, Coerce(LLM)),
+        }
+    ),
+)
+def get_ai_dora_summary(data: dict, access_token: str, model: LLM):
+
+    ai_service = AIAnalyticsService(model, access_token)
+    return {"dora_compiled_summary": ai_service.get_dora_compiled_summary(data)}
