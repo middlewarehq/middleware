@@ -41,13 +41,24 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     ].map((f) => f(dora_data, model, access_token))
   );
 
-  res.send({
+  const aggregated_dora_data = {
     ...dora_metrics_score,
     ...lead_time_trends_summary,
     ...change_failure_rate_trends_summary,
     ...mean_time_to_recovery_trends_summary,
     ...deployment_frequency_trends_summary,
     ...dora_trend_summary
+  };
+
+  const dora_compiled_summary = await getDORACompiledSummary(
+    aggregated_dora_data,
+    model,
+    access_token
+  );
+
+  res.send({
+    ...aggregated_dora_data,
+    ...dora_compiled_summary
   });
 });
 
@@ -261,6 +272,24 @@ const getDoraTrendsCorrelationSummary = (
       access_token: access_token
     }
   });
+};
+
+const getDORACompiledSummary = (
+  aggregated_dora_data: any,
+  model: string,
+  access_token: string
+) => {
+  return handleRequest<{ dora_compiled_summary: string }>(
+    'ai/dora_data/compiled_summary',
+    {
+      method: 'POST',
+      data: {
+        data: aggregated_dora_data,
+        model: model,
+        access_token: access_token
+      }
+    }
+  );
 };
 
 const transformTrendData = <T>(
