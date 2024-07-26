@@ -23,7 +23,7 @@ export const ConfigureGithubModalBody: FC<{
   onClose: () => void;
 }> = ({ onClose }) => {
   const token = useEasyState('');
-  const { orgId } = useAuth();
+  const { orgId, integrationList } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const isLoading = useBoolState();
@@ -79,7 +79,7 @@ export const ConfigureGithubModalBody: FC<{
         dispatch(
           fetchTeams({
             org_id: orgId,
-            provider: Integration.GITHUB
+            providers: integrationList
           })
         );
         enqueueSnackbar('Github linked successfully', {
@@ -96,6 +96,7 @@ export const ConfigureGithubModalBody: FC<{
   }, [
     dispatch,
     enqueueSnackbar,
+    integrationList,
     isLoading.false,
     isLoading.true,
     onClose,

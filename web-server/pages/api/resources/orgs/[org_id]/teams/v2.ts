@@ -40,12 +40,13 @@ const repoSchema = yup.object().shape({
 });
 
 const getSchema = yup.object().shape({
-  provider: yup.string().oneOf(Object.values(Integration)).required()
+  providers: yup.array(
+    yup.string().oneOf(Object.values(Integration)).required()
+  )
 });
 
 const postSchema = yup.object().shape({
   name: yup.string().required(),
-  provider: yup.string().oneOf(Object.values(Integration)).required(),
   org_repos: yup.lazy((obj) =>
     yup.object(mapObjIndexed(() => yup.array().of(repoSchema), obj))
   )
@@ -54,7 +55,6 @@ const postSchema = yup.object().shape({
 const patchSchema = yup.object().shape({
   id: yup.string().uuid().required(),
   name: yup.string().nullable().optional(),
-  provider: yup.string().oneOf(Object.values(Integration)).required(),
   org_repos: yup.lazy((obj) =>
     yup.object(mapObjIndexed(() => yup.array().of(repoSchema), obj))
   )
@@ -75,7 +75,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const { org_id, provider } = req.payload;
+  const { org_id, providers } = req.payload;
   const getQuery = db('Team')
     .select('*')
     .where('org_id', org_id)
@@ -83,10 +83,12 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     .orderBy('name', 'asc');
 
   const teams = await getQuery;
-  const reposWithWorkflows = await getSelectedReposForOrg(
-    org_id,
-    provider as Integration
-  );
+  const reposWithWorkflows = await Promise.all(
+    providers.map((provider) =>
+      getSelectedReposForOrg(org_id, provider as Integration)
+    )
+  ).then((res) => res.flat());
+
   res.send({
     teams: teams,
     teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows),
