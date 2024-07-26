@@ -249,5 +249,5 @@ export const gitlabSearch = async (pat: string, searchString: string) => {
     results = await searchProjects(groupName, projectQuery, pat);
   }
   if (results?.length) return results;
-  else return searchGitlabRepos(pat, searchString);
+  else return searchGitlabRepos(pat, projectQuery || searchString);
 };

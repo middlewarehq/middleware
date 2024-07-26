@@ -25,19 +25,21 @@ const endpoint = new Endpoint(pathSchema);
 endpoint.handle.GET(getSchema, async (req, res) => {
   const { org_id, search_text, providers } = req.payload;
 
+  const providerMap = fetchMap.filter((item) =>
+    providers.includes(item.provider)
+  );
+
   const tokens = await Promise.all(
-    fetchMap
-      .filter((item) => providers.includes(item.provider))
-      .map((item) => item.getToken(org_id))
+    providerMap.map((item) => item.getToken(org_id))
   );
 
   const repos = await Promise.all(
-    fetchMap
-      .filter((item) => providers.includes(item.provider))
-      .map((item) => item.search(tokens.shift(), search_text))
+    providerMap.map((item) => item.search(tokens.shift(), search_text))
   );
 
-  return res.status(200).send(repos.flat());
+  const sortedRepos = repos.flat().sort((a, b) => a.name.localeCompare(b.name));
+
+  return res.status(200).send(sortedRepos);
 });
 
 export default endpoint.serve();
