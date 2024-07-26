@@ -1,4 +1,8 @@
-import { ArrowForwardIosRounded, SettingsRounded } from '@mui/icons-material';
+import {
+  ArrowForwardIosRounded,
+  ChevronRightRounded,
+  SettingsRounded
+} from '@mui/icons-material';
 import { Button, useTheme } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useSnackbar } from 'notistack';
@@ -121,10 +125,15 @@ export const GithubIntegrationCard = () => {
               label={!isGithubIntegrated ? 'Link' : 'Unlink'}
               bgOpacity={!isGithubIntegrated ? 0.45 : 0.25}
               endIcon={
-                isLoading && (
+                isLoading ? (
                   <CircularProgress
                     size={theme.spacing(1)}
                     sx={{ ml: 1 / 2 }}
+                  />
+                ) : (
+                  <ChevronRightRounded
+                    fontSize="small"
+                    sx={{ ml: 1 / 2, mr: -2 / 3 }}
                   />
                 )
               }
