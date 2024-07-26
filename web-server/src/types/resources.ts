@@ -462,7 +462,12 @@ export type RepoWithMultipleWorkflows = Omit<
 
 export type RepoUniqueDetails = Pick<
   RepoWithMultipleWorkflows,
-  'name' | 'slug' | 'default_branch' | 'idempotency_key' | 'deployment_type'
+  | 'name'
+  | 'slug'
+  | 'default_branch'
+  | 'idempotency_key'
+  | 'deployment_type'
+  | 'provider'
 > & { repo_workflows: AdaptedRepoWorkflow[] };
 
 export type RepoContributors = {
