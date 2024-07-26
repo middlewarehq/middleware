@@ -87,7 +87,8 @@ export const TeamsCRUDProvider: React.FC<{
   const dispatch = useDispatch();
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
-  const { orgId } = useAuth();
+  const { orgId, integrationList } = useAuth();
+
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
   );
@@ -98,10 +99,10 @@ export const TeamsCRUDProvider: React.FC<{
     dispatch(
       fetchTeams({
         org_id: orgId,
-        provider: Integration.GITHUB
+        providers: integrationList
       })
     );
-  }, [dispatch, orgId]);
+  }, [dispatch, integrationList, orgId]);
 
   // team name logic
   const teamName = useEasyState('');
@@ -446,7 +447,8 @@ const repoToPayload = (repos: BaseRepo[]) => {
       slug: repo.slug,
       default_branch: repo.branch,
       deployment_type: repo.deployment_type,
-      repo_workflows: repo.repo_workflows
+      repo_workflows: repo.repo_workflows,
+      provider: repo.provider
     };
     const orgName = repo.parent;
 
@@ -465,6 +467,8 @@ const DEBOUNCE_TIME = 500;
 const useReposSearch = () => {
   const { orgId } = useAuth();
   const searchResults = useEasyState<BaseRepo[]>([]);
+  const { integrationList } = useAuth();
+
   const isLoading = useBoolState(false);
 
   let cancelTokenSource = axios.CancelToken.source();
@@ -496,7 +500,7 @@ const useReposSearch = () => {
         const response = await axios(
           `/api/internal/${orgId}/git_provider_org`,
           {
-            params: { provider: Integration.GITHUB, search_text: query },
+            params: { providers: integrationList, search_text: query },
             cancelToken: cancelTokenSource.token
           }
         );
