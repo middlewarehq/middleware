@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 
+import { Integration } from '@/constants/integrations';
 import { BaseRepo } from '@/types/resources';
 
 const GITHUB_API_URL = 'https://api.github.com/graphql';
@@ -91,7 +92,8 @@ export const searchGithubRepos = async (
         parent: repo.owner.login,
         web_url: repo.url,
         language: repo.primaryLanguage?.name,
-        branch: repo.defaultBranchRef?.name
+        branch: repo.defaultBranchRef?.name,
+        provider: Integration.GITHUB
       }) as BaseRepo
   );
 };
@@ -141,6 +143,9 @@ export const searchGitlabRepos = async (
               fullPath
               name
               webUrl
+              group {
+                  path
+              }
               description
               path
               languages {
@@ -184,7 +189,65 @@ export const searchGitlabRepos = async (
         slug: repo.path,
         web_url: repo.webUrl,
         branch: repo.repository?.rootRef || null,
-        parent: repo.fullPath.replace('https://gitlab.com/', '').split('/')[0]
+        parent: repo.fullPath.replace('https://gitlab.com/', '').split('/')[0],
+        provider: Integration.GITLAB
       }) as BaseRepo
   );
+};
+
+// another approach:
+interface Project {
+  id: number;
+  name: string;
+  description: string;
+  web_url: string;
+  [key: string]: any;
+}
+
+export async function searchProjects(
+  group: string,
+  searchString: string,
+  token: string
+): Promise<BaseRepo[]> {
+  const response = await fetch(
+    `https://gitlab.com/api/v4/groups/${group}/projects?search=${encodeURIComponent(
+      searchString
+    )}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Error fetching projects for group ${group}: ${response.statusText}`
+    );
+  }
+
+  const projects = (await response.json()) as Project[];
+  return projects.map(
+    (repo) =>
+      ({
+        id: repo.id,
+        name: repo.name,
+        desc: repo.description,
+        slug: repo.path,
+        web_url: repo.web_url,
+        branch: repo.default_branch,
+        parent: repo.web_url.replace('https://gitlab.com/', '').split('/')[0],
+        provider: Integration.GITLAB
+      }) as BaseRepo
+  );
+}
+
+export const gitlabSearch = async (pat: string, searchString: string) => {
+  const [groupName, projectQuery] = searchString.split('/');
+  let results: BaseRepo[];
+  if (groupName && projectQuery) {
+    results = await searchProjects(groupName, projectQuery, pat);
+  }
+  if (results?.length) return results;
+  else return searchGitlabRepos(pat, searchString);
 };
