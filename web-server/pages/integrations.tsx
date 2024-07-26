@@ -57,7 +57,13 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
-  const { orgId, integrations, integrationSet, activeCodeProvider } = useAuth();
+  const {
+    orgId,
+    integrations,
+    integrationSet,
+    activeCodeProvider,
+    integrationList
+  } = useAuth();
   const hasCodeProviderLinked = integrationSet.has(IntegrationGroup.CODE);
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
@@ -97,7 +103,7 @@ const Content = () => {
       dispatch(
         fetchTeams({
           org_id: orgId,
-          provider: activeCodeProvider
+          providers: integrationList
         })
       ).finally(loadedTeams.true);
     }
@@ -105,6 +111,7 @@ const Content = () => {
     activeCodeProvider,
     dispatch,
     hasCodeProviderLinked,
+    integrationList,
     loadedTeams.true,
     orgId,
     teamCount
