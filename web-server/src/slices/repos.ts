@@ -203,10 +203,10 @@ export const fetchUnassignedRepos = createAsyncThunk(
 
 export const fetchProviderOrgs = createAsyncThunk(
   'repos/fetchProviderOrgs',
-  async (params: { orgId: ID; provider: Integration }) => {
+  async (params: { orgId: ID; providers: Integration[] }) => {
     return await handleApi<LoadedOrg[]>(
       `/internal/${params.orgId}/git_provider_org`,
-      { params: { provider: params.provider } }
+      { params: { providers: params.providers } }
     );
   }
 );
@@ -214,7 +214,7 @@ export const fetchProviderOrgs = createAsyncThunk(
 export const fetchReposForOrgFromProvider = createAsyncThunk(
   'repos/fetchReposForOrgFromProvider',
   async (
-    params: { orgId: ID; provider: Integration; orgName: string },
+    params: { orgId: ID; providers: Integration[]; orgName: string },
     { getState }
   ) => {
     const {
@@ -225,7 +225,7 @@ export const fetchReposForOrgFromProvider = createAsyncThunk(
       `/internal/${params.orgId}/git_provider_org`,
       {
         params: {
-          provider: params.provider,
+          providers: params.providers,
           org_name: params.orgName,
           team_id: selectedTeam?.value
         }
