@@ -25,6 +25,7 @@ export interface AuthContextValue extends AuthState {
   role: UserRole;
   integrations: Org['integrations'];
   onboardingState: OnboardingStep[];
+  integrationList: Integration[];
   integrationSet: Set<IntegrationGroup>;
   activeCodeProvider: CodeProviderIntegrations | null;
 }
@@ -35,6 +36,7 @@ export const AuthContext = createContext<AuthContextValue>({
   role: UserRole.MOM,
   integrations: {},
   onboardingState: [],
+  integrationList: [],
   integrationSet: new Set(),
   activeCodeProvider: null
 });
@@ -113,6 +115,14 @@ export const AuthProvider: FC = (props) => {
     [integrations.github]
   );
 
+  const integrationList = useMemo(
+    () =>
+      Object.entries(integrations)
+        .filter(([_, value]) => value.integrated)
+        .map(([key, _]) => key) as Integration[],
+    [integrations]
+  );
+
   const activeCodeProvider = useMemo(
     () =>
       Object.keys(state?.org?.integrations || {}).find(
@@ -131,6 +141,7 @@ export const AuthProvider: FC = (props) => {
         role,
         integrations,
         integrationSet,
+        integrationList,
         activeCodeProvider,
         onboardingState: (state.org?.onboarding_state as OnboardingStep[]) || []
       }}
