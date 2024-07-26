@@ -13,7 +13,6 @@ import { ascend } from 'ramda';
 import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
 import { truncate } from 'voca';
 
-import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
@@ -258,7 +257,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
 const MoreOptions = ({ teamId }: { teamId: ID }) => {
   const dispatch = useDispatch();
   const { enqueueSnackbar } = useSnackbar();
-  const { orgId } = useAuth();
+  const { orgId, integrationList } = useAuth();
   const anchorEl = useEasyState();
   const loading = useBoolState(false);
   const cancelMenu = useBoolState(false);
@@ -286,9 +285,7 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
               variant: 'success',
               autoHideDuration: 2000
             });
-            dispatch(
-              fetchTeams({ org_id: orgId, provider: Integration.GITHUB })
-            );
+            dispatch(fetchTeams({ org_id: orgId, providers: integrationList }));
             handleCloseMenu();
           } else {
             enqueueSnackbar('Failed to delete team', {
@@ -304,6 +301,7 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
       dispatch,
       enqueueSnackbar,
       handleCloseMenu,
+      integrationList,
       loading.false,
       loading.true,
       orgId

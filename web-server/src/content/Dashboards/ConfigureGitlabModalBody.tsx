@@ -24,7 +24,7 @@ export const ConfigureGitlabModalBody: FC<{
 }> = ({ onClose }) => {
   const token = useEasyState('');
   const customDomain = useEasyState('');
-  const { orgId } = useAuth();
+  const { orgId, integrationList } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const isLoading = useBoolState();
@@ -106,7 +106,7 @@ export const ConfigureGitlabModalBody: FC<{
         dispatch(
           fetchTeams({
             org_id: orgId,
-            provider: Integration.GITLAB
+            providers: integrationList
           })
         );
         enqueueSnackbar('Gitlab linked successfully', {
@@ -124,6 +124,7 @@ export const ConfigureGitlabModalBody: FC<{
     customDomain.value,
     dispatch,
     enqueueSnackbar,
+    integrationList,
     isLoading.false,
     isLoading.true,
     onClose,
