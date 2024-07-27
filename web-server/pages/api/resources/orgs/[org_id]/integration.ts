@@ -55,8 +55,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     return res.send({ status: 'OK' });
   }
 
-  const { org_id } = req.payload;
-  const { provider, the_good_stuff } = req.body;
+  const { org_id, provider, the_good_stuff } = req.payload;
 
   await db('Integration')
     .insert({

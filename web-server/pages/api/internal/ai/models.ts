@@ -9,7 +9,7 @@ const endpoint = new Endpoint(nullSchema);
 
 endpoint.handle.GET(getSchema, async (_req, res) => {
   const response = await handleRequest('ai/models', { method: 'GET' });
-  res.send(response);
+  res.send(Object.keys(response));
 });
 
 export default endpoint.serve();
