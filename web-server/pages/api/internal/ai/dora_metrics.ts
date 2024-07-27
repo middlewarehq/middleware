@@ -1,6 +1,7 @@
 import * as yup from 'yup';
-import { Endpoint, nullSchema } from '@/api-helpers/global';
+
 import { handleRequest } from '@/api-helpers/axios';
+import { Endpoint, nullSchema } from '@/api-helpers/global';
 import {
   DeploymentFrequencyBaseStatsV2,
   TeamDoraMetricsApiResponseType
@@ -261,8 +262,6 @@ const getDoraTrendsCorrelationSummary = (
     if (!mergedData[key]) mergedData[key] = {};
     mergedData[key].deployment_frequency = deploymentFrequencyTrends[key].count;
   }
-
-  console.log(mergedData);
 
   return handleRequest<{ dora_trend_summary: string }>('ai/dora_trends', {
     method: 'POST',

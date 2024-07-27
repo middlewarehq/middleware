@@ -35,5 +35,10 @@ export const overlaysImportMap = {
     import('@/content/DoraMetrics/ResolvedIncidents').then((c) => ({
       default: c.ResolvedIncidentsBody
     }))
+  ),
+  ai_analysis: lazy(() =>
+    import('@/content/DoraMetrics/AIAnalysis/AIAnalysis').then((c) => ({
+      default: c.AIAnalysis
+    }))
   )
 };
