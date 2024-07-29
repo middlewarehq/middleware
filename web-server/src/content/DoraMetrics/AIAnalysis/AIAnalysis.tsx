@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { AxiosError } from 'axios';
 import { enqueueSnackbar } from 'notistack';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { AiOutlineOpenAI } from 'react-icons/ai';
 import { FaMeta } from 'react-icons/fa6';
 import ReactMarkdown from 'react-markdown';
@@ -30,8 +30,10 @@ import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { useAxios } from '@/hooks/useAxios';
 import { useEasyState } from '@/hooks/useEasyState';
-import { useSelector } from '@/store';
-import { noOp } from '@/utils/fn';
+import { usePrevious } from '@/hooks/usePrevious';
+import { DoraAiAPIResponse, doraMetricsSlice } from '@/slices/dora_metrics';
+import { useDispatch, useSelector } from '@/store';
+import { depFn, noOp } from '@/utils/fn';
 
 enum Model {
   GPT4o = 'GPT4o',
@@ -53,14 +55,23 @@ export const AIAnalysis = () => {
   const [models, { loading: loadingModels, fetch: fetchModels }] = useAxios<
     Model[]
   >(`/internal/ai/models`, { manual: true });
-  const [data, { loading: loadingData, fetch: loadData }] =
-    useAxios<DoraAPIResponse>(`/internal/ai/dora_metrics`, {
+
+  const dispatch = useDispatch();
+  const theme = useTheme();
+  const doraData = useSelector((s) => s.doraMetrics.metrics_summary);
+  const savedSummary = useSelector((s) => s.doraMetrics.ai_summary);
+  const savedToken = useSelector((s) => s.doraMetrics.ai_summary_token);
+
+  const [response, { loading: loadingData, fetch: loadData }] =
+    useAxios<DoraAiAPIResponse>(`/internal/ai/dora_metrics`, {
       manual: true,
       onError: noOp
     });
 
-  const theme = useTheme();
-  const doraData = useSelector((s) => s.doraMetrics.metrics_summary);
+  const data = useMemo(
+    () => response || savedSummary,
+    [response, savedSummary]
+  );
 
   const selectedModel = useEasyState<Model>(Model.GPT4o);
   const token = useEasyState<string>('');
@@ -69,6 +80,12 @@ export const AIAnalysis = () => {
   useEffect(() => {
     fetchModels();
   }, [fetchModels]);
+
+  const prevSavedToken = usePrevious(savedToken);
+  useEffect(() => {
+    if (token.value || prevSavedToken === savedToken) return;
+    depFn(token.set, savedToken);
+  }, [prevSavedToken, savedToken, token.set, token.value]);
 
   return (
     <FlexBox
@@ -124,7 +141,15 @@ export const AIAnalysis = () => {
                 data: doraData
               }
             })
-              .then(() => selectedTab.set('0'))
+              .then((r) => {
+                dispatch(
+                  doraMetricsSlice.actions.setAiSummary({
+                    summary: r.data,
+                    token: token.value
+                  })
+                );
+                selectedTab.set('0');
+              })
               .catch((r: AxiosError) => {
                 enqueueSnackbar(
                   r.response?.data?.message || 'Something went wrong!',
@@ -258,13 +283,3 @@ export const AIAnalysis = () => {
 const Markdown: typeof ReactMarkdown = (props) => (
   <ReactMarkdown {...props} remarkPlugins={[gfm]} />
 );
-
-export type DoraAPIResponse = {
-  dora_metrics_score: string;
-  lead_time_trends_summary: string;
-  change_failure_rate_trends_summary: string;
-  mean_time_to_recovery_trends_summary: string;
-  deployment_frequency_trends_summary: string;
-  dora_trend_summary: string;
-  dora_compiled_summary: string;
-};
