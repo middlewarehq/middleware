@@ -19,12 +19,14 @@ import {
   useTheme
 } from '@mui/material';
 import { AxiosError } from 'axios';
+import copy from 'copy-to-clipboard';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect, useMemo } from 'react';
 import { AiOutlineOpenAI } from 'react-icons/ai';
 import { FaMeta } from 'react-icons/fa6';
 import ReactMarkdown from 'react-markdown';
 import gfm from 'remark-gfm';
+import v from 'voca';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
@@ -182,12 +184,31 @@ export const AIAnalysis = () => {
           <Line>Please enter a token, and click "Generate"</Line>
         ) : (
           <>
-            <Alert
-              icon={<CheckRounded fontSize="inherit" />}
-              severity="success"
-            >
-              <Line white>{data.dora_metrics_score}</Line>
-            </Alert>
+            <FlexBox gap1 alignCenter>
+              <Alert
+                icon={<CheckRounded fontSize="inherit" />}
+                severity="success"
+                sx={{ flex: 1 }}
+              >
+                <Line white>{data.dora_metrics_score}</Line>
+              </Alert>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  copy(
+                    Object.entries(data)
+                      .map(
+                        ([key, val]) =>
+                          `# ${v.titleCase(key).replaceAll('_', ' ')}\n${val}`
+                      )
+                      .join('\n\n')
+                  );
+                  enqueueSnackbar('Copied!', { variant: 'success' });
+                }}
+              >
+                Copy
+              </Button>
+            </FlexBox>
             <Card
               sx={{
                 '.MuiTabPanel-root': { p: 2 },
