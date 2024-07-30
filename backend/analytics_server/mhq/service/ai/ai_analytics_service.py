@@ -164,8 +164,8 @@ class AIAnalyticsService:
         """
         This function takes aggregated_dora_data for 4 keys trends from the above methods and outputs a short summary.
         """
-        
-        base_prompt = 'SYSTEM PROMPT: You are a DORA Metrics expert. We need to summarise the DORA metrics data for a team and highlight all the important data point. Give actionable suggestions applicable to their performance in the last few weeks. Concisely summarise data in the following markdown table. \nExample Response:\n| Section               | Explained                                                    |\n|-----------------------|--------------------------------------------------------------|\n| Summary               | <overall summary in 50 words across all my metrics>          |\n| What it means for you | <how it might affect my team and its delivery in terms of real world impact> |\n| Suggestions           | <what steps I can take to improve my metrics>                |\n\n**Action Items**\n- [Team Action Items to improve dora metrics]\n\nPrompt Start:\ndata: '
+
+        base_prompt = "SYSTEM PROMPT: You are a DORA Metrics expert. We need to summarise the DORA metrics data for a team and highlight all the important data point. Give actionable suggestions applicable to their performance in the last few weeks. Concisely summarise data in the following markdown table. \nExample Response:\n| Section               | Explained                                                    |\n|-----------------------|--------------------------------------------------------------|\n| Summary               | <overall summary in 50 words across all my metrics>          |\n| What it means for you | <how it might affect my team and its delivery in terms of real world impact> |\n| Suggestions           | <what steps I can take to improve my metrics>                |\n\n**Action Items**\n- [Team Action Items to improve dora metrics]\n\nPrompt Start:\ndata: "
         message = self._get_message(base_prompt + json.dumps(aggregated_dora_data))
 
         return self._fetch_completion([message])
