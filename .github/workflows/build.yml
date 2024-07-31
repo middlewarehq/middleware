@@ -181,9 +181,6 @@ jobs:
           docker buildx imagetools create ${{ env.DOCKER_TAG }} \
             $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
-      - name: Inspect image
-        run: docker buildx imagetools inspect $(echo "${{ env.DOCKER_TAG }}" | sed 's/-t //g')
-
   stop-runner-arm:
     name: Stop self-hosted EC2 arm runner
     needs:
