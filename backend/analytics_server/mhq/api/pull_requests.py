@@ -167,3 +167,13 @@ def get_team_lead_time_trends(
         week.isoformat(): adapt_lead_time_metrics(average_lead_time_metrics)
         for week, average_lead_time_metrics in weekly_lead_time_metrics_avg_map.items()
     }
+
+@app.route("/teams/<team_id>/prs/merged_not_reviwed", methods={"GET"})
+def merge_not_reviwed(team_id : str):
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+    pr_analytics = get_pr_analytics_service()
+    result = pr_analytics.get_prs_not_reviewed_merged(team.id)
+    return result
+    # return {'message':'hellothere'}
+    
