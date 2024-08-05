@@ -102,6 +102,10 @@ jobs:
       - name: Print build metadata
         run: echo "${{ toJson(steps.meta.outputs) }}"
 
+      - name: Set Build Date
+        id: set-build-date
+        run: echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+
       - name: Build and push Docker image by digest
         id: build
         uses: docker/build-push-action@v5
@@ -110,7 +114,7 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           build-args: |
-            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            BUILD_DATE=${{ env.BUILD_DATE }}
             MERGE_COMMIT_SHA=${{ github.sha }}
           tags: ${{ github.ref == 'refs/heads/main' && format('middlewareeng/middleware:latest') || steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
