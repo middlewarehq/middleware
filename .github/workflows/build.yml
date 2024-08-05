@@ -110,7 +110,7 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           build-args: |
-            BUILD_DATE=${{ steps.meta.outputs.created }}
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
             MERGE_COMMIT_SHA=${{ github.sha }}
           tags: ${{ github.ref == 'refs/heads/main' && format('middlewareeng/middleware:latest') || steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
