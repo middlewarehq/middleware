@@ -111,6 +111,9 @@ function isUpdateAvailable({
   localVersionInfo: ProjectVersionInfo;
   dockerLatestRemoteTag: TagCompressed;
 }): boolean {
+
+  const estimatesBuildTimeInMs: number = 30*60*1000;
+
   const env = process.env.NEXT_PUBLIC_APP_ENVIRONMENT;
 
   if (env == 'development') {
@@ -122,7 +125,7 @@ function isUpdateAvailable({
 
   const localBuildDate = new Date(localVersionInfo.current_build_date);
   const latestRemoteDate = new Date(dockerLatestRemoteTag.last_updated);
-  return latestRemoteDate > localBuildDate;
+  return latestRemoteDate.getTime() - localBuildDate.getTime() > estimatesBuildTimeInMs;
 }
 
 async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
