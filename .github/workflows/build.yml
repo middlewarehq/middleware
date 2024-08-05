@@ -70,7 +70,6 @@ jobs:
           BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
           echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
-          echo ${{ env.BUILD_DATE }}
 
       - name: Checkout
         uses: actions/checkout@v4
