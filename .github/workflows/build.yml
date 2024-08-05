@@ -67,7 +67,9 @@ jobs:
       - name: Prepare
         run: |
           platform=${{ matrix.platform }}
+          BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -110,7 +112,7 @@ jobs:
           file: ./Dockerfile
           platforms: ${{ matrix.platform }}
           build-args: |
-            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+            BUILD_DATE=${{ env.BUILD_DATE }}
             MERGE_COMMIT_SHA=${{ github.sha }}
           tags: ${{ github.ref == 'refs/heads/main' && format('middlewareeng/middleware:latest') || steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
