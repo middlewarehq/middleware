@@ -6,6 +6,23 @@ import {
 } from 'date-fns/constants';
 import { isNil, mean, reject } from 'ramda';
 
+export enum IndustryStandardsDoraScores {
+  ALL_INDUSTRIES = 6.3,
+  EDUCATION = 6.5,
+  ENERGY = 6.1,
+  FINANCIAL_SERVICES = 6.5,
+  GOVERNMENT = 6.2,
+  HEALTHCARE_AND_PHARMACEUTICALS = 6.0,
+  INDUSTRIALS_AND_MANUFACTURING = 5.7,
+  INSURANCE = 6.2,
+  MEDIA_AND_ENTERTAINMENT = 7.2,
+  NON_PROFIT = 6.2,
+  RETAIL_CONSUMER_ECOMMERCE = 6.5,
+  TECHNOLOGY = 6.3,
+  TELECOMMUNICATIONS = 6.2,
+  OTHER = 6.7
+}
+
 export const getDoraScore = ({
   lt,
   df,
