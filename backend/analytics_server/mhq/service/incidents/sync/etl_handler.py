@@ -24,7 +24,9 @@ from mhq.utils.time import time_now
 
 class IncidentsETLHandler:
 
-    DEFAULT_SYNC_DAYS = 31
+    DEFAULT_SYNC_DAYS = (
+        int(getenv("DEFAULT_SYNC_DAYS")) if getenv("DEFAULT_SYNC_DAYS") else 31
+    )
 
     def __init__(
         self,
