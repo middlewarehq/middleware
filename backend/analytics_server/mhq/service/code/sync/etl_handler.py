@@ -20,7 +20,7 @@ from mhq.service.merge_to_deploy_broker import (
     get_merge_to_deploy_broker_utils_service,
     MergeToDeployBrokerUtils,
 )
-from mhq.store.models.code import OrgRepo, BookmarkType, Bookmark, PullRequest
+from mhq.store.models.code import OrgRepo, CodeBookmarkType, Bookmark, PullRequest
 from mhq.store.repos.code import CodeRepoService
 from mhq.utils.log import LOG
 from mhq.utils.time import time_now
@@ -120,7 +120,7 @@ class CodeETLHandler:
     ):
 
         bookmark = self.code_repo_service.get_org_repo_bookmark(
-            org_repo, BookmarkType.PR
+            org_repo.id, CodeBookmarkType.PR
         )
         if not bookmark:
             default_pr_bookmark = datetime.now().astimezone(tz=pytz.UTC) - timedelta(
@@ -128,7 +128,7 @@ class CodeETLHandler:
             )
             bookmark = Bookmark(
                 repo_id=org_repo.id,
-                type=BookmarkType.PR.value,
+                type=CodeBookmarkType.PR.value,
                 bookmark=default_pr_bookmark.isoformat(),
             )
         return bookmark
