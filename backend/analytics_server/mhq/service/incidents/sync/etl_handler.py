@@ -2,6 +2,11 @@ from os import getenv
 from datetime import timedelta
 from typing import List
 
+from mhq.store.models.settings.configuration_settings import (
+    SettingType,
+)
+from mhq.store.models.settings.enums import EntityType
+from mhq.service.settings.configuration_settings import get_settings_service
 from mhq.service.incidents.integration import get_incidents_integration_service
 from mhq.service.incidents.sync.etl_incidents_factory import IncidentsETLFactory
 from mhq.service.incidents.sync.etl_provider_handler import IncidentsProviderETLHandler
@@ -19,9 +24,7 @@ from mhq.utils.time import time_now
 
 class IncidentsETLHandler:
 
-    DEFAULT_SYNC_DAYS = (
-        int(getenv("DEFAULT_SYNC_DAYS")) if getenv("DEFAULT_SYNC_DAYS") else 31
-    )
+    DEFAULT_SYNC_DAYS = 31
 
     def __init__(
         self,
@@ -54,9 +57,19 @@ class IncidentsETLHandler:
             LOG.error(f"Error syncing incident services for org {org_id}: {str(e)}")
             return
 
-    def _sync_service_incidents(self, service: OrgIncidentService):
+    def _sync_service_incidents(self, org_id: str, service: OrgIncidentService):
         try:
-            bookmark: IncidentsBookmark = self.__get_incidents_bookmark(service)
+            default_sync_days_setting = get_settings_service().get_settings(
+                setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                entity_type=EntityType.ORG,
+                entity_id=org_id,
+            )
+            default_sync_days = (
+                default_sync_days_setting.specific_settings.default_sync_days
+            )
+            bookmark: IncidentsBookmark = self.__get_incidents_bookmark(
+                service, default_sync_days
+            )
             (
                 incidents,
                 incident_org_incident_service_map,

@@ -1,5 +1,6 @@
 from mhq.service.settings.models import (
     ConfigurationSettings,
+    DefaultSyncDaysSetting,
     IncidentSettings,
     ExcludedPRsSetting,
     IncidentTypesSetting,
@@ -47,6 +48,11 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
                     source.value
                     for source in config_settings.specific_settings.incident_sources
                 ]
+            }
+
+        if isinstance(config_settings.specific_settings, DefaultSyncDaysSetting):
+            response["setting"] = {
+                "default_sync_days": config_settings.specific_settings.default_sync_days
             }
 
         # ADD NEW API ADAPTER HERE
