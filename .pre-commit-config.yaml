@@ -1,0 +1,30 @@
+exclude: examples/
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+  # I dont find any dedicated hook for this, so using a custom one
+  - repo: local
+    hooks:
+    - id: linting webserver
+      name: Linting-webserver
+      entry: bash -c 'cd web-server && yarn lint-fix'
+      language: system
+  - repo: local
+    hooks:
+    - id: linting cli
+      name: Linting-cli
+      entry: bash -c 'cd cli && yarn lint-fix'
+      language: system
+  # black fixes code, so let it be at the last
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black
