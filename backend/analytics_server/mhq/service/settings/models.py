@@ -46,7 +46,6 @@ class DefaultSyncDaysSetting(BaseSetting):
     default_sync_days: int
 
 
-
 # ADD NEW SETTING CLASS HERE
 
 # Sample Future Settings
