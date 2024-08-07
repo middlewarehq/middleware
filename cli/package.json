@@ -11,8 +11,8 @@
 		"build": "tsc",
 		"dev": "tsc --watch",
 		"test": "yarn link-fix && ava",
-		"lint": "eslint",
-		"lint-fix": "eslint --fix ./source/**/*",
+		"lint": "eslint source/**/*.{js,ts,tsx}",
+		"lint-fix": "eslint --fix ./source/**/{js,ts,tsx}",
 		"start": "[ -e ../.env ] && set -a && . ../.env; node dist/cli.js"
 	},
 	"files": [
