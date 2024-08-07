@@ -4,6 +4,13 @@ from typing import List
 
 import pytz
 
+from mhq.service.settings.configuration_settings import (
+    get_settings_service,
+)
+from mhq.store.models.settings.configuration_settings import (
+    SettingType,
+)
+from mhq.store.models.settings.enums import EntityType
 from mhq.service.code.integration import get_code_integration_service
 from mhq.service.code.sync.etl_code_factory import (
     CodeProviderETLHandler,
@@ -61,7 +68,17 @@ class CodeETLHandler:
 
     def _sync_repo_pull_requests_data(self, org_repo: OrgRepo) -> None:
         try:
-            bookmark: Bookmark = self.__get_org_repo_bookmark(org_repo)
+            default_sync_days_setting = get_settings_service().get_settings(
+                setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                entity_type=EntityType.ORG,
+                entity_id=str(org_repo.org_id),
+            )
+            default_sync_days = (
+                default_sync_days_setting.specific_settings.default_sync_days
+            )
+            bookmark: Bookmark = self.__get_org_repo_bookmark(
+                org_repo, default_sync_days
+            )
             (
                 pull_requests,
                 pull_request_commits,

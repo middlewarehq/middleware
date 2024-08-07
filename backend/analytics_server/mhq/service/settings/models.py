@@ -41,6 +41,11 @@ class IncidentSourcesSetting(BaseSetting):
     incident_sources: List[IncidentSource]
 
 
+@dataclass
+class DefaultSyncDaysSetting(BaseSetting):
+    default_sync_days: int
+
+
 # ADD NEW SETTING CLASS HERE
 
 # Sample Future Settings

@@ -26,6 +26,9 @@ def get_default_setting_data(setting_type: SettingType):
             "incident_types": [incident_type.value for incident_type in incident_types]
         }
 
+    if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING:
+        return {"default_sync_days": 31}
+
     # ADD NEW DEFAULT SETTING HERE
 
     raise Exception(f"Invalid Setting Type: {setting_type}")

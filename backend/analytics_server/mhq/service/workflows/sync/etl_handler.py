@@ -3,6 +3,13 @@ from datetime import timedelta
 from typing import List, Tuple
 from uuid import uuid4
 
+from mhq.service.settings.configuration_settings import (
+    get_settings_service,
+)
+from mhq.store.models.settings.configuration_settings import (
+    SettingType,
+)
+from mhq.store.models.settings.enums import EntityType
 from mhq.service.code import get_code_integration_service
 from mhq.service.workflows.integration import get_workflows_integrations_service
 from mhq.service.workflows.sync.etl_provider_handler import WorkflowProviderETLHandler
@@ -88,8 +95,16 @@ class WorkflowETLHandler:
             LOG.error("Invalid PAT for code provider")
             return
         try:
+            default_sync_days_setting = get_settings_service().get_settings(
+                setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                entity_type=EntityType.ORG,
+                entity_id=str(org_repo.org_id),
+            )
+            default_sync_days = (
+                default_sync_days_setting.specific_settings.default_sync_days
+            )
             bookmark: RepoWorkflowRunsBookmark = self.__get_repo_workflow_bookmark(
-                repo_workflow
+                repo_workflow, default_sync_days
             )
             repo_workflow_runs: List[RepoWorkflowRuns]
             repo_workflow_runs, bookmark = etl_service.get_workflow_runs(
