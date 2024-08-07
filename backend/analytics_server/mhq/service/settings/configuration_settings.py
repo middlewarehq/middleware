@@ -59,9 +59,7 @@ class SettingsService:
             ]
         )
 
-    def _adapt_default_sync_days_setting_setting_from_setting_data(
-        self, data: Dict[str, any]
-    ):
+    def _adapt_default_sync_days_setting_from_setting_data(self, data: Dict[str, any]):
         return DefaultSyncDaysSetting(
             default_sync_days=data.get("default_sync_days", None)
         )
@@ -86,9 +84,7 @@ class SettingsService:
             return self._adapt_incident_source_setting_from_setting_data(setting_data)
 
         if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING:
-            return self._adapt_default_sync_days_setting_setting_from_setting_data(
-                setting_data
-            )
+            return self._adapt_default_sync_days_setting_from_setting_data(setting_data)
 
         # ADD NEW HANDLE FROM DB SETTINGS HERE
 
@@ -164,7 +160,7 @@ class SettingsService:
             ]
         )
 
-    def _adapt_default_sync_days_setting_setting_from_json(self, data: Dict[str, any]):
+    def _adapt_default_sync_days_setting_from_json(self, data: Dict[str, any]):
         return DefaultSyncDaysSetting(
             default_sync_days=data.get("default_sync_days", None)
         )
@@ -189,7 +185,7 @@ class SettingsService:
             return self._adapt_incident_types_setting_from_json(setting_data)
 
         if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING:
-            return self._adapt_default_sync_days_setting_setting_from_json(setting_data)
+            return self._adapt_default_sync_days_setting_from_json(setting_data)
 
         # ADD NEW HANDLE FROM JSON DATA HERE
 
@@ -224,7 +220,7 @@ class SettingsService:
             ]
         }
 
-    def _adapt_default_sync_days_setting_setting_json_data(
+    def _adapt_default_sync_days_setting_json_data(
         self, specific_setting: DefaultSyncDaysSetting
     ):
         return {"default_sync_days": specific_setting.default_sync_days}
@@ -258,9 +254,7 @@ class SettingsService:
         if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING and isinstance(
             specific_setting, DefaultSyncDaysSetting
         ):
-            return self._adapt_default_sync_days_setting_setting_json_data(
-                specific_setting
-            )
+            return self._adapt_default_sync_days_setting_json_data(specific_setting)
 
         # ADD NEW HANDLE TO DB SETTINGS HERE
 
