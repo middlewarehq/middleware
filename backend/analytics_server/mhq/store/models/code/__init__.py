@@ -1,6 +1,6 @@
 from .enums import (
     CodeProvider,
-    BookmarkType,
+    CodeBookmarkType,
     PullRequestState,
     PullRequestEventState,
     PullRequestEventType,
