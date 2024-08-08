@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import List, Tuple
 
 from mhq.store.models.incidents import (
@@ -32,12 +33,12 @@ class IncidentsProviderETLHandler(ABC):
 
     @abstractmethod
     def process_service_incidents(
-        self, incident_service: OrgIncidentService, bookmark: IncidentsBookmark
-    ) -> Tuple[List[Incident], List[IncidentOrgIncidentServiceMap], IncidentsBookmark]:
+        self, incident_service: OrgIncidentService, bookmark: datetime
+    ) -> Tuple[List[Incident], List[IncidentOrgIncidentServiceMap], datetime]:
         """
         This method processes the incidents for the incident services.
         :param incident_service: Incident service object
-        :param bookmark: IncidentsBookmark object
+        :param bookmark: datetime object
         :return: Tuple of incidents, incident service map and incidents bookmark
         """
         pass
