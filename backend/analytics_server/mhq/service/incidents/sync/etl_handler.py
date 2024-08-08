@@ -66,10 +66,12 @@ class IncidentsETLHandler:
 
     def _sync_service_incidents(self, service: OrgIncidentService):
         try:
-            default_sync_days_setting = self.settings_service.get_settings(
-                setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
-                entity_type=EntityType.ORG,
-                entity_id=str(service.org_id),
+            default_sync_days_setting = (
+                self.settings_service.get_or_set_default_settings(
+                    setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                    entity_type=EntityType.ORG,
+                    entity_id=str(service.org_id),
+                )
             )
             default_sync_days = (
                 default_sync_days_setting.specific_settings.default_sync_days

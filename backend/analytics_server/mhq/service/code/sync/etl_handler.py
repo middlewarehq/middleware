@@ -70,7 +70,7 @@ class CodeETLHandler:
     def _sync_repo_pull_requests_data(self, org_repo: OrgRepo) -> None:
         try:
             default_sync_days_setting: DefaultSyncDaysSetting = (
-                self.settings_service.get_settings(
+                self.settings_service.get_or_set_default_settings(
                     setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
                     entity_type=EntityType.ORG,
                     entity_id=str(org_repo.org_id),
