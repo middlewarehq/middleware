@@ -18,7 +18,6 @@ from mhq.service.code.sync.revert_prs_github_sync import (
 from mhq.store.models import UserIdentityProvider
 from mhq.store.models.code import (
     OrgRepo,
-    Bookmark,
     PullRequestState,
     PullRequest,
     PullRequestCommit,
@@ -90,7 +89,7 @@ class GithubETLHandler(CodeProviderETLHandler):
         ]
 
     def get_repo_pull_requests_data(
-        self, org_repo: OrgRepo, bookmark: Bookmark
+        self, org_repo: OrgRepo, bookmark: datetime
     ) -> Tuple[List[PullRequest], List[PullRequestCommit], List[PullRequestEvent]]:
         """
         This method returns all pull requests, their Commits and Events of a repo.
@@ -106,7 +105,6 @@ class GithubETLHandler(CodeProviderETLHandler):
         )
 
         prs_to_process = []
-        bookmark_time = datetime.fromisoformat(bookmark.bookmark)
         for page in range(
             0, github_pull_requests.totalCount // PR_PROCESSING_CHUNK_SIZE + 1, 1
         ):
@@ -114,11 +112,9 @@ class GithubETLHandler(CodeProviderETLHandler):
             if not prs:
                 break
 
-            if prs[-1].updated_at.astimezone(tz=pytz.UTC) <= bookmark_time:
+            if prs[-1].updated_at.astimezone(tz=pytz.UTC) <= bookmark:
                 prs_to_process += [
-                    pr
-                    for pr in prs
-                    if pr.updated_at.astimezone(tz=pytz.UTC) > bookmark_time
+                    pr for pr in prs if pr.updated_at.astimezone(tz=pytz.UTC) > bookmark
                 ]
                 break
 
@@ -129,7 +125,7 @@ class GithubETLHandler(CodeProviderETLHandler):
             state_changed_at = pr.merged_at if pr.merged_at else pr.closed_at
             if (
                 pr.state.upper() != PullRequestState.OPEN.value
-                and state_changed_at.astimezone(tz=pytz.UTC) < bookmark_time
+                and state_changed_at.astimezone(tz=pytz.UTC) < bookmark
             ):
                 continue
             if pr not in filtered_prs:
