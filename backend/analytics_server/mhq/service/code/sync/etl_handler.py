@@ -1,5 +1,4 @@
-from os import getenv
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List
 
 import pytz
@@ -24,16 +23,11 @@ from mhq.service.merge_to_deploy_broker import (
 from mhq.store.models.code import OrgRepo, CodeBookmarkType, Bookmark, PullRequest
 from mhq.store.repos.code import CodeRepoService
 from mhq.utils.log import LOG
-from mhq.utils.time import time_now
 from mhq.service.settings.models import DefaultSyncDaysSetting
 from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_service
 
 
 class CodeETLHandler:
-
-    DEFAULT_SYNC_DAYS = (
-        int(getenv("DEFAULT_SYNC_DAYS")) if getenv("DEFAULT_SYNC_DAYS") else 31
-    )
 
     def __init__(
         self,
