@@ -1,54 +1,59 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from mhq.store.models.code import (
     PullRequest,
     PullRequestState,
-    BookmarkMergeToDeployBroker,
 )
-from mhq.store.repos.code import CodeRepoService
 from mhq.utils.lock import get_redis_lock_service, RedisLockService
+from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_service
+from mhq.store.models.code import OrgRepo
 
 
 class MergeToDeployBrokerUtils:
     def __init__(
-        self, code_repo_service: CodeRepoService, redis_lock_service: RedisLockService
+        self,
+        redis_lock_service: RedisLockService,
+        bookmark_service: BookmarkService,
     ):
-        self.code_repo_service = code_repo_service
         self.redis_lock_service = redis_lock_service
+        self.bookmark_service = bookmark_service
 
-    def pushback_merge_to_deploy_bookmark(self, repo_id: str, prs: List[PullRequest]):
+    def pushback_merge_to_deploy_bookmark(self, repo: OrgRepo, prs: List[PullRequest]):
+        repo_id = str(repo.id)
         with self.redis_lock_service.acquire_lock(
             "{org_repo}:" + f"{repo_id}:merge_to_deploy_broker"
         ):
-            self._pushback_merge_to_deploy_bookmark(repo_id, prs)
+            self._pushback_merge_to_deploy_bookmark(repo, prs)
 
-    def _pushback_merge_to_deploy_bookmark(self, repo_id: str, prs: List[PullRequest]):
+    def _pushback_merge_to_deploy_bookmark(self, repo: OrgRepo, prs: List[PullRequest]):
         merged_prs = [pr for pr in prs if pr.state == PullRequestState.MERGED]
         if not merged_prs:
             return
 
         min_merged_time: datetime = min([pr.state_changed_at for pr in merged_prs])
-
-        merge_to_deploy_broker_bookmark: BookmarkMergeToDeployBroker = (
-            self.code_repo_service.get_merge_to_deploy_broker_bookmark(repo_id)
+        repo_id = str(repo.id)
+        provider = repo.provider
+        merge_to_deploy_broker_bookmark: Optional[datetime] = (
+            self.bookmark_service.get_bookmark(
+                repo_id, BookmarkType.MERGE_TO_DEPLOY_BOOKMARK, provider
+            )
         )
         if not merge_to_deploy_broker_bookmark:
-            merge_to_deploy_broker_bookmark = BookmarkMergeToDeployBroker(
-                repo_id=repo_id, bookmark=min_merged_time.isoformat()
-            )
+            merge_to_deploy_broker_bookmark = min_merged_time
 
-        merge_to_deploy_broker_bookmark.bookmark = min(
-            datetime.fromisoformat(merge_to_deploy_broker_bookmark.bookmark),
+        merge_to_deploy_broker_bookmark = min(
+            merge_to_deploy_broker_bookmark,
             min_merged_time,
-        ).isoformat()
+        )
 
-        self.code_repo_service.update_merge_to_deploy_broker_bookmark(
-            merge_to_deploy_broker_bookmark
+        self.bookmark_service.update_bookmark(
+            repo_id,
+            BookmarkType.MERGE_TO_DEPLOY_BOOKMARK,
+            provider,
+            merge_to_deploy_broker_bookmark,
         )
 
 
 def get_merge_to_deploy_broker_utils_service():
-    return MergeToDeployBrokerUtils(
-        CodeRepoService(), redis_lock_service=get_redis_lock_service()
-    )
+    return MergeToDeployBrokerUtils(get_redis_lock_service(), get_bookmark_service())

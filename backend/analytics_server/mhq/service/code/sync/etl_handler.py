@@ -109,9 +109,7 @@ class CodeETLHandler:
                 org_repo.provider,
                 bookmark,
             )
-            self.mtd_broker.pushback_merge_to_deploy_bookmark(
-                str(org_repo.id), pull_requests
-            )
+            self.mtd_broker.pushback_merge_to_deploy_bookmark(org_repo, pull_requests)
             self.__sync_revert_prs_mapping(org_repo, pull_requests)
         except Exception as e:
             LOG.error(f"Error syncing pull requests for repo {org_repo.name}: {str(e)}")
