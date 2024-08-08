@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from typing import List, Dict, Optional, Tuple, Set, Any
 from uuid import uuid4
 from mhq.utils.diffparser import parse_gitlab_diffs
@@ -22,7 +23,6 @@ from mhq.service.code.sync.etl_provider_handler import CodeProviderETLHandler
 from mhq.store.models import UserIdentityProvider
 from mhq.store.models.code import (
     OrgRepo,
-    Bookmark,
     PullRequestState,
     PullRequest,
     PullRequestCommit,
@@ -34,7 +34,7 @@ from mhq.store.models.code import (
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.core import CoreRepoService
 from mhq.utils.log import LOG
-from mhq.utils.time import dt_from_iso_time_string, time_now
+from mhq.utils.time import time_now
 
 PR_PROCESSING_CHUNK_SIZE = 100
 
@@ -117,7 +117,7 @@ class GitlabETLHandler(CodeProviderETLHandler):
         return org_repo
 
     def get_repo_pull_requests_data(
-        self, org_repo: OrgRepo, bookmark: Bookmark
+        self, org_repo: OrgRepo, bookmark: datetime
     ) -> Tuple[List[PullRequest], List[PullRequestCommit], List[PullRequestEvent]]:
         """
         This method returns all pull requests, their Commits and Events of a repo.
@@ -126,11 +126,8 @@ class GitlabETLHandler(CodeProviderETLHandler):
         :return: Pull requests, their commits and events
         """
         gitlab_repo: GitlabRepo = self._api.get_project(org_repo.idempotency_key)
-        bookmark_time = dt_from_iso_time_string(bookmark.bookmark)
         prs_to_process: List[Dict] = asyncio.run(
-            self._api.get_project_merge_requests(
-                gitlab_repo.idempotency_key, bookmark_time
-            )
+            self._api.get_project_merge_requests(gitlab_repo.idempotency_key, bookmark)
         )
         filtered_prs: List[Dict] = []
         for pr in prs_to_process:

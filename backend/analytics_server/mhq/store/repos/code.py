@@ -18,6 +18,7 @@ from mhq.store.models.code import (
     PullRequestState,
     PRFilter,
     BookmarkMergeToDeployBroker,
+    CodeBookmarkType,
 )
 from mhq.utils.time import Interval
 
@@ -127,12 +128,12 @@ class CodeRepoService:
         self._db.session.commit()
 
     @rollback_on_exc
-    def get_org_repo_bookmark(self, org_repo: OrgRepo, bookmark_type):
+    def get_org_repo_bookmark(self, org_repo_id: str, bookmark_type: CodeBookmarkType):
         return (
             self._db.session.query(Bookmark)
             .filter(
                 and_(
-                    Bookmark.repo_id == org_repo.id,
+                    Bookmark.repo_id == org_repo_id,
                     Bookmark.type == bookmark_type.value,
                 )
             )
@@ -142,6 +143,23 @@ class CodeRepoService:
     @rollback_on_exc
     def update_org_repo_bookmark(self, bookmark: Bookmark):
         self._db.session.merge(bookmark)
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def get_all_org_repo_bookmarks(self, org_id: str) -> List[Bookmark]:
+        return (
+            self._db.session.query(Bookmark)
+            .join(OrgRepo, OrgRepo.id == Bookmark.repo_id)
+            .filter(OrgRepo.org_id == org_id)
+            .all()
+        )
+
+    @rollback_on_exc
+    def update_org_repo_bookmarks(self, bookmarks: List[Bookmark]):
+
+        for bookmark in bookmarks:
+            self._db.session.merge(bookmark)
+
         self._db.session.commit()
 
     @rollback_on_exc
@@ -348,10 +366,29 @@ class CodeRepoService:
         )
 
     @rollback_on_exc
+    def get_all_org_merge_to_deploy_broker_bookmarks(
+        self, org_id: str
+    ) -> List[BookmarkMergeToDeployBroker]:
+        return (
+            self._db.session.query(BookmarkMergeToDeployBroker)
+            .join(OrgRepo, BookmarkMergeToDeployBroker.repo_id == OrgRepo.id)
+            .filter(OrgRepo.org_id == org_id)
+            .all()
+        )
+
+    @rollback_on_exc
     def update_merge_to_deploy_broker_bookmark(
         self, bookmark: BookmarkMergeToDeployBroker
     ):
         self._db.session.merge(bookmark)
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def update_merge_to_deploy_broker_bookmarks(
+        self, bookmarks: List[BookmarkMergeToDeployBroker]
+    ):
+        for bookmark in bookmarks:
+            self._db.session.merge(bookmark)
         self._db.session.commit()
 
     @rollback_on_exc

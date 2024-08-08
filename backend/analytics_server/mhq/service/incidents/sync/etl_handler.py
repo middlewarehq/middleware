@@ -1,42 +1,42 @@
-from os import getenv
-from datetime import timedelta
+from datetime import datetime
 from typing import List
 
 from mhq.store.models.settings.configuration_settings import (
     SettingType,
 )
 from mhq.store.models.settings.enums import EntityType
-from mhq.service.settings.configuration_settings import get_settings_service
+from mhq.service.settings.configuration_settings import (
+    SettingsService,
+    get_settings_service,
+)
 from mhq.service.incidents.integration import get_incidents_integration_service
 from mhq.service.incidents.sync.etl_incidents_factory import IncidentsETLFactory
 from mhq.service.incidents.sync.etl_provider_handler import IncidentsProviderETLHandler
 from mhq.store.models.incidents import (
     OrgIncidentService,
-    IncidentBookmarkType,
     IncidentProvider,
-    IncidentsBookmark,
 )
 from mhq.store.repos.incidents import IncidentsRepoService
 from mhq.utils.log import LOG
-from mhq.utils.string import uuid4_str
-from mhq.utils.time import time_now
+from mhq.service.settings.models import DefaultSyncDaysSetting
+from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_service
 
 
 class IncidentsETLHandler:
-
-    DEFAULT_SYNC_DAYS = (
-        int(getenv("DEFAULT_SYNC_DAYS")) if getenv("DEFAULT_SYNC_DAYS") else 31
-    )
 
     def __init__(
         self,
         provider: IncidentProvider,
         incident_repo_service: IncidentsRepoService,
         etl_service: IncidentsProviderETLHandler,
+        settings_service: SettingsService,
+        bookmark_service: BookmarkService,
     ):
         self.provider = provider
         self.incident_repo_service = incident_repo_service
         self.etl_service = etl_service
+        self.settings_service = settings_service
+        self.bookmark_service = bookmark_service
 
     def sync_org_incident_services(self, org_id: str):
         try:
@@ -61,16 +61,19 @@ class IncidentsETLHandler:
 
     def _sync_service_incidents(self, service: OrgIncidentService):
         try:
-            default_sync_days_setting = get_settings_service().get_settings(
-                setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
-                entity_type=EntityType.ORG,
-                entity_id=str(service.org_id),
+            default_sync_days_setting: DefaultSyncDaysSetting = (
+                self.settings_service.get_or_set_default_settings(
+                    setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                    entity_type=EntityType.ORG,
+                    entity_id=str(service.org_id),
+                ).specific_settings
             )
-            default_sync_days = (
-                default_sync_days_setting.specific_settings.default_sync_days
-            )
-            bookmark: IncidentsBookmark = self.__get_incidents_bookmark(
-                service, default_sync_days
+            default_sync_days = default_sync_days_setting.default_sync_days
+            bookmark: datetime = self.bookmark_service.get_bookmark(
+                str(service.id),
+                BookmarkType.INCIDENT_SERVICE_BOOKMARK,
+                service.provider,
+                default_sync_days,
             )
             (
                 incidents,
@@ -80,29 +83,16 @@ class IncidentsETLHandler:
             self.incident_repo_service.save_incidents_data(
                 incidents, incident_org_incident_service_map
             )
-            bookmark.updated_at = time_now()
-            self.incident_repo_service.save_incidents_bookmark(bookmark)
+            self.bookmark_service.update_bookmark(
+                str(service.id),
+                BookmarkType.INCIDENT_SERVICE_BOOKMARK,
+                service.provider,
+                bookmark,
+            )
 
         except Exception as e:
             LOG.error(f"Error syncing incidents for service {service.key}: {str(e)}")
             return
-
-    def __get_incidents_bookmark(
-        self, service: OrgIncidentService, default_sync_days: int = DEFAULT_SYNC_DAYS
-    ) -> IncidentsBookmark:
-        bookmark = self.incident_repo_service.get_incidents_bookmark(
-            str(service.id), IncidentBookmarkType.SERVICE, self.provider
-        )
-        if not bookmark:
-            default_pr_bookmark = time_now() - timedelta(days=default_sync_days)
-            bookmark = IncidentsBookmark(
-                id=uuid4_str(),
-                entity_id=str(service.id),
-                entity_type=IncidentBookmarkType.SERVICE,
-                provider=self.provider.value,
-                bookmark=default_pr_bookmark,
-            )
-        return bookmark
 
 
 def sync_org_incidents(org_id: str):
@@ -118,7 +108,11 @@ def sync_org_incidents(org_id: str):
         try:
             incident_provider = IncidentProvider(provider)
             incidents_etl_handler = IncidentsETLHandler(
-                incident_provider, IncidentsRepoService(), etl_factory(provider)
+                incident_provider,
+                IncidentsRepoService(),
+                etl_factory(provider),
+                get_settings_service(),
+                get_bookmark_service(),
             )
             incidents_etl_handler.sync_org_incident_services(org_id)
         except Exception as e:

@@ -6,7 +6,7 @@ class CodeProvider(Enum):
     GITLAB = "gitlab"
 
 
-class BookmarkType(Enum):
+class CodeBookmarkType(Enum):
     PR = "PR"
 
 

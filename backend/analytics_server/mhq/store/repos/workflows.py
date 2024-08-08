@@ -16,6 +16,7 @@ from mhq.store.models.code.workflows.workflows import (
     RepoWorkflowRuns,
     RepoWorkflowRunsBookmark,
 )
+from mhq.store.models.code.repository import OrgRepo
 from mhq.utils.time import Interval
 
 
@@ -71,8 +72,33 @@ class WorkflowRepoService:
         )
 
     @rollback_on_exc
+    def get_all_repo_workflow_runs_bookmark(
+        self, org_id: str
+    ) -> List[RepoWorkflowRunsBookmark]:
+        return (
+            self._db.session.query(RepoWorkflowRunsBookmark)
+            .join(
+                RepoWorkflow,
+                RepoWorkflowRunsBookmark.repo_workflow_id == RepoWorkflow.id,
+            )
+            .join(OrgRepo, RepoWorkflow.org_repo_id == OrgRepo.id)
+            .filter(OrgRepo.org_id == org_id)
+            .all()
+        )
+
+    @rollback_on_exc
     def update_repo_workflow_runs_bookmark(self, bookmark: RepoWorkflowRunsBookmark):
         self._db.session.merge(bookmark)
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def update_repo_workflow_runs_bookmarks(
+        self, bookmarks: List[RepoWorkflowRunsBookmark]
+    ):
+
+        for bookmark in bookmarks:
+            self._db.session.merge(bookmark)
+
         self._db.session.commit()
 
     @rollback_on_exc
@@ -185,7 +211,7 @@ class WorkflowRepoService:
     @rollback_on_exc
     def get_repo_workflow_runs_conducted_after_time(
         self, repo_id: str, from_time: datetime = None, limit_value: int = 500
-    ):
+    ) -> List[RepoWorkflowRuns]:
         query = (
             self._db.session.query(RepoWorkflowRuns)
             .options(defer(RepoWorkflowRuns.meta))

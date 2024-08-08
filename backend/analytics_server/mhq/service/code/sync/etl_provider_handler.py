@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import List, Tuple
 
 from mhq.store.models.code import (
@@ -31,7 +32,7 @@ class CodeProviderETLHandler(ABC):
 
     @abstractmethod
     def get_repo_pull_requests_data(
-        self, org_repo: OrgRepo, bookmark: Bookmark
+        self, org_repo: OrgRepo, bookmark: datetime
     ) -> Tuple[List[PullRequest], List[PullRequestCommit], List[PullRequestEvent]]:
         """
         This method returns all pull requests, their Commits and Events of a repo. After the bookmark date.

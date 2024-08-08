@@ -4,6 +4,7 @@ from typing import List, Tuple
 from uuid import uuid4
 
 from mhq.service.settings.configuration_settings import (
+    SettingsService,
     get_settings_service,
 )
 from mhq.store.models.settings.configuration_settings import (
@@ -38,10 +39,12 @@ class WorkflowETLHandler:
         code_repo_service: CodeRepoService,
         workflow_repo_service: WorkflowRepoService,
         etl_factory: WorkflowETLFactory,
+        settings_service: SettingsService,
     ):
         self.code_repo_service = code_repo_service
         self.workflow_repo_service = workflow_repo_service
         self.etl_factory = etl_factory
+        self.settings_service = settings_service
 
     def sync_org_workflows(self, org_id: str):
         active_repo_workflows: List[Tuple[OrgRepo, RepoWorkflow]] = (
@@ -95,10 +98,12 @@ class WorkflowETLHandler:
             LOG.error("Invalid PAT for code provider")
             return
         try:
-            default_sync_days_setting = get_settings_service().get_settings(
-                setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
-                entity_type=EntityType.ORG,
-                entity_id=str(org_repo.org_id),
+            default_sync_days_setting = (
+                self.settings_service.get_or_set_default_settings(
+                    setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                    entity_type=EntityType.ORG,
+                    entity_id=str(org_repo.org_id),
+                )
             )
             default_sync_days = (
                 default_sync_days_setting.specific_settings.default_sync_days
@@ -151,6 +156,6 @@ def sync_org_workflows(org_id: str):
     workflow_repo_service = WorkflowRepoService()
     etl_factory = WorkflowETLFactory(org_id)
     workflow_etl_handler = WorkflowETLHandler(
-        code_repo_service, workflow_repo_service, etl_factory
+        code_repo_service, workflow_repo_service, etl_factory, get_settings_service()
     )
     workflow_etl_handler.sync_org_workflows(org_id)
