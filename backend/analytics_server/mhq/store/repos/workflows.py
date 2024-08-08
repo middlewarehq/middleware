@@ -211,7 +211,7 @@ class WorkflowRepoService:
     @rollback_on_exc
     def get_repo_workflow_runs_conducted_after_time(
         self, repo_id: str, from_time: datetime = None, limit_value: int = 500
-    ):
+    ) -> List[RepoWorkflowRuns]:
         query = (
             self._db.session.query(RepoWorkflowRuns)
             .options(defer(RepoWorkflowRuns.meta))

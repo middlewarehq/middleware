@@ -118,6 +118,21 @@ class SettingsService:
 
         return self._adapt_config_setting_from_db_setting(setting)
 
+    def get_or_set_default_settings(
+        self, setting_type: SettingType, entity_type: EntityType, entity_id: str
+    ) -> ConfigurationSettings:
+        """
+        This method fetches the setting if it exists.
+        If setting does not exist, we set default value and return the update setting.
+        """
+
+        setting = self.get_settings(setting_type, entity_type, entity_id)
+
+        if not setting:
+            setting = self.save_settings(setting_type, entity_type, entity_id)
+
+        return setting
+
     def _adapt_specific_incident_setting_from_json(
         self, data: Dict[str, any]
     ) -> IncidentSettings:

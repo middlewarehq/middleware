@@ -70,7 +70,7 @@ class CodeETLHandler:
     def _sync_repo_pull_requests_data(self, org_repo: OrgRepo) -> None:
         try:
             default_sync_days_setting: DefaultSyncDaysSetting = (
-                self.settings_service.get_settings(
+                self.settings_service.get_or_set_default_settings(
                     setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
                     entity_type=EntityType.ORG,
                     entity_id=str(org_repo.org_id),
@@ -109,9 +109,7 @@ class CodeETLHandler:
                 org_repo.provider,
                 bookmark,
             )
-            self.mtd_broker.pushback_merge_to_deploy_bookmark(
-                str(org_repo.id), pull_requests
-            )
+            self.mtd_broker.pushback_merge_to_deploy_bookmark(org_repo, pull_requests)
             self.__sync_revert_prs_mapping(org_repo, pull_requests)
         except Exception as e:
             LOG.error(f"Error syncing pull requests for repo {org_repo.name}: {str(e)}")
