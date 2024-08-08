@@ -50,22 +50,22 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
         self,
         org_repo: OrgRepo,
         repo_workflow: RepoWorkflow,
-        bookmark: RepoWorkflowRunsBookmark,
-    ) -> Tuple[List[RepoWorkflowRuns], RepoWorkflowRunsBookmark]:
+        bookmark: datetime,
+    ) -> Tuple[List[RepoWorkflowRuns], datetime]:
         """
         This method returns all workflow runs of a repo's workflow. After the bookmark date.
         :param org_repo: OrgRepo object to get workflow runs for
         :param repo_workflow: RepoWorkflow object to get workflow runs for
-        :param bookmark: Bookmark object to get all workflow runs after this date
-        :return: Workflow runs, Bookmark object
+        :param bookmark: datetime object to get all workflow runs after this date
+        :return: Workflow runs, datetime object
         """
-        bookmark_time_stamp = datetime.fromisoformat(bookmark.bookmark)
+
         try:
             github_workflow_runs = self._api.get_workflow_runs(
                 org_repo.org_name,
                 org_repo.name,
                 repo_workflow.provider_workflow_id,
-                bookmark_time_stamp,
+                bookmark,
             )
         except Exception as e:
             raise Exception(
@@ -81,9 +81,7 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
             )
             return [], bookmark
 
-        bookmark.bookmark = self._get_new_bookmark_time_stamp(
-            github_workflow_runs
-        ).isoformat()
+        bookmark = self._get_new_bookmark_time_stamp(github_workflow_runs)
 
         repo_workflow_runs = [
             self._adapt_github_workflows_to_workflow_runs(

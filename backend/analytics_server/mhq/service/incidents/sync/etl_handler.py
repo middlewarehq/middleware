@@ -23,7 +23,6 @@ from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_ser
 
 
 class IncidentsETLHandler:
-
     def __init__(
         self,
         provider: IncidentProvider,
