@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Option
+from typing import List, Optional
 
 from mhq.service.deployments import DeploymentPRMapperService
 from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_service
@@ -63,7 +63,7 @@ class MergeToDeployCacheHandler:
         if not repo_workflows:
             return
 
-        bookmark: Option[datetime] = self.bookmark_service.get_bookmark(
+        bookmark: Optional[datetime] = self.bookmark_service.get_bookmark(
             repo_id, BookmarkType.MERGE_TO_DEPLOY_BOOKMARK, org_repo.provider
         )
 
