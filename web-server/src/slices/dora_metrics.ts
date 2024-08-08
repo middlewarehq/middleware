@@ -31,6 +31,8 @@ export type State = StateFetchConfig<{
     | 'deploymentsConfiguredForAllRepos'
     | 'deploymentsConfigured'
   >;
+  ai_summary: DoraAiAPIResponse | null;
+  ai_summary_token: string;
   allReposAssignedToTeam: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
   all_deployments: DeploymentWithIncidents[];
   resolved_incidents: IncidentsWithDeploymentResponseType[];
@@ -42,11 +44,23 @@ export type State = StateFetchConfig<{
   unsyncedRepos: ID[];
 }>;
 
+export type DoraAiAPIResponse = {
+  dora_metrics_score: string;
+  lead_time_trends_summary: string;
+  change_failure_rate_trends_summary: string;
+  mean_time_to_recovery_trends_summary: string;
+  deployment_frequency_trends_summary: string;
+  dora_trend_summary: string;
+  dora_compiled_summary: string;
+};
+
 const initialState: State = {
   firstLoadDone: false,
   activeChangeTimeMode: ChangeTimeModes.CYCLE_TIME,
   deploymentPrs: [],
   metrics_summary: null,
+  ai_summary: null,
+  ai_summary_token: '',
   allReposAssignedToTeam: [],
   all_deployments: [],
   resolved_incidents: [],
@@ -82,6 +96,13 @@ export const doraMetricsSlice = createSlice({
         (state.activeChangeTimeMode === ChangeTimeModes.CYCLE_TIME
           ? ChangeTimeModes.LEAD_TIME
           : ChangeTimeModes.CYCLE_TIME);
+    },
+    setAiSummary(
+      state: State,
+      action: PayloadAction<{ summary: State['ai_summary']; token: string }>
+    ) {
+      state.ai_summary = action.payload.summary;
+      state.ai_summary_token = action.payload.token;
     }
   },
   extraReducers: (builder) => {
