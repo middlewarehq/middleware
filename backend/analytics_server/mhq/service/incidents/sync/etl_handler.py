@@ -6,7 +6,10 @@ from mhq.store.models.settings.configuration_settings import (
     SettingType,
 )
 from mhq.store.models.settings.enums import EntityType
-from mhq.service.settings.configuration_settings import get_settings_service
+from mhq.service.settings.configuration_settings import (
+    SettingsService,
+    get_settings_service,
+)
 from mhq.service.incidents.integration import get_incidents_integration_service
 from mhq.service.incidents.sync.etl_incidents_factory import IncidentsETLFactory
 from mhq.service.incidents.sync.etl_provider_handler import IncidentsProviderETLHandler
@@ -33,10 +36,12 @@ class IncidentsETLHandler:
         provider: IncidentProvider,
         incident_repo_service: IncidentsRepoService,
         etl_service: IncidentsProviderETLHandler,
+        settings_service: SettingsService,
     ):
         self.provider = provider
         self.incident_repo_service = incident_repo_service
         self.etl_service = etl_service
+        self.settings_service = settings_service
 
     def sync_org_incident_services(self, org_id: str):
         try:
@@ -61,7 +66,7 @@ class IncidentsETLHandler:
 
     def _sync_service_incidents(self, service: OrgIncidentService):
         try:
-            default_sync_days_setting = get_settings_service().get_settings(
+            default_sync_days_setting = self.settings_service.get_settings(
                 setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
                 entity_type=EntityType.ORG,
                 entity_id=str(service.org_id),
@@ -118,7 +123,10 @@ def sync_org_incidents(org_id: str):
         try:
             incident_provider = IncidentProvider(provider)
             incidents_etl_handler = IncidentsETLHandler(
-                incident_provider, IncidentsRepoService(), etl_factory(provider)
+                incident_provider,
+                IncidentsRepoService(),
+                etl_factory(provider),
+                get_settings_service(),
             )
             incidents_etl_handler.sync_org_incident_services(org_id)
         except Exception as e:
