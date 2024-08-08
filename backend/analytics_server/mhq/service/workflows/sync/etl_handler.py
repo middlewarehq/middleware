@@ -1,7 +1,6 @@
 from os import getenv
-from datetime import timedelta
+from datetime import datetime
 from typing import List, Tuple
-from uuid import uuid4
 
 from mhq.service.settings.configuration_settings import (
     SettingsService,
@@ -25,7 +24,8 @@ from mhq.store.models.code import (
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.workflows import WorkflowRepoService
 from mhq.utils.log import LOG
-from mhq.utils.time import time_now
+from mhq.service.settings.models import DefaultSyncDaysSetting
+from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_service
 
 
 class WorkflowETLHandler:
@@ -40,11 +40,13 @@ class WorkflowETLHandler:
         workflow_repo_service: WorkflowRepoService,
         etl_factory: WorkflowETLFactory,
         settings_service: SettingsService,
+        bookmark_service: BookmarkService,
     ):
         self.code_repo_service = code_repo_service
         self.workflow_repo_service = workflow_repo_service
         self.etl_factory = etl_factory
         self.settings_service = settings_service
+        self.bookmark_service = bookmark_service
 
     def sync_org_workflows(self, org_id: str):
         active_repo_workflows: List[Tuple[OrgRepo, RepoWorkflow]] = (
@@ -98,51 +100,37 @@ class WorkflowETLHandler:
             LOG.error("Invalid PAT for code provider")
             return
         try:
-            default_sync_days_setting = (
+            default_sync_days_setting: DefaultSyncDaysSetting = (
                 self.settings_service.get_or_set_default_settings(
                     setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
                     entity_type=EntityType.ORG,
                     entity_id=str(org_repo.org_id),
-                )
+                ).specific_settings
             )
-            default_sync_days = (
-                default_sync_days_setting.specific_settings.default_sync_days
-            )
-            bookmark: RepoWorkflowRunsBookmark = self.__get_repo_workflow_bookmark(
-                repo_workflow, default_sync_days
+            default_sync_days = default_sync_days_setting.default_sync_days
+
+            bookmark: datetime = self.bookmark_service.get_bookmark(
+                str(repo_workflow.id),
+                BookmarkType.REPO_WORKFLOW_BOOKMARK,
+                repo_workflow.provider,
+                default_sync_days,
             )
             repo_workflow_runs: List[RepoWorkflowRuns]
             repo_workflow_runs, bookmark = etl_service.get_workflow_runs(
                 org_repo, repo_workflow, bookmark
             )
             self.workflow_repo_service.save_repo_workflow_runs(repo_workflow_runs)
-            bookmark.updated_at = time_now()
-            self.workflow_repo_service.update_repo_workflow_runs_bookmark(bookmark)
+            self.bookmark_service.update_bookmark(
+                str(repo_workflow.id),
+                BookmarkType.REPO_WORKFLOW_BOOKMARK,
+                repo_workflow.provider,
+                bookmark,
+            )
         except Exception as e:
             LOG.error(
                 f"Error syncing workflow for repo {repo_workflow.org_repo_id}: {str(e)}"
             )
             return
-
-    def __get_repo_workflow_bookmark(
-        self, repo_workflow: RepoWorkflow, default_sync_days: int = DEFAULT_SYNC_DAYS
-    ) -> RepoWorkflowRunsBookmark:
-        repo_workflow_bookmark = (
-            self.workflow_repo_service.get_repo_workflow_runs_bookmark(repo_workflow.id)
-        )
-        if not repo_workflow_bookmark:
-            bookmark_string = (
-                time_now() - timedelta(days=default_sync_days)
-            ).isoformat()
-
-            repo_workflow_bookmark = RepoWorkflowRunsBookmark(
-                id=uuid4(),
-                repo_workflow_id=repo_workflow.id,
-                bookmark=bookmark_string,
-                created_at=time_now(),
-                updated_at=time_now(),
-            )
-        return repo_workflow_bookmark
 
 
 def sync_org_workflows(org_id: str):
@@ -156,6 +144,10 @@ def sync_org_workflows(org_id: str):
     workflow_repo_service = WorkflowRepoService()
     etl_factory = WorkflowETLFactory(org_id)
     workflow_etl_handler = WorkflowETLHandler(
-        code_repo_service, workflow_repo_service, etl_factory, get_settings_service()
+        code_repo_service,
+        workflow_repo_service,
+        etl_factory,
+        get_settings_service(),
+        get_bookmark_service(),
     )
     workflow_etl_handler.sync_org_workflows(org_id)
