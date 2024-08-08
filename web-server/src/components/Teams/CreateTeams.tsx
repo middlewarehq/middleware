@@ -193,7 +193,7 @@ const TeamRepos: FC = () => {
           getOptionLabel={(option) => `${option.parent}/${option.name}`}
           renderInput={(params) => (
             <TextField
-              onKeyDown={(event: any) => {
+              onKeyDown={(event) => {
                 if (event.key === 'Backspace') {
                   event.stopPropagation();
                 }
