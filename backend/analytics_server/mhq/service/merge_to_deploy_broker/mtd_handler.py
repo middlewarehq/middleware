@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import List
+from typing import List, Option
 
 from mhq.service.deployments import DeploymentPRMapperService
+from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_service
 from mhq.store.models.code import (
     PullRequest,
     OrgRepo,
@@ -26,12 +27,14 @@ class MergeToDeployCacheHandler:
         workflow_repo_service: WorkflowRepoService,
         deployment_pr_mapper_service: DeploymentPRMapperService,
         redis_lock_service: RedisLockService,
+        bookmark_service: BookmarkService,
     ):
         self.org_id = org_id
         self.code_repo_service = code_repo_service
         self.workflow_repo_service = workflow_repo_service
         self.deployment_pr_mapper_service = deployment_pr_mapper_service
         self.redis_lock_service = redis_lock_service
+        self.bookmark_service = bookmark_service
 
     def process_org_mtd(self):
         org_repos: List[OrgRepo] = self.code_repo_service.get_active_org_repos(
@@ -60,17 +63,13 @@ class MergeToDeployCacheHandler:
         if not repo_workflows:
             return
 
-        broker_bookmark: BookmarkMergeToDeployBroker = (
-            self.code_repo_service.get_merge_to_deploy_broker_bookmark(repo_id)
+        bookmark: Option[datetime] = self.bookmark_service.get_bookmark(
+            repo_id, BookmarkType.MERGE_TO_DEPLOY_BOOKMARK, org_repo.provider
         )
-        if not broker_bookmark:
-            broker_bookmark = BookmarkMergeToDeployBroker(repo_id=repo_id)
-
-        bookmark_time: datetime = broker_bookmark.bookmark_date
 
         repo_workflow_runs: List[RepoWorkflowRuns] = (
             self.workflow_repo_service.get_repo_workflow_runs_conducted_after_time(
-                repo_id, bookmark_time, DEPLOYMENTS_TO_PROCESS
+                repo_id, bookmark, DEPLOYMENTS_TO_PROCESS
             )
         )
 
@@ -79,15 +78,15 @@ class MergeToDeployCacheHandler:
 
         for repo_workflow_run in repo_workflow_runs:
             try:
-                self.code_repo_service.get_merge_to_deploy_broker_bookmark(repo_id)
                 self._cache_prs_merge_to_deploy_for_repo_workflow_run(
                     repo_id, repo_workflow_run
                 )
                 conducted_at: datetime = repo_workflow_run.conducted_at
-                broker_bookmark.bookmark = conducted_at.isoformat()
-                broker_bookmark.updated_at = time_now()
-                self.code_repo_service.update_merge_to_deploy_broker_bookmark(
-                    broker_bookmark
+                self.bookmark_service.update_bookmark(
+                    repo_id,
+                    BookmarkType.MERGE_TO_DEPLOY_BOOKMARK,
+                    org_repo.provider,
+                    conducted_at,
                 )
             except Exception as e:
                 raise Exception(f"Error caching prs for repo {repo_id}: {str(e)}")
@@ -124,5 +123,6 @@ def process_merge_to_deploy_cache(org_id: str):
         WorkflowRepoService(),
         DeploymentPRMapperService(),
         get_redis_lock_service(),
+        get_bookmark_service(),
     )
     merge_to_deploy_cache_handler.process_org_mtd()
