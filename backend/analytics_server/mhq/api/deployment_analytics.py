@@ -31,7 +31,7 @@ from mhq.service.deployments.models.models import (
     DeploymentFrequencyMetrics,
     DeploymentType,
 )
-from mhq.store.repos.code import CodeRepoService
+from mhq.service.code.repository_service import get_repository_service
 
 
 app = Blueprint("deployment_analytics", __name__)
@@ -62,12 +62,12 @@ def get_team_deployment_analytics(
     pr_filter: PRFilter = apply_pr_filter(
         pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
     )
-    code_repo_service = CodeRepoService()
+    repository_service = get_repository_service()
 
-    team_repos: List[TeamRepos] = code_repo_service.get_active_team_repos_by_team_id(
+    team_repos: List[TeamRepos] = repository_service.get_active_team_repos_by_team_id(
         team_id
     )
-    org_repos: List[OrgRepo] = code_repo_service.get_active_org_repos_by_ids(
+    org_repos: List[OrgRepo] = repository_service.get_active_org_repos_by_ids(
         [str(team_repo.org_repo_id) for team_repo in team_repos]
     )
 

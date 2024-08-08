@@ -26,6 +26,12 @@ class RepositoryService:
     def get_team_repos_by_team(self, team: Team) -> List[TeamRepos]:
         return self._code_repo_service.get_team_repos_by_team_id(team_id=str(team.id))
 
+    def get_active_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
+        return self._code_repo_service.get_active_team_repos_by_team_id(team_id)
+
+    def get_active_org_repos_by_ids(self, repo_ids: List[str]) -> List[OrgRepo]:
+        return self._code_repo_service.get_active_org_repos_by_ids(repo_ids)
+
     def get_repo_id_team_repos_map(
         self, team: Team, org_repos: List[OrgRepo]
     ) -> Dict[str, TeamRepos]:
