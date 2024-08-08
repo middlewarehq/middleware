@@ -20,7 +20,7 @@ from mhq.service.merge_to_deploy_broker import (
     get_merge_to_deploy_broker_utils_service,
     MergeToDeployBrokerUtils,
 )
-from mhq.store.models.code import OrgRepo, CodeBookmarkType, Bookmark, PullRequest
+from mhq.store.models.code import OrgRepo, PullRequest
 from mhq.store.repos.code import CodeRepoService
 from mhq.utils.log import LOG
 from mhq.service.settings.models import DefaultSyncDaysSetting
