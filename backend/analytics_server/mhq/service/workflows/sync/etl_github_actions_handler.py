@@ -59,7 +59,7 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
         :param bookmark: datetime object to get all workflow runs after this date
         :return: Workflow runs, datetime object
         """
-        
+
         try:
             github_workflow_runs = self._api.get_workflow_runs(
                 org_repo.org_name,
@@ -81,9 +81,7 @@ class GithubActionsETLHandler(WorkflowProviderETLHandler):
             )
             return [], bookmark
 
-        bookmark = self._get_new_bookmark_time_stamp(
-            github_workflow_runs
-        )
+        bookmark = self._get_new_bookmark_time_stamp(github_workflow_runs)
 
         repo_workflow_runs = [
             self._adapt_github_workflows_to_workflow_runs(

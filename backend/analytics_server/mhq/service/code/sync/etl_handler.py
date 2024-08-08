@@ -28,7 +28,6 @@ from mhq.service.bookmark import BookmarkService, BookmarkType, get_bookmark_ser
 
 
 class CodeETLHandler:
-
     def __init__(
         self,
         code_repo_service: CodeRepoService,
