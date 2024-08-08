@@ -78,18 +78,18 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
     def process_service_incidents(
         self,
         incident_service: OrgIncidentService,
-        bookmark: IncidentsBookmark,
-    ) -> Tuple[List[Incident], List[IncidentOrgIncidentServiceMap], IncidentsBookmark]:
+        bookmark: datetime,
+    ) -> Tuple[List[Incident], List[IncidentOrgIncidentServiceMap], datetime]:
         """
         Sync incidents for the service
         :param incident_service: OrgIncidentService
-        :param bookmark: IncidentsBookmark
-        :return: List of Incidents, List of IncidentOrgIncidentServiceMap, IncidentsBookmark
+        :param bookmark: datetime
+        :return: List of Incidents, List of IncidentOrgIncidentServiceMap, datetime bookmark
         """
         if not incident_service or not isinstance(incident_service, OrgIncidentService):
             raise Exception(f"Service not found")
 
-        from_time: datetime = bookmark.bookmark
+        from_time: datetime = bookmark
         to_time: datetime = time_now()
 
         revert_pr_incidents: List[RevertPRMap] = (
@@ -108,7 +108,7 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
             key=lambda revert_pr_incident: revert_pr_incident.updated_at
         )
 
-        bookmark.bookmark = max(bookmark.bookmark, revert_pr_incidents[-1].updated_at)
+        bookmark = max(bookmark, revert_pr_incidents[-1].updated_at)
 
         incidents, incident_org_incident_service_map_models = self._process_incidents(
             incident_service, revert_pr_incidents
