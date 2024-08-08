@@ -104,8 +104,25 @@ class IncidentsRepoService:
         )
 
     @rollback_on_exc
+    def get_all_org_incidents_bookmarks(self, org_id: str) -> List[IncidentsBookmark]:
+        return (
+            self._db.session.query(IncidentsBookmark)
+            .join(
+                OrgIncidentService, OrgIncidentService.id == IncidentsBookmark.entity_id
+            )
+            .filter(OrgIncidentService.org_id == org_id)
+            .all()
+        )
+
+    @rollback_on_exc
     def save_incidents_bookmark(self, bookmark: IncidentsBookmark):
         self._db.session.merge(bookmark)
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def save_incidents_bookmarks(self, bookmarks: List[IncidentsBookmark]):
+        for bookmark in bookmarks:
+            self._db.session.merge(bookmark)
         self._db.session.commit()
 
     @rollback_on_exc
