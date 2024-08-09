@@ -160,7 +160,7 @@ def get_gitlab_orgs(org_id: str):
                 "name": group.get("name"),
                 "avatar_url": group.get("avatar_url"),
                 "web_url": group.get("web_url"),
-                "internal_id": group.get("id"),
+                "provider_org_id": group.get("id"),
             }
             for group in groups
         ]
