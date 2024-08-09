@@ -120,7 +120,7 @@ def get_prs_included_in_deployment(deployment_id: str):
         raise NotFound(f"Deployment not found for id {deployment_id}")
 
     repo: OrgRepo = pr_analytics_service.get_repo_by_id(deployment.repo_id)
-    
+
     if not repo:
         raise NotFound(f"Repo with {deployment.repo_id} not found")
 
