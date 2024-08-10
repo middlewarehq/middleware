@@ -2,7 +2,7 @@ import * as yup from 'yup';
 
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
-import { OrgSettingsApiResponse } from '@/types/resources';
+import { OrgAlertSettings, OrgSettingsApiResponse } from '@/types/resources';
 
 const getSchema = yup.object().shape({
   user_id: yup.string().uuid().required()
@@ -36,7 +36,7 @@ endpoint.handle.PUT(putSchema, async (req, res) => {
 });
 
 export const getOrgAlertAsIncidentServiceSetting = (org_id: ID, user_id: ID) =>
-  handleRequest<OrgSettingsApiResponse>(`/orgs/${org_id}/settings`, {
+  handleRequest<OrgSettingsApiResponse<OrgAlertSettings>>(`/orgs/${org_id}/settings`, {
     params: {
       setting_type: 'SHOULD_SYNC_ALERTS_AS_INCIDENTS_SETTING',
       setter_id: user_id
@@ -48,7 +48,7 @@ export const updatedOrgAlertAsIncidentServiceSetting = (
   user_id: ID,
   updated_setting: boolean
 ) =>
-  handleRequest<OrgSettingsApiResponse>(`/orgs/${org_id}/settings`, {
+  handleRequest<OrgSettingsApiResponse<OrgAlertSettings>>(`/orgs/${org_id}/settings`, {
     data: {
       setting_type: 'SHOULD_SYNC_ALERTS_AS_INCIDENTS_SETTING',
       setter_id: user_id,
