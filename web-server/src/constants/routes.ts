@@ -67,7 +67,8 @@ export const ROUTES = {
       PATH: route.PATH
     };
   },
-  INTEGRATIONS: new RoutePath('INTEGRATIONS')
+  INTEGRATIONS: new RoutePath('INTEGRATIONS'),
+  SETTINGS: new RoutePath('SETTINGS')
 };
 
 export const DEFAULT_HOME_ROUTE = ROUTES.DORA_METRICS;

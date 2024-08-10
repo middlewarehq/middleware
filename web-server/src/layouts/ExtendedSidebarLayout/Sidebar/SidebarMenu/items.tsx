@@ -1,7 +1,8 @@
 import {
   ExtensionTwoTone,
   GroupsTwoTone,
-  Analytics
+  Analytics,
+  Settings
 } from '@mui/icons-material';
 
 import { ROUTES } from '@/constants/routes';
@@ -60,6 +61,11 @@ const menuItems = (): MenuItems[] => [
         icon: ExtensionTwoTone,
         link: ROUTES.INTEGRATIONS.PATH
       },
+      {
+        name: 'Settings',
+        icon: Settings,
+        link: ROUTES.SETTINGS.PATH
+      }
     ]
   }
 ];
