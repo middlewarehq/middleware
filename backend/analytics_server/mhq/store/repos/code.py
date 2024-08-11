@@ -368,23 +368,14 @@ class CodeRepoService:
         return self.get_repos_by_ids(team_repo_ids)
     
     @rollback_on_exc
-    def get_prs_not_reviewed_merged(self,team_id):
+    def get_prs_merged_without_review(self,team_id,interval) -> List[PullRequest]:
         AllOrg = self.get_team_repos(team_id)
         AllOrg_ids = [tr.id for tr in AllOrg]
-        print(AllOrg)
-        AllPullRequestEventReviweinOrgIds = (self._db.session.query(PullRequestEvent)
-                                  .filter(PullRequestEvent.org_repo_id.in_(AllOrg_ids))
-                                  .all()
-                                  )
-        ListofReviwedPrs = [ tr.pull_request_id for tr in AllPullRequestEventReviweinOrgIds]
-        AllPullRequestMergedNotReviwed = (self._db.session.query(PullRequest)
-                                          .filter(PullRequest.id.not_in(ListofReviwedPrs))
-                                          .filter(PullRequest.state == PullRequestState.MERGED)
+        return (self._db.session.query(PullRequest)
+                                          .filter(PullRequest.repo_id.in_(AllOrg_ids))
+                                          .filter(PullRequest.merge_time == None)
+                                          .filter(PullRequest.created_in_db_at.between(interval.from_time,interval.to_time))
                                           .all())
-        print(AllPullRequestMergedNotReviwed)
-        
-        return {"countofMergedReviewedPrs": len(AllPullRequestEventReviweinOrgIds),"countOfMergedNOtReviwedPrs":len(AllPullRequestMergedNotReviwed)}
-
 
     @rollback_on_exc
     def get_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
