@@ -106,7 +106,7 @@ class GitlabETLHandler(CodeProviderETLHandler):
             org_id=self.org_id,
             name=gitlab_repo.name,
             provider=self.provider,
-            org_name=org_repo.org_name,
+            org_name=gitlab_repo.org_name,
             default_branch=gitlab_repo.default_branch,
             language=str(gitlab_repo.languages),
             contributors=self.get_repo_contributors(gitlab_repo),
