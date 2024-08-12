@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import Any, Dict, Optional, List
 
 from mhq.service.settings.default_settings_data import get_default_setting_data
@@ -14,6 +15,7 @@ from mhq.store.models.incidents import IncidentSource, IncidentType
 from mhq.store.models.settings import SettingType, Settings, EntityType
 from mhq.store.repos.settings import SettingsRepoService
 from mhq.utils.time import time_now
+from mhq.service.bookmark.bookmark import get_bookmark_service
 
 
 class SettingsService:
@@ -307,20 +309,26 @@ class SettingsService:
         else:
             data = get_default_setting_data(setting_type)
 
+        existing_setting = self.get_settings(setting_type, entity_type, entity_id)
+
         setting = Settings(
             entity_id=entity_id,
             entity_type=entity_type,
             setting_type=setting_type,
             updated_by=setter.id if setter else None,
             data=data,
-            created_at=time_now(),
+            created_at=existing_setting.created_at if existing_setting else time_now(),
             updated_at=time_now(),
             is_deleted=False,
         )
 
         saved_setting = self._settings_repo.save_setting(setting)
+        saved_config_setting = self._adapt_config_setting_from_db_setting(saved_setting)
+        self._handle_settings_update_side_effect(
+            setting_type, saved_config_setting, existing_setting
+        )
 
-        return self._adapt_config_setting_from_db_setting(saved_setting)
+        return saved_config_setting
 
     def delete_settings(
         self,
@@ -390,6 +398,64 @@ class SettingsService:
         return self._handle_config_setting_from_db_setting(
             setting_type, get_default_setting_data(setting_type)
         )
+
+    def _handle_settings_update_side_effect(
+        self,
+        setting_type: SettingType,
+        updated_setting: ConfigurationSettings,
+        previous_setting: Optional[ConfigurationSettings] = None,
+    ):
+        """
+        Setting updations might have other side-effect across the codebase. This should not be common but useful whenever needed.
+        Ex: Default Sync Days updation, should allow users to reset the existing bookmark. Since bookmarks are an underlying system detail, their updation can be a side effect till they are introduced in the product.
+        """
+
+        if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING:
+            self._handle_default_sync_days_setting_side_effect(
+                updated_setting, previous_setting
+            )
+
+    def _handle_default_sync_days_setting_side_effect(
+        self,
+        updated_setting: ConfigurationSettings,
+        previous_setting: ConfigurationSettings = None,
+    ):
+
+        updated_default_sync_days_setting: DefaultSyncDaysSetting = (
+            updated_setting.specific_settings
+        )
+        if updated_setting.entity_type != EntityType.ORG:
+            return
+
+        org_id = updated_setting.entity_id
+        new_bookmark_timestamp = time_now() - timedelta(
+            days=updated_default_sync_days_setting.default_sync_days
+        )
+
+        try:
+            get_bookmark_service().reset_org_bookmarks(org_id, new_bookmark_timestamp)
+        except Exception as e:
+
+            data = get_default_setting_data(SettingType.DEFAULT_SYNC_DAYS_SETTING)
+            if previous_setting:
+                data = self._handle_config_setting_to_db_setting(
+                    SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                    previous_setting.specific_settings,
+                )
+
+            setting = Settings(
+                entity_id=org_id,
+                entity_type=EntityType.ORG,
+                setting_type=SettingType.DEFAULT_SYNC_DAYS_SETTING,
+                updated_by=updated_setting.updated_by,
+                data=data,
+                created_at=updated_setting.created_at,
+                updated_at=time_now(),
+                is_deleted=False,
+            )
+
+            self._settings_repo.save_setting(setting)
+            raise e
 
 
 def get_settings_service():
