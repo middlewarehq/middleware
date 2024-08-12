@@ -49,7 +49,7 @@ export const searchGithubRepos = async (
                               primaryLanguage {
                                     name
                                 }
-                                
+
                               owner {
                                   login
                               }

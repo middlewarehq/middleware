@@ -27,7 +27,7 @@ labels: bug
 <!-- Feel Free to Remove this section if you are a user and don't have the exact server details -->
 <!-- Additional Information which may be useful. Add whatever information is available, skip the field which are not available-->
 
-- Operating System: 
+- Operating System:
 - Deployment Method: <!-- snap/docker/tar/etc -->
 
 

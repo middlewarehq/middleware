@@ -33,7 +33,7 @@ jobs:
         pip install -r requirements.txt
 
     - name: Test with pytest
-      env:  
+      env:
         DB_HOST: "localhost"
         DB_NAME: "mhq-oss"
         DB_PASS: "postgres"

@@ -1,7 +1,7 @@
 from typing import List
 from flask import Blueprint, jsonify
 from github import GithubException
-from voluptuous import Schema, Optional, Coerce, Range, All, Required
+from voluptuous import Schema, Optional, Coerce, Range, All
 
 from mhq.exapi.models.gitlab import GitlabRepo
 from mhq.api.request_utils import queryschema

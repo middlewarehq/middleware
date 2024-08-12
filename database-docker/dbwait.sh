@@ -9,4 +9,3 @@ until dbmate wait
         echo "inside dbmate"
         sleep 2
     done
-

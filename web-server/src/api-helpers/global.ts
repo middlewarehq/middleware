@@ -97,7 +97,7 @@ export class Endpoint<PathSchema extends AnySchema> {
         const statusCode = error.status || 500;
         const errorMessage = error.payload || 'Internal Server Error';
 
-        console.error('GLOBAL ERR', nextReq, error, err)
+        console.error('GLOBAL ERR', nextReq, error, err);
         // Send error response
         res.status(statusCode).send(errorMessage);
       }

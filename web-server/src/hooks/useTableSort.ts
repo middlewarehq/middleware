@@ -107,16 +107,19 @@ export const useTableSort = <T = Record<string, any>>(
     if (!result.some((pr) => pr?.deletions)) return simpleSort();
     if (conf.order === 'asc') {
       result.sort((a, b) => {
-        return Number(a.additions + a.deletions) - Number(b.additions + b.deletions);
+        return (
+          Number(a.additions + a.deletions) - Number(b.additions + b.deletions)
+        );
       });
     } else {
       result.sort((b, a) => {
-        return Number(a.additions + a.deletions) - Number(b.additions + b.deletions);
+        return (
+          Number(a.additions + a.deletions) - Number(b.additions + b.deletions)
+        );
       });
     }
     return result;
   }, [conf.order, list, simpleSort]);
-  
 
   const sortedList: T[] = useMemo(() => {
     if (conf.field === 'author') return handleAuthorUsernameSort();

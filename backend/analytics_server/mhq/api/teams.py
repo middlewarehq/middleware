@@ -5,7 +5,6 @@ from werkzeug.exceptions import BadRequest
 from mhq.store.models.code.repository import OrgRepo, TeamRepos
 from mhq.service.code.models.org_repo import RawTeamOrgRepo
 from mhq.api.resources.code_resouces import (
-    adapt_org_repo,
     adapt_team_repos,
     adapt_team_repo_and_org_repo,
 )
@@ -151,7 +150,7 @@ def patch_team_repos_mapping(team_id: str, team_repos_data: List[TeamRepos]):
     for team_repo in team_repos_data:
         if team_repo.team_id != team_id:
             raise BadRequest(
-                f"Team Repo with repo_id: {team_repo.org_repo_id} team_id: {team_repo.team_id} does not match team in request url: {team_id}."
+                f"Team Repo with repo_id: {team_repo.org_repo_id} team_id: {team_repo.team_id} does not match team in request url: {team_id}."  # noqa E501
             )
 
     team_repos_service = get_repository_service()

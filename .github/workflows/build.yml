@@ -5,7 +5,7 @@ on:
     types: [published]
   push:
     branches: ["main"]
-    paths:  
+    paths:
         - 'Dockerfile'
         - 'backend/**'
         - 'database-docker/**'
@@ -125,7 +125,7 @@ jobs:
         run: |
           mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "/tmp/digests/${digest#sha256:}"  
+          touch "/tmp/digests/${digest#sha256:}"
 
 
       - name: Upload digest
@@ -186,11 +186,11 @@ jobs:
   stop-runner-arm:
     name: Stop self-hosted EC2 arm runner
     needs:
-      - start-runner-arm 
+      - start-runner-arm
       - build
       - merge
     runs-on: ubuntu-latest
-    if: ${{ always() }} 
+    if: ${{ always() }}
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -205,4 +205,3 @@ jobs:
           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           label: ${{ needs.start-runner-arm.outputs.label }}
           ec2-instance-id: ${{ needs.start-runner-arm.outputs.ec2-instance-id }}
-

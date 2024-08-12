@@ -81,7 +81,7 @@ class PRFilter:
                 return None
 
             return and_(
-                PullRequest.cycle_time != None,
+                PullRequest.cycle_time != None,  # noqa: E711
                 PullRequest.cycle_time < self.max_cycle_time,
             )
 

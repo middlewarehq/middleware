@@ -87,7 +87,7 @@ class GitIncidentsETLHandler(IncidentsProviderETLHandler):
         :return: List of Incidents, List of IncidentOrgIncidentServiceMap, datetime bookmark
         """
         if not incident_service or not isinstance(incident_service, OrgIncidentService):
-            raise Exception(f"Service not found")
+            raise Exception("Service not found")
 
         from_time: datetime = bookmark
         to_time: datetime = time_now()

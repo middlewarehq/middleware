@@ -1,7 +1,6 @@
 from typing import List, Tuple
 from .models.adapter import DeploymentsAdaptor
 from mhq.store.models.code.pull_requests import PullRequest
-from mhq.store.models.code.repository import TeamRepos
 from mhq.store.models.code.workflows.filter import WorkflowFilter
 from mhq.store.models.code.workflows.workflows import RepoWorkflow, RepoWorkflowRuns
 from mhq.service.deployments.models.models import Deployment

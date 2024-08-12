@@ -141,7 +141,6 @@ def test_pr_performance_returns_rework_time_for_open_prs():
     t1 = time_now()
     t2 = t1 + timedelta(hours=1)
     t3 = t2 + timedelta(hours=1)
-    t4 = t3 + timedelta(hours=1)
     pr = get_pull_request(state=PullRequestState.OPEN, created_at=t1, updated_at=t1)
     changes_requested_1 = get_pull_request_event(
         pull_request_id=pr.id,
@@ -160,8 +159,6 @@ def test_pr_performance_returns_rework_time_minus1_for_non_approved_prs():
     pr_service = CodeETLAnalyticsService()
     t1 = time_now()
     t2 = t1 + timedelta(hours=1)
-    t3 = t2 + timedelta(hours=1)
-    t4 = t3 + timedelta(hours=1)
     pr = get_pull_request(state=PullRequestState.OPEN, created_at=t1, updated_at=t1)
     changes_requested_1 = get_pull_request_event(
         pull_request_id=pr.id,

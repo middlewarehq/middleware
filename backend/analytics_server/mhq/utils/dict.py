@@ -27,6 +27,6 @@ def get_key_to_count_map_from_key_to_list_map(
     """
     This method takes a dict of keys to list and returns a dict of keys mapped to the length of lists from the input dict.
     """
-    list_len_or_zero = lambda x: len(x) if type(x) in [list, set] else 0
+    list_len_or_zero = lambda x: len(x) if type(x) in [list, set] else 0  # noqa E731
 
     return {key: list_len_or_zero(lst) for key, lst in week_to_list_map.items()}

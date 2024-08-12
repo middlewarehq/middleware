@@ -89,7 +89,7 @@
     "start": "NEXT_MANUAL_SIG_HANDLE=true next start",
     "export": "next export",
     "lint": "eslint src/**/*.{js,,ts,tsx}",
-    "lint-fix": "eslint --fix src/**/*.{js,ts,tsx}",
+    "lint-fix": "eslint --fix --ignore-pattern 'node_modules/*' 'src/**/*.{js,ts,tsx}'",
     "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,json}\" --config ./.prettierrc",
     "quality-check": "concurrently -c \"auto\" --kill-others-on-fail \"yarn lint-fix\" \"yarn tsc\"",
     "qc": "yarn quality-check",

@@ -33,7 +33,7 @@ We use the following labels to categorize and prioritize issues:
 - `good first issue`: Indicates that the issue is suitable for newcomers to the project.
 - `priority`: high/medium/low: Indicates the priority level of the issue.
 - `discussion`: Indicates that the issue is open for discussion and feedback.
-  
+
 If you're creating a new issue, please apply the appropriate labels to help us better organize and address it.
 
 ## Feedback

@@ -18,7 +18,6 @@ class IncidentsProviderETLHandler(ABC):
         :return: True if PAT is valid, False otherwise
         :raises: Exception if PAT is invalid
         """
-        pass
 
     @abstractmethod
     def get_updated_incident_services(
@@ -29,7 +28,6 @@ class IncidentsProviderETLHandler(ABC):
         :param incident_services: List of incident services
         :return: List of updated incident services
         """
-        pass
 
     @abstractmethod
     def process_service_incidents(
@@ -41,4 +39,3 @@ class IncidentsProviderETLHandler(ABC):
         :param bookmark: datetime object
         :return: Tuple of incidents, incident service map and incidents bookmark
         """
-        pass

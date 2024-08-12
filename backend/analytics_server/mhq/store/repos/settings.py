@@ -27,7 +27,7 @@ class SettingsRepoService:
                     Settings.setting_type == setting_type,
                     Settings.entity_type == entity_type,
                     Settings.entity_id == entity_id,
-                    Settings.is_deleted == False,
+                    Settings.is_deleted == False,  # noqa E712
                 )
             )
             .one_or_none()
@@ -83,7 +83,7 @@ class SettingsRepoService:
                     Settings.setting_type.in_(setting_types),
                     Settings.entity_type == entity_type,
                     Settings.entity_id == entity_id,
-                    Settings.is_deleted == False,
+                    Settings.is_deleted == False,  # noqa E712
                 )
             )
             .all()

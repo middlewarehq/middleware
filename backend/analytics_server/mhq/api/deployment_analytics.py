@@ -21,7 +21,7 @@ from mhq.api.resources.deployment_resources import (
 )
 from mhq.service.deployments.analytics import get_deployment_analytics_service
 from mhq.service.query_validator import get_query_validator
-from mhq.store.models import SettingType, EntityType, Team
+from mhq.store.models import SettingType, EntityType
 from mhq.store.models.code.filter import PRFilter
 from mhq.store.models.code.pull_requests import PullRequest
 from mhq.store.models.code.repository import OrgRepo, TeamRepos

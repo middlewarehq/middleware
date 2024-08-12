@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 

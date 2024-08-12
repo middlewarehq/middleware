@@ -9,4 +9,3 @@ if [ "$ENVIRONMENT" == "prod" ]; then
 else
   yarn dev
 fi
-

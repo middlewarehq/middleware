@@ -7,7 +7,7 @@ This document outlines the security practices and considerations for the middlew
 We appreciate your help in keeping middleware secure. If you discover a security vulnerability, please report it responsibly by following these steps:
 
 * **Email:** Send an email to [security@middlewarehq.com](mailto:security@middlewarehq.com).
-* **Include:** 
+* **Include:**
     * A detailed description of the vulnerability, including the affected components and potential impact.
     * Steps to reproduce the vulnerability (if possible), including any specific code snippets or configurations.
     * Any additional information that may help us understand and address the vulnerability.

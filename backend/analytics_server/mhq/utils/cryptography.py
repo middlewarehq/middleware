@@ -45,7 +45,8 @@ class CryptoService:
             raise Exception("No public key found to encrypt")
 
         chunks = [
-            message[i : i + chunk_size] for i in range(0, len(message), chunk_size)
+            message[i : i + chunk_size]  # noqa: E203
+            for i in range(0, len(message), chunk_size)
         ]
 
         return [
