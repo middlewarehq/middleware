@@ -14,20 +14,18 @@ const getSchema = yup.object().shape({
 
 const putSchema = yup.object().shape({
   setting_type: yup.string().required(),
-  user_id: yup.string().uuid().optional(),
   setting_data: yup.object().required()
 });
 
 const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.PUT(putSchema, async (req, res) => {
-  const { org_id, setting_type, user_id, setting_data } = req.payload;
+  const { org_id, setting_type, setting_data } = req.payload;
   return res.send(
     await handleRequest<OrgSettingsApiResponse>(`/orgs/${org_id}/settings`, {
       method: 'PUT',
       data: {
         setting_type,
-        setter_id: user_id,
         setting_data
       }
     }).then((s) => s.setting)

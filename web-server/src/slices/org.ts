@@ -221,32 +221,35 @@ export const updatedOrgAlertSettings = createAsyncThunk(
 export const getDefaultSyncDaysSettings = createAsyncThunk(
   'org/getDefaultSyncDaysSettings',
   async (params: { orgId: ID }) => {
-    return (await handleApi<OrgDefaultSyncDaysSettings>(
-      `/internal/${params.orgId}/settings`,
-      {
-        params: {
-          setting_type: 'DEFAULT_SYNC_DAYS_SETTING'
+    return (
+      await handleApi<OrgDefaultSyncDaysSettings>(
+        `/internal/${params.orgId}/settings`,
+        {
+          params: {
+            setting_type: 'DEFAULT_SYNC_DAYS_SETTING'
+          }
         }
-      }
-    )).default_sync_days;
+      )
+    ).default_sync_days;
   }
 );
 
 export const updateDefaultSyncDaysSettings = createAsyncThunk(
   'org/updateDefaultSyncDaysSettings',
-  async (params: { orgId: ID; userId?: ID; defaultSyncDays: number }) => {
-    return (await handleApi<OrgDefaultSyncDaysSettings>(
-      `/internal/${params.orgId}/settings`,
-      {
-        data: {
-          setting_type: 'DEFAULT_SYNC_DAYS_SETTING',
-          setter_id: params.userId,
-          setting_data: {
-            default_sync_days: params.defaultSyncDays
-          }
-        },
-        method: 'PUT'
-      }
-    )).default_sync_days;
+  async (params: { orgId: ID; defaultSyncDays: number }) => {
+    return (
+      await handleApi<OrgDefaultSyncDaysSettings>(
+        `/internal/${params.orgId}/settings`,
+        {
+          data: {
+            setting_type: 'DEFAULT_SYNC_DAYS_SETTING',
+            setting_data: {
+              default_sync_days: params.defaultSyncDays
+            }
+          },
+          method: 'PUT'
+        }
+      )
+    ).default_sync_days;
   }
 );
