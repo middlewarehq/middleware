@@ -7,9 +7,55 @@ import {
   TeamDoraMetricsApiResponseType
 } from '@/types/resources';
 
-interface DateStringToData<T> {
+type DateStringToData<T> = {
   [key: string]: T;
-}
+};
+
+type PartialDoraMetrics = Partial<{
+  lead_time: number;
+  mean_time_to_recovery: number;
+  change_failure_rate: number;
+}>;
+
+type DoraMetrics = {
+  deployment_frequency?: number;
+} & PartialDoraMetrics;
+
+type DateStringToDoraTrends = DateStringToData<DoraMetrics>;
+
+type DeploymentFrequencyTypeKeys =
+  | 'avg_daily_deployment_frequency'
+  | 'avg_weekly_deployment_frequency'
+  | 'avg_monthly_deployment_frequency';
+type DeploymentFrequencyKeys<T extends DeploymentFrequencyTypeKeys> = Record<
+  T,
+  number
+>;
+
+type CalculatedDoraMetrics<T extends DeploymentFrequencyTypeKeys> =
+  PartialDoraMetrics & Partial<DeploymentFrequencyKeys<T>>;
+
+type DoraCompiledSummaryResponse = { dora_compiled_summary: string };
+
+type DoraTrendSummaryResponse = { dora_trend_summary: string };
+type DeploymentFrequencyTrendSummaryResponse = {
+  deployment_frequency_trends_summary: string;
+};
+type LeadTimeTrendSummaryResponse = { lead_time_trends_summary: string };
+type MeanTimeToRecoveryTrendSummaryResponse = {
+  mean_time_to_recovery_trends_summary: string;
+};
+type ChangeFailureRateTrendSummarySummary = {
+  change_failure_rate_trends_summary: string;
+};
+type DORAScoreResponse = { dora_metrics_score: number };
+
+type AggregatedDORAData = DORAScoreResponse &
+  DoraTrendSummaryResponse &
+  DeploymentFrequencyTrendSummaryResponse &
+  LeadTimeTrendSummaryResponse &
+  MeanTimeToRecoveryTrendSummaryResponse &
+  ChangeFailureRateTrendSummarySummary;
 
 const postSchema = yup.object().shape({
   data: yup.object().optional(),
@@ -49,7 +95,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     ...mean_time_to_recovery_trends_summary,
     ...deployment_frequency_trends_summary,
     ...dora_trend_summary
-  };
+  } as AggregatedDORAData;
 
   const dora_compiled_summary = await getDORACompiledSummary(
     aggregated_dora_data,
@@ -67,7 +113,7 @@ const getDoraMetricsScore = (
   dora_data: TeamDoraMetricsApiResponseType,
   model: string,
   access_token: string
-): Promise<{ dora_metrics_score: number }> => {
+): Promise<DORAScoreResponse> => {
   const lead_time = dora_data.lead_time_stats.current.lead_time;
   const mean_time_to_recovery =
     dora_data.mean_time_to_restore_stats.current.mean_time_to_recovery;
@@ -81,15 +127,15 @@ const getDoraMetricsScore = (
   const avg_deployment_frequency =
     deployment_frequency_data.avg_deployment_frequency;
 
-  const doraData = {
+  const doraData: CalculatedDoraMetrics<typeof deployment_frequency_key> = {
     lead_time,
     mean_time_to_recovery,
     change_failure_rate
-  } as any;
+  };
 
   doraData[deployment_frequency_key] = avg_deployment_frequency;
 
-  return handleRequest<{ dora_metrics_score: number }>('ai/dora_score', {
+  return handleRequest<DORAScoreResponse>('ai/dora_score', {
     method: 'POST',
     data: {
       data: doraData,
@@ -135,30 +181,27 @@ const getLeadTimeSummary = (
   dora_data: TeamDoraMetricsApiResponseType,
   model: string,
   access_token: string
-): Promise<{ lead_time_trends_summary: string }> => {
+): Promise<LeadTimeTrendSummaryResponse> => {
   const leadTimeTrends = transformTrendData(dora_data.lead_time_trends.current);
-  return handleRequest<{ lead_time_trends_summary: string }>(
-    'ai/lead_time_trends',
-    {
-      method: 'POST',
-      data: {
-        data: leadTimeTrends,
-        model: model,
-        access_token: access_token
-      }
+  return handleRequest<LeadTimeTrendSummaryResponse>('ai/lead_time_trends', {
+    method: 'POST',
+    data: {
+      data: leadTimeTrends,
+      model: model,
+      access_token: access_token
     }
-  );
+  });
 };
 
 const getCFRSummary = (
   dora_data: TeamDoraMetricsApiResponseType,
   model: string,
   access_token: string
-): Promise<{ change_failure_rate_trends_summary: string }> => {
+): Promise<ChangeFailureRateTrendSummarySummary> => {
   const cfrTrends = transformTrendData(
     dora_data.change_failure_rate_trends.current
   );
-  return handleRequest<{ change_failure_rate_trends_summary: string }>(
+  return handleRequest<ChangeFailureRateTrendSummarySummary>(
     'ai/change_failure_rate_trends',
     {
       method: 'POST',
@@ -175,12 +218,12 @@ const getMTTRSummary = (
   dora_data: TeamDoraMetricsApiResponseType,
   model: string,
   access_token: string
-): Promise<{ mean_time_to_recovery_trends_summary: string }> => {
+): Promise<MeanTimeToRecoveryTrendSummaryResponse> => {
   const mttrTrends = transformTrendData(
     dora_data.mean_time_to_restore_trends.current
   );
 
-  return handleRequest<{ mean_time_to_recovery_trends_summary: string }>(
+  return handleRequest<MeanTimeToRecoveryTrendSummaryResponse>(
     'ai/mean_time_to_recovery_trends',
     {
       method: 'POST',
@@ -197,7 +240,7 @@ const getDeploymentFrequencySummary = (
   dora_data: TeamDoraMetricsApiResponseType,
   model: string,
   access_token: string
-): Promise<{ deployment_frequency_trends_summary: string }> => {
+): Promise<DeploymentFrequencyTrendSummaryResponse> => {
   const deploymentFrequencyTrends = transformTrendData(
     dora_data.deployment_frequency_trends.current
   );
@@ -211,7 +254,7 @@ const getDeploymentFrequencySummary = (
     }
   }
 
-  return handleRequest<{ deployment_frequency_trends_summary: string }>(
+  return handleRequest<DeploymentFrequencyTrendSummaryResponse>(
     'ai/deployment_frequency_trends',
     {
       method: 'POST',
@@ -228,7 +271,7 @@ const getDoraTrendsCorrelationSummary = (
   dora_data: TeamDoraMetricsApiResponseType,
   model: string,
   access_token: string
-): Promise<{ dora_trend_summary: string }> => {
+): Promise<DoraTrendSummaryResponse> => {
   const deploymentFrequencyTrends = transformTrendData(
     dora_data.deployment_frequency_trends.current
   );
@@ -240,7 +283,7 @@ const getDoraTrendsCorrelationSummary = (
   );
   const leadTimeTrends = transformTrendData(dora_data.lead_time_trends.current);
 
-  let mergedData: any = {};
+  let mergedData: DateStringToDoraTrends = {};
 
   for (let key in leadTimeTrends) {
     if (!mergedData[key]) mergedData[key] = {};
@@ -263,7 +306,7 @@ const getDoraTrendsCorrelationSummary = (
     mergedData[key].deployment_frequency = deploymentFrequencyTrends[key].count;
   }
 
-  return handleRequest<{ dora_trend_summary: string }>('ai/dora_trends', {
+  return handleRequest<DoraTrendSummaryResponse>('ai/dora_trends', {
     method: 'POST',
     data: {
       data: mergedData,
@@ -274,11 +317,11 @@ const getDoraTrendsCorrelationSummary = (
 };
 
 const getDORACompiledSummary = (
-  aggregated_dora_data: any,
+  aggregated_dora_data: AggregatedDORAData,
   model: string,
   access_token: string
 ) => {
-  return handleRequest<{ dora_compiled_summary: string }>(
+  return handleRequest<DoraCompiledSummaryResponse>(
     'ai/dora_data/compiled_summary',
     {
       method: 'POST',
