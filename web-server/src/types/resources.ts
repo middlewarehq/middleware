@@ -679,10 +679,6 @@ export type OrgSettingsApiResponse<T extends {} = {}> = {
   setting: T;
 };
 
-export type OrgResetBookmarkApiResponse = {
-  updated_bookmark: string;
-};
-
 export type IncidentProviderAssignedTeam = {
   id: ID;
   team_name: string;
