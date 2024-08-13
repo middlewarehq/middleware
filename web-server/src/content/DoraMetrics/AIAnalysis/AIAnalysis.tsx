@@ -37,6 +37,8 @@ import { DoraAiAPIResponse, doraMetricsSlice } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { depFn, noOp } from '@/utils/fn';
 
+import RocketGraphic from './rocket-graphic.svg';
+
 enum Model {
   GPT4o = 'GPT4o',
   LLAMA3p1450B = 'LLAMA3p1450B',
@@ -77,7 +79,9 @@ export const AIAnalysis = () => {
 
   const selectedModel = useEasyState<Model>(Model.GPT4o);
   const token = useEasyState<string>('');
-  const selectedTab = useEasyState<string>('0');
+  const selectedTab = useEasyState<string>(
+    String(AnalysisTabs.dora_compiled_summary)
+  );
 
   useEffect(() => {
     fetchModels();
@@ -150,7 +154,7 @@ export const AIAnalysis = () => {
                     token: token.value
                   })
                 );
-                selectedTab.set('0');
+                selectedTab.set(String(AnalysisTabs.dora_trend_summary));
               })
               .catch((r: AxiosError) => {
                 enqueueSnackbar(
@@ -181,7 +185,20 @@ export const AIAnalysis = () => {
       </FlexBox>
       <FlexBox col gap1>
         {!data ? (
-          <Line>Please enter a token, and click "Generate"</Line>
+          <FlexBox col overflow="hidden">
+            <Line>Please enter a token, and click "Generate"</Line>
+            <FlexBox
+              position="absolute"
+              sx={{
+                opacity: 0.3,
+                bottom: theme.spacing(-0),
+                height: '400px',
+                maxHeight: '50%'
+              }}
+            >
+              <RocketGraphic />
+            </FlexBox>
+          </FlexBox>
         ) : (
           <>
             <FlexBox gap1 alignCenter>
@@ -228,7 +245,11 @@ export const AIAnalysis = () => {
                     size="small"
                     onClick={() =>
                       selectedTab.set((n) =>
-                        n === '0' ? '5' : String(Number(n) - 1)
+                        String(
+                          n === String(AnalysisTabs.dora_trend_summary)
+                            ? AnalysisTabs.mean_time_to_recovery_trends_summary
+                            : Number(n) - 1
+                        )
                       )
                     }
                   >
@@ -255,23 +276,25 @@ export const AIAnalysis = () => {
                     <ChevronRightRounded />
                   </IconButton>
                 </FlexBox>
-                <TabPanel value="0">
+                <TabPanel value={String(AnalysisTabs.dora_compiled_summary)}>
                   <Markdown>{data.dora_compiled_summary}</Markdown>
                 </TabPanel>
                 <TabPanel
-                  value="1"
+                  value={String(AnalysisTabs.dora_trend_summary)}
                   sx={{ 'table td:first-of-type': { whiteSpace: 'nowrap' } }}
                 >
                   <Markdown>{data.dora_trend_summary}</Markdown>
                 </TabPanel>
                 <TabPanel
-                  value="2"
+                  value={String(AnalysisTabs.lead_time_trends_summary)}
                   sx={{ 'table td:first-of-type': { whiteSpace: 'nowrap' } }}
                 >
                   <Markdown>{data.lead_time_trends_summary}</Markdown>
                 </TabPanel>
                 <TabPanel
-                  value="3"
+                  value={String(
+                    AnalysisTabs.deployment_frequency_trends_summary
+                  )}
                   sx={{ 'table td:first-of-type': { whiteSpace: 'nowrap' } }}
                 >
                   <Markdown>
@@ -279,13 +302,17 @@ export const AIAnalysis = () => {
                   </Markdown>
                 </TabPanel>
                 <TabPanel
-                  value="4"
+                  value={String(
+                    AnalysisTabs.change_failure_rate_trends_summary
+                  )}
                   sx={{ 'table td:first-of-type': { whiteSpace: 'nowrap' } }}
                 >
                   <Markdown>{data.change_failure_rate_trends_summary}</Markdown>
                 </TabPanel>
                 <TabPanel
-                  value="5"
+                  value={String(
+                    AnalysisTabs.mean_time_to_recovery_trends_summary
+                  )}
                   sx={{ 'table td:first-of-type': { whiteSpace: 'nowrap' } }}
                 >
                   <Markdown>
@@ -304,3 +331,12 @@ export const AIAnalysis = () => {
 const Markdown: typeof ReactMarkdown = (props) => (
   <ReactMarkdown {...props} remarkPlugins={[gfm]} />
 );
+
+enum AnalysisTabs {
+  dora_compiled_summary,
+  dora_trend_summary,
+  lead_time_trends_summary,
+  deployment_frequency_trends_summary,
+  change_failure_rate_trends_summary,
+  mean_time_to_recovery_trends_summary
+}
