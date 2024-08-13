@@ -1,13 +1,16 @@
+import { AutoGraphRounded } from '@mui/icons-material';
 import { Grid, Divider, Button } from '@mui/material';
 import Link from 'next/link';
 import { FC, useEffect } from 'react';
 
+import { AiButton } from '@/components/AiButton';
 import { DoraMetricsConfigurationSettings } from '@/components/DoraMetricsConfigurationSettings';
 import { DoraScore } from '@/components/DoraScore';
 import { EmptyState } from '@/components/EmptyState';
 import { FixedContentRefreshLoader } from '@/components/FixedContentRefreshLoader/FixedContentRefreshLoader';
 import { FlexBox } from '@/components/FlexBox';
 import { MiniLoader } from '@/components/MiniLoader';
+import { useOverlayPage } from '@/components/OverlayPageContext';
 import { SomethingWentWrong } from '@/components/SomethingWentWrong/SomethingWentWrong';
 import { Line } from '@/components/Text';
 import { ROUTES } from '@/constants/routes';
@@ -59,6 +62,8 @@ export const DoraMetricsBody = () => {
       !s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
         .avg_daily_deployment_frequency
   );
+
+  const { addPage } = useOverlayPage();
 
   useEffect(() => {
     if (!singleTeamId) return;
@@ -118,6 +123,21 @@ export const DoraMetricsBody = () => {
       <FlexBox gap={2}>
         {!!stats.avg && <DoraScore {...stats} />}
         <FlexBox fit gap1 ml="auto">
+          <AiButton
+            size="small"
+            startIcon={<AutoGraphRounded />}
+            variant="outlined"
+            onClickCallback={() =>
+              addPage({
+                page: {
+                  ui: 'ai_analysis',
+                  title: 'Analyse your Dora Metrics with AI of your choice'
+                }
+              })
+            }
+          >
+            AI Analysis
+          </AiButton>
           <DoraMetricsConfigurationSettings />
         </FlexBox>
       </FlexBox>
