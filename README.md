@@ -14,7 +14,7 @@
 <img src="https://img.shields.io/github/stars/middlewarehq/middleware?style=for-the-badge" alt="Stars" />
 </p>
 
-<p align="center"><a href="https://mhq.link/oss-community">Join our Engineering Leaders Community</a></p>
+<p align="center"><a href="https://mhq.link/oss-community">Join our Open Source Community</a></p>
 
 ![Middleware Opensource](https://github.com/middlewarehq/middleware/blob/main/media_files/banner.gif)
 
@@ -67,6 +67,8 @@ They are:
   docker volume create middleware_keys
   docker run --name middleware \
              -p 3333:3333 \
+             -p 9696:9696 \
+             -p 9697:9697 \
              -v middleware_postgres_data:/var/lib/postgresql/data \
              -v middleware_keys:/app/keys \
              -d middlewareeng/middleware:latest
