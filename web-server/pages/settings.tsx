@@ -8,8 +8,14 @@ import { useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
 import { SyncDaysSetting } from '@/components/Settings/SyncDaysSetting';
 import { Box } from '@mui/material';
+import { useRedirectWithSession } from '@/constants/useRoute';
+import { useAuth } from '@/hooks/useAuth';
 
 function Settings() {
+  useRedirectWithSession();
+  const {
+    integrations: { github: isGithubIntegrated }
+  } = useAuth();
   const isLoading = useSelector(
     (s) => s.org.requests?.defaultSyncDays === FetchState.REQUEST
   );
@@ -27,7 +33,7 @@ function Settings() {
         showEvenIfNoTeamSelected={true}
         isLoading={isLoading}
       >
-        <Content />
+        {isGithubIntegrated && <Content />}
       </PageWrapper>
     </>
   );

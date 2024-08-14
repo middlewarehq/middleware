@@ -109,6 +109,19 @@ export const SyncDaysSetting: FC = () => {
             }}
             gap2
           >
+            <Button
+              variant="outlined"
+              disabled={isSaving}
+              sx={{
+                '&.Mui-disabled': {
+                  borderColor: 'secondary.light'
+                },
+                width: '160px'
+              }}
+              onClick={handleDiscard}
+            >
+              DISCARD
+            </Button>
             <LoadingButton
               type="submit"
               variant="outlined"
@@ -125,19 +138,6 @@ export const SyncDaysSetting: FC = () => {
             >
               SAVE
             </LoadingButton>
-            <Button
-              variant="outlined"
-              disabled={isSaving}
-              sx={{
-                '&.Mui-disabled': {
-                  borderColor: 'secondary.light'
-                },
-                width: '160px'
-              }}
-              onClick={handleDiscard}
-            >
-              DISCARD
-            </Button>
           </FlexBox>
         </>
       )}
