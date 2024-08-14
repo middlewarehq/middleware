@@ -20,7 +20,7 @@ class GitlabRepo:
 
     def __init__(self, project: Dict):
         self.name = project.get("name")
-        self.org_name = project.get("namespace", {}).get("path")
+        self.org_name = project.get("namespace", {}).get("full_path")
         self.default_branch = project.get("default_branch")
         self.idempotency_key = str(project.get("id"))
         self.slug = project.get("path")
