@@ -118,6 +118,6 @@ ENV MERGE_COMMIT_SHA=$MERGE_COMMIT_SHA
 
 ENV PATH="/opt/venv/bin:/usr/lib/postgresql/15/bin:/usr/local/bin:$PATH"
 
-EXPOSE 3333 
+EXPOSE 3333 9696 9697
 
 CMD ["/bin/bash", "-c", "/app/setup_utils/start.sh"]
