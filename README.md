@@ -67,6 +67,8 @@ They are:
   docker volume create middleware_keys
   docker run --name middleware \
              -p 3333:3333 \
+             -p 9696:9696 \
+             -p 9697:9697 \
              -v middleware_postgres_data:/var/lib/postgresql/data \
              -v middleware_keys:/app/keys \
              -d middlewareeng/middleware:latest
