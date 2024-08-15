@@ -168,6 +168,7 @@ def get_team_lead_time_trends(
         for week, average_lead_time_metrics in weekly_lead_time_metrics_avg_map.items()
     }
 
+
 @app.route("/teams/<team_id>/prs/merged_without_review", methods={"GET"})
 @queryschema(
     Schema(
@@ -177,16 +178,11 @@ def get_team_lead_time_trends(
         }
     ),
 )
-def merged_without_review(
-    team_id : str,
-    from_time: datetime,
-    to_time: datetime
-):
+def merged_without_review(team_id: str, from_time: datetime, to_time: datetime):
     query_validator = get_query_validator()
     team: Team = query_validator.team_validator(team_id)
     interval: Interval = query_validator.interval_validator(from_time, to_time)
     pr_analytics = get_pr_analytics_service()
-    result = pr_analytics.get_prs_merged_without_review(team.id,interval)
+    result = pr_analytics.get_prs_merged_without_review(team.id, interval)
     prs_map = [pr.id for pr in result]
-    return {'PrsWithoutReviewMerged': prs_map}
-    
+    return {"PrsWithoutReviewMerged": prs_map}
