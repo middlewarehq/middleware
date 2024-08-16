@@ -12,7 +12,6 @@ from mhq.store.models.incidents import (
     IncidentSource,
     OrgIncidentService,
     IncidentType,
-    IncidentsBookmark,
     IncidentOrgIncidentServiceMap,
     IncidentStatus,
     Incident,

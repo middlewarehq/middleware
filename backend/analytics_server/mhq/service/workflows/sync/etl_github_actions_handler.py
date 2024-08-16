@@ -12,7 +12,6 @@ from mhq.store.models.code import (
     RepoWorkflowRunsStatus,
     RepoWorkflowRuns,
     OrgRepo,
-    RepoWorkflowRunsBookmark,
     RepoWorkflow,
 )
 from mhq.store.repos.core import CoreRepoService

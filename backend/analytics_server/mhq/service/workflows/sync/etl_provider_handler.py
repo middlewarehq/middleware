@@ -5,7 +5,6 @@ from typing import List, Tuple
 from mhq.store.models.code import (
     OrgRepo,
     RepoWorkflow,
-    RepoWorkflowRunsBookmark,
     RepoWorkflowRuns,
 )
 

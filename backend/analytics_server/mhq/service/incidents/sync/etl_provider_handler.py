@@ -4,7 +4,6 @@ from typing import List, Tuple
 
 from mhq.store.models.incidents import (
     OrgIncidentService,
-    IncidentsBookmark,
     Incident,
     IncidentOrgIncidentServiceMap,
 )

@@ -8,7 +8,6 @@ from mhq.store.models.code import (
     PullRequestCommit,
     PullRequestEvent,
     PullRequestRevertPRMapping,
-    Bookmark,
 )
 
 

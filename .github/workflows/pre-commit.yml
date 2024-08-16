@@ -29,23 +29,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Install dependencies for web-server
-        run: yarn install
-        working-directory: web-server
-
       - name: Setup Node.js 18
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
       - name: Install dependencies for cli
-        run: yarn install
+        run: yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
         working-directory: cli
+
+      - name: Setup Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: Install dependencies for web-server
+        run: yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
+        working-directory: web-server
 
       - name: Run pre-commit hooks
         uses: pre-commit/action@v3.0.1
