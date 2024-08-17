@@ -172,7 +172,7 @@ class BookmarkService:
                 id=uuid4_str(),
                 entity_id=service_id,
                 entity_type=IncidentBookmarkType.SERVICE,
-                provider=incident_provider,
+                provider=incident_provider.value,
                 bookmark=default_incident_bookmark,
             )
         return bookmark
