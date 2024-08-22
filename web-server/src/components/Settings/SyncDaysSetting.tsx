@@ -86,8 +86,8 @@ export const SyncDaysSetting: FC = () => {
                 Sync Days
               </Line>
               <Box>
-                Select how many days of past data to load; more days may
-                increase sync time.
+                Select the number of past days to load; more days may increase
+                sync time.
               </Box>
             </FlexBox>
 
