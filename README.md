@@ -128,6 +128,9 @@ After initialization, you can access the server at port 3333 of the gitpod insta
 
 ### 🐳 Using Docker
 
+> [!IMPORTANT]
+> We recommend minimum 16GB RAM when developing locally.
+
 If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/).
 Make sure docker is running.
 
