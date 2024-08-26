@@ -14,13 +14,38 @@ We use pull requests for code contributions. To submit a pull request:
 
 1. Fork the repository.
 2. Create a new branch for your feature or bug fix.
-3. Make your changes and commit them with clear and concise messages.
+3. Make your changes and commit them with clear and concise messages. Refer [Making Commits](#making-commits)
 4. Push your changes to your fork.
 5. Submit a pull request to the main repository, detailing the changes you've made and referencing any relevant issues.
 
 ## Code Style
 
-Please follow the existing code style and conventions used in the project. If you're unsure, feel free to ask for clarification in the pull request or issue comments.
+Please follow the existing code style and conventions used in the project. If you're unsure, feel free to ask for clarification in the pull request or issue comments. For linting and all refer [Making Commits](#making-commits)
+
+## Making Commits
+
+1. Pre-commit should be installed as a dev dependency already. If not run the follwoing command from project root dir:
+    ```
+    pip install backend/dev-requirements.txt --upgrade
+    ```
+    Then install it:
+    ```
+    pre-commit install
+    ```
+2. Then after adding the changes to staging, commit it normally. You will observe pre-commit hooks running.
+
+    *NOTE*: The pre-commit hooks modifies the files and you have to again add the modified changes to staging and then commit
+
+3. You can run the pre-commit without committing anything as
+    ```
+    pre-commit run --all-files
+    ```
+    or
+    ```
+    pre-commit run --files [path/to/file]
+    ```
+
+*NOTE*: Make sure the terminal is using node 16 for the linting before committing(Until we upgrade node for webserver)
 
 ## Labels
 
