@@ -135,26 +135,28 @@ const CliUi = () => {
   }, [appState, exit]);
 
   useInput((input) => {
+    const lowerCaseInput = input.toLowerCase(); 
+
     if (appState === AppStates.DOCKER_READY) {
       dispatch(appSlice.actions.setLogsStream([]));
-      if (input === 'q') {
+      if (lowerCaseInput === 'q') {
         dispatch(appSlice.actions.setLogSource(LogSource.WebServer));
-      } else if (input === 'w') {
+      } else if (lowerCaseInput === 'w') {
         dispatch(appSlice.actions.setLogSource(LogSource.ApiServer));
-      } else if (input === 'e') {
+      } else if (lowerCaseInput === 'e') {
         dispatch(appSlice.actions.setLogSource(LogSource.Redis));
-      } else if (input === 'r') {
+      } else if (lowerCaseInput === 'r') {
         dispatch(appSlice.actions.setLogSource(LogSource.Postgres));
-      } else if (input === 't') {
+      } else if (lowerCaseInput === 't') {
         dispatch(appSlice.actions.setLogSource(LogSource.InitDb));
-      } else if (input === 'a') {
+      } else if (lowerCaseInput === 'a') {
         dispatch(appSlice.actions.setLogSource(LogSource.All));
-      } else if (input === 's') {
+      } else if (lowerCaseInput === 's') {
         dispatch(appSlice.actions.setLogSource(LogSource.SyncServer));
       }
     }
 
-    if (input === 'x') {
+    if (lowerCaseInput === 'x') {
       handleExit();
     }
   });
