@@ -77,7 +77,16 @@ RUN apt-get update && \
     && echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf \
     && sed -i "s/^port = .*/port = ${DB_PORT}/" /etc/postgresql/15/main/postgresql.conf \
     && npm install --global yarn --force \
-    && curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-amd64 \
+    && if [ "$(uname -m)" = "x86_64" ]; then \
+         curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-amd64; \
+       elif [ "$(uname -m)" = "aarch64" ]; then \
+         curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-arm64; \
+       elif [ "$(uname -m)" = "arm64" ]; then \
+         curl -fsSL -o /usr/local/bin/dbmate https://github.com/amacneil/dbmate/releases/download/v1.16.0/dbmate-linux-arm64; \
+       else \
+         echo "Unsupported architecture: $(uname -m)"; \
+         exit 1; \
+       fi \
     && chmod +x /usr/local/bin/dbmate \
     && mkdir -p /var/log/postgres \
     && touch /var/log/postgres/postgres.log \
