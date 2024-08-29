@@ -24,9 +24,10 @@ Please follow the existing code style and conventions used in the project. If yo
 
 ## Making Commits
 
-1. Pre-commit should be installed as a dev dependency already. If not run the follwoing command from project root dir:
+1. Pre-commit should be installed as a dev dependency already. If not then Create a virual environment [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments) or [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) and run the follwoing command from project root dir:
+
     ```
-    pip install backend/dev-requirements.txt --upgrade
+    pip install -r backend/dev-requirements.txt --upgrade
     ```
     Then install it:
     ```
