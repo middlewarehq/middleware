@@ -7,6 +7,7 @@ import { doraMetricsSlice } from '@/slices/dora_metrics';
 import { loadLinkSlice } from '@/slices/loadLink';
 import { orgSlice } from '@/slices/org';
 import { reposSlice } from '@/slices/repos';
+import { serviceSlice } from '@/slices/service';
 import { teamSlice } from '@/slices/team';
 
 export const rootReducer = combineReducers({
@@ -17,5 +18,6 @@ export const rootReducer = combineReducers({
   repos: reposSlice.reducer,
   org: orgSlice.reducer,
   doraMetrics: doraMetricsSlice.reducer,
-  loadLink: loadLinkSlice.reducer
+  loadLink: loadLinkSlice.reducer,
+  service: serviceSlice.reducer
 });
