@@ -115,6 +115,11 @@ export const useDoraStats = () => {
 
   const lt = leadTimeProps.count;
 
+  const interval = useSelector(
+    (s) =>
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current.duration
+  );
+
   return useMemo(
     () =>
       getDoraScore({
@@ -124,9 +129,19 @@ export const useDoraStats = () => {
         mttr:
           integrationSet.has(IntegrationGroup.INCIDENT) && !isNoDataAvailable
             ? mttr
-            : null
+            : null,
+        dfInterval: interval
       }),
-    [cfr, depsConfigured, df, integrationSet, isNoDataAvailable, lt, mttr]
+    [
+      cfr,
+      depsConfigured,
+      df,
+      integrationSet,
+      interval,
+      isNoDataAvailable,
+      lt,
+      mttr
+    ]
   );
 };
 
