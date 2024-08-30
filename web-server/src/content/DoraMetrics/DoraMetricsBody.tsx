@@ -5,7 +5,7 @@ import { FC, useEffect } from 'react';
 
 import { AiButton } from '@/components/AiButton';
 import { DoraMetricsConfigurationSettings } from '@/components/DoraMetricsConfigurationSettings';
-import { DoraScore } from '@/components/DoraScore';
+import { DoraScoreV2 } from '@/components/DoraScoreV2';
 import { EmptyState } from '@/components/EmptyState';
 import { FixedContentRefreshLoader } from '@/components/FixedContentRefreshLoader/FixedContentRefreshLoader';
 import { FlexBox } from '@/components/FlexBox';
@@ -121,7 +121,7 @@ export const DoraMetricsBody = () => {
     <FlexBox col gap2>
       <FixedContentRefreshLoader show={isLoading} />
       <FlexBox gap={2}>
-        {!!stats.avg && <DoraScore {...stats} />}
+        {!!stats.avg && <DoraScoreV2 {...stats} />}
         <FlexBox fit gap1 ml="auto">
           <AiButton
             size="small"

@@ -1,5 +1,6 @@
 import { useTheme } from '@mui/material';
 import Link from 'next/link';
+import { FC } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
@@ -8,10 +9,14 @@ import { OPEN_IN_NEW_TAB_PROPS } from '@/utils/url';
 
 import { commonProps } from '../content/DoraMetrics/MetricsCommonProps';
 
-export const DoraScore = ({
+export type DoraScoreProps = ReturnType<typeof getDoraScore> & {
+  mode?: 'regular' | 'small';
+};
+
+export const DoraScore: FC<DoraScoreProps> = ({
   mode = 'regular',
   ...stats
-}: ReturnType<typeof getDoraScore> & { mode?: 'regular' | 'small' }) => {
+}) => {
   const theme = useTheme();
 
   const small = mode === 'small';
