@@ -2,7 +2,8 @@ import {
   secondsInHour,
   secondsInDay,
   secondsInMonth,
-  secondsInWeek
+  secondsInWeek,
+  daysInWeek
 } from 'date-fns/constants';
 import { isNil, mean, reject } from 'ramda';
 
@@ -44,8 +45,11 @@ export const getDoraScore = ({
   lt,
   df,
   cfr,
-  mttr
-}: Partial<Record<'lt' | 'df' | 'cfr' | 'mttr', number>>) => {
+  mttr,
+  dfInterval
+}: Partial<Record<'lt' | 'df' | 'cfr' | 'mttr', number | null>> & {
+  dfInterval: string;
+}) => {
   const ltMttrBreakpoints = [
     secondsInMonth * 6,
     secondsInMonth,
@@ -54,6 +58,12 @@ export const getDoraScore = ({
     secondsInHour,
     0
   ];
+
+  let deploymentFrequency = df;
+
+  if (dfInterval === 'day') deploymentFrequency = df * daysInWeek;
+  else if (dfInterval === 'week') deploymentFrequency = df;
+  else if (dfInterval === 'month') deploymentFrequency = (df / 30) * daysInWeek;
 
   const deployBreakpoints = [
     1 / (4 * 6), // ~once in 6 months
@@ -75,8 +85,8 @@ export const getDoraScore = ({
   const scores = {
     lt: typeof lt === 'number' ? getScoreFromData(lt, ltMttrBreakpoints) : null,
     df:
-      typeof df === 'number'
-        ? getScoreFromDataInv(df, deployBreakpoints)
+      typeof deploymentFrequency === 'number'
+        ? getScoreFromDataInv(deploymentFrequency, deployBreakpoints)
         : null,
     cfr: typeof cfr === 'number' ? getCFRScore(cfr) : null,
     mttr:
@@ -85,7 +95,10 @@ export const getDoraScore = ({
         : null
   };
 
-  const filteredScores = reject(isNil, scores) as Partial<typeof scores>;
+  const filteredScores = reject(isNil, scores) as Record<
+    keyof typeof scores,
+    number
+  >;
 
   const rawAvg = mean(Object.values(filteredScores));
   const avg = rawAvg ? Number(rawAvg.toFixed(1)) : null;
