@@ -79,8 +79,6 @@ const checkServiceStatus = async (serviceName: string): Promise<boolean> => {
 };
 
 endpoint.handle.GET(getStatusSchema, async (req, res) => {
-  console.log('Fetching service status...');
-
   const services = Object.values(ServiceNames);
   const statuses: { [key in ServiceNames]: { isUp: boolean } } = {
     [ServiceNames.API_SERVER]: { isUp: false },
@@ -93,8 +91,6 @@ endpoint.handle.GET(getStatusSchema, async (req, res) => {
     const isUp = await checkServiceStatus(service);
     statuses[service] = { isUp: isUp };
   }
-
-  console.log(statuses);
 
   return res.send({ statuses });
 });

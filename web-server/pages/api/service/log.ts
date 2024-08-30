@@ -31,9 +31,7 @@ const fetchDockerLogs = (
 };
 
 endpoint.handle.GET(getLogsSchema, async (req, res) => {
-  console.log(req.payload);
   const { serviceName } = req.payload;
-  console.log(`Fetching logs for ${serviceName}...`);
 
   const commandMap: Record<string, string> = {
     'api-server-service':

@@ -73,9 +73,7 @@ export const serviceSlice = createSlice({
   initialState,
   reducers: {
     setActiveService: (state, action) => {
-      console.log(action.payload, 'payload', typeof action.payload);
       state.active = action.payload;
-      console.log(state.active, 'active');
     },
     resetState: () => getInitialState()
   },

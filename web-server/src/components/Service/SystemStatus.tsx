@@ -40,7 +40,6 @@ export const SystemStatus: FC = () => {
     fetchAndHandleServiceStatus();
     workerRef.current = new Worker('/workers/fetchStatusWorker.js');
     workerRef.current.onmessage = (event: MessageEvent<string>) => {
-      console.log('WebWorker Response =>', event.data);
       dispatch(fetchServiceStatus());
     };
     workerRef.current?.postMessage('fetchStatus');
