@@ -9,6 +9,7 @@ is_project_root
 
 NEXT_MANUAL_SIG_HANDLE=true
 yarn run next build
+yarn run build:workers
 
 echo "EXITED $?"
 
