@@ -576,13 +576,10 @@ export type TeamDoraMetricsApiResponseType = {
     previous: ChangeFailureRateTrendsApiResponse;
   };
   deployment_frequency_stats: {
-    current: DeploymentFrequencyApiResponse;
-    previous: DeploymentFrequencyApiResponse;
+    current: DeploymentFrequencyAnalyticsResponse;
+    previous: DeploymentFrequencyAnalyticsResponse;
   };
-  deployment_frequency_trends: {
-    current: DeploymentFrequencyTrends;
-    previous: DeploymentFrequencyTrends;
-  };
+  deployment_frequency_trends: Record<DateString, DeploymentFrequencyTrendBase>;
   lead_time_prs: PR[];
   assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
   unsynced_repos: ID[];
@@ -856,9 +853,10 @@ export type DeploymentFrequencyBaseStats = {
 };
 
 export type DeploymentFrequencyAnalyticsResponse = UserAndTeamMapApiReturnType &
-  DeploymentFrequencyBaseStats & {
-    team_analytics: Array<{ team_id: ID } & DeploymentFrequencyBaseStats>;
-    manager_analytics: Array<
+  DeploymentFrequencyBaseStats &
+  DeploymentFrequencyBaseStatsV2 & {
+    team_analytics?: Array<{ team_id: ID } & DeploymentFrequencyBaseStats>;
+    manager_analytics?: Array<
       {
         manager_id: ID;
         team_ids: ID[];
