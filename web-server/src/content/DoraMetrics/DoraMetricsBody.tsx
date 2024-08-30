@@ -60,7 +60,7 @@ export const DoraMetricsBody = () => {
         .incident_count &&
       !s.doraMetrics.metrics_summary?.lead_time_stats.current.lead_time &&
       !s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
-        .avg_daily_deployment_frequency
+        .avg_deployment_frequency
   );
 
   const { addPage } = useOverlayPage();

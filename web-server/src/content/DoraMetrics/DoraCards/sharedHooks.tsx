@@ -9,7 +9,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { doraMetricsSlice } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { ChangeTimeModes, IntegrationGroup } from '@/types/resources';
-import { getBadgeDetails } from '@/utils/adapt_deployment_frequency';
 import { getDoraScore } from '@/utils/dora';
 
 import {
@@ -206,28 +205,29 @@ export const usePropsForChangeTimeCard = () => {
 };
 
 export const useAvgWeeklyDeploymentFrequency = () => {
-  const currentDeploymentFrequency = useSelector(
-    (s) => s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
+  const avgDeploymentFrequency = useSelector(
+    (s) =>
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
+        .avg_deployment_frequency || 0
+  );
+  const prevAvgDeploymentFrequency = useSelector(
+    (s) =>
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.previous
+        .avg_deployment_frequency || 0
   );
 
-  const previousDeploymentFrequency = useSelector(
-    (s) => s.doraMetrics.metrics_summary?.deployment_frequency_stats.previous
-  );
-
-  const avgDeploymentFrequency = getBadgeDetails(currentDeploymentFrequency);
-
-  const prevAvgDeploymentFrequency = getBadgeDetails(
-    previousDeploymentFrequency,
-    avgDeploymentFrequency.duration
+  const interval = useSelector(
+    (s) =>
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current.duration
   );
 
   const metricInterval = useMemo(() => {
     return {
-      count: avgDeploymentFrequency.avg_deployment_frequency,
-      prev: prevAvgDeploymentFrequency.avg_deployment_frequency,
-      interval: avgDeploymentFrequency.duration
+      count: avgDeploymentFrequency,
+      prev: prevAvgDeploymentFrequency,
+      interval
     };
-  }, [avgDeploymentFrequency, prevAvgDeploymentFrequency]);
+  }, [avgDeploymentFrequency, interval, prevAvgDeploymentFrequency]);
 
   return useMemo(() => {
     const key = updatedDeploymentFrequencyThresholds(metricInterval);
