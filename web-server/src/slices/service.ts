@@ -23,6 +23,7 @@ type State = StateFetchConfig<{
   services: ServiceStatusState;
   loading?: boolean;
   error?: string;
+  active: string | null; // Add 'active' to store the active service name
 }>;
 
 export type serviceSliceState = State;
@@ -34,7 +35,10 @@ const getInitialState = (): State => {
       'redis-service': { isUp: false, logs: [] },
       'postgres-service': { isUp: false, logs: [] },
       'sync-server-service': { isUp: false, logs: [] }
-    }
+    },
+    active: null,
+    loading: false,
+    error: undefined
   };
 };
 
@@ -67,7 +71,14 @@ export const fetchServiceLogs = createAsyncThunk(
 export const serviceSlice = createSlice({
   name: 'services',
   initialState,
-  reducers: {},
+  reducers: {
+    setActiveService: (state, action) => {
+      console.log(action.payload, 'payload', typeof action.payload);
+      state.active = action.payload;
+      console.log(state.active, 'active');
+    },
+    resetState: () => getInitialState()
+  },
   extraReducers: (builder) => {
     builder.addCase(fetchServiceStatus.fulfilled, (state, action) => {
       state.loading = false;
