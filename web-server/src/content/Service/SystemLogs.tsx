@@ -48,9 +48,6 @@ export const SystemLogs = () => {
             {log}
           </Typography>
         ))}
-      <Typography variant="body1" sx={{ color: 'white', marginBottom: 1 }}>
-        Hello, World!
-      </Typography>
     </Box>
   );
 };
