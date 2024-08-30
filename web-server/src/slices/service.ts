@@ -23,7 +23,7 @@ type State = StateFetchConfig<{
   services: ServiceStatusState;
   loading?: boolean;
   error?: string;
-  active: string | null; // Add 'active' to store the active service name
+  active: string | null;
 }>;
 
 export type serviceSliceState = State;
@@ -31,10 +31,10 @@ export type serviceSliceState = State;
 const getInitialState = (): State => {
   return {
     services: {
-      'api-server-service': { isUp: false, logs: [] },
-      'redis-service': { isUp: false, logs: [] },
-      'postgres-service': { isUp: false, logs: [] },
-      'sync-server-service': { isUp: false, logs: [] }
+      [ServiceNames.API_SERVER]: { isUp: false, logs: [] },
+      [ServiceNames.REDIS]: { isUp: false, logs: [] },
+      [ServiceNames.POSTGRES]: { isUp: false, logs: [] },
+      [ServiceNames.SYNC_SERVER]: { isUp: false, logs: [] }
     },
     active: null,
     loading: false,
