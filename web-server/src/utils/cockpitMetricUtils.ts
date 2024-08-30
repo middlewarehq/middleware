@@ -327,19 +327,6 @@ const removeMapsFromObj = (
   return temp;
 };
 
-const merge = (obj1: Record<string, any>, obj2: Record<string, any>) => {
-  return Object.keys(obj1).reduce(
-    (acc, key) => {
-      acc[key] = {
-        current: obj1[key],
-        previous: obj2[key]
-      };
-      return acc;
-    },
-    {} as Record<string, any>
-  );
-};
-
 const combinePreviousAndCurrent = (
   current: Record<string, any>,
   previous: Record<string, any>
