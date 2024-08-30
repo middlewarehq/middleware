@@ -1,7 +1,7 @@
 import { Authenticated } from 'src/components/Authenticated';
 import { FlexBox } from '@/components/FlexBox';
 import Loader from '@/components/Loader';
-import {  SystemStatus } from '@/components/Service/SystemStatus';
+import { SystemStatus } from '@/components/Service/SystemStatus';
 import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,11 +28,11 @@ function Service() {
     <PageWrapper
       title={
         <FlexBox gap={1} alignCenter>
-          Service
+          System
         </FlexBox>
       }
       hideAllSelectors
-      pageTitle="Service"
+      pageTitle="System"
       showEvenIfNoTeamSelected={true}
       isLoading={isLoading}
     >

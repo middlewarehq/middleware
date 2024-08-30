@@ -68,9 +68,9 @@ const menuItems = (): MenuItems[] => [
         link: ROUTES.SETTINGS.PATH
       },
       {
-        name: 'Services',
+        name: 'System',
         icon: Dns,
-        link: ROUTES.SERVICE.PATH
+        link: ROUTES.SYSTEM.PATH
       }
     ]
   }
