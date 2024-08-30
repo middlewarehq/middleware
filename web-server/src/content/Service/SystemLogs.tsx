@@ -29,10 +29,8 @@ export const SystemLogs = () => {
   return (
     <Box
       sx={{
-        backgroundColor: '#1e1e1e',
-        padding: 2,
+        padding: '16px 24px',
         borderRadius: 2,
-        fontFamily: 'monospace',
         color: 'white',
         overflowY: 'auto',
         maxHeight: '650px'
@@ -43,9 +41,33 @@ export const SystemLogs = () => {
           <Typography
             key={i}
             variant="body1"
-            sx={{ color: 'white', marginBottom: 1 }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              color: 'white',
+              marginBottom: 1.5,
+              padding: '8px 12px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+              '&:last-child': { borderBottom: 'none' },
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                cursor: 'pointer'
+              }
+            }}
           >
-            {log}
+            <Box
+              component="span"
+              sx={{
+                marginRight: '12px',
+                fontWeight: 'bold',
+                color: 'rgba(255, 255, 255, 0.7)'
+              }}
+            >
+              {i + 1}
+            </Box>
+            <Box component="span" sx={{ flexGrow: 1 }}>
+              {log}
+            </Box>
           </Typography>
         ))}
     </Box>

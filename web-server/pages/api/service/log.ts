@@ -3,6 +3,7 @@ import * as yup from 'yup';
 import { exec } from 'child_process';
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
+import { ServiceNames } from '@/constants/service';
 
 const endpoint = new Endpoint(nullSchema);
 const getLogsSchema = yup.object().shape({
@@ -34,13 +35,13 @@ endpoint.handle.GET(getLogsSchema, async (req, res) => {
   const { serviceName } = req.payload;
 
   const commandMap: Record<string, string> = {
-    'api-server-service':
+    [ServiceNames.API_SERVER]:
       'cd ../../.. && cd /var/log/apiserver/ && tail -n 500 apiserver.log',
-    'sync-server-service':
+    [ServiceNames.SYNC_SERVER]:
       'cd ../../.. && cd /var/log/sync_server/ && tail -n 500 sync_server.log',
-    'redis-service':
+    [ServiceNames.REDIS]:
       'cd ../../.. && cd /var/log/redis/ && tail -n 500 redis.log',
-    'postgres-service':
+    [ServiceNames.POSTGRES]:
       'cd ../../.. && cd /var/log/postgres/ && tail -n 500 postgres.log'
   };
 

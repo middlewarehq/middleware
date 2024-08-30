@@ -1,14 +1,8 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
+import { ServiceNames } from '@/constants/service';
 import { StateFetchConfig } from '@/types/redux';
-
-export enum ServiceNames {
-  API_SERVER = 'api-server-service',
-  REDIS = 'redis-service',
-  POSTGRES = 'postgres-service',
-  SYNC_SERVER = 'sync-server-service'
-}
 
 type ServiceStatus = {
   isUp: boolean;
