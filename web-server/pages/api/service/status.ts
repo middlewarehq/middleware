@@ -4,7 +4,7 @@ import { exec } from 'child_process';
 
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { Endpoint, nullSchema } from '@/api-helpers/global';
-import { ServiceNames } from '@/slices/service';
+import { ServiceNames } from '@/constants/service';
 import { dbRaw } from '@/utils/db';
 
 const getStatusSchema = yup.object().shape({});
