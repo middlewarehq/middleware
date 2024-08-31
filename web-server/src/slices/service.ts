@@ -50,7 +50,6 @@ export const serviceSlice = createSlice({
     },
     setStatus: (state, action: PayloadAction<SetStatusPayload>) => {
       state.loading = false;
-      console.log(action.payload, 'state set');
       const { statuses } = action.payload;
 
       for (const [serviceName, { isUp }] of Object.entries(statuses)) {
@@ -64,7 +63,6 @@ export const serviceSlice = createSlice({
       action: PayloadAction<{ serviceName: ServiceNames; serviceLog: string[] }>
     ) => {
       const { serviceName, serviceLog } = action.payload;
-      console.log(action, 'action ');
       state.services[serviceName].logs = [
         ...state.services[serviceName].logs,
         ...serviceLog
