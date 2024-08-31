@@ -2,7 +2,7 @@ import { Box, Button, Divider, Typography } from '@mui/material';
 import { FC, useEffect, useState } from 'react';
 
 import { ServiceNames } from '@/constants/service';
-import service, { serviceSlice, ServiceStatusState } from '@/slices/service';
+import { serviceSlice, ServiceStatusState } from '@/slices/service';
 import { useDispatch, useSelector } from '@/store';
 
 import { FlexBox } from '../FlexBox';
@@ -42,26 +42,43 @@ export const SystemStatus: FC = () => {
 
     // eventSource.addEventListener("message", (event) => { console.log(event) })
     eventSource.onmessage = (event) => {
-      console.log('Message received', event);
+      // console.log('Message received', event);
       // Parse the data and update your component state here
       const data = JSON.parse(event.data);
-      console.log(data);
-
-      dispatch(serviceSlice.actions.setStatus(data));
-
-      // For example: setLastUpdate(data.time);
+      // console.log(data);
+      if (data.type === 'status-update') {
+        dispatch(serviceSlice.actions.setStatus({ statuses: data.statuses }));
+      }
+      if (data.type === 'log-update') {
+        console.log(data.serviceName);
+        const newLines = data.content.split('\n'); // Split new content into lines
+        const trimmedLines = newLines.filter(
+          (line: string) => line.trim() !== ''
+        );
+        dispatch(
+          serviceSlice.actions.setServiceLogs({
+            serviceName: data.serviceName,
+            serviceLog: trimmedLines
+          })
+        );
+        // }
+        // For example: setLastUpdate(data.time);
+      }
     };
-
-    eventSource.addEventListener('state', function (event) {
-      const data = JSON.parse(event.data);
-      console.log('State:', data);
-    });
 
     eventSource.onerror = (event) => {
       console.error('EventSource failed:', event);
+      eventSource.close();
     };
 
+    setTimeout(() => {
+      console.log('Cleaning up EventSource...');
+      eventSource.close();
+      console.log('EventSource closed');
+    }, 60000);
+
     return () => {
+      console.log('Cleaning up EventSource...');
       eventSource.close();
       console.log('EventSource closed');
     };
@@ -97,7 +114,9 @@ export const SystemStatus: FC = () => {
             }
           });
         }}
-      ></Button>
+      >
+        LOG
+      </Button>
 
       <FlexBox col gap={2}>
         {/* {services && loading &&
