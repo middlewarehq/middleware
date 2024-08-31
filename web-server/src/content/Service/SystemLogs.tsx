@@ -14,18 +14,6 @@ export const SystemLogs = () => {
   const workerRef = useRef<Worker>();
 
   const logs = services[active].logs;
-
-  useEffect(() => {
-    workerRef.current = new Worker('/workers/fetchLogsWorker.js');
-    workerRef.current.onmessage = (event: MessageEvent<string>) => {
-      dispatch(fetchServiceLogs(active));
-    };
-    workerRef.current?.postMessage('fetchStatus');
-    return () => {
-      workerRef.current?.terminate();
-    };
-  });
-
   return (
     <Box
       sx={{

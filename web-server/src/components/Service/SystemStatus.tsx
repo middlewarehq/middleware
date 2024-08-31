@@ -1,7 +1,8 @@
-import { Box, Button, Divider, Typography } from '@mui/material';
+import { Box, Divider } from '@mui/material';
 import { FC, useEffect, useState } from 'react';
 
 import { ServiceNames } from '@/constants/service';
+import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { serviceSlice, ServiceStatusState } from '@/slices/service';
 import { useDispatch, useSelector } from '@/store';
 
@@ -18,20 +19,7 @@ export const SystemStatus: FC = () => {
   );
   const loading = useSelector((s) => s.service.loading);
 
-  // useEffect(() => {
-  //   // const fetchAndHandleServiceStatus = async () => {
-  //   //   try {
-  //   //     await dispatch(fetchServiceStatus()).unwrap();
-  //   //     dispatch(serviceSlice.actions.setLoading(true));
-
-  //   //   } catch (err) {
-  //   //     setError('Failed to fetch service status');
-  //   //   }
-  //   // };
-
-  //   // fetchAndHandleServiceStatus();
-
-  // }, [dispatch]);
+  console.log(services);
 
   useEffect(() => {
     const eventSource = new EventSource('/api/service/stream');
@@ -40,10 +28,7 @@ export const SystemStatus: FC = () => {
       console.log('Connection opened', event);
     };
 
-    // eventSource.addEventListener("message", (event) => { console.log(event) })
     eventSource.onmessage = (event) => {
-      // console.log('Message received', event);
-      // Parse the data and update your component state here
       const data = JSON.parse(event.data);
       // console.log(data);
       if (data.type === 'status-update') {
@@ -61,8 +46,6 @@ export const SystemStatus: FC = () => {
             serviceLog: trimmedLines
           })
         );
-        // }
-        // For example: setLastUpdate(data.time);
       }
     };
 
@@ -71,14 +54,7 @@ export const SystemStatus: FC = () => {
       eventSource.close();
     };
 
-    setTimeout(() => {
-      console.log('Cleaning up EventSource...');
-      eventSource.close();
-      console.log('EventSource closed');
-    }, 60000);
-
     return () => {
-      console.log('Cleaning up EventSource...');
       eventSource.close();
       console.log('EventSource closed');
     };
@@ -105,21 +81,9 @@ export const SystemStatus: FC = () => {
           <p>{error}</p>
         </Box>
       )}
-      <Button
-        onClick={() => {
-          addPage({
-            page: {
-              ui: 'system_logs',
-              title: ` Logs`
-            }
-          });
-        }}
-      >
-        LOG
-      </Button>
 
       <FlexBox col gap={2}>
-        {/* {services && loading &&
+        {services &&
           Object.keys(services).map((serviceName) => {
             const { isUp } = services[serviceName];
             return (
@@ -143,8 +107,9 @@ export const SystemStatus: FC = () => {
                   },
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '12px',
-                  border: `1px solid ${isUp ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'
-                    }`,
+                  border: `1px solid ${
+                    isUp ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'
+                  }`,
                   padding: '16px',
                   cursor: 'pointer',
                   position: 'relative',
@@ -197,84 +162,7 @@ export const SystemStatus: FC = () => {
                 </FlexBox>
               </CardRoot>
             );
-          })} */}
-        <Box
-          sx={{
-            padding: '16px 24px',
-            borderRadius: 2,
-            color: 'white',
-            overflowY: 'auto',
-            maxHeight: '650px',
-            backgroundColor: '#333'
-          }}
-        >
-          {Object.entries(services).map(([serviceName, serviceData]) => (
-            <Box
-              key={serviceName}
-              sx={{
-                marginBottom: 2,
-                padding: '12px',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: 1
-              }}
-            >
-              <Typography
-                variant="h6"
-                sx={{
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  fontWeight: 'bold',
-                  marginBottom: 1
-                }}
-              >
-                {serviceName}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: serviceData.isUp ? 'lightgreen' : 'red',
-                  marginBottom: 1
-                }}
-              >
-                Status: {serviceData.isUp ? 'Up' : 'Down'}
-              </Typography>
-              <Box
-                sx={{
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  backgroundColor: '#222',
-                  padding: '8px',
-                  borderRadius: 1
-                }}
-              >
-                {serviceData.logs.length > 0 ? (
-                  serviceData.logs.map((log, index) => (
-                    <Typography
-                      key={index}
-                      variant="body2"
-                      sx={{
-                        color: 'white',
-                        marginBottom: 0.5,
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      {log}
-                    </Typography>
-                  ))
-                ) : (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: 'gray',
-                      fontStyle: 'italic'
-                    }}
-                  >
-                    No logs available
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          ))}
-        </Box>
+          })}
       </FlexBox>
     </FlexBox>
   );
