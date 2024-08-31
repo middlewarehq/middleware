@@ -1,13 +1,15 @@
 import { exec } from 'child_process';
+import { watch, createReadStream, FSWatcher } from 'fs';
 
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
-import { ApiRequest, ApiResponse } from '@/types/request';
 import { dbRaw } from '@/utils/db';
 
+import type { NextApiRequest, NextApiResponse } from 'next/types';
+
 export default async function handler(
-  request: ApiRequest,
-  response: ApiResponse
+  request: NextApiRequest,
+  response: NextApiResponse
 ) {
   console.log('SSE handler initialized');
 
@@ -22,16 +24,78 @@ export default async function handler(
   // Send an initial message to establish the connection
   // response.write('data: Connected\n\n');
 
-  const statuses = await getStatus();
-  const Status = {
-    statuses: statuses
+  // ---------------------------
+  // const sendStatuses = async () => {
+  //   // Fetch the statuses
+  //   const statuses = await getStatus();
+  //   const statusData = { type: 'status-update', statuses: statuses };
+
+  //   // Send the data to the client
+  //   response.write(`data: ${JSON.stringify(statusData)}\n\n`);
+
+  //   // Call this function again after 15 seconds
+  //   timeoutId = setTimeout(sendStatuses, 15000);
+  // };
+
+  // Start the recursive process
+  // let timeoutId = setTimeout(sendStatuses, 15000); // Set initial timeout
+
+  // -----------------------------
+  const fullPath = '/var/log/apiserver/apiserver.log';
+  let lastPosition = 0;
+
+  const sendFileContent = async () => {
+    console.log('SEnd file content');
+    return new Promise<void>((resolve, reject) => {
+      const stream = createReadStream(fullPath, {
+        start: lastPosition,
+        encoding: 'utf8'
+      });
+      stream.on('data', (chunk) => {
+        const data = {
+          type: 'log-update',
+          serviceName: ServiceNames.API_SERVER,
+          content: chunk
+        };
+        response.write(`data: ${JSON.stringify(data)}\n\n`);
+        lastPosition += Buffer.byteLength(chunk);
+      });
+      stream.on('end', () => {
+        response.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
+        resolve();
+      });
+      stream.on('error', (error) => {
+        reject(error);
+      });
+    });
   };
-  response.write(`data: ${JSON.stringify(Status)}\n\n`);
+
+  let watcher: FSWatcher | null = null;
+
+  if (!watcher) {
+    watcher = watch(fullPath, async (eventType, filename) => {
+      if (eventType === 'change') {
+        console.log(`File ${filename} has been changed`);
+        await sendFileContent();
+      }
+    });
+    console.log('Watcher created for', fullPath);
+  } else {
+    console.log('Watcher already exists for', fullPath);
+  }
+
+  // Initial read of the file
+  await sendFileContent();
 
   response.on('close', () => {
     console.log('Client disconnected');
-    // clearInterval(intervalId);
-    response.end();
+    watcher.close(); // Ensure the watcher is closed
+    response.end(); // End the response
+  });
+
+  response.on('finish', () => {
+    console.log('Response finished');
+    watcher.close(); // Close the watcher when response is finished
   });
 }
 
