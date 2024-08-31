@@ -6,6 +6,7 @@ import { ServiceNames } from '@/constants/service';
 import { dbRaw } from '@/utils/db';
 
 import type { NextApiRequest, NextApiResponse } from 'next/types';
+export const dynamic = 'force-dynamic';
 
 export default async function handler(
   request: NextApiRequest,
@@ -14,7 +15,7 @@ export default async function handler(
   console.log('SSE handler initialized');
 
   response.setHeader('Content-Type', 'text/event-stream');
-  response.setHeader('Cache-Control', 'no-cache');
+  response.setHeader('Cache-Control', 'no-cache, no-transform');
   response.setHeader('Connection', 'keep-alive');
   response.setHeader('content-encoding', 'none');
   response.setHeader('Access-Control-Allow-Origin', '*'); // Enable CORS
@@ -25,80 +26,116 @@ export default async function handler(
   // response.write('data: Connected\n\n');
 
   // ---------------------------
-  // const sendStatuses = async () => {
-  //   // Fetch the statuses
-  //   const statuses = await getStatus();
-  //   const statusData = { type: 'status-update', statuses: statuses };
+  const sendStatuses = async () => {
+    console.log('Set STatus');
+    // Fetch the statuses
+    const statuses = await getStatus();
+    const statusData = { type: 'status-update', statuses: statuses };
 
-  //   // Send the data to the client
-  //   response.write(`data: ${JSON.stringify(statusData)}\n\n`);
+    // Send the data to the client
+    response.write(`data: ${JSON.stringify(statusData)}\n\n`);
 
-  //   // Call this function again after 15 seconds
-  //   timeoutId = setTimeout(sendStatuses, 15000);
-  // };
+    // Call this function again after 15 seconds
+    timeoutId = setTimeout(sendStatuses, 15000);
+  };
 
   // Start the recursive process
-  // let timeoutId = setTimeout(sendStatuses, 15000); // Set initial timeout
+  let timeoutId = setTimeout(sendStatuses, 15000); // Set initial timeout
 
   // -----------------------------
-  const fullPath = '/var/log/apiserver/apiserver.log';
-  let lastPosition = 0;
+  const logFiles = [
+    {
+      path: '/var/log/apiserver/apiserver.log',
+      serviceName: ServiceNames.API_SERVER
+    },
+    {
+      path: '/var/log/sync_server/sync_server.log',
+      serviceName: ServiceNames.SYNC_SERVER
+    },
+    {
+      path: '/var/log/redis/redis.log',
+      serviceName: ServiceNames.REDIS
+    },
+    {
+      path: '/var/log/postgres/postgres.log',
+      serviceName: ServiceNames.POSTGRES
+    }
+  ];
 
-  const sendFileContent = async () => {
-    console.log('SEnd file content');
+  let watchers: FSWatcher[] = [];
+  let lastPositions: { [key: string]: number } = {};
+
+  const sendFileContent = async (filePath: string, serviceName: string) => {
+    console.log(`Sending file content for ${serviceName}`);
+
     return new Promise<void>((resolve, reject) => {
-      const stream = createReadStream(fullPath, {
-        start: lastPosition,
+      const stream = createReadStream(filePath, {
+        start: lastPositions[filePath] || 0,
         encoding: 'utf8'
       });
+
       stream.on('data', (chunk) => {
         const data = {
           type: 'log-update',
-          serviceName: ServiceNames.API_SERVER,
+          serviceName,
           content: chunk
         };
         response.write(`data: ${JSON.stringify(data)}\n\n`);
-        lastPosition += Buffer.byteLength(chunk);
+        lastPositions[filePath] =
+          (lastPositions[filePath] || 0) + Buffer.byteLength(chunk);
       });
+
       stream.on('end', () => {
-        response.write(`data: ${JSON.stringify({ type: 'end' })}\n\n`);
         resolve();
       });
+
       stream.on('error', (error) => {
         reject(error);
       });
     });
   };
 
-  let watcher: FSWatcher | null = null;
+  const startWatchers = () => {
+    logFiles.forEach(({ path, serviceName }) => {
+      const watcher = watch(path, async (eventType) => {
+        if (eventType === 'change') {
+          console.log(`File ${path} (${serviceName}) has been changed`);
+          await sendFileContent(path, serviceName);
+        }
+      });
 
-  if (!watcher) {
-    watcher = watch(fullPath, async (eventType, filename) => {
-      if (eventType === 'change') {
-        console.log(`File ${filename} has been changed`);
-        await sendFileContent();
-      }
+      watchers.push(watcher);
+      console.log(`Watcher created for ${path}`);
     });
-    console.log('Watcher created for', fullPath);
-  } else {
-    console.log('Watcher already exists for', fullPath);
+  };
+
+  // Start watchers for all log files
+  startWatchers();
+  sendStatuses();
+
+  // Initial read of all files
+  for (const { path, serviceName } of logFiles) {
+    await sendFileContent(path, serviceName);
   }
 
-  // Initial read of the file
-  await sendFileContent();
+  const cleanupWatchers = () => {
+    watchers.forEach((watcher) => watcher.close());
+    watchers = [];
+  };
 
   response.on('close', () => {
     console.log('Client disconnected');
-    watcher.close(); // Ensure the watcher is closed
-    response.end(); // End the response
+    cleanupWatchers();
+    clearTimeout(timeoutId);
+    response.end();
   });
 
   response.on('finish', () => {
     console.log('Response finished');
-    watcher.close(); // Close the watcher when response is finished
+    clearTimeout(timeoutId);
+    cleanupWatchers();
   });
 }
-
 const getStatus = async () => {
   const services = Object.values(ServiceNames);
   const statuses: { [key in ServiceNames]: { isUp: boolean } } = {
