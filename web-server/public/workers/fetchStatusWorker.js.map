@@ -1,1 +1,0 @@
-{"version":3,"file":"fetchStatusWorker.js","sourceRoot":"","sources":["../../src/workers/fetchStatusWorker.ts"],"names":[],"mappings":";AAAA,gBAAgB,CAAC,SAAS,EAAE,CAAC,MAA4B,EAAE,EAAE;IAC3D,0BAA0B;IAC1B,WAAW,CAAC,GAAG,EAAE;QACf,WAAW,CAAC,OAAO,CAAC,CAAC;IACvB,CAAC,EAAE,IAAI,CAAC,CAAC;AACX,CAAC,CAAC,CAAC"}

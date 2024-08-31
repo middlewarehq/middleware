@@ -96,9 +96,7 @@
     "clean": "rm -rf .next",
     "test": "jest --passWithNoTests --onlyChanged",
     "test:e2e": "playwright test --headed",
-    "env": "bash ./scripts/setup-env.sh",
-    "build:workers": "tsc -p tsconfig.worker.json",
-    "watch:workers": "tsc -p tsconfig.worker.json -watch"
+    "env": "bash ./scripts/setup-env.sh"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^12.3.0",
