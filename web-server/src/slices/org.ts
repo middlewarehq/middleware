@@ -7,7 +7,6 @@ import { StateFetchConfig } from '@/types/redux';
 import {
   BaseUser,
   DBUserRow,
-  OrgAlertSettings,
   OrgDefaultSyncDaysSettings
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
@@ -79,15 +78,6 @@ export const orgSlice = createSlice({
       (state, action) =>
         (state.members[action.payload.id].is_deleted =
           action.payload.is_deleted)
-    );
-    addFetchCasesToReducer(
-      builder,
-      getOrgAlertSettings,
-      'syncAlertsAsIncidents',
-      (state, action) => {
-        state.syncAlertsAsIncidents =
-          action.payload.should_sync_alerts_as_incidents;
-      }
     );
     addFetchCasesToReducer(
       builder,
@@ -185,36 +175,6 @@ export const restoreMember = createAsyncThunk(
       },
       method: 'POST'
     }).catch((err) => rejectWithValue(err));
-  }
-);
-
-export const getOrgAlertSettings = createAsyncThunk(
-  'org/orgAlertSettings',
-  async (params: { userId: ID; orgId: ID }) => {
-    return await handleApi<OrgAlertSettings>(
-      `/internal/${params.orgId}/alerts_as_incidents`,
-      {
-        params: {
-          user_id: params.userId
-        }
-      }
-    );
-  }
-);
-
-export const updatedOrgAlertSettings = createAsyncThunk(
-  'org/orgAlertSettings',
-  async (params: { userId: ID; orgId: ID; updatedSetting: boolean }) => {
-    return await handleApi<OrgAlertSettings>(
-      `/internal/${params.orgId}/alerts_as_incidents`,
-      {
-        data: {
-          updated_setting: params.updatedSetting,
-          user_id: params.userId
-        },
-        method: 'PUT'
-      }
-    );
   }
 );
 
