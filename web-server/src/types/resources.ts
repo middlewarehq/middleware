@@ -664,10 +664,6 @@ export enum AiSummarySource {
   PRS_ANALYSIS = 'PRS_ANALYSIS'
 }
 
-export type OrgAlertSettings = {
-  should_sync_alerts_as_incidents: boolean;
-};
-
 export type OrgDefaultSyncDaysSettings = {
   default_sync_days: number;
 };
