@@ -109,7 +109,6 @@ const IndustryDropdown = () => {
     depFn(anchorEl.set, null);
   }, [anchorEl.set]);
 
-  console.log('Debugging', { selectedIndustry });
   return (
     <FlexBox>
       <FlexBox alignCenter pointer onClick={handleOpenMenu}>
