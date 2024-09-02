@@ -50,7 +50,7 @@ export const DoraScoreV2: FC<DoraScoreProps> = ({ ...stats }) => {
 
         <FlexBox col>
           <Line bigish medium>
-            Ed-tech
+            {selectedIndustry}
           </Line>
           <IndustryDropdown />
         </FlexBox>
