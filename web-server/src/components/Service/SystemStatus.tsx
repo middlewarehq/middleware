@@ -22,17 +22,24 @@ export const SystemStatus: FC = () => {
 
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
-
+    eventSource.onopen = (event)=>{
+      console.log("OPEN")
+    }
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      if (data.type.includes('status-update')) {
+      if (data.type === 'status-update') {
         const statuses = { statuses: data.statuses };
         dispatch(serviceSlice.actions.setStatus(statuses));
         loading.set(false);
       }
-      if (data.type.includes('log-update')) {
+
+      if (data.type === 'log-update') {
         const { serviceName, content } = data;
+
+        if (serviceName === ServiceNames.REDIS) {
+          console.log(content);
+        }
 
         const newLines = content.split('\n');
         const trimmedLines = newLines.filter(
@@ -55,7 +62,7 @@ export const SystemStatus: FC = () => {
     return () => {
       eventSource.close();
     };
-  }, [dispatch, loading]);
+  }, [dispatch]);
 
   const { addPage } = useOverlayPage();
 
