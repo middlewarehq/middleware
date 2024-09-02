@@ -22,9 +22,6 @@ export const SystemStatus: FC = () => {
 
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
-    eventSource.onopen = (event)=>{
-      console.log("OPEN")
-    }
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
@@ -36,11 +33,6 @@ export const SystemStatus: FC = () => {
 
       if (data.type === 'log-update') {
         const { serviceName, content } = data;
-
-        if (serviceName === ServiceNames.REDIS) {
-          console.log(content);
-        }
-
         const newLines = content.split('\n');
         const trimmedLines = newLines.filter(
           (line: string) => line.trim() !== ''
