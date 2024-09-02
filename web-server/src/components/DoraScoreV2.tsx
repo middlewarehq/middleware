@@ -112,9 +112,7 @@ const IndustryDropdown = () => {
   return (
     <FlexBox>
       <FlexBox alignCenter pointer onClick={handleOpenMenu}>
-        <Line primary bigish>
-          Change
-        </Line>
+        <Line primary>Change</Line>
         <KeyboardArrowDown color="primary" fontSize="small" />
       </FlexBox>
 
