@@ -5,29 +5,10 @@ import { FSWatcher, createReadStream, watch } from 'fs';
 
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
+import { ServiceStatus, UPDATE_INTERVAL, LogFile, LOG_FILES } from '@/constants/stream';
 
-type LogFile = {
-  path: string;
-  serviceName: ServiceNames;
-};
 
-type ServiceStatus = {
-  [key in ServiceNames]: { isUp: boolean };
-};
 
-const UPDATE_INTERVAL = 10000;
-const LOG_FILES: LogFile[] = [
-  {
-    path: '/var/log/apiserver/apiserver.log',
-    serviceName: ServiceNames.API_SERVER
-  },
-  {
-    path: '/var/log/sync_server/sync_server.log',
-    serviceName: ServiceNames.SYNC_SERVER
-  },
-  { path: '/var/log/redis/redis.log', serviceName: ServiceNames.REDIS },
-  { path: '/var/log/postgres/postgres.log', serviceName: ServiceNames.POSTGRES }
-];
 
   let watchers: FSWatcher[] = [];
   let lastPositions: { [key: string]: number } = {};
