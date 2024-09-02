@@ -15,7 +15,7 @@ type ServiceStatus = {
   [key in ServiceNames]: { isUp: boolean };
 };
 
-const UPDATE_INTERVAL = 10000;
+const UPDATE_INTERVAL = 5000;
 const LOG_FILES: LogFile[] = [
   {
     path: '/var/log/apiserver/apiserver.log',
