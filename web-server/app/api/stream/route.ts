@@ -14,10 +14,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   let streamClosed = false;
 
   const sendStatuses = async () => {
-    if (streamClosed) return; 
+    if (streamClosed) return;
 
     try {
-      console.log('Fetching service statuses...');
       const statuses = await getStatus();
       const statusData = { type: 'status-update', statuses };
 
@@ -30,7 +29,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       console.error('Error sending statuses:', error);
     }
 
-    // Schedule the next status update
     if (!streamClosed) {
       timeoutId = setTimeout(sendStatuses, 10000);
     }
@@ -56,8 +54,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   let lastPositions: { [key: string]: number } = {};
 
   const sendFileContent = async (filePath: string, serviceName: string) => {
-    if (streamClosed) return; // Prevent sending if the stream is closed
-    console.log(`Sending file content for ${serviceName}`);
+    if (streamClosed) return;
 
     return new Promise<void>((resolve, reject) => {
       const stream = createReadStream(filePath, {
@@ -66,7 +63,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       });
 
       stream.on('data', (chunk) => {
-        if (streamClosed) return; 
+        if (streamClosed) return;
         const data = {
           type: 'log-update',
           serviceName,
@@ -89,13 +86,11 @@ export async function GET(request: NextRequest): Promise<Response> {
 
       const watcher = watch(path, async (eventType) => {
         if (eventType === 'change') {
-          console.log(`File ${path} (${serviceName}) has been changed`);
           await sendFileContent(path, serviceName);
         }
       });
 
       watchers.push(watcher);
-      console.log(`Watcher created for ${path}`);
     });
   };
 
@@ -108,7 +103,6 @@ export async function GET(request: NextRequest): Promise<Response> {
   startWatchers();
 
   const closeStream = () => {
-    console.log('Client Disconnected');
     if (!streamClosed) {
       streamClosed = true;
       writer
@@ -129,14 +123,6 @@ export async function GET(request: NextRequest): Promise<Response> {
       Connection: 'keep-alive',
       'Cache-Control': 'no-cache, no-transform'
     }
-  });
-}
-
-process.setMaxListeners(20);
-if (!process.listenerCount('SIGINT')) {
-  process.on('SIGINT', () => {
-    console.log('SIGINT received. Performing cleanup.');
-    process.exit();
   });
 }
 
