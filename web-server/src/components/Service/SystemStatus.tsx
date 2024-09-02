@@ -1,8 +1,9 @@
 import { Box, CircularProgress, Divider } from '@mui/material';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect } from 'react';
 
 import { ServiceNames } from '@/constants/service';
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
+import { useBoolState } from '@/hooks/useEasyState';
 import { serviceSlice, ServiceStatusState } from '@/slices/service';
 import { useDispatch, useSelector } from '@/store';
 
@@ -12,7 +13,8 @@ import { Line } from '../Text';
 
 export const SystemStatus: FC = () => {
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState<boolean>(true);
+  const loading = useBoolState(true);
+
   const services = useSelector(
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
@@ -23,11 +25,11 @@ export const SystemStatus: FC = () => {
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      setLoading(false);
 
       if (data.type.includes('status-update')) {
         const statuses = { statuses: data.statuses };
         dispatch(serviceSlice.actions.setStatus(statuses));
+        loading.set(false);
       }
       if (data.type.includes('log-update')) {
         const { serviceName, content } = data;
@@ -53,7 +55,7 @@ export const SystemStatus: FC = () => {
     return () => {
       eventSource.close();
     };
-  }, [dispatch]);
+  }, [dispatch, loading]);
 
   const { addPage } = useOverlayPage();
 
@@ -70,7 +72,7 @@ export const SystemStatus: FC = () => {
       </Line>
       <Divider sx={{ mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
 
-      {loading && (
+      {loading.value ? (
         <Box
           sx={{
             display: 'flex',
@@ -80,12 +82,9 @@ export const SystemStatus: FC = () => {
         >
           <CircularProgress color="primary" size={50} />
         </Box>
-      )}
-
-      <FlexBox col gap={2}>
-        {services &&
-          !loading &&
-          Object.keys(services).map((serviceName) => {
+      ) : (
+        <FlexBox col gap={2}>
+          {Object.keys(services).map((serviceName) => {
             const ServiceName = serviceName as ServiceNames;
             const { isUp } = services[ServiceName];
             return (
@@ -165,7 +164,8 @@ export const SystemStatus: FC = () => {
               </CardRoot>
             );
           })}
-      </FlexBox>
+        </FlexBox>
+      )}
     </FlexBox>
   );
 };
