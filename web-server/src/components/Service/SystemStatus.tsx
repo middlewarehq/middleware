@@ -20,14 +20,16 @@ export const SystemStatus: FC = () => {
   const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    const eventSource = new EventSource(`/api/stream`); //configure this based on your user case, for demo purpose I'm using static value
+    const eventSource = new EventSource(`/api/stream`);
 
     eventSource.onmessage = (event) => {
-      const data = event.data && JSON.parse(event?.data);
+      const data = JSON.parse(event.data);
+      console.log(data);
 
-      if (data.success) {
-        setStatus('success');
-        eventSource.close();
+      if (data.type.includes('status-update')) {
+        const statuses = { statuses: data.statuses };
+        console.log(statuses);
+        dispatch(serviceSlice.actions.setStatus(statuses));
       }
     };
 

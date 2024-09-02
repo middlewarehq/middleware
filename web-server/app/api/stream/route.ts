@@ -1,11 +1,10 @@
 import { NextRequest } from 'next/server';
-
 import { exec } from 'child_process';
-
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+
+// Increase the max listeners limit to avoid warnings
+process.setMaxListeners(20);
 
 // Utility function to execute shell commands as promises
 const execPromise = (command: string): Promise<string> => {
@@ -88,7 +87,10 @@ export async function GET(request: NextRequest): Promise<Response> {
   let timeoutId: NodeJS.Timeout | null = null;
   let streamClosed = false;
 
+  // Function to send statuses to the client
   const sendStatuses = async () => {
+    if (streamClosed) return; // Prevent sending if the stream is closed
+
     try {
       console.log('Fetching service statuses...');
       const statuses = await getStatus();
@@ -107,19 +109,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   // Start the initial status send
   sendStatuses();
 
-  // Handle client disconnect
-  request.signal.onabort = () => {
-    console.log('Client disconnected. Closing writer.');
-    closeStream();
-  };
-  request.signal.addEventListener('abort', () => {
-    // removeClient(clientId)
-    console.log('event listner client dis');
-    closeStream();
-  });
-
   // Function to close the stream and clear timeout
   const closeStream = () => {
+    console.log('CLIENT DISCONNECTED');
     if (!streamClosed) {
       streamClosed = true;
       writer
@@ -131,6 +123,9 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
   };
 
+  // Handle client disconnect
+  request.signal.onabort = closeStream;
+
   // Return the response stream
   return new Response(responseStream.readable, {
     headers: {
@@ -138,5 +133,14 @@ export async function GET(request: NextRequest): Promise<Response> {
       Connection: 'keep-alive',
       'Cache-Control': 'no-cache, no-transform'
     }
+  });
+}
+
+// Adding a single listener for SIGINT to perform cleanup
+if (!process.listenerCount('SIGINT')) {
+  process.on('SIGINT', () => {
+    console.log('SIGINT received. Performing cleanup.');
+    // Perform your cleanup logic here if needed
+    process.exit();
   });
 }
