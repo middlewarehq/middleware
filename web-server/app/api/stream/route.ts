@@ -8,80 +8,9 @@ import { ServiceNames } from '@/constants/service';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
-  let responseStream = new TransformStream();
-  const writer = responseStream.writable.getWriter();
-  const encoder = new TextEncoder();
-  let count = 0;
-  let timeoutId: NodeJS.Timeout | null = null;
-  let streamClosed = false;
-
-
-  const sendStatuses = async () => {
-    console.log('Set Status');
-    // Fetch the statuses
-    const statuses = await getStatus();
-    const statusData = { type: 'status-update', statuses: statuses };
-
-    //         await writer.write(encoder.encode(`data: ${data}\n\n`));
-
-    // Send the data to the client
-    // response.write(`data: ${JSON.stringify(statusData)}\n\n`);
-    writer.write(encoder.encode(`data: ${JSON.stringify(statusData)}\n\n`));
-
-    // Call this function again after 15 seconds
-    timeoutId = setTimeout(sendStatuses, 15000);
-  };
-
-  // Start the recursive process
-  sendStatuses(); // Set initial timeout
-
-  // Close the stream if the client disconnects and stop the timeout
-  request.signal.onabort = () => {
-    console.log('Client disconnected. Closing writer.');
-    closeStream();
-  };
-
-  const closeStream = () => {
-    if (!streamClosed) {
-      streamClosed = true;
-      writer.close().catch((error) => {
-        console.error('Error closing writer:', error);
-      });
-      if (timeoutId !== null) {
-        clearTimeout(timeoutId);
-      }
-    }
-  };
-
-  return new Response(responseStream.readable, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      Connection: 'keep-alive',
-      'Cache-Control': 'no-cache, no-transform'
-    }
-  });
-}
-
-const getStatus = async () => {
-  const services = Object.values(ServiceNames);
-  const statuses: { [key in ServiceNames]: { isUp: boolean } } = {
-    [ServiceNames.API_SERVER]: { isUp: false },
-    [ServiceNames.REDIS]: { isUp: false },
-    [ServiceNames.POSTGRES]: { isUp: false },
-    [ServiceNames.SYNC_SERVER]: { isUp: false }
-  };
-
-  for (const service of services) {
-    const isUp = await checkServiceStatus(service);
-    statuses[service] = { isUp: isUp };
-  }
-
-  return statuses;
-};
-
-const execPromise = (command: string) => {
-  return new Promise<string>((resolve, reject) => {
+// Utility function to execute shell commands as promises
+const execPromise = (command: string): Promise<string> => {
+  return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
       if (error) {
         return reject(error);
@@ -91,70 +20,119 @@ const execPromise = (command: string) => {
   });
 };
 
+// Utility function to check if a service is up
 const checkServiceStatus = async (serviceName: string): Promise<boolean> => {
-  let isUp = false;
-  switch (serviceName) {
-    case ServiceNames.API_SERVER:
-      try {
+  try {
+    switch (serviceName) {
+      case ServiceNames.API_SERVER: {
         const response = await handleRequest('');
-        if (response.message.includes('hello world')) {
-          isUp = true;
-        }
-      } catch (error) {
-        console.error('API Server service is down:', error);
-        isUp = false;
+        return response.message.includes('hello world');
       }
-      break;
-    case ServiceNames.REDIS:
-      try {
+
+      case ServiceNames.REDIS: {
         const REDIS_PORT = process.env.REDIS_PORT;
         const response = await execPromise(`redis-cli -p ${REDIS_PORT} ping`);
-
-        if (response.trim().includes('PONG')) {
-          isUp = true;
-        }
-      } catch (error) {
-        console.error('Redis service is down:', error);
-        isUp = false;
+        return response.trim().includes('PONG');
       }
-      break;
-    case ServiceNames.POSTGRES:
-      try {
-        // await dbRaw.raw('SELECT NOW()');
-        const POSTGRES_PORT = process.env.DB_PORT; // Default port for PostgreSQL
-        const POSTGRES_HOST = process.env.DB_HOST;
 
-        // Using pg_isready to check if the server is up
+      case ServiceNames.POSTGRES: {
+        const POSTGRES_PORT = process.env.DB_PORT;
+        const POSTGRES_HOST = process.env.DB_HOST;
         const response = await execPromise(
           `pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT}`
         );
-
-        if (response.includes('accepting connections')) {
-          isUp = true;
-        } else {
-          isUp = false;
-        }
-      } catch (error) {
-        console.error('PostgreSQL service is down:', error);
-        isUp = false;
+        return response.includes('accepting connections');
       }
-      break;
-    case ServiceNames.SYNC_SERVER:
-      try {
+
+      case ServiceNames.SYNC_SERVER: {
         const response = await handleSyncServerRequest('');
-        if (response.message.includes('hello world')) {
-          isUp = true;
-        }
-      } catch (error) {
-        console.error('Sync Server service is down:', error);
-        isUp = false;
+        return response.message.includes('hello world');
       }
-      break;
 
-    default:
-      console.warn(`Service ${serviceName} not recognized.`);
-      break;
+      default:
+        console.warn(`Service ${serviceName} not recognized.`);
+        return false;
+    }
+  } catch (error) {
+    console.error(`${serviceName} service is down:`, error);
+    return false;
   }
-
-  return isUp;
 };
+
+// Function to get the status of all services
+const getStatus = async (): Promise<{
+  [key in ServiceNames]: { isUp: boolean };
+}> => {
+  const services = Object.values(ServiceNames);
+  const statuses: { [key in ServiceNames]: { isUp: boolean } } = {
+    [ServiceNames.API_SERVER]: { isUp: false },
+    [ServiceNames.REDIS]: { isUp: false },
+    [ServiceNames.POSTGRES]: { isUp: false },
+    [ServiceNames.SYNC_SERVER]: { isUp: false }
+  };
+
+  await Promise.all(
+    services.map(async (service) => {
+      const isUp = await checkServiceStatus(service);
+      statuses[service] = { isUp };
+    })
+  );
+
+  return statuses;
+};
+
+// Stream handling function
+export async function GET(request: NextRequest): Promise<Response> {
+  const responseStream = new TransformStream();
+  const writer = responseStream.writable.getWriter();
+  const encoder = new TextEncoder();
+  let timeoutId: NodeJS.Timeout | null = null;
+  let streamClosed = false;
+
+  const sendStatuses = async () => {
+    try {
+      console.log('Fetching service statuses...');
+      const statuses = await getStatus();
+      const statusData = { type: 'status-update', statuses };
+      await writer.write(
+        encoder.encode(`data: ${JSON.stringify(statusData)}\n\n`)
+      );
+    } catch (error) {
+      console.error('Error sending statuses:', error);
+    }
+
+    // Schedule the next status update
+    timeoutId = setTimeout(sendStatuses, 15000);
+  };
+
+  // Start the initial status send
+  sendStatuses();
+
+  // Handle client disconnect
+  request.signal.onabort = () => {
+    console.log('Client disconnected. Closing writer.');
+    closeStream();
+  };
+
+  // Function to close the stream and clear timeout
+  const closeStream = () => {
+    if (!streamClosed) {
+      streamClosed = true;
+      writer
+        .close()
+        .catch((error) => console.error('Error closing writer:', error));
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  };
+
+  // Return the response stream
+  return new Response(responseStream.readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache, no-transform'
+    }
+  });
+}
