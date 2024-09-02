@@ -1,15 +1,148 @@
 import { NextRequest } from 'next/server';
+
 import { exec } from 'child_process';
+import { FSWatcher, createReadStream, watch } from 'fs';
+
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
 
-// Increase the max listeners limit to avoid warnings
-process.setMaxListeners(20);
+export async function GET(request: NextRequest): Promise<Response> {
+  const responseStream = new TransformStream();
+  const writer = responseStream.writable.getWriter();
+  const encoder = new TextEncoder();
+  let timeoutId: NodeJS.Timeout | null = null;
+  let streamClosed = false;
 
-// Utility function to execute shell commands as promises
+  const sendStatuses = async () => {
+    if (streamClosed) return; 
+
+    try {
+      console.log('Fetching service statuses...');
+      const statuses = await getStatus();
+      const statusData = { type: 'status-update', statuses };
+
+      if (!streamClosed) {
+        await writer.write(
+          encoder.encode(`data: ${JSON.stringify(statusData)}\n\n`)
+        );
+      }
+    } catch (error) {
+      console.error('Error sending statuses:', error);
+    }
+
+    // Schedule the next status update
+    if (!streamClosed) {
+      timeoutId = setTimeout(sendStatuses, 10000);
+    }
+  };
+
+  const logFiles = [
+    {
+      path: '/var/log/apiserver/apiserver.log',
+      serviceName: ServiceNames.API_SERVER
+    },
+    {
+      path: '/var/log/sync_server/sync_server.log',
+      serviceName: ServiceNames.SYNC_SERVER
+    },
+    { path: '/var/log/redis/redis.log', serviceName: ServiceNames.REDIS },
+    {
+      path: '/var/log/postgres/postgres.log',
+      serviceName: ServiceNames.POSTGRES
+    }
+  ];
+
+  let watchers: FSWatcher[] = [];
+  let lastPositions: { [key: string]: number } = {};
+
+  const sendFileContent = async (filePath: string, serviceName: string) => {
+    if (streamClosed) return; // Prevent sending if the stream is closed
+    console.log(`Sending file content for ${serviceName}`);
+
+    return new Promise<void>((resolve, reject) => {
+      const stream = createReadStream(filePath, {
+        start: lastPositions[filePath] || 0,
+        encoding: 'utf8'
+      });
+
+      stream.on('data', (chunk) => {
+        if (streamClosed) return; 
+        const data = {
+          type: 'log-update',
+          serviceName,
+          content: chunk
+        };
+
+        writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+        lastPositions[filePath] =
+          (lastPositions[filePath] || 0) + Buffer.byteLength(chunk);
+      });
+
+      stream.on('end', () => resolve());
+      stream.on('error', (error) => reject(error));
+    });
+  };
+
+  const startWatchers = () => {
+    logFiles.forEach(async ({ path, serviceName }) => {
+      await sendFileContent(path, serviceName);
+
+      const watcher = watch(path, async (eventType) => {
+        if (eventType === 'change') {
+          console.log(`File ${path} (${serviceName}) has been changed`);
+          await sendFileContent(path, serviceName);
+        }
+      });
+
+      watchers.push(watcher);
+      console.log(`Watcher created for ${path}`);
+    });
+  };
+
+  const cleanupWatchers = () => {
+    watchers.forEach((watcher) => watcher.close());
+    watchers = [];
+  };
+
+  sendStatuses();
+  startWatchers();
+
+  const closeStream = () => {
+    console.log('Client Disconnected');
+    if (!streamClosed) {
+      streamClosed = true;
+      writer
+        .close()
+        .catch((error) => console.error('Error closing writer:', error));
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+    cleanupWatchers();
+  };
+
+  request.signal.onabort = closeStream;
+
+  return new Response(responseStream.readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache, no-transform'
+    }
+  });
+}
+
+process.setMaxListeners(20);
+if (!process.listenerCount('SIGINT')) {
+  process.on('SIGINT', () => {
+    console.log('SIGINT received. Performing cleanup.');
+    process.exit();
+  });
+}
+
 const execPromise = (command: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    exec(command, (error, stdout, stderr) => {
+    exec(command, (error, stdout, _stderr) => {
       if (error) {
         return reject(error);
       }
@@ -18,7 +151,6 @@ const execPromise = (command: string): Promise<string> => {
   });
 };
 
-// Utility function to check if a service is up
 const checkServiceStatus = async (serviceName: string): Promise<boolean> => {
   try {
     switch (serviceName) {
@@ -57,7 +189,6 @@ const checkServiceStatus = async (serviceName: string): Promise<boolean> => {
   }
 };
 
-// Function to get the status of all services
 const getStatus = async (): Promise<{
   [key in ServiceNames]: { isUp: boolean };
 }> => {
@@ -78,69 +209,3 @@ const getStatus = async (): Promise<{
 
   return statuses;
 };
-
-// Stream handling function
-export async function GET(request: NextRequest): Promise<Response> {
-  const responseStream = new TransformStream();
-  const writer = responseStream.writable.getWriter();
-  const encoder = new TextEncoder();
-  let timeoutId: NodeJS.Timeout | null = null;
-  let streamClosed = false;
-
-  // Function to send statuses to the client
-  const sendStatuses = async () => {
-    if (streamClosed) return; // Prevent sending if the stream is closed
-
-    try {
-      console.log('Fetching service statuses...');
-      const statuses = await getStatus();
-      const statusData = { type: 'status-update', statuses };
-      await writer.write(
-        encoder.encode(`data: ${JSON.stringify(statusData)}\n\n`)
-      );
-    } catch (error) {
-      console.error('Error sending statuses:', error);
-    }
-
-    // Schedule the next status update
-    timeoutId = setTimeout(sendStatuses, 15000);
-  };
-
-  // Start the initial status send
-  sendStatuses();
-
-  // Function to close the stream and clear timeout
-  const closeStream = () => {
-    console.log('CLIENT DISCONNECTED');
-    if (!streamClosed) {
-      streamClosed = true;
-      writer
-        .close()
-        .catch((error) => console.error('Error closing writer:', error));
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    }
-  };
-
-  // Handle client disconnect
-  request.signal.onabort = closeStream;
-
-  // Return the response stream
-  return new Response(responseStream.readable, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      Connection: 'keep-alive',
-      'Cache-Control': 'no-cache, no-transform'
-    }
-  });
-}
-
-// Adding a single listener for SIGINT to perform cleanup
-if (!process.listenerCount('SIGINT')) {
-  process.on('SIGINT', () => {
-    console.log('SIGINT received. Performing cleanup.');
-    // Perform your cleanup logic here if needed
-    process.exit();
-  });
-}

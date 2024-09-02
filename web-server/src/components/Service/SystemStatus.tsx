@@ -1,5 +1,5 @@
-import { Box, Button, Divider } from '@mui/material';
-import { FC, useEffect, useState, useRef } from 'react';
+import { Box, CircularProgress, Divider } from '@mui/material';
+import { FC, useEffect, useState } from 'react';
 
 import { ServiceNames } from '@/constants/service';
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -12,24 +12,37 @@ import { Line } from '../Text';
 
 export const SystemStatus: FC = () => {
   const dispatch = useDispatch();
-  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
   const services = useSelector(
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
   );
-  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log(data);
+      setLoading(false);
 
       if (data.type.includes('status-update')) {
         const statuses = { statuses: data.statuses };
-        console.log(statuses);
         dispatch(serviceSlice.actions.setStatus(statuses));
+      }
+      if (data.type.includes('log-update')) {
+        const { serviceName, content } = data;
+
+        const newLines = content.split('\n');
+        const trimmedLines = newLines.filter(
+          (line: string) => line.trim() !== ''
+        );
+
+        dispatch(
+          serviceSlice.actions.setServiceLogs({
+            serviceName,
+            serviceLog: trimmedLines
+          })
+        );
       }
     };
 
@@ -40,7 +53,7 @@ export const SystemStatus: FC = () => {
     return () => {
       eventSource.close();
     };
-  }, []);
+  }, [dispatch]);
 
   const { addPage } = useOverlayPage();
 
@@ -55,19 +68,26 @@ export const SystemStatus: FC = () => {
       <Line bold white fontSize="24px" sx={{ mb: 2 }}>
         System Status
       </Line>
-      {status}
       <Divider sx={{ mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
 
-      {error && (
-        <Box sx={{ color: 'red', mb: 2 }}>
-          <p>{error}</p>
+      {loading && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <CircularProgress color="primary" size={50} />
         </Box>
       )}
 
       <FlexBox col gap={2}>
         {services &&
+          !loading &&
           Object.keys(services).map((serviceName) => {
-            const { isUp } = services[serviceName];
+            const ServiceName = serviceName as ServiceNames;
+            const { isUp } = services[ServiceName];
             return (
               <CardRoot
                 key={serviceName}

@@ -1,19 +1,17 @@
 import { Box, Typography } from '@mui/material';
-import { useEffect, useRef } from 'react';
 
-import { fetchServiceLogs, ServiceStatusState } from '@/slices/service';
-import { useDispatch, useSelector } from '@/store';
+import { ServiceNames } from '@/constants/service';
+import { ServiceStatusState } from '@/slices/service';
+import { useSelector } from '@/store';
 
 export const SystemLogs = () => {
-  const dispatch = useDispatch();
   const services = useSelector(
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
   );
-  const active = useSelector((s) => s.service.active);
-  const workerRef = useRef<Worker>();
-
-  const logs = services[active].logs;
+  const active = useSelector((s) => s.service.active) as ServiceNames;
+  const logs: string[] = services[active].logs;
+  
   return (
     <Box
       sx={{
