@@ -24,7 +24,7 @@ export enum Industries {
   OTHER = 'Other'
 }
 
-export const IndustryStandardsDoraScores: { [key in Industries]: number } = {
+export const IndustryStandardsDoraScores: Record<Industries, number> = {
   [Industries.ALL_INDUSTRIES]: 6.3,
   [Industries.EDUCATION]: 6.5,
   [Industries.ENERGY]: 6.1,

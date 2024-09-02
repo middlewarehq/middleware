@@ -17,6 +17,7 @@ import {
   FetchTeamsResponse,
   ImageStatusApiResponse
 } from '@/types/resources';
+import { Industries } from '@/utils/dora';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
 import { fetchTeams } from './team';
@@ -49,6 +50,7 @@ type State = StateFetchConfig<{
   lastSyncedAt: Date | null;
   lastDisabledImageUpdateBannerAt: DateString | null;
   latestImageStatus: ImageStatusApiResponse | null;
+  selectedIndustry: Industries;
 }>;
 
 export const DEFAULT_PR_TABLE_COLUMN_STATE_MAP = {
@@ -88,7 +90,8 @@ const initialState: State = {
   prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP,
   lastSyncedAt: null,
   lastDisabledImageUpdateBannerAt: null,
-  latestImageStatus: null
+  latestImageStatus: null,
+  selectedIndustry: Industries.ALL_INDUSTRIES
 };
 
 export const appSlice = createSlice({
@@ -189,6 +192,9 @@ export const appSlice = createSlice({
       action: PayloadAction<ImageStatusApiResponse | null>
     ) {
       state.latestImageStatus = action.payload;
+    },
+    setIndustry(state: State, action: PayloadAction<Industries>) {
+      state.selectedIndustry = action.payload;
     }
   },
   extraReducers: (builder) => {
