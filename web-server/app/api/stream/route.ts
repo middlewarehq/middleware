@@ -5,10 +5,12 @@ import { FSWatcher, createReadStream, watch } from 'fs';
 
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
-import { ServiceStatus, UPDATE_INTERVAL, LogFile, LOG_FILES } from '@/constants/stream';
-
-
-
+import {
+  ServiceStatus,
+  UPDATE_INTERVAL,
+  LogFile,
+  LOG_FILES
+} from '@/constants/stream';
 
 const execPromise = (command: string): Promise<string> => {
   return new Promise((resolve, reject) => {
