@@ -1,5 +1,5 @@
 import { KeyboardArrowDown } from '@mui/icons-material';
-import { useTheme, Menu } from '@mui/material';
+import { useTheme, Menu, Divider } from '@mui/material';
 import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -137,34 +137,40 @@ const IndustryDropdown = () => {
         }}
         transformOrigin={{ vertical: 'top', horizontal: 'left' }}
       >
-        <FlexBox width={'300px'} col gap={1 / 2}>
-          {Object.entries(Industries).map(
-            ([key, industryName]) =>
-              industryName !== Industries.OTHER && (
-                <FlexBox
-                  onClick={() => {
-                    updateSelectedIndustry(industryName as Industries);
-                    handleCloseMenu();
-                    cancelMenu.false();
-                  }}
-                  key={key}
-                  p={1 / 2}
-                  px={1}
-                  pointer
-                  bgcolor={
-                    industryName === selectedIndustry ? 'primary.light' : null
-                  }
-                  sx={{
-                    transition: 'background-color 0.2s',
-                    ':hover': {
-                      bgcolor: 'primary.dark'
+        <FlexBox col gap1>
+          <Line big semibold px={1}>
+            Choose Industry
+          </Line>
+          <Divider />
+          <FlexBox width={'300px'} col gap={1 / 2}>
+            {Object.entries(Industries).map(
+              ([key, industryName]) =>
+                industryName !== Industries.OTHER && (
+                  <FlexBox
+                    onClick={() => {
+                      updateSelectedIndustry(industryName as Industries);
+                      handleCloseMenu();
+                      cancelMenu.false();
+                    }}
+                    key={key}
+                    p={1 / 2}
+                    px={1}
+                    pointer
+                    bgcolor={
+                      industryName === selectedIndustry ? 'primary.light' : null
                     }
-                  }}
-                >
-                  <Line bigish>{industryName}</Line>
-                </FlexBox>
-              )
-          )}
+                    sx={{
+                      transition: 'background-color 0.2s',
+                      ':hover': {
+                        bgcolor: 'primary.dark'
+                      }
+                    }}
+                  >
+                    <Line regular>{industryName}</Line>
+                  </FlexBox>
+                )
+            )}
+          </FlexBox>
         </FlexBox>
       </Menu>
     </FlexBox>
