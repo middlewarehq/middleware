@@ -1,15 +1,26 @@
-import { useTheme } from '@mui/material';
-import Link from 'next/link';
-import { FC } from 'react';
+import { KeyboardArrowDown } from '@mui/icons-material';
+import { useTheme, Menu } from '@mui/material';
+import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
+import { useDispatch } from 'react-redux';
 
 import { commonProps } from '@/content/DoraMetrics/MetricsCommonProps';
-import { OPEN_IN_NEW_TAB_PROPS } from '@/utils/url';
+import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { appSlice } from '@/slices/app';
+import { useSelector } from '@/store';
+import { Industries, IndustryStandardsDoraScores } from '@/utils/dora';
+import { depFn } from '@/utils/fn';
 
 import { DoraScoreProps } from './DoraScore';
 import { FlexBox } from './FlexBox';
 import { Line } from './Text';
 
 export const DoraScoreV2: FC<DoraScoreProps> = ({ ...stats }) => {
+  const { selectedIndustry } = useSelectedIndustry();
+
+  const standardScore = useMemo(() => {
+    return IndustryStandardsDoraScores[selectedIndustry];
+  }, [selectedIndustry]);
+
   return (
     <FlexBox>
       <FlexBox centered gap={1.5}>
@@ -35,23 +46,13 @@ export const DoraScoreV2: FC<DoraScoreProps> = ({ ...stats }) => {
           </Line>
         </FlexBox>
 
-        <DoraScore stat={stats.standard} isIndustry />
+        <DoraScore stat={standardScore} isIndustry />
 
         <FlexBox col>
           <Line bigish medium>
-            Based on data available
+            Ed-tech
           </Line>
-          <Line bigish>
-            at{' '}
-            <Line info semibold>
-              <Link
-                href="https://dora.dev/quickcheck"
-                {...OPEN_IN_NEW_TAB_PROPS}
-              >
-                dora.dev
-              </Link>
-            </Line>
-          </Line>
+          <IndustryDropdown />
         </FlexBox>
       </FlexBox>
     </FlexBox>
@@ -94,3 +95,100 @@ const getBg = (stat: number) => ({
       ? commonProps.medium.bg
       : commonProps.low.bg
 });
+
+const IndustryDropdown = () => {
+  const anchorEl = useEasyState();
+  const cancelMenu = useBoolState(false);
+  const { selectedIndustry, updateSelectedIndustry } = useSelectedIndustry();
+
+  const handleOpenMenu: MouseEventHandler<HTMLDivElement> = (event) => {
+    anchorEl.set(event.currentTarget);
+  };
+
+  const handleCloseMenu = useCallback(() => {
+    depFn(anchorEl.set, null);
+  }, [anchorEl.set]);
+
+  console.log('Debugging', { selectedIndustry });
+  return (
+    <FlexBox>
+      <FlexBox alignCenter pointer onClick={handleOpenMenu}>
+        <Line primary bigish>
+          Change
+        </Line>
+        <KeyboardArrowDown color="primary" fontSize="small" />
+      </FlexBox>
+
+      <Menu
+        id="team-setting-menu"
+        anchorEl={anchorEl.value}
+        keepMounted
+        open={Boolean(anchorEl.value)}
+        onClose={() => {
+          handleCloseMenu();
+          cancelMenu.false();
+        }}
+        MenuListProps={{
+          'aria-labelledby': 'simple-menu',
+          disablePadding: true,
+          sx: {
+            padding: 0
+          }
+        }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      >
+        <FlexBox width={'300px'} col gap={1 / 2}>
+          {Object.entries(Industries).map(
+            ([key, industryName]) =>
+              industryName !== Industries.OTHER && (
+                <FlexBox
+                  onClick={() => {
+                    updateSelectedIndustry(industryName as Industries);
+                    handleCloseMenu();
+                    cancelMenu.false();
+                  }}
+                  key={key}
+                  p={1 / 2}
+                  px={1}
+                  pointer
+                  bgcolor={
+                    industryName === selectedIndustry ? 'primary.light' : null
+                  }
+                  sx={{
+                    transition: 'background-color 0.2s',
+                    ':hover': {
+                      bgcolor: 'primary.dark'
+                    }
+                  }}
+                >
+                  <Line bigish>{industryName}</Line>
+                </FlexBox>
+              )
+          )}
+        </FlexBox>
+      </Menu>
+    </FlexBox>
+  );
+};
+
+export const useSelectedIndustry = () => {
+  const selectedIndustry = useSelector((s) => s.app.selectedIndustry);
+  const dispatch = useDispatch();
+
+  const updateSelectedIndustry = useCallback(
+    (industry: Industries) => {
+      dispatch(appSlice.actions.setIndustry(industry));
+    },
+    [dispatch]
+  );
+
+  return useMemo(
+    () => ({
+      selectedIndustry: selectedIndustry
+        ? selectedIndustry
+        : Industries.ALL_INDUSTRIES,
+      updateSelectedIndustry
+    }),
+    [selectedIndustry, updateSelectedIndustry]
+  );
+};
