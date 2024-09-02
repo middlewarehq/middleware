@@ -289,94 +289,75 @@ export async function GET(request: NextRequest): Promise<Response> {
   const responseStream = new TransformStream();
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const responseStream = new TransformStream();
-  const writer = responseStream.writable.getWriter();
+  const { writable, readable } = new TransformStream();
+  const writer = writable.getWriter();
   const encoder = new TextEncoder();
+
   let timeoutId: NodeJS.Timeout | null = null;
   let streamClosed = false;
-
-  const sendStatuses = async () => {
-    if (streamClosed) return;
-
-    try {
-      const statuses = await getStatus();
-      const statusData = { type: 'status-update', statuses };
-
-      if (!streamClosed) {
-        await writer.write(
-          encoder.encode(`data: ${JSON.stringify(statusData)}\n\n`)
-        );
-      }
-    } catch (error) {
-      console.error('Error sending statuses:', error);
-    }
-
-    if (!streamClosed) {
-      timeoutId = setTimeout(sendStatuses, 10000);
-    }
-  };
-
-  const logFiles = [
-    {
-      path: '/var/log/apiserver/apiserver.log',
-      serviceName: ServiceNames.API_SERVER
-    },
-    {
-      path: '/var/log/sync_server/sync_server.log',
-      serviceName: ServiceNames.SYNC_SERVER
-    },
-    { path: '/var/log/redis/redis.log', serviceName: ServiceNames.REDIS },
-    {
-      path: '/var/log/postgres/postgres.log',
-      serviceName: ServiceNames.POSTGRES
-    }
-  ];
-
   let watchers: FSWatcher[] = [];
   let lastPositions: { [key: string]: number } = {};
 
-  const sendFileContent = async (filePath: string, serviceName: string) => {
+  const sendEvent = async (eventType: string, data: any) => {
     if (streamClosed) return;
+    await writer.write(
+      encoder.encode(
+        `data: ${JSON.stringify({ type: eventType, ...data })}\n\n`
+      )
+    );
+  };
 
+  const sendStatuses = async () => {
+    if (streamClosed) return;
+    try {
+      const statuses = await getStatus();
+      await sendEvent('status-update', { statuses });
+    } catch (error) {
+      console.error('Error sending statuses:', error);
+    }
+    if (!streamClosed) {
+      timeoutId = setTimeout(sendStatuses, UPDATE_INTERVAL);
+    }
+  };
+
+  const sendFileContent = async ({ path, serviceName }: LogFile) => {
+    if (streamClosed) return;
     return new Promise<void>((resolve, reject) => {
-      const stream = createReadStream(filePath, {
-        start: lastPositions[filePath] || 0,
+      const stream = createReadStream(path, {
+        start: lastPositions[path] || 0,
         encoding: 'utf8'
       });
-
-      stream.on('data', (chunk) => {
+      stream.on('data', async (chunk) => {
         if (streamClosed) return;
-        const data = {
-          type: 'log-update',
-          serviceName,
-          content: chunk
-        };
-
-        writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-        lastPositions[filePath] =
-          (lastPositions[filePath] || 0) + Buffer.byteLength(chunk);
+        await sendEvent('log-update', { serviceName, content: chunk });
+        lastPositions[path] =
+          (lastPositions[path] || 0) + Buffer.byteLength(chunk);
       });
-
-      stream.on('end', () => resolve());
-      stream.on('error', (error) => reject(error));
+      stream.on('end', resolve);
+      stream.on('error', reject);
     });
   };
 
   const startWatchers = () => {
-    logFiles.forEach(async ({ path, serviceName }) => {
-      await sendFileContent(path, serviceName);
-
-      const watcher = watch(path, async (eventType) => {
+    LOG_FILES.forEach(async (logFile) => {
+      await sendFileContent(logFile);
+      const watcher = watch(logFile.path, async (eventType) => {
         if (eventType === 'change') {
-          await sendFileContent(path, serviceName);
+          await sendFileContent(logFile);
         }
       });
-
       watchers.push(watcher);
     });
   };
 
-  const cleanupWatchers = () => {
+  const cleanup = () => {
+    if (!streamClosed) {
+      streamClosed = true;
+      writer
+        .close()
+        .catch((error) => console.error('Error closing writer:', error));
+      if (timeoutId) clearTimeout(timeoutId);
+    }
     watchers.forEach((watcher) => watcher.close());
     watchers = [];
   };
@@ -384,22 +365,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   sendStatuses();
   startWatchers();
 
-  const closeStream = () => {
-    if (!streamClosed) {
-      streamClosed = true;
-      writer
-        .close()
-        .catch((error) => console.error('Error closing writer:', error));
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-    }
-    cleanupWatchers();
-  };
+  request.signal.onabort = cleanup;
 
-  request.signal.onabort = closeStream;
-
-  return new Response(responseStream.readable, {
+  return new Response(readable, {
     headers: {
       'Content-Type': 'text/event-stream',
       Connection: 'keep-alive',
