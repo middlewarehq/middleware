@@ -1,5 +1,5 @@
-import { Box, Divider } from '@mui/material';
-import { FC, useEffect, useState } from 'react';
+import { Box, Button, Divider } from '@mui/material';
+import { FC, useEffect, useState, useRef } from 'react';
 
 import { ServiceNames } from '@/constants/service';
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -17,46 +17,26 @@ export const SystemStatus: FC = () => {
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
   );
-  const loading = useSelector((s) => s.service.loading);
-
-  console.log(services);
+  const [status, setStatus] = useState('loading');
 
   useEffect(() => {
-    const eventSource = new EventSource('/api/service/stream');
-
-    eventSource.onopen = (event) => {
-      console.log('Connection opened', event);
-    };
+    const eventSource = new EventSource(`/api/stream`); //configure this based on your user case, for demo purpose I'm using static value
 
     eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // console.log(data);
-      if (data.type === 'status-update') {
-        dispatch(serviceSlice.actions.setStatus({ statuses: data.statuses }));
-      }
-      if (data.type === 'log-update') {
-        console.log(data.serviceName);
-        const newLines = data.content.split('\n'); // Split new content into lines
-        const trimmedLines = newLines.filter(
-          (line: string) => line.trim() !== ''
-        );
-        dispatch(
-          serviceSlice.actions.setServiceLogs({
-            serviceName: data.serviceName,
-            serviceLog: trimmedLines
-          })
-        );
+      const data = event.data && JSON.parse(event?.data);
+
+      if (data.success) {
+        setStatus('success');
+        eventSource.close();
       }
     };
 
-    eventSource.onerror = (event) => {
-      console.error('EventSource failed:', event);
+    eventSource.onerror = () => {
       eventSource.close();
     };
 
     return () => {
       eventSource.close();
-      console.log('EventSource closed');
     };
   }, []);
 
@@ -73,7 +53,7 @@ export const SystemStatus: FC = () => {
       <Line bold white fontSize="24px" sx={{ mb: 2 }}>
         System Status
       </Line>
-
+      {status}
       <Divider sx={{ mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
 
       {error && (

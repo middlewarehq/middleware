@@ -4,7 +4,6 @@ import { exec } from 'child_process';
 
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
-// import { dbRaw } from '@/utils/db';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -113,6 +112,11 @@ export async function GET(request: NextRequest): Promise<Response> {
     console.log('Client disconnected. Closing writer.');
     closeStream();
   };
+  request.signal.addEventListener('abort', () => {
+    // removeClient(clientId)
+    console.log('event listner client dis');
+    closeStream();
+  });
 
   // Function to close the stream and clear timeout
   const closeStream = () => {
