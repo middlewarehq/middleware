@@ -22,6 +22,7 @@ import { Logo } from './Logo/Logo';
 import { Tabs } from './Tabs';
 import { TeamSelector } from './TeamSelector/TeamSelector';
 import { Line } from './Text';
+import { GithubButton } from './GithubButton';
 
 type SubRoute = {
   label: string;
@@ -100,6 +101,7 @@ export const PageHeader: FC<
             {children}
           </FlexBox>
           {Boolean(subRoutes?.length) && <PageTabs subRoutes={subRoutes} />}
+          <GithubButton></GithubButton>
         </FlexBox>
         {showSelectorSection && (
           <>
