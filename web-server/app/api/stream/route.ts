@@ -1,7 +1,5 @@
-import { NextRequest } from 'next/server';
-
 import { exec } from 'child_process';
-import { createReadStream, watch } from 'fs';
+import { createReadStream, FSWatcher, watch } from 'fs';
 
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
@@ -173,11 +171,12 @@ export async function GET(request: NextRequest): Promise<Response> {
   const encoder = new TextEncoder();
   let streamClosed = false;
   let lastPositions: { [key: string]: number } = {};
+  let statusTimer: NodeJS.Timeout | null = null;
+  const watchers: FSWatcher[] = [];
 
   const sendEvent = (eventType: string, data: any) => {
-    return encoder.encode(
-      `data: ${JSON.stringify({ type: eventType, ...data })}\n\n`
-    );
+    const eventData = JSON.stringify({ type: eventType, ...data });
+    return encoder.encode(`data: ${eventData}\n\n`);
   };
 
   const stream = new ReadableStream({
@@ -186,48 +185,61 @@ export async function GET(request: NextRequest): Promise<Response> {
         if (streamClosed) return;
         try {
           const statuses = await getStatus();
-          controller.enqueue(sendEvent('status-update', { statuses }));
+          if (!streamClosed) {
+            controller.enqueue(sendEvent('status-update', { statuses }));
+          }
         } catch (error) {
           console.error('Error sending statuses:', error);
         }
-        setTimeout(pushStatus, UPDATE_INTERVAL);
+        if (!streamClosed) {
+          statusTimer = setTimeout(pushStatus, UPDATE_INTERVAL);
+        }
       };
 
       const pushFileContent = async ({ path, serviceName }: LogFile) => {
         if (streamClosed) return;
-        const fileStream = createReadStream(path, {
-          start: lastPositions[path] || 0,
-          encoding: 'utf8'
-        });
+        try {
+          const fileStream = createReadStream(path, {
+            start: lastPositions[path] || 0,
+            encoding: 'utf8'
+          });
 
-        for await (const chunk of fileStream) {
-          if (streamClosed) break;
-          controller.enqueue(
-            sendEvent('log-update', { serviceName, content: chunk })
-          );
-          lastPositions[path] =
-            (lastPositions[path] || 0) + Buffer.byteLength(chunk);
+          for await (const chunk of fileStream) {
+            if (streamClosed) break;
+            controller.enqueue(
+              sendEvent('log-update', { serviceName, content: chunk })
+            );
+            lastPositions[path] =
+              (lastPositions[path] || 0) + Buffer.byteLength(chunk);
+          }
+        } catch (error) {
+          console.error(`Error reading log file for ${serviceName}:`, error);
         }
       };
 
       const startWatchers = () => {
         LOG_FILES.forEach((logFile) => {
-          watch(logFile.path, async (eventType) => {
+          const watcher = watch(logFile.path, async (eventType) => {
             if (eventType === 'change' && !streamClosed) {
               await pushFileContent(logFile);
             }
           });
+          watchers.push(watcher);
         });
       };
 
       pushStatus();
       LOG_FILES.forEach(pushFileContent);
       startWatchers();
+    },
+    cancel() {
+      streamClosed = true;
 
-      request.signal.addEventListener('abort', () => {
-        streamClosed = true;
-        controller.close();
-      });
+      if (statusTimer) {
+        clearTimeout(statusTimer);
+      }
+
+      watchers.forEach((watcher) => watcher.close());
     }
   });
 
