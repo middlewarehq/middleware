@@ -579,7 +579,10 @@ export type TeamDoraMetricsApiResponseType = {
     current: DeploymentFrequencyAnalyticsResponse;
     previous: DeploymentFrequencyAnalyticsResponse;
   };
-  deployment_frequency_trends: Record<DateString, DeploymentFrequencyTrendBase>;
+  deployment_frequency_trends: {
+    current: Record<DateString, DeploymentFrequencyTrendBase>;
+    previous: Record<DateString, DeploymentFrequencyTrendBase>;
+  };
   lead_time_prs: PR[];
   assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
   unsynced_repos: ID[];
