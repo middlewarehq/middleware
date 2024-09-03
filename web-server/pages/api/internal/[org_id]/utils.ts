@@ -122,7 +122,10 @@ interface RepoNode {
 
 interface RepoResponse {
   data: {
-    projects: {
+    byFullPath: {
+      nodes: RepoNode[];
+    };
+    bySearch: {
       nodes: RepoNode[];
     };
   };
@@ -136,26 +139,45 @@ export const searchGitlabRepos = async (
   searchString: string
 ): Promise<BaseRepo[]> => {
   const query = `
-  query($searchString: String!) {
-      projects(search: $searchString, first: 50) {
-          nodes {
-              id
-              fullPath
-              name
-              webUrl
-              group {
-                  path
-              }
-              description
-              path
-              languages {
-                  name
-              }
-              repository {
-                  rootRef
-              }
-          }
+  query($fullPaths: [String!], $searchString: String!) {
+    byFullPath: projects(fullPaths: $fullPaths, first: 50) {
+      nodes {
+        id
+        fullPath
+        name
+        webUrl
+        group {
+          path
+        }
+        description
+        path
+        languages {
+          name
+        }
+        repository {
+          rootRef
+        }
       }
+    }
+    bySearch: projects(search: $searchString, first: 50) {
+      nodes {
+        id
+        fullPath
+        name
+        webUrl
+        group {
+          path
+        }
+        description
+        path
+        languages {
+          name
+        }
+        repository {
+          rootRef
+        }
+      }
+    }
   }
 `;
 
@@ -165,7 +187,10 @@ export const searchGitlabRepos = async (
       'Content-Type': 'application/json',
       Authorization: `Bearer ${pat}`
     },
-    body: JSON.stringify({ query, variables: { searchString } })
+    body: JSON.stringify({
+      query,
+      variables: { fullPaths: searchString, searchString: searchString }
+    })
   });
 
   const responseBody = (await response.json()) as RepoResponse;
@@ -178,7 +203,10 @@ export const searchGitlabRepos = async (
     );
   }
 
-  const repositories = responseBody.data.projects.nodes;
+  const repositories = [
+    ...responseBody.data.byFullPath.nodes,
+    ...responseBody.data.bySearch.nodes
+  ];
 
   return repositories.map(
     (repo) =>
@@ -189,65 +217,20 @@ export const searchGitlabRepos = async (
         slug: repo.path,
         web_url: repo.webUrl,
         branch: repo.repository?.rootRef || null,
-        parent: repo.fullPath.replace('https://gitlab.com/', '').split('/')[0],
+        parent: repo.fullPath.split('/').slice(0, -1).join('/'),
         provider: Integration.GITLAB
       }) as BaseRepo
   );
 };
 
-// another approach:
-interface Project {
-  id: number;
-  name: string;
-  description: string;
-  web_url: string;
-  [key: string]: any;
-}
-
-export async function searchProjects(
-  group: string,
-  searchString: string,
-  token: string
-): Promise<BaseRepo[]> {
-  const response = await fetch(
-    `https://gitlab.com/api/v4/groups/${group}/projects?search=${encodeURIComponent(
-      searchString
-    )}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(
-      `Error fetching projects for group ${group}: ${response.statusText}`
-    );
-  }
-
-  const projects = (await response.json()) as Project[];
-  return projects.map(
-    (repo) =>
-      ({
-        id: repo.id,
-        name: repo.name,
-        desc: repo.description,
-        slug: repo.path,
-        web_url: repo.web_url,
-        branch: repo.default_branch,
-        parent: repo.web_url.replace('https://gitlab.com/', '').split('/')[0],
-        provider: Integration.GITLAB
-      }) as BaseRepo
-  );
-}
-
 export const gitlabSearch = async (pat: string, searchString: string) => {
-  const [groupName, projectQuery] = searchString.split('/');
-  let results: BaseRepo[];
-  if (groupName && projectQuery) {
-    results = await searchProjects(groupName, projectQuery, pat);
+  let search = '';
+  try {
+    const url = new URL(searchString);
+    search = url.pathname;
+    if (search.startsWith('/')) search = search.slice(1);
+  } catch (e) {
+    search = searchString;
   }
-  if (results?.length) return results;
-  else return searchGitlabRepos(pat, projectQuery || searchString);
+  return searchGitlabRepos(pat, search);
 };
