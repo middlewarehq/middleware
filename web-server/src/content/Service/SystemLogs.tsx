@@ -38,43 +38,21 @@ export const SystemLogs = () => {
       sx={{
         padding: '16px 24px',
         borderRadius: 2,
-        color: 'white',
         overflowY: 'auto',
-        maxHeight: '750px'
+        maxHeight: '750px',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        lineHeight: 1.6,
+        marginTop: '8px'
       }}
     >
       {services &&
-        logs.map((log, i) => (
+        logs.map((log, index) => (
           <Typography
-            key={i}
-            variant="body1"
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'white',
-              marginBottom: 1.5,
-              padding: '8px 12px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-              '&:last-child': { borderBottom: 'none' },
-              '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                cursor: 'pointer'
-              }
-            }}
+            key={index}
+            style={{ marginBottom: '8px', fontFamily: 'monospace' }}
           >
-            <Box
-              component="span"
-              sx={{
-                marginRight: '12px',
-                fontWeight: 'bold',
-                color: 'rgba(255, 255, 255, 0.7)'
-              }}
-            >
-              {i + 1}
-            </Box>
-            <Box component="span" sx={{ flexGrow: 1 }}>
-              {log}
-            </Box>
+            {log}
           </Typography>
         ))}
     </Box>

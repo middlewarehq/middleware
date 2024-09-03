@@ -23,12 +23,12 @@ export const SystemStatus: FC = () => {
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
     eventSource.onmessage = (event) => {
+      loading.set(false);
       const data = JSON.parse(event.data);
 
       if (data.type === 'status-update') {
         const statuses = { statuses: data.statuses };
         dispatch(serviceSlice.actions.setStatus(statuses));
-        loading.set(false);
       }
 
       if (data.type === 'log-update') {
@@ -53,6 +53,7 @@ export const SystemStatus: FC = () => {
 
     return () => {
       eventSource.close();
+      dispatch(serviceSlice.actions.resetState());
     };
   }, [dispatch]);
 

@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
 import { exec } from 'child_process';
-import { FSWatcher, createReadStream, watch } from 'fs';
+import { createReadStream, watch } from 'fs';
 
 import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
@@ -68,85 +68,68 @@ const getStatus = async (): Promise<ServiceStatus> => {
 };
 
 export async function GET(request: NextRequest): Promise<Response> {
-  const { writable, readable } = new TransformStream();
-  const writer = writable.getWriter();
   const encoder = new TextEncoder();
-
-  let timeoutId: NodeJS.Timeout | null = null;
   let streamClosed = false;
-  let watchers: FSWatcher[] = [];
   let lastPositions: { [key: string]: number } = {};
 
-  const sendEvent = async (eventType: string, data: any) => {
-    if (streamClosed) return;
-    await writer.write(
-      encoder.encode(
-        `data: ${JSON.stringify({ type: eventType, ...data })}\n\n`
-      )
+  const sendEvent = (eventType: string, data: any) => {
+    return encoder.encode(
+      `data: ${JSON.stringify({ type: eventType, ...data })}\n\n`
     );
   };
 
-  const sendStatuses = async () => {
-    if (streamClosed) return;
-    try {
-      const statuses = await getStatus();
-      await sendEvent('status-update', { statuses });
-    } catch (error) {
-      console.error('Error sending statuses:', error);
-    }
-    if (!streamClosed) {
-      timeoutId = setTimeout(sendStatuses, UPDATE_INTERVAL);
-    }
-  };
-
-  const sendFileContent = async ({ path, serviceName }: LogFile) => {
-    if (streamClosed) return;
-    return new Promise<void>((resolve, reject) => {
-      const stream = createReadStream(path, {
-        start: lastPositions[path] || 0,
-        encoding: 'utf8'
-      });
-      stream.on('data', async (chunk) => {
+  const stream = new ReadableStream({
+    start(controller) {
+      const pushStatus = async () => {
         if (streamClosed) return;
-        await sendEvent('log-update', { serviceName, content: chunk });
-        lastPositions[path] =
-          (lastPositions[path] || 0) + Buffer.byteLength(chunk);
-      });
-      stream.on('end', resolve);
-      stream.on('error', reject);
-    });
-  };
-
-  const startWatchers = () => {
-    LOG_FILES.forEach(async (logFile) => {
-      await sendFileContent(logFile);
-      const watcher = watch(logFile.path, async (eventType) => {
-        if (eventType === 'change') {
-          await sendFileContent(logFile);
+        try {
+          const statuses = await getStatus();
+          controller.enqueue(sendEvent('status-update', { statuses }));
+        } catch (error) {
+          console.error('Error sending statuses:', error);
         }
+        setTimeout(pushStatus, UPDATE_INTERVAL);
+      };
+
+      const pushFileContent = async ({ path, serviceName }: LogFile) => {
+        if (streamClosed) return;
+        const fileStream = createReadStream(path, {
+          start: lastPositions[path] || 0,
+          encoding: 'utf8'
+        });
+
+        for await (const chunk of fileStream) {
+          if (streamClosed) break;
+          controller.enqueue(
+            sendEvent('log-update', { serviceName, content: chunk })
+          );
+          lastPositions[path] =
+            (lastPositions[path] || 0) + Buffer.byteLength(chunk);
+        }
+      };
+
+      const startWatchers = () => {
+        LOG_FILES.forEach((logFile) => {
+          watch(logFile.path, async (eventType) => {
+            if (eventType === 'change' && !streamClosed) {
+              await pushFileContent(logFile);
+            }
+          });
+        });
+      };
+
+      pushStatus();
+      LOG_FILES.forEach(pushFileContent);
+      startWatchers();
+
+      request.signal.addEventListener('abort', () => {
+        streamClosed = true;
+        controller.close();
       });
-      watchers.push(watcher);
-    });
-  };
-
-  const cleanup = () => {
-    if (!streamClosed) {
-      streamClosed = true;
-      writer
-        .close()
-        .catch((error) => console.error('Error closing writer:', error));
-      if (timeoutId) clearTimeout(timeoutId);
     }
-    watchers.forEach((watcher) => watcher.close());
-    watchers = [];
-  };
+  });
 
-  sendStatuses();
-  startWatchers();
-
-  request.signal.onabort = cleanup;
-
-  return new Response(readable, {
+  return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
       Connection: 'keep-alive',
