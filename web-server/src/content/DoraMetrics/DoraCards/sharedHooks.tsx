@@ -108,39 +108,35 @@ export const useLeadTimeProps = () => {
 export const useDoraStats = () => {
   const { integrationSet } = useAuth();
   const leadTimeProps = useLeadTimeProps();
-  const depsConfigured = true;
-  const { count: df } = useAvgWeeklyDeploymentFrequency();
   const { count: cfr } = useChangeFailureRateProps();
   const { count: mttr, isNoDataAvailable } = useMeanTimeToRestoreProps();
 
   const lt = leadTimeProps.count;
 
-  const interval = useSelector(
+  const weeklyDeploymentFrequency = useSelector(
     (s) =>
-      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current.duration
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
+        .avg_weekly_deployment_frequency
   );
 
   return useMemo(
     () =>
       getDoraScore({
         lt: integrationSet.has(IntegrationGroup.CODE) ? lt : null,
-        df: depsConfigured ? df : null,
+        df: weeklyDeploymentFrequency,
         cfr: integrationSet.has(IntegrationGroup.INCIDENT) ? cfr : null,
         mttr:
           integrationSet.has(IntegrationGroup.INCIDENT) && !isNoDataAvailable
             ? mttr
-            : null,
-        dfInterval: interval
+            : null
       }),
     [
       cfr,
-      depsConfigured,
-      df,
       integrationSet,
-      interval,
       isNoDataAvailable,
       lt,
-      mttr
+      mttr,
+      weeklyDeploymentFrequency
     ]
   );
 };
@@ -219,7 +215,7 @@ export const usePropsForChangeTimeCard = () => {
   };
 };
 
-export const useAvgWeeklyDeploymentFrequency = () => {
+export const useAvgIntervalBasedDeploymentFrequency = () => {
   const avgDeploymentFrequency = useSelector(
     (s) =>
       s.doraMetrics.metrics_summary?.deployment_frequency_stats.current

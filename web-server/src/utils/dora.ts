@@ -2,8 +2,7 @@ import {
   secondsInHour,
   secondsInDay,
   secondsInMonth,
-  secondsInWeek,
-  daysInWeek
+  secondsInWeek
 } from 'date-fns/constants';
 import { isNil, mean, reject } from 'ramda';
 
@@ -41,15 +40,21 @@ export const IndustryStandardsDoraScores: Record<Industries, number> = {
   [Industries.OTHER]: 6.7
 };
 
+/**
+ * Calculates the DORA (DevOps Research and Assessment) score based on the provided parameters.
+ *
+ * @param {Object} params - An object containing the following properties:
+ * @param {number | null} [params.lt] - Lead Time for Changes
+ * @param {number | null} [params.df] - Weekly Deployment Frequency. IMPORTANT: must be weekly
+ * @param {number | null} [params.cfr] - Change Failure Rate
+ * @param {number | null} [params.mttr] - Mean Time to Recovery.
+ */
 export const getDoraScore = ({
   lt,
   df,
   cfr,
-  mttr,
-  dfInterval
-}: Partial<Record<'lt' | 'df' | 'cfr' | 'mttr', number | null>> & {
-  dfInterval: string;
-}) => {
+  mttr
+}: Partial<Record<'lt' | 'df' | 'cfr' | 'mttr', number | null>>) => {
   const ltMttrBreakpoints = [
     secondsInMonth * 6,
     secondsInMonth,
@@ -58,12 +63,6 @@ export const getDoraScore = ({
     secondsInHour,
     0
   ];
-
-  let deploymentFrequency = df;
-
-  if (dfInterval === 'day') deploymentFrequency = df * daysInWeek;
-  else if (dfInterval === 'week') deploymentFrequency = df;
-  else if (dfInterval === 'month') deploymentFrequency = (df / 30) * daysInWeek;
 
   const deployBreakpoints = [
     1 / (4 * 6), // ~once in 6 months
@@ -85,8 +84,8 @@ export const getDoraScore = ({
   const scores = {
     lt: typeof lt === 'number' ? getScoreFromData(lt, ltMttrBreakpoints) : null,
     df:
-      typeof deploymentFrequency === 'number'
-        ? getScoreFromDataInv(deploymentFrequency, deployBreakpoints)
+      typeof df === 'number'
+        ? getScoreFromDataInv(df, deployBreakpoints)
         : null,
     cfr: typeof cfr === 'number' ? getCFRScore(cfr) : null,
     mttr:
