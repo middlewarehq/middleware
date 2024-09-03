@@ -3,7 +3,6 @@ import { FC, useEffect } from 'react';
 
 import { ServiceNames } from '@/constants/service';
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import { useBoolState } from '@/hooks/useEasyState';
 import { serviceSlice, ServiceStatusState } from '@/slices/service';
 import { useDispatch, useSelector } from '@/store';
 
@@ -13,8 +12,7 @@ import { Line } from '../Text';
 
 export const SystemStatus: FC = () => {
   const dispatch = useDispatch();
-  const loading = useBoolState(true);
-
+  const loading = useSelector((state) => state.service.loading);
   const services = useSelector(
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
@@ -23,7 +21,6 @@ export const SystemStatus: FC = () => {
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
     eventSource.onmessage = (event) => {
-      loading.set(false);
       const data = JSON.parse(event.data);
 
       if (data.type === 'status-update') {
@@ -37,7 +34,6 @@ export const SystemStatus: FC = () => {
         const trimmedLines = newLines.filter(
           (line: string) => line.trim() !== ''
         );
-
         dispatch(
           serviceSlice.actions.setServiceLogs({
             serviceName,
@@ -72,7 +68,7 @@ export const SystemStatus: FC = () => {
       </Line>
       <Divider sx={{ mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
 
-      {loading.value ? (
+      {loading ? (
         <Box
           sx={{
             display: 'flex',
