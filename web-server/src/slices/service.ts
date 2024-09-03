@@ -30,7 +30,7 @@ const initialState: State = {
     [ServiceNames.SYNC_SERVER]: { isUp: false, logs: [] }
   },
   active: null,
-  loading: false,
+  loading: true,
   error: undefined
 };
 
@@ -62,6 +62,7 @@ export const serviceSlice = createSlice({
       state,
       action: PayloadAction<{ serviceName: ServiceNames; serviceLog: string[] }>
     ) => {
+      state.loading = false;
       const { serviceName, serviceLog } = action.payload;
       state.services[serviceName].logs = [
         ...state.services[serviceName].logs,
