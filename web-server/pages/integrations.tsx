@@ -71,8 +71,8 @@ const Content = () => {
   const lastSyncMap = useMemo(() => {
     return integrationList
       .map((item) => {
-        // @ts-ignore
-        const linkedAt = integrations[item].linked_at;
+        const linkedAt =
+          integrations[item as 'github' | 'gitlab' | 'bitbucket'].linked_at;
         if (!linkedAt) return null;
         const codeProviderLinkedAt = new Date(linkedAt);
         const currentDate = new Date();
