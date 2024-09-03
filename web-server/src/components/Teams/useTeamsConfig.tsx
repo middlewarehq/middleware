@@ -532,5 +532,6 @@ const adaptBaseRepo = (repo: DB_OrgRepo): BaseRepo =>
     branch: repo.default_branch,
     parent: repo.org_name,
     deployment_type: repo.deployment_type,
-    repo_workflows: repo.repo_workflows
+    repo_workflows: repo.repo_workflows,
+    provider: repo.provider
   }) as unknown as BaseRepo;
