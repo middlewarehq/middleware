@@ -6,13 +6,13 @@ type Status = {
   isUp: boolean;
 };
 
-type ServiceStatus = {
+type Service = {
   isUp: boolean;
   logs: string[];
 };
 
 export type ServiceStatusState = {
-  [key in ServiceNames]: ServiceStatus;
+  [key in ServiceNames]: Service;
 };
 
 type State = {
