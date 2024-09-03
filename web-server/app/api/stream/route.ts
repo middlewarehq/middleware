@@ -160,9 +160,11 @@ export async function GET(): Promise<Response> {
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
+      'Content-Type': 'text/event-stream; charset=utf-8',
       Connection: 'keep-alive',
-      'Cache-Control': 'no-cache, no-transform'
+      'Cache-Control': 'no-cache, no-transform',
+      'X-Accel-Buffering': 'no',
+      'Content-Encoding': 'none'
     }
   });
 }
