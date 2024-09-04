@@ -1,3 +1,4 @@
+import axios from 'axios';
 import fetch from 'node-fetch';
 
 import { Integration } from '@/constants/integrations';
@@ -37,13 +38,38 @@ export const searchGithubRepos = async (
   searchQuery: string
 ): Promise<BaseRepo[]> => {
   let urlString = searchQuery;
-  urlString = urlString.replace('https://', '');
-  urlString = urlString.replace('http://', '');
-  urlString = urlString.replace('www.', '');
-  urlString = urlString.replace('github.com/', '');
-  urlString = urlString.endsWith('/') ? urlString.slice(0, -1) : urlString;
+  if (isUrl(urlString)) {
+    try {
+      urlString = urlString.replace('https://', '');
+      urlString = urlString.replace('http://', '');
+      urlString = urlString.replace('www.', '');
+      urlString = urlString.replace('github.com/', '');
+      urlString = urlString.endsWith('/') ? urlString.slice(0, -1) : urlString;
+      return await searchRepoWithURL(urlString);
+    } catch (e) {
+      return await searchGithubReposWithNames(pat, urlString);
+    }
+  }
+  return await searchGithubReposWithNames(pat, urlString);
+};
 
-  return searchGithubReposWithNames(pat, urlString);
+const searchRepoWithURL = async (searchString: string) => {
+  const apiUrl = `https://api.github.com/repos/${searchString}`;
+  const response = await axios.get<GithubRepo>(apiUrl);
+  const repo = response.data;
+  return [
+    {
+      id: repo.databaseId,
+      name: repo.name,
+      desc: repo.description,
+      slug: repo.name,
+      parent: repo.owner.login,
+      web_url: repo.url,
+      branch: repo.defaultBranchRef?.name,
+      language: repo.primaryLanguage?.name,
+      provider: Integration.GITHUB
+    }
+  ] as BaseRepo[];
 };
 
 export const searchGithubReposWithNames = async (
@@ -247,4 +273,13 @@ export const gitlabSearch = async (pat: string, searchString: string) => {
     search = searchString;
   }
   return searchGitlabRepos(pat, search);
+};
+
+const isUrl = (urlString: string) => {
+  return (
+    urlString.startsWith('http://') ||
+    urlString.startsWith('https://') ||
+    urlString.startsWith('www.') ||
+    urlString.startsWith('github.com')
+  );
 };
