@@ -332,7 +332,12 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem>
-          <FlexBox col width={'150px'} maxWidth={'150px'}>
+          <FlexBox
+            col
+            width={'150px'}
+            maxWidth={'150px'}
+            pt={Number(cancelMenu.value)}
+          >
             <FlexBox onClick={cancelMenu.true} gap1 alignCenter fullWidth>
               <Delete fontSize="small" color="error" />
               <Line semibold error>
