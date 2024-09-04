@@ -20,6 +20,7 @@ type GithubRepo = {
   owner: {
     login: string;
   };
+  html_url: string;
 };
 
 type RepoReponse = {
@@ -37,14 +38,9 @@ export const searchGithubRepos = async (
   pat: string,
   searchQuery: string
 ): Promise<BaseRepo[]> => {
-  let urlString = searchQuery;
-  if (isUrl(urlString)) {
+  let urlString = convertUrlToQuery(searchQuery);
+  if (urlString !== searchQuery) {
     try {
-      urlString = urlString.replace('https://', '');
-      urlString = urlString.replace('http://', '');
-      urlString = urlString.replace('www.', '');
-      urlString = urlString.replace('github.com/', '');
-      urlString = urlString.endsWith('/') ? urlString.slice(0, -1) : urlString;
       return await searchRepoWithURL(urlString);
     } catch (e) {
       return await searchGithubReposWithNames(pat, urlString);
@@ -64,7 +60,7 @@ const searchRepoWithURL = async (searchString: string) => {
       desc: repo.description,
       slug: repo.name,
       parent: repo.owner.login,
-      web_url: repo.url,
+      web_url: repo.html_url,
       branch: repo.defaultBranchRef?.name,
       language: repo.primaryLanguage?.name,
       provider: Integration.GITHUB
@@ -264,22 +260,23 @@ export const searchGitlabRepos = async (
 };
 
 export const gitlabSearch = async (pat: string, searchString: string) => {
-  let search = '';
-  try {
-    const url = new URL(searchString);
-    search = url.pathname;
-    if (search.startsWith('/')) search = search.slice(1);
-  } catch (e) {
-    search = searchString;
-  }
+  let search = convertUrlToQuery(searchString);
   return searchGitlabRepos(pat, search);
 };
 
-const isUrl = (urlString: string) => {
-  return (
-    urlString.startsWith('http://') ||
-    urlString.startsWith('https://') ||
-    urlString.startsWith('www.') ||
-    urlString.startsWith('github.com')
-  );
+const convertUrlToQuery = (url: string) => {
+  let query = url;
+  try {
+    const urlObject = new URL(url);
+    query = urlObject.pathname;
+    query = query.startsWith('/') ? query.slice(1) : query;
+  } catch (_) {
+    query = query.replace('https://', '');
+    query = query.replace('http://', '');
+    query = query.replace('github.com/', '');
+    query = query.replace('gitlab.com/', '');
+    query = query.startsWith('www.') ? query.slice(4) : query;
+    query = query.endsWith('/') ? query.slice(0, -1) : query;
+  }
+  return query; // of type parent/repo or group/subgroup/repo
 };
