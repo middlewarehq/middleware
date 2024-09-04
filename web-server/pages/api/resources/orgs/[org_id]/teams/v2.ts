@@ -28,6 +28,7 @@ import groupBy from '@/utils/objectArray';
 
 const repoSchema = yup.object().shape({
   idempotency_key: yup.string().required(),
+  provider: yup.string().required(),
   deployment_type: yup.string().required(),
   slug: yup.string().required(),
   name: yup.string().required(),
