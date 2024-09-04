@@ -303,7 +303,7 @@ const TokenPermissions = () => {
           transition: 'all 0.8s ease',
           position: 'relative',
           maxWidth: '100%',
-          background: '#FEFEFE'
+          background: '#000000'
         }}
       >
         <Image
@@ -311,7 +311,8 @@ const TokenPermissions = () => {
           style={{
             position: 'relative',
             transition: 'all 0.8s ease',
-            opacity: !imageLoaded.value ? 0 : 1
+            opacity: !imageLoaded.value ? 0 : 1,
+            filter: 'invert(1)'
           }}
           src="/assets/gitlabPAT.png"
           width={816}
