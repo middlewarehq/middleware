@@ -217,7 +217,7 @@ const TeamRepos: FC = () => {
           options={repoOptions}
           value={selectedRepos}
           onChange={handleRepoSelectionChange}
-          getOptionLabel={(option) => `${option.parent}/${option.name}`}
+          getOptionLabel={(option) => option.web_url}
           renderInput={(params) => (
             <TextField
               onKeyDown={(event) => {
