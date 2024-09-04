@@ -20,7 +20,8 @@ type GithubRepo = {
   owner: {
     login: string;
   };
-  html_url: string;
+  html_url?: string;
+  id?: number;
 };
 
 type RepoReponse = {
@@ -55,7 +56,7 @@ const searchRepoWithURL = async (searchString: string) => {
   const repo = response.data;
   return [
     {
-      id: repo.databaseId,
+      id: repo.id,
       name: repo.name,
       desc: repo.description,
       slug: repo.name,
