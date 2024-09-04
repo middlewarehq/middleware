@@ -198,7 +198,7 @@ const TeamRepos: FC = () => {
         <Line big semibold>
           Add Repositories
         </Line>
-        <Line>Select repositories for this team</Line>
+        <Line>Select repositories for this team using name or link</Line>
       </FlexBox>
       <FlexBox>
         <Autocomplete
