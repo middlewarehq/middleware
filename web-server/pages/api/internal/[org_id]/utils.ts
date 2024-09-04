@@ -34,6 +34,20 @@ type RepoReponse = {
 
 export const searchGithubRepos = async (
   pat: string,
+  searchQuery: string
+): Promise<BaseRepo[]> => {
+  let urlString = searchQuery;
+  urlString = urlString.replace('https://', '');
+  urlString = urlString.replace('http://', '');
+  urlString = urlString.replace('www.', '');
+  urlString = urlString.replace('github.com/', '');
+  urlString = urlString.endsWith('/') ? urlString.slice(0, -1) : urlString;
+
+  return searchGithubReposWithNames(pat, urlString);
+};
+
+export const searchGithubReposWithNames = async (
+  pat: string,
   searchString: string
 ): Promise<BaseRepo[]> => {
   const query = `
