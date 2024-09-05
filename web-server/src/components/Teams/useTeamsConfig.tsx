@@ -11,7 +11,6 @@ import {
   useEffect
 } from 'react';
 
-import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
@@ -248,8 +247,7 @@ export const TeamsCRUDProvider: React.FC<{
         createTeam({
           org_id: orgId,
           team_name: capitalizedTeamName,
-          org_repos: repoPayload,
-          provider: Integration.GITHUB
+          org_repos: repoPayload
         })
       )
         .then((res) => {
@@ -291,8 +289,7 @@ export const TeamsCRUDProvider: React.FC<{
           team_id: teamId,
           org_id: orgId,
           team_name: teamName.value,
-          org_repos: repoPayload,
-          provider: Integration.GITHUB
+          org_repos: repoPayload
         })
       )
         .then((res) => {
