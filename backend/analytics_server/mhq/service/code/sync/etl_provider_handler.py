@@ -8,7 +8,6 @@ from mhq.store.models.code import (
     PullRequestCommit,
     PullRequestEvent,
     PullRequestRevertPRMapping,
-    Bookmark,
 )
 
 
@@ -20,7 +19,6 @@ class CodeProviderETLHandler(ABC):
         :return: PAT details
         :raises: Exception if PAT is invalid
         """
-        pass
 
     @abstractmethod
     def get_org_repos(self, org_repos: List[OrgRepo]) -> List[OrgRepo]:
@@ -28,7 +26,6 @@ class CodeProviderETLHandler(ABC):
         This method returns all repos from provider that are in sync and available for the provider in given access token.
         :return: List of repos as OrgRepo objects
         """
-        pass
 
     @abstractmethod
     def get_repo_pull_requests_data(
@@ -40,7 +37,6 @@ class CodeProviderETLHandler(ABC):
         :param bookmark: Bookmark object to get all pull requests after this date
         :return: Pull requests sorted by state_changed_at date, their commits and events
         """
-        pass
 
     @abstractmethod
     def get_revert_prs_mapping(
@@ -51,4 +47,3 @@ class CodeProviderETLHandler(ABC):
         :param prs: List of PRs to process
         :return: List of PullRequestRevertPRMapping objects
         """
-        pass

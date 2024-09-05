@@ -16,11 +16,11 @@ import {
 import clsx from 'clsx';
 import NextLink from 'next/link';
 import { FC, ReactNode, useContext, MouseEvent, useEffect } from 'react';
+import { SidebarContext } from 'src/contexts/SidebarContext';
 
 import { track } from '@/constants/events';
 import { appSlice } from '@/slices/app';
 import { useDispatch, useSelector } from '@/store';
-import { SidebarContext } from 'src/contexts/SidebarContext';
 
 interface SidebarMenuItemProps {
   children?: ReactNode;

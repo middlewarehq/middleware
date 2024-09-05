@@ -20,5 +20,5 @@ tar -czf \
   public \
   scripts \
 
-  
+
 echo "Completed artifact creation"

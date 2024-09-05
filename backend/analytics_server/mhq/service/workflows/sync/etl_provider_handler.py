@@ -5,7 +5,6 @@ from typing import List, Tuple
 from mhq.store.models.code import (
     OrgRepo,
     RepoWorkflow,
-    RepoWorkflowRunsBookmark,
     RepoWorkflowRuns,
 )
 
@@ -18,7 +17,6 @@ class WorkflowProviderETLHandler(ABC):
         :return: PAT details
         :raises: Exception if PAT is invalid
         """
-        pass
 
     @abstractmethod
     def get_workflow_runs(
@@ -34,4 +32,3 @@ class WorkflowProviderETLHandler(ABC):
         :param bookmark: datetime object to get all workflow runs after this date
         :return: List of RepoWorkflowRuns objects, datetime object
         """
-        pass

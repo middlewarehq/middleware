@@ -338,7 +338,12 @@ class CodeRepoService:
     def get_team_repos(self, team_id) -> List[OrgRepo]:
         team_repos = (
             self._db.session.query(TeamRepos)
-            .filter(and_(TeamRepos.team_id == team_id, TeamRepos.is_active == True))
+            .filter(
+                and_(
+                    TeamRepos.team_id == team_id,
+                    TeamRepos.is_active == True,  # noqa E712
+                )
+            )
             .all()
         )
         if not team_repos:
@@ -351,7 +356,12 @@ class CodeRepoService:
     def get_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
         return (
             self._db.session.query(TeamRepos)
-            .filter(and_(TeamRepos.team_id == team_id, TeamRepos.is_active == True))
+            .filter(
+                and_(
+                    TeamRepos.team_id == team_id,
+                    TeamRepos.is_active == True,  # noqa E712
+                )
+            )
             .all()
         )
 

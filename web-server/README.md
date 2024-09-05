@@ -23,17 +23,17 @@ yarn stage-tun
 
 ## Notes
 
-**HTTPS Server**  
-Use `yarn https` to start.  
-Naturally, auth and cookies are separate for the HTTP and HTTPS server.  
+**HTTPS Server**
+Use `yarn https` to start.
+Naturally, auth and cookies are separate for the HTTP and HTTPS server.
 If you were developing using `yarn dev` and then switched to `yarn https`, you'll need to login again. But since it's still pointing to staging, the data on the UI would remain the same.
 
-**Slack**  
-If working with Slack integration linking logic, use `yarn https`.  
+**Slack**
+If working with Slack integration linking logic, use `yarn https`.
 However, if working with the Slack Bot API request/response logic, use `yarn dev` and then use `ngrok` or something.
 
-**Logrocket**  
-LR operates over a nextjs rewrite path.  
+**Logrocket**
+LR operates over a nextjs rewrite path.
 However, a rewrite from an HTTP path to an HTTPS path is not supported, hence unless you're using `yarn https`, LR won't work locally even if you tried.
 
 If you must run it locally, do the following:

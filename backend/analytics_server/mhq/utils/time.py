@@ -48,7 +48,7 @@ class Interval:
             min(self.from_time, interval.from_time), max(self.to_time, interval.to_time)
         )
 
-    def merge(self, interval: []):
+    def merge(self, interval: []):  # noqa: F811
         return Interval(
             min(self.from_time, interval.from_time), max(self.to_time, interval.to_time)
         )

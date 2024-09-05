@@ -14,7 +14,10 @@ def test_get_revert_merge_commit_hash():
     assert handler.get_revert_merge_commit_hash("revert-abcdef12") == "abcdef12"
     assert handler.get_revert_merge_commit_hash("not-a-revert-branch") is None
     assert handler.get_revert_merge_commit_hash("revert-123") is None
-    assert handler.get_revert_merge_commit_hash("revert-1234567890abcdef") == None
+    assert (
+        handler.get_revert_merge_commit_hash("revert-1234567890abcdef")
+        == None  # noqa E711
+    )
 
 
 def test_process_revert_prs_empty_list():

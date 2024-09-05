@@ -1,0 +1,38 @@
+exclude: (\.git/|\.tox/|\.venv/|build/|static/|dist/|node_modules/|__init__.py|app.py|sync_app.py)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.0.1
+    hooks:
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: end-of-file-fixer
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.1.1
+    hooks:
+      - id: flake8
+        args:
+          - --ignore=E501,W503,W605
+
+  # I dont find any dedicated hook for this, so using a custom one
+  - repo: local
+    hooks:
+    - id: linting webserver
+      name: Linting-webserver
+      entry: bash -c 'cd web-server && yarn lint-fix'
+      language: system
+  - repo: local
+    hooks:
+    - id: linting cli
+      name: Linting-cli
+      entry: bash -c 'cd cli && yarn lint-fix'
+      language: system
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
+    hooks:
+    - id: autoflake
+      args: [--remove-all-unused-imports, --in-place]
+  # black fixes code, so let it be at the last
+  - repo: https://github.com/psf/black
+    rev: 24.8.0
+    hooks:
+      - id: black

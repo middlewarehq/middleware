@@ -42,7 +42,7 @@ services:
         - action: sync
           path: ./backend/analytics_server
           target: /app/backend/analytics_server
-          ignore: 
+          ignore:
             - venv
             - __pycache__
             - env.example
@@ -70,8 +70,8 @@ services:
         - action: sync
           path: ./web-server
           target: /app/web-server
-          ignore: 
-            - ./web-server/.vscode 
+          ignore:
+            - ./web-server/.vscode
             - ./web-server/node_modules
 
         - action: rebuild
@@ -80,4 +80,3 @@ services:
         - action: sync+restart
           path: ./setup_utils/
           target: /app/setup_utils
-          

@@ -26,9 +26,7 @@ def test_incorrect_interval_raises_exception():
 
     attribute = "state_changed_at"
     with pytest.raises(AssertionError) as e:
-        buckets = generate_expanded_buckets(
-            object_list, Interval(from_time, to_time), attribute
-        )
+        generate_expanded_buckets(object_list, Interval(from_time, to_time), attribute)
     assert (
         str(e.value)
         == f"from_time: {from_time.isoformat()} is greater than to_time: {to_time.isoformat()}"
@@ -40,10 +38,8 @@ def test_missing_attribute_raise_exception():
     from_time = time_now()
     to_time = from_time + timedelta(seconds=1)
     attribute = "updated_at"
-    with pytest.raises(AttributeError) as e:
-        buckets = generate_expanded_buckets(
-            object_list, Interval(from_time, to_time), attribute
-        )
+    with pytest.raises(AttributeError):
+        generate_expanded_buckets(object_list, Interval(from_time, to_time), attribute)
 
 
 def test_incorrect_attribute_type_raise_exception():
@@ -52,9 +48,7 @@ def test_incorrect_attribute_type_raise_exception():
     to_time = from_time + timedelta(seconds=1)
     attribute = "state_changed_at"
     with pytest.raises(Exception) as e:
-        buckets = generate_expanded_buckets(
-            object_list, Interval(from_time, to_time), attribute
-        )
+        generate_expanded_buckets(object_list, Interval(from_time, to_time), attribute)
         assert (
             str(e.value)
             == f"Type of datetime_attribute:{type(getattr(object_list[0], attribute))} is not datetime"
@@ -104,7 +98,7 @@ def test_data_generates_empty_middle_buckets():
     ans_buckets[second_week_2023] = []
     ans_buckets[third_week_2023] = [obj4, obj5, obj6]
 
-    curr_date = get_given_weeks_monday(from_time)
+    get_given_weeks_monday(from_time)
 
     assert ans_buckets == generate_expanded_buckets(
         object_list, Interval(from_time, to_time), attribute

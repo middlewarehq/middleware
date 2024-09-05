@@ -80,7 +80,7 @@ export const BranchSelector: FC = () => {
       })
     );
     depFn(localBranchNames.set, []);
-  }, [dispatch, teamReposProdBranchArray,localBranchNames.set]);
+  }, [dispatch, teamReposProdBranchArray, localBranchNames.set]);
 
   const openProductionBranchSelectorModal = useCallback(async () => {
     const modal = addModal({

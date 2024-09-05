@@ -1,4 +1,3 @@
-from typing import Dict
 from mhq.exapi.models.gitlab import GitlabCommit, GitlabNote, GitlabPR, GitlabPRState
 from mhq.utils.time import time_now
 from datetime import datetime
