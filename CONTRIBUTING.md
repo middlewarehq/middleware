@@ -24,7 +24,7 @@ Please follow the existing code style and conventions used in the project. If yo
 
 ## Making Commits
 
-1. Pre-commit should be installed as a dev dependency already. If not then Create a virual environment [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments) or [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) and run the follwoing command from project root dir:
+1. Pre-commit should be installed as a dev dependency already. If not then Create a virual environment [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments) or [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) and run the following command from project root dir:
 
     ```
     pip install -r backend/dev-requirements.txt --upgrade
@@ -37,10 +37,10 @@ Please follow the existing code style and conventions used in the project. If yo
     ```
     ```
     cd cli
-    yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
+    yarn add eslint@^8.40.0 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
     ```
     ```
-    cd webserver
+    cd web-server
     yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
     ```
     Then install it:
