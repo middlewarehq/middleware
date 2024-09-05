@@ -13,7 +13,7 @@ import { db, dbRaw } from '@/utils/db';
 
 const getSchema = yup.object().shape({
   org_id: yup.string().uuid().required(),
-  provider: yup.string().oneOf(Object.values(Integration))
+  providers: yup.array(yup.string().oneOf(Object.values(Integration)))
 });
 
 const endpoint = new Endpoint(nullSchema);
@@ -23,14 +23,14 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     return res.send(selectedDBReposMock);
   }
 
-  const { org_id, provider } = req.payload;
+  const { org_id, providers } = req.payload;
 
-  res.send(await getSelectedReposForOrg(org_id, provider as Integration));
+  res.send(await getSelectedReposForOrg(org_id, providers as Integration[]));
 });
 
 export const getSelectedReposForOrg = async (
   org_id: ID,
-  provider: Integration
+  providers: Integration[]
 ): Promise<RepoWithMultipleWorkflows[]> => {
   const dbRepos: RepoWithSingleWorkflow[] = await db(Table.OrgRepo)
     .leftJoin({ rw: Table.RepoWorkflow }, function () {
@@ -47,7 +47,8 @@ export const getSelectedReposForOrg = async (
     .select(dbRaw.raw('to_json(rw) as repo_workflow'))
     .select('tr.deployment_type', 'tr.team_id')
     .from('OrgRepo')
-    .where({ org_id, 'OrgRepo.provider': provider })
+    .where('org_id', org_id)
+    .and.whereIn('OrgRepo.provider', providers)
     .andWhereNot('OrgRepo.is_active', false);
 
   const repoToWorkflowMap = dbRepos.reduce(
