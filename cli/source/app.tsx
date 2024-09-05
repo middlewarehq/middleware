@@ -135,7 +135,7 @@ const CliUi = () => {
   }, [appState, exit]);
 
   useInput((input) => {
-    const lowerCaseInput = input.toLowerCase(); 
+    const lowerCaseInput = input.toLowerCase();
 
     if (appState === AppStates.DOCKER_READY) {
       dispatch(appSlice.actions.setLogsStream([]));

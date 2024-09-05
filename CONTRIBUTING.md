@@ -29,6 +29,20 @@ Please follow the existing code style and conventions used in the project. If yo
     ```
     pip install -r backend/dev-requirements.txt --upgrade
     ```
+    Also install the eslint for both `cli/` and `webserver/`. Please use node 16 for that
+    *NOTE*: If NVM is not installed, install using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating)
+    ```
+    nvm install 16
+    nvm use 16
+    ```
+    ```
+    cd cli
+    yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
+    ```
+    ```
+    cd webserver
+    yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
+    ```
     Then install it:
     ```
     pre-commit install
