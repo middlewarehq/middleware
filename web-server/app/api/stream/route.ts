@@ -1,7 +1,10 @@
 import { exec } from 'child_process';
 import { createReadStream, FSWatcher, watch } from 'fs';
 
-import { handleRequest, handleSyncServerRequest } from '@/api-helpers/axios';
+import {
+  getServerStatusCode,
+  getSyncServerStatusCode
+} from '@/api-helpers/axios';
 import { ServiceNames } from '@/constants/service';
 import {
   UPDATE_INTERVAL,
@@ -11,45 +14,33 @@ import {
   FileEvent
 } from '@/constants/stream';
 
-const execPromise = (command: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
+const execPromise = (command: string): Promise<string> =>
+  new Promise((resolve, reject) => {
     exec(command, (error, stdout) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve(stdout);
+      if (error) reject(error);
+      else resolve(stdout.trim());
     });
   });
-};
 
-const checkServiceStatus = async (serviceName: string): Promise<boolean> => {
+const checkServiceStatus = async (
+  serviceName: ServiceNames
+): Promise<boolean> => {
   try {
     switch (serviceName) {
-      case ServiceNames.API_SERVER: {
-        const response = await handleRequest('');
-        return response.message.includes('hello world');
-      }
-
-      case ServiceNames.REDIS: {
-        const REDIS_PORT = process.env.REDIS_PORT;
-        const response = await execPromise(`redis-cli -p ${REDIS_PORT} ping`);
-        return response.trim().includes('PONG');
-      }
-
-      case ServiceNames.POSTGRES: {
-        const POSTGRES_PORT = process.env.DB_PORT;
-        const POSTGRES_HOST = process.env.DB_HOST;
-        const response = await execPromise(
-          `pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT}`
-        );
-        return response.includes('accepting connections');
-      }
-
-      case ServiceNames.SYNC_SERVER: {
-        const response = await handleSyncServerRequest('');
-        return response.message.includes('hello world');
-      }
-
+      case ServiceNames.API_SERVER:
+        return (await getServerStatusCode('')) === 200;
+      case ServiceNames.SYNC_SERVER:
+        return (await getSyncServerStatusCode('')) === 200;
+      case ServiceNames.REDIS:
+        return (
+          await execPromise(`redis-cli -p ${process.env.REDIS_PORT} ping`)
+        ).includes('PONG');
+      case ServiceNames.POSTGRES:
+        return (
+          await execPromise(
+            `pg_isready -h ${process.env.DB_HOST} -p ${process.env.DB_PORT}`
+          )
+        ).includes('accepting connections');
       default:
         console.warn(`Service ${serviceName} not recognized.`);
         return false;
@@ -60,21 +51,17 @@ const checkServiceStatus = async (serviceName: string): Promise<boolean> => {
   }
 };
 
-const getStatus = async (): Promise<{
-  [key in ServiceNames]: { isUp: boolean };
-}> => {
+const getStatus = async (): Promise<
+  Record<ServiceNames, { isUp: boolean }>
+> => {
   const services = Object.values(ServiceNames);
-  const statuses: { [key in ServiceNames]: { isUp: boolean } } = {
-    [ServiceNames.API_SERVER]: { isUp: false },
-    [ServiceNames.REDIS]: { isUp: false },
-    [ServiceNames.POSTGRES]: { isUp: false },
-    [ServiceNames.SYNC_SERVER]: { isUp: false }
-  };
+  const statuses = Object.fromEntries(
+    services.map((service) => [service, { isUp: false }])
+  ) as Record<ServiceNames, { isUp: boolean }>;
 
   await Promise.all(
     services.map(async (service) => {
-      const isUp = await checkServiceStatus(service);
-      statuses[service] = { isUp };
+      statuses[service].isUp = await checkServiceStatus(service);
     })
   );
 
@@ -84,19 +71,16 @@ const getStatus = async (): Promise<{
 export async function GET(): Promise<Response> {
   const encoder = new TextEncoder();
   let streamClosed = false;
-  let lastPositions: { [key: string]: number } = {};
+  const lastPositions: Record<string, number> = {};
   let statusTimer: NodeJS.Timeout | null = null;
   const watchers: FSWatcher[] = [];
 
-  const sendEvent = (eventType: StreamEventType, data: any) => {
-    const eventData = JSON.stringify({ type: eventType, ...data });
-    return encoder.encode(`data: ${eventData}\n\n`);
-  };
+  const sendEvent = (eventType: StreamEventType, data: unknown): Uint8Array =>
+    encoder.encode(`data: ${JSON.stringify({ type: eventType, ...data })}\n\n`);
 
   const stream = new ReadableStream({
     start(controller) {
       const pushStatus = async () => {
-        console.log('push status');
         if (streamClosed) return;
         try {
           const statuses = await getStatus();
@@ -114,8 +98,6 @@ export async function GET(): Promise<Response> {
       };
 
       const pushFileContent = async ({ path, serviceName }: LogFile) => {
-        console.log('push content');
-
         if (streamClosed) return;
         try {
           const fileStream = createReadStream(path, {
@@ -155,13 +137,8 @@ export async function GET(): Promise<Response> {
       startWatchers();
     },
     cancel() {
-      console.log('CLOSE ');
       streamClosed = true;
-
-      if (statusTimer) {
-        clearTimeout(statusTimer);
-      }
-
+      if (statusTimer) clearTimeout(statusTimer);
       watchers.forEach((watcher) => watcher.close());
     }
   });

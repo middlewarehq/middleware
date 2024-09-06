@@ -16,7 +16,6 @@ export type ServiceStatusState = Record<ServiceNames, Service>;
 type State = {
   services: ServiceStatusState;
   loading: boolean;
-  error: string | null;
 };
 
 const initialState: State = {
@@ -26,8 +25,7 @@ const initialState: State = {
     [ServiceNames.POSTGRES]: { isUp: false, logs: [] },
     [ServiceNames.SYNC_SERVER]: { isUp: false, logs: [] }
   },
-  loading: true,
-  error: null
+  loading: true
 };
 
 type SetStatusPayload = {
@@ -44,6 +42,7 @@ export const serviceSlice = createSlice({
     setStatus: (state, action: PayloadAction<SetStatusPayload>) => {
       state.loading = false;
       const { statuses } = action.payload;
+
       Object.entries(statuses).forEach(([serviceName, { isUp }]) => {
         const service = state.services[serviceName as ServiceNames];
         if (service) {

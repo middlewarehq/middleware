@@ -90,3 +90,41 @@ export const handleSyncServerRequest = <T = any>(
   })
     .then(handleThen)
     .catch(handleCatch);
+
+export const getServerStatusCode = async (
+  url: string,
+  params: AxiosRequestConfig<any> = { method: 'get' }
+): Promise<number> => {
+  try {
+    const response = await internal({
+      url,
+      ...params,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return response.status;
+  } catch (error: any) {
+    if (error.response) {
+      return error.response.status;
+    }
+    throw error;
+  }
+};
+
+export const getSyncServerStatusCode = async (
+  url: string,
+  params: AxiosRequestConfig<any> = { method: 'get' }
+): Promise<number> => {
+  try {
+    const response = await internalSyncServer({
+      url,
+      ...params,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return response.status;
+  } catch (error: any) {
+    if (error.response) {
+      return error.response.status;
+    }
+    throw error;
+  }
+};

@@ -12,6 +12,20 @@ import { FlexBox } from '../FlexBox';
 import { useOverlayPage } from '../OverlayPageContext';
 import { Line } from '../Text';
 
+const serviceTitle: Record<ServiceNames, string> = {
+  [ServiceNames.API_SERVER]: 'Backend Server',
+  [ServiceNames.REDIS]: 'Redis Database',
+  [ServiceNames.POSTGRES]: 'Postgres Database',
+  [ServiceNames.SYNC_SERVER]: 'Sync Server'
+};
+
+const serviceColor: Record<ServiceNames, string> = {
+  [ServiceNames.API_SERVER]: '#06d6a0',
+  [ServiceNames.REDIS]: '#ef476f',
+  [ServiceNames.POSTGRES]: '#ff70a6',
+  [ServiceNames.SYNC_SERVER]: '#ab34eb'
+};
+
 export const SystemStatus: FC = () => {
   const dispatch = useDispatch();
   const theme = useTheme();
@@ -25,10 +39,8 @@ export const SystemStatus: FC = () => {
       const data = JSON.parse(event.data);
 
       if (data.type === StreamEventType.StatusUpdate) {
-        const statuses = { statuses: data.statuses };
-        dispatch(serviceSlice.actions.setStatus(statuses));
+        dispatch(serviceSlice.actions.setStatus({ statuses: data.statuses }));
       }
-
       if (data.type === StreamEventType.LogUpdate) {
         const { serviceName, content } = data;
         const newLines = content.split('\n');
@@ -44,10 +56,6 @@ export const SystemStatus: FC = () => {
       }
     };
 
-    eventSource.onerror = () => {
-      eventSource.close();
-    };
-
     return () => {
       eventSource.close();
       dispatch(serviceSlice.actions.resetState());
@@ -56,18 +64,14 @@ export const SystemStatus: FC = () => {
 
   const { addPage } = useOverlayPage();
 
-  const serviceTitle: Record<ServiceNames, string> = {
-    [ServiceNames.API_SERVER]: 'Backend Server',
-    [ServiceNames.REDIS]: 'Redis Database',
-    [ServiceNames.POSTGRES]: 'Postgres Database',
-    [ServiceNames.SYNC_SERVER]: 'Sync Server'
-  };
-
-  const serviceColor: Record<ServiceNames, string> = {
-    [ServiceNames.API_SERVER]: '#06d6a0',
-    [ServiceNames.REDIS]: '#ef476f',
-    [ServiceNames.POSTGRES]: '#ff70a6',
-    [ServiceNames.SYNC_SERVER]: '#ab34eb'
+  const handleCardClick = (serviceName: ServiceNames) => {
+    addPage({
+      page: {
+        ui: 'system_logs',
+        title: `${serviceTitle[serviceName]} Logs`,
+        props: { serviceName }
+      }
+    });
   };
 
   return (
@@ -93,18 +97,11 @@ export const SystemStatus: FC = () => {
             const serviceKey = serviceName as ServiceNames;
             const { isUp } = services[serviceKey];
             const borderColor = serviceColor[serviceKey];
+
             return (
               <CardRoot
                 key={serviceName}
-                onClick={() => {
-                  addPage({
-                    page: {
-                      ui: 'system_logs',
-                      title: `${serviceTitle[serviceKey]} Logs`,
-                      props: { serviceName }
-                    }
-                  });
-                }}
+                onClick={() => handleCardClick(serviceKey)}
                 sx={{
                   transition: 'box-shadow 0.2s ease',
                   '&:hover': {
