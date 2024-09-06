@@ -6,7 +6,7 @@ import { ServiceNames } from '@/constants/service';
 import { ServiceStatusState } from '@/slices/service';
 import { useSelector } from '@/store';
 
-export const SystemLogs = () => {
+export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -14,17 +14,16 @@ export const SystemLogs = () => {
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
   );
-  const active = useSelector((s) => s.service.active) as ServiceNames;
 
   const logs = useMemo(() => {
-    return active ? services[active]?.logs || [] : [];
-  }, [active, services]);
+    return serviceName ? services[serviceName]?.logs || [] : [];
+  }, [serviceName, services]);
 
   useEffect(() => {
-    if (!active) {
+    if (!serviceName) {
       router.push('/system');
     }
-  }, [active, router]);
+  }, [serviceName, router]);
 
   useEffect(() => {
     if (containerRef.current) {

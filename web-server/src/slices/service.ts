@@ -19,7 +19,6 @@ type State = {
   services: ServiceStatusState;
   loading: boolean;
   error?: string;
-  active: string | null;
 };
 
 const initialState: State = {
@@ -29,7 +28,6 @@ const initialState: State = {
     [ServiceNames.POSTGRES]: { isUp: false, logs: [] },
     [ServiceNames.SYNC_SERVER]: { isUp: false, logs: [] }
   },
-  active: null,
   loading: true,
   error: undefined
 };
@@ -42,9 +40,6 @@ export const serviceSlice = createSlice({
   name: 'services',
   initialState,
   reducers: {
-    setActiveService: (state, action: PayloadAction<string | null>) => {
-      state.active = action.payload;
-    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },

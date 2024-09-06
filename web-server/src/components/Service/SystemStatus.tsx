@@ -87,12 +87,13 @@ export const SystemStatus: FC = () => {
               <CardRoot
                 key={serviceName}
                 onClick={() => {
-                  dispatch(serviceSlice.actions.setActiveService(serviceName));
-
                   addPage({
                     page: {
                       ui: 'system_logs',
-                      title: `${ServiceTitle[serviceName]} Logs`
+                      title: `${ServiceTitle[serviceName]} Logs`,
+                      props:{
+                          serviceName:serviceName
+                      }
                     }
                   });
                 }}
