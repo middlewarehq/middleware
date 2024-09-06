@@ -14,11 +14,10 @@ import { Line } from '../Text';
 
 export const SystemStatus: FC = () => {
   const dispatch = useDispatch();
+  const theme = useTheme();
   const loading = useSelector((state) => state.service.loading);
   const services = useSelector((state) => state.service.services);
 
-  console.log('Status Page render');
-  const theme = useTheme();
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
 

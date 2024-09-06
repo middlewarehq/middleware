@@ -7,7 +7,6 @@ import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
-import { serviceSlice } from '@/slices/service';
 import { useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
 
@@ -18,12 +17,7 @@ function Service() {
     integrations: { github: isGithubIntegrated }
   } = useAuth();
 
-  const initialState = serviceSlice.getInitialState();
-  const currentState = useSelector(
-    (state: { service: { services: any } }) => state.service.services
-  );
-
-  const isLoading = currentState === initialState.services;
+  const loading = useSelector((state) => state.service.loading);
 
   return (
     <PageWrapper
@@ -35,7 +29,7 @@ function Service() {
       hideAllSelectors
       pageTitle="System logs"
       showEvenIfNoTeamSelected={true}
-      isLoading={isLoading}
+      isLoading={loading}
     >
       {isGithubIntegrated ? <SystemStatus /> : <Loader />}
     </PageWrapper>
