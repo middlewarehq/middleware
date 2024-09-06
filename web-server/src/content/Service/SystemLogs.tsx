@@ -5,6 +5,21 @@ import { useEffect, useRef, useMemo } from 'react';
 import { ServiceNames } from '@/constants/service';
 import { useSelector } from '@/store';
 
+const getColorTheme = (serviceName: ServiceNames): [string, string] => {
+  switch (serviceName) {
+    case ServiceNames.API_SERVER:
+      return ['api', '#06d6a0'];
+    case ServiceNames.SYNC_SERVER:
+      return ['snc', '#ab34eb'];
+    case ServiceNames.REDIS:
+      return ['rdi', '#ef476f'];
+    case ServiceNames.POSTGRES:
+      return ['pgs', '#ff70a6'];
+    default:
+      return ['', '#000000'];
+  }
+};
+
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,14 +57,22 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
       }}
     >
       {services &&
-        logs.map((log, index) => (
-          <Typography
-            key={index}
-            style={{ marginBottom: '8px', fontFamily: 'monospace' }}
-          >
-            {log}
-          </Typography>
-        ))}
+        logs.map((log, index) => {
+          const [code, color] = getColorTheme(serviceName);
+          return (
+            <Typography
+              key={index}
+              style={{
+                marginBottom: '8px',
+                fontFamily: 'monospace',
+                border: `0.2px solid ${color}`,
+                padding: '2px'
+              }}
+            >
+              {log}
+            </Typography>
+          );
+        })}
     </Box>
   );
 };

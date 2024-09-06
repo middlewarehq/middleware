@@ -176,7 +176,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   let statusTimer: NodeJS.Timeout | null = null;
   const watchers: FSWatcher[] = [];
 
-  const sendEvent = (eventType: string, data: any) => {
+  const sendEvent = (eventType: StreamEventType, data: any) => {
     const eventData = JSON.stringify({ type: eventType, ...data });
     return encoder.encode(`data: ${eventData}\n\n`);
   };
