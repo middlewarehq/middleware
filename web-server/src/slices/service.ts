@@ -44,11 +44,8 @@ export const serviceSlice = createSlice({
     setStatus: (state, action: PayloadAction<SetStatusPayload>) => {
       state.loading = false;
       const { statuses } = action.payload;
-
-      Object.entries(statuses).forEach(([serviceNameKey, { isUp }]) => {
-        const serviceName = serviceNameKey as ServiceNames;
-        const service = state.services[serviceName];
-
+      Object.entries(statuses).forEach(([serviceName, { isUp }]) => {
+        const service = state.services[serviceName as ServiceNames];
         if (service) {
           service.isUp = isUp;
         }

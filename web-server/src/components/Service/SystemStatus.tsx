@@ -56,11 +56,18 @@ export const SystemStatus: FC = () => {
 
   const { addPage } = useOverlayPage();
 
-  const ServiceTitle: Record<ServiceNames, string> = {
+  const serviceTitle: Record<ServiceNames, string> = {
     [ServiceNames.API_SERVER]: 'Backend Server',
     [ServiceNames.REDIS]: 'Redis Database',
     [ServiceNames.POSTGRES]: 'Postgres Database',
     [ServiceNames.SYNC_SERVER]: 'Sync Server'
+  };
+
+  const serviceColor: Record<ServiceNames, string> = {
+    [ServiceNames.API_SERVER]: '#06d6a0',
+    [ServiceNames.REDIS]: '#ef476f',
+    [ServiceNames.POSTGRES]: '#ff70a6',
+    [ServiceNames.SYNC_SERVER]: '#ab34eb'
   };
 
   return (
@@ -85,7 +92,7 @@ export const SystemStatus: FC = () => {
           {Object.keys(services).map((serviceName) => {
             const serviceKey = serviceName as ServiceNames;
             const { isUp } = services[serviceKey];
-
+            const borderColor = serviceColor[serviceKey];
             return (
               <CardRoot
                 key={serviceName}
@@ -93,7 +100,7 @@ export const SystemStatus: FC = () => {
                   addPage({
                     page: {
                       ui: 'system_logs',
-                      title: `${ServiceTitle[serviceKey]} Logs`,
+                      title: `${serviceTitle[serviceKey]} Logs`,
                       props: { serviceName }
                     }
                   });
@@ -106,9 +113,7 @@ export const SystemStatus: FC = () => {
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '12px',
                   border: `1px solid ${
-                    isUp
-                      ? alpha(theme.colors.success.main, 0.3)
-                      : alpha(theme.colors.error.main, 0.3)
+                    isUp ? borderColor : alpha(theme.colors.error.main, 0.3)
                   }`,
                   padding: '16px',
                   cursor: 'pointer',
@@ -127,7 +132,7 @@ export const SystemStatus: FC = () => {
                         alignItems: 'center'
                       }}
                     >
-                      {ServiceTitle[serviceKey]}
+                      {serviceTitle[serviceKey]}
                       <Box
                         component="span"
                         sx={{
