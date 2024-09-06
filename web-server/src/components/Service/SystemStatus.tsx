@@ -1,10 +1,11 @@
-import { Box, CircularProgress, Divider } from '@mui/material';
+import { Box, CircularProgress, Divider, useTheme } from '@mui/material';
 import { FC, useEffect } from 'react';
+import { alpha } from '@mui/material/styles';
 
 import { ServiceNames } from '@/constants/service';
 import { StreamEventType } from '@/constants/stream';
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import { serviceSlice, ServiceStatusState } from '@/slices/service';
+import { serviceSlice } from '@/slices/service';
 import { useDispatch, useSelector } from '@/store';
 
 import { FlexBox } from '../FlexBox';
@@ -14,13 +15,13 @@ import { Line } from '../Text';
 export const SystemStatus: FC = () => {
   const dispatch = useDispatch();
   const loading = useSelector((state) => state.service.loading);
-  const services = useSelector(
-    (state: { service: { services: ServiceStatusState } }) =>
-      state.service.services
-  );
+  const services = useSelector((state) => state.service.services);
+
   console.log('Status Page render');
+  const theme = useTheme();
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
+
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
@@ -56,12 +57,13 @@ export const SystemStatus: FC = () => {
 
   const { addPage } = useOverlayPage();
 
-  const ServiceTitle: { [key: string]: string } = {
+  const ServiceTitle: Record<ServiceNames, string> = {
     [ServiceNames.API_SERVER]: 'Backend Server',
     [ServiceNames.REDIS]: 'Redis Database',
     [ServiceNames.POSTGRES]: 'Postgres Database',
     [ServiceNames.SYNC_SERVER]: 'Sync Server'
   };
+
   return (
     <FlexBox col gap={2} sx={{ padding: '16px' }}>
       <Line bold white fontSize="24px" sx={{ mb: 2 }}>
@@ -84,6 +86,7 @@ export const SystemStatus: FC = () => {
           {Object.keys(services).map((serviceName) => {
             const serviceKey = serviceName as ServiceNames;
             const { isUp } = services[serviceKey];
+
             return (
               <CardRoot
                 key={serviceName}
@@ -91,10 +94,8 @@ export const SystemStatus: FC = () => {
                   addPage({
                     page: {
                       ui: 'system_logs',
-                      title: `${ServiceTitle[serviceName]} Logs`,
-                      props: {
-                        serviceName: serviceName
-                      }
+                      title: `${ServiceTitle[serviceKey]} Logs`,
+                      props: { serviceName }
                     }
                   });
                 }}
@@ -106,7 +107,9 @@ export const SystemStatus: FC = () => {
                   backgroundColor: 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '12px',
                   border: `1px solid ${
-                    isUp ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)'
+                    isUp
+                      ? alpha(theme.colors.success.main, 0.3)
+                      : alpha(theme.colors.error.main, 0.3)
                   }`,
                   padding: '16px',
                   cursor: 'pointer',
@@ -125,7 +128,7 @@ export const SystemStatus: FC = () => {
                         alignItems: 'center'
                       }}
                     >
-                      {ServiceTitle[serviceName]}
+                      {ServiceTitle[serviceKey]}
                       <Box
                         component="span"
                         sx={{
@@ -134,9 +137,11 @@ export const SystemStatus: FC = () => {
                           width: '10px',
                           height: '10px',
                           borderRadius: '50%',
-                          backgroundColor: isUp ? '#28a745' : '#dc3545'
+                          backgroundColor: isUp
+                            ? theme.colors.success.main
+                            : theme.colors.error.main
                         }}
-                      ></Box>
+                      />
                     </Line>
                   </FlexBox>
 

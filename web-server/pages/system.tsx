@@ -1,4 +1,5 @@
 import { Authenticated } from 'src/components/Authenticated';
+
 import { FlexBox } from '@/components/FlexBox';
 import Loader from '@/components/Loader';
 import { SystemStatus } from '@/components/Service/SystemStatus';
@@ -28,11 +29,11 @@ function Service() {
     <PageWrapper
       title={
         <FlexBox gap={1} alignCenter>
-          System
+          System logs
         </FlexBox>
       }
       hideAllSelectors
-      pageTitle="System"
+      pageTitle="System logs"
       showEvenIfNoTeamSelected={true}
       isLoading={isLoading}
     >

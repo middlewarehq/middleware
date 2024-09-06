@@ -3,17 +3,13 @@ import { useRouter } from 'next/router';
 import { useEffect, useRef, useMemo } from 'react';
 
 import { ServiceNames } from '@/constants/service';
-import { ServiceStatusState } from '@/slices/service';
 import { useSelector } from '@/store';
 
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const services = useSelector(
-    (state: { service: { services: ServiceStatusState } }) =>
-      state.service.services
-  );
+  const services = useSelector((state) => state.service.services);
 
   const logs = useMemo(() => {
     return serviceName ? services[serviceName]?.logs || [] : [];

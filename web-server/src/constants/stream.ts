@@ -5,9 +5,7 @@ type LogFile = {
   serviceName: ServiceNames;
 };
 
-type ServiceStatus = {
-  [key in ServiceNames]: { isUp: boolean };
-};
+type ServiceStatus = Record<ServiceNames, { isUp: boolean }>;
 
 const UPDATE_INTERVAL = 10000;
 

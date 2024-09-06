@@ -11,14 +11,12 @@ type Service = {
   logs: string[];
 };
 
-export type ServiceStatusState = {
-  [key in ServiceNames]: Service;
-};
+export type ServiceStatusState = Record<ServiceNames, Service>;
 
 type State = {
   services: ServiceStatusState;
   loading: boolean;
-  error?: string;
+  error: string | null;
 };
 
 const initialState: State = {
@@ -29,11 +27,11 @@ const initialState: State = {
     [ServiceNames.SYNC_SERVER]: { isUp: false, logs: [] }
   },
   loading: true,
-  error: undefined
+  error: null
 };
 
 type SetStatusPayload = {
-  statuses: { [key in ServiceNames]: Status };
+  statuses: Record<ServiceNames, Status>;
 };
 
 export const serviceSlice = createSlice({
@@ -47,11 +45,14 @@ export const serviceSlice = createSlice({
       state.loading = false;
       const { statuses } = action.payload;
 
-      for (const [serviceName, { isUp }] of Object.entries(statuses)) {
-        if (state.services[serviceName as ServiceNames]) {
-          state.services[serviceName as ServiceNames].isUp = isUp;
+      Object.entries(statuses).forEach(([serviceNameKey, { isUp }]) => {
+        const serviceName = serviceNameKey as ServiceNames;
+        const service = state.services[serviceName];
+
+        if (service) {
+          service.isUp = isUp;
         }
-      }
+      });
     },
     setServiceLogs: (
       state,
