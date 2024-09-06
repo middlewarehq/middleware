@@ -5,18 +5,18 @@ import { useEffect, useRef, useMemo } from 'react';
 import { ServiceNames } from '@/constants/service';
 import { useSelector } from '@/store';
 
-const getColorTheme = (serviceName: ServiceNames): [string, string] => {
+const getColorTheme = (serviceName: ServiceNames): string => {
   switch (serviceName) {
     case ServiceNames.API_SERVER:
-      return ['api', '#06d6a0'];
+      return '#06d6a0';
     case ServiceNames.SYNC_SERVER:
-      return ['snc', '#ab34eb'];
+      return '#ab34eb';
     case ServiceNames.REDIS:
-      return ['rdi', '#ef476f'];
+      return '#ef476f';
     case ServiceNames.POSTGRES:
-      return ['pgs', '#ff70a6'];
+      return '#ff70a6';
     default:
-      return ['', '#000000'];
+      return '#000000';
   }
 };
 
@@ -58,7 +58,7 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
     >
       {services &&
         logs.map((log, index) => {
-          const [code, color] = getColorTheme(serviceName);
+          const color = getColorTheme(serviceName);
           return (
             <Typography
               key={index}
