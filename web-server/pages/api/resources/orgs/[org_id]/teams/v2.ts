@@ -47,7 +47,6 @@ const getSchema = yup.object().shape({
 });
 
 const postSchema = yup.object().shape({
-  provider: yup.string().oneOf(Object.values(Integration)).required(),
   name: yup.string().required(),
   org_repos: yup.lazy((obj) =>
     yup.object(mapObjIndexed(() => yup.array().of(repoSchema), obj))

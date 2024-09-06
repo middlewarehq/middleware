@@ -1,21 +1,19 @@
+import { Box } from '@mui/material';
 import { Authenticated } from 'src/components/Authenticated';
 
 import { FlexBox } from '@/components/FlexBox';
+import { SyncDaysSetting } from '@/components/Settings/SyncDaysSetting';
 import { FetchState } from '@/constants/ui-states';
+import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
+import { useAuth } from '@/hooks/useAuth';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
 import { useSelector } from '@/store';
 import { PageLayout } from '@/types/resources';
-import { SyncDaysSetting } from '@/components/Settings/SyncDaysSetting';
-import { Box } from '@mui/material';
-import { useRedirectWithSession } from '@/constants/useRoute';
-import { useAuth } from '@/hooks/useAuth';
 
 function Settings() {
   useRedirectWithSession();
-  const {
-    integrations: { github: isGithubIntegrated }
-  } = useAuth();
+  const { integrationList } = useAuth();
   const isLoading = useSelector(
     (s) => s.org.requests?.defaultSyncDays === FetchState.REQUEST
   );
@@ -33,7 +31,7 @@ function Settings() {
         showEvenIfNoTeamSelected={true}
         isLoading={isLoading}
       >
-        {isGithubIntegrated && <Content />}
+        {integrationList.length > 0 && <Content />}
       </PageWrapper>
     </>
   );
