@@ -18,6 +18,7 @@ export const SystemStatus: FC = () => {
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
   );
+  console.log('Status Page render');
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
     eventSource.onmessage = (event) => {
@@ -91,8 +92,8 @@ export const SystemStatus: FC = () => {
                     page: {
                       ui: 'system_logs',
                       title: `${ServiceTitle[serviceName]} Logs`,
-                      props:{
-                          serviceName:serviceName
+                      props: {
+                        serviceName: serviceName
                       }
                     }
                   });
