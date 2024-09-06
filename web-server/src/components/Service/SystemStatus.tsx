@@ -1,6 +1,6 @@
 import { Box, CircularProgress, Divider, useTheme } from '@mui/material';
-import { FC, useEffect } from 'react';
 import { alpha } from '@mui/material/styles';
+import { FC, useEffect } from 'react';
 
 import { ServiceNames } from '@/constants/service';
 import { StreamEventType } from '@/constants/stream';

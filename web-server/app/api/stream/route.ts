@@ -26,7 +26,7 @@ import {
       });
 
       stream.on('data', (chunk) => {
-        if (streamClosed) return; 
+        if (streamClosed) return;
         const data = {
           type: 'log-update',
           serviceName,
