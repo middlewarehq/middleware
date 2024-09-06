@@ -110,9 +110,14 @@ export const AuthProvider: FC = (props) => {
   const integrationSet = useMemo(
     () =>
       new Set<IntegrationGroup>(
-        [].concat(integrations.github && IntegrationGroup.CODE).filter(Boolean)
+        []
+          .concat(
+            (integrations.github || integrations.gitlab) &&
+              IntegrationGroup.CODE
+          )
+          .filter(Boolean)
       ),
-    [integrations.github]
+    [integrations.github, integrations.gitlab]
   );
 
   const integrationList = useMemo(

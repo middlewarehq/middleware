@@ -3,6 +3,7 @@ from typing import List
 
 import pytz
 
+from mhq.store.models.code.enums import CodeProvider
 from mhq.service.settings.configuration_settings import (
     get_settings_service,
     SettingsService,
@@ -42,11 +43,11 @@ class CodeETLHandler:
         self.bookmark_service = bookmark_service
         self.settings_service = settings_service
 
-    def sync_org_repos(self, org_id: str):
+    def sync_org_repos(self, org_id: str, provider: CodeProvider):
         if not self.etl_service.check_pat_validity():
             LOG.error("Invalid PAT for code provider")
             return
-        org_repos: List[OrgRepo] = self._sync_org_repos(org_id)
+        org_repos: List[OrgRepo] = self._sync_org_repos(org_id, provider)
         for org_repo in org_repos:
             try:
                 self._sync_repo_pull_requests_data(org_repo)
@@ -56,9 +57,11 @@ class CodeETLHandler:
                 )
                 continue
 
-    def _sync_org_repos(self, org_id: str) -> List[OrgRepo]:
+    def _sync_org_repos(self, org_id: str, provider: CodeProvider) -> List[OrgRepo]:
         try:
-            org_repos = self.code_repo_service.get_active_org_repos(org_id)
+            org_repos = self.code_repo_service.get_active_org_repos_for_provider(
+                org_id, provider
+            )
             org_repos = self.etl_service.get_org_repos(org_repos)
             self.code_repo_service.update_org_repos(org_repos)
             return org_repos
@@ -141,7 +144,7 @@ def sync_code_repos(org_id: str):
                 get_bookmark_service(),
                 get_settings_service(),
             )
-            code_etl_handler.sync_org_repos(org_id)
+            code_etl_handler.sync_org_repos(org_id, CodeProvider(provider))
             LOG.info(f"Synced org repos for provider {provider}")
         except Exception as e:
             LOG.error(f"Error syncing org repos for provider {provider}: {str(e)}")
