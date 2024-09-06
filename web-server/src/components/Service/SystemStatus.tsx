@@ -2,6 +2,7 @@ import { Box, CircularProgress, Divider } from '@mui/material';
 import { FC, useEffect } from 'react';
 
 import { ServiceNames } from '@/constants/service';
+import { StreamEventType } from '@/constants/stream';
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { serviceSlice, ServiceStatusState } from '@/slices/service';
 import { useDispatch, useSelector } from '@/store';
@@ -17,18 +18,17 @@ export const SystemStatus: FC = () => {
     (state: { service: { services: ServiceStatusState } }) =>
       state.service.services
   );
-
   useEffect(() => {
     const eventSource = new EventSource(`/api/stream`);
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      if (data.type === 'status-update') {
+      if (data.type === StreamEventType.StatusUpdate) {
         const statuses = { statuses: data.statuses };
         dispatch(serviceSlice.actions.setStatus(statuses));
       }
 
-      if (data.type === 'log-update') {
+      if (data.type === StreamEventType.LogUpdate) {
         const { serviceName, content } = data;
         const newLines = content.split('\n');
         const trimmedLines = newLines.filter(
@@ -81,14 +81,13 @@ export const SystemStatus: FC = () => {
       ) : (
         <FlexBox col gap={2}>
           {Object.keys(services).map((serviceName) => {
-            const ServiceName = serviceName as ServiceNames;
-            const { isUp } = services[ServiceName];
+            const serviceKey = serviceName as ServiceNames;
+            const { isUp } = services[serviceKey];
             return (
               <CardRoot
                 key={serviceName}
                 onClick={() => {
                   dispatch(serviceSlice.actions.setActiveService(serviceName));
-                  dispatch(serviceSlice.actions.setLoading(true));
 
                   addPage({
                     page: {

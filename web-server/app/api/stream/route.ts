@@ -7,7 +7,9 @@ import {
   ServiceStatus,
   UPDATE_INTERVAL,
   LogFile,
-  LOG_FILES
+  LOG_FILES,
+  StreamEventType,
+  FileEvent
 } from '@/constants/stream';
 
 const execPromise = (command: string): Promise<string> => {
@@ -101,7 +103,9 @@ export async function GET(): Promise<Response> {
         try {
           const statuses = await getStatus();
           if (!streamClosed) {
-            controller.enqueue(sendEvent('status-update', { statuses }));
+            controller.enqueue(
+              sendEvent(StreamEventType.StatusUpdate, { statuses })
+            );
           }
         } catch (error) {
           console.error('Error sending statuses:', error);
@@ -122,7 +126,10 @@ export async function GET(): Promise<Response> {
           for await (const chunk of fileStream) {
             if (streamClosed) break;
             controller.enqueue(
-              sendEvent('log-update', { serviceName, content: chunk })
+              sendEvent(StreamEventType.LogUpdate, {
+                serviceName,
+                content: chunk
+              })
             );
             lastPositions[path] =
               (lastPositions[path] || 0) + Buffer.byteLength(chunk);
@@ -135,7 +142,7 @@ export async function GET(): Promise<Response> {
       const startWatchers = () => {
         LOG_FILES.forEach((logFile) => {
           const watcher = watch(logFile.path, async (eventType) => {
-            if (eventType === 'change' && !streamClosed) {
+            if (eventType === FileEvent.Change && !streamClosed) {
               await pushFileContent(logFile);
             }
           });
