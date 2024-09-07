@@ -80,7 +80,7 @@ export const SystemStatus: FC = () => {
       <Divider sx={{ mb: 2, backgroundColor: theme.colors.secondary.light }} />
 
       {loading ? (
-        <FlexBox justifyCenter alignCenter sx={{ minHeight: '50vh' }}>
+        <FlexBox justifyCenter alignCenter minHeight={'50vh'}>
           <CircularProgress size={'60px'} />
         </FlexBox>
       ) : (
@@ -133,20 +133,16 @@ export const SystemStatus: FC = () => {
                         lineHeight={'1.4'}
                         white
                       >
-                        Status:
-                      </Line>
-                      <Line
-                        fontWeight={'500'}
-                        fontSize={'0.95em'}
-                        lineHeight={'1.4'}
-                        color={
-                          isUp
-                            ? theme.colors.success.main
-                            : theme.colors.error.main
-                        }
-                        marginLeft={'8px'}
-                      >
-                        {isUp ? 'Healthy' : 'Not Operational'}{' '}
+                        Status:{' '}
+                        <span
+                          style={{
+                            color: isUp
+                              ? theme.colors.success.main
+                              : theme.colors.error.main
+                          }}
+                        >
+                          {isUp ? 'Healthy' : 'Not Operational'}
+                        </span>
                       </Line>
                     </FlexBox>
                   </FlexBox>
