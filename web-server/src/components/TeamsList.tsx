@@ -7,10 +7,11 @@ import {
   MenuItem,
   TextField
 } from '@mui/material';
+import { useRouter } from 'next/router';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { ascend } from 'ramda';
-import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
+import { FC, MouseEventHandler, useCallback, useEffect, useMemo } from 'react';
 import { truncate } from 'voca';
 
 import { ROUTES } from '@/constants/routes';
@@ -34,6 +35,8 @@ const HORIZONTAL_SPACE = 3 / 2;
 export const TeamsList = () => {
   const teamsArray = useSelector((state) => state.team.teams);
   const searchQuery = useEasyState('');
+  const router = useRouter();
+  const showCreate = useBoolState(false);
 
   const teamsArrayFiltered = useMemo(() => {
     if (!searchQuery.value) {
@@ -44,7 +47,6 @@ export const TeamsList = () => {
     );
   }, [searchQuery.value, teamsArray]);
 
-  const showCreate = useBoolState(false);
   const handleShowCreateTeam = useCallback(() => {
     depFn(showCreate.toggle);
   }, [showCreate.toggle]);
@@ -52,6 +54,13 @@ export const TeamsList = () => {
   const isLoadingTeams = useSelector(
     (state) => state.team?.requests?.teams === FetchState.REQUEST
   );
+
+  useEffect(() => {
+    if (router.query.create === 'true') {
+      showCreate.true();
+      router.replace(router.pathname, '');
+    }
+  }, [router, router.query.create, showCreate]);
 
   return (
     <>
