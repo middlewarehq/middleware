@@ -11,7 +11,8 @@ import {
   LogFile,
   LOG_FILES,
   StreamEventType,
-  FileEvent
+  FileEvent,
+  SendEventData
 } from '@/constants/stream';
 
 const execPromise = (command: string): Promise<string> =>
@@ -75,7 +76,10 @@ export async function GET(): Promise<Response> {
   let statusTimer: NodeJS.Timeout | null = null;
   const watchers: FSWatcher[] = [];
 
-  const sendEvent = (eventType: StreamEventType, data: unknown): Uint8Array =>
+  const sendEvent = (
+    eventType: StreamEventType,
+    data: SendEventData
+  ): Uint8Array =>
     encoder.encode(`data: ${JSON.stringify({ type: eventType, ...data })}\n\n`);
 
   const stream = new ReadableStream({

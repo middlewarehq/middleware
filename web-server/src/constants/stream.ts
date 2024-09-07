@@ -7,6 +7,17 @@ type LogFile = {
 
 type ServiceStatus = Record<ServiceNames, { isUp: boolean }>;
 
+type LogUpdateData = {
+  serviceName: ServiceNames;
+  content: string;
+};
+
+type StatusUpdateData = {
+  statuses: ServiceStatus;
+};
+
+type SendEventData = LogUpdateData | StatusUpdateData;
+
 const UPDATE_INTERVAL = 10000;
 
 const LOG_FILES: LogFile[] = [
@@ -37,5 +48,5 @@ enum FileEvent {
   Change = 'change'
 }
 
-export type { LogFile, ServiceStatus };
+export type { LogFile, ServiceStatus, SendEventData };
 export { UPDATE_INTERVAL, LOG_FILES, StreamEventType, FileEvent };

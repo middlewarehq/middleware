@@ -91,12 +91,15 @@ export const handleSyncServerRequest = <T = any>(
     .then(handleThen)
     .catch(handleCatch);
 
-export const getServerStatusCode = async (
+const getStatusCode = async (
   url: string,
-  params: AxiosRequestConfig<any> = { method: 'get' }
+  params: AxiosRequestConfig<any> = { method: 'get' },
+  server: 'internal' | 'sync' = 'internal'
 ): Promise<number> => {
+  const instance = server === 'internal' ? internal : internalSyncServer;
+
   try {
-    const response = await internal({
+    const response = await instance({
       url,
       ...params,
       headers: { 'Content-Type': 'application/json' }
@@ -110,21 +113,12 @@ export const getServerStatusCode = async (
   }
 };
 
-export const getSyncServerStatusCode = async (
+export const getServerStatusCode = (
   url: string,
-  params: AxiosRequestConfig<any> = { method: 'get' }
-): Promise<number> => {
-  try {
-    const response = await internalSyncServer({
-      url,
-      ...params,
-      headers: { 'Content-Type': 'application/json' }
-    });
-    return response.status;
-  } catch (error: any) {
-    if (error.response) {
-      return error.response.status;
-    }
-    throw error;
-  }
-};
+  params?: AxiosRequestConfig<any>
+) => getStatusCode(url, params, 'internal');
+
+export const getSyncServerStatusCode = (
+  url: string,
+  params?: AxiosRequestConfig<any>
+) => getStatusCode(url, params, 'sync');
