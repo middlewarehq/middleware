@@ -23,6 +23,7 @@ import {
   useTheme
 } from '@mui/material';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import pluralize from 'pluralize';
 import {
   FC,
@@ -54,7 +55,6 @@ import { depFn } from '@/utils/fn';
 import { defaultPopoverProps } from './defaultPopoverProps';
 
 import { useOverlayPage } from '../OverlayPageContext';
-import { useRouter } from 'next/router';
 
 export const TeamPopover: FC<{
   teamElRef: MutableRefObject<any>;
