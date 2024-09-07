@@ -1,10 +1,8 @@
-import { Box, CircularProgress, Divider, useTheme } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Button, CircularProgress, Divider, useTheme } from '@mui/material';
 import { FC, useEffect } from 'react';
 
 import { ServiceNames } from '@/constants/service';
 import { StreamEventType } from '@/constants/stream';
-import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { serviceSlice } from '@/slices/service';
 import { useDispatch, useSelector } from '@/store';
 
@@ -75,22 +73,16 @@ export const SystemStatus: FC = () => {
   };
 
   return (
-    <FlexBox col gap={2} sx={{ padding: '16px' }}>
-      <Line bold white fontSize="24px" sx={{ mb: 2 }}>
+    <FlexBox col gap={2} padding={'16px'}>
+      <Line bold white fontSize="24px" marginBottom={2}>
         System Status
       </Line>
-      <Divider sx={{ mb: 2, backgroundColor: 'rgba(255, 255, 255, 0.2)' }} />
+      <Divider sx={{ mb: 2, backgroundColor: theme.colors.secondary.light }} />
 
       {loading ? (
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <CircularProgress color="primary" size={50} />
-        </Box>
+        <FlexBox justifyCenter alignCenter sx={{ minHeight: '50vh' }}>
+          <CircularProgress size={'60px'} />
+        </FlexBox>
       ) : (
         <FlexBox col gap={2}>
           {Object.keys(services).map((serviceName) => {
@@ -99,23 +91,13 @@ export const SystemStatus: FC = () => {
             const borderColor = serviceColor[serviceKey];
 
             return (
-              <CardRoot
+              <Button
                 key={serviceName}
                 onClick={() => handleCardClick(serviceKey)}
                 sx={{
-                  transition: 'box-shadow 0.2s ease',
-                  '&:hover': {
-                    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
-                  },
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '12px',
                   border: `1px solid ${
-                    isUp ? borderColor : alpha(theme.colors.error.main, 0.3)
-                  }`,
-                  padding: '16px',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  overflow: 'hidden'
+                    isUp ? borderColor : theme.colors.error.main
+                  }`
                 }}
               >
                 <FlexBox col flexGrow={1} minHeight="5em">
@@ -123,48 +105,53 @@ export const SystemStatus: FC = () => {
                     <Line
                       white
                       bold
-                      sx={{
-                        fontSize: '1.2em',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}
+                      fontSize={'1.2em'}
+                      display={'flex'}
+                      alignItems={'center'}
                     >
                       {serviceTitle[serviceKey]}
-                      <Box
+                      <FlexBox
                         component="span"
-                        sx={{
-                          display: 'inline-block',
-                          marginLeft: '6px',
-                          width: '10px',
-                          height: '10px',
-                          borderRadius: '50%',
-                          backgroundColor: isUp
+                        marginLeft={'6px'}
+                        borderRadius={'50%'}
+                        width={'10px'}
+                        height={'10px'}
+                        bgcolor={
+                          isUp
                             ? theme.colors.success.main
                             : theme.colors.error.main
-                        }}
+                        }
                       />
                     </Line>
                   </FlexBox>
 
                   <FlexBox col relative fullWidth flexGrow={1}>
-                    <FlexBox
-                      alignCenter
-                      sx={{ width: '100%', paddingTop: '8px' }}
-                    >
+                    <FlexBox alignCenter fullWidth paddingTop={'8px'}>
                       <Line
-                        sx={{
-                          fontWeight: '500',
-                          fontSize: '0.95em',
-                          color: isUp ? '#28a745' : '#dc3545',
-                          lineHeight: '1.4'
-                        }}
+                        fontWeight={'500'}
+                        fontSize={'0.95em'}
+                        lineHeight={'1.4'}
+                        white
                       >
-                        {isUp ? 'Status: Healthy' : 'Status: Not Operational'}
+                        Status:
+                      </Line>
+                      <Line
+                        fontWeight={'500'}
+                        fontSize={'0.95em'}
+                        lineHeight={'1.4'}
+                        color={
+                          isUp
+                            ? theme.colors.success.main
+                            : theme.colors.error.main
+                        }
+                        marginLeft={'8px'}
+                      >
+                        {isUp ? 'Healthy' : 'Not Operational'}{' '}
                       </Line>
                     </FlexBox>
                   </FlexBox>
                 </FlexBox>
-              </CardRoot>
+              </Button>
             );
           })}
         </FlexBox>
