@@ -110,8 +110,7 @@ const Content = () => {
     if (hasCodeProviderLinked && !teamCount) {
       dispatch(
         fetchTeams({
-          org_id: orgId,
-          providers: integrationList
+          org_id: orgId
         })
       ).finally(loadedTeams.true);
     }

@@ -42,7 +42,7 @@ const repoSchema = yup.object().shape({
 
 const getSchema = yup.object().shape({
   providers: yup.array(
-    yup.string().oneOf(Object.values(Integration)).required()
+    yup.string().oneOf(Object.values(Integration)).optional()
   )
 });
 
@@ -86,7 +86,9 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   const teams = await getQuery;
   const reposWithWorkflows = await getSelectedReposForOrg(
     org_id,
-    providers as Integration[]
+    providers?.length
+      ? (providers as Integration[])
+      : [Integration.GITHUB, Integration.GITLAB]
   ).then((res) => res.flat());
 
   res.send({

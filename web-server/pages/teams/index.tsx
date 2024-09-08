@@ -24,12 +24,11 @@ function Page() {
     depFn(loading.true);
     await dispatch(
       fetchTeams({
-        org_id: orgId,
-        providers: integrationList
+        org_id: orgId
       })
     );
     depFn(loading.false);
-  }, [dispatch, integrationList, loading.false, loading.true, orgId]);
+  }, [dispatch, loading.false, loading.true, orgId]);
 
   useEffect(() => {
     if (!orgId) return;
