@@ -74,13 +74,12 @@ export const SystemStatus: FC = () => {
 
   return (
     <FlexBox col gap={2} padding={'16px'}>
-      <Line bold white fontSize="24px" marginBottom={2}>
+      <Line bold white huge marginBottom={2}>
         System Status
       </Line>
       <Divider sx={{ mb: 2, backgroundColor: theme.colors.secondary.light }} />
-
       {loading ? (
-        <FlexBox justifyCenter alignCenter minHeight={'50vh'}>
+        <FlexBox justifyCenter alignCenter fill>
           <CircularProgress size={'60px'} />
         </FlexBox>
       ) : (
@@ -102,13 +101,7 @@ export const SystemStatus: FC = () => {
               >
                 <FlexBox col flexGrow={1} minHeight="5em">
                   <FlexBox alignCenter justifyContent="space-between">
-                    <Line
-                      white
-                      bold
-                      fontSize={'1.2em'}
-                      display={'flex'}
-                      alignItems={'center'}
-                    >
+                    <Line white bold bigish display={'flex'}>
                       {serviceTitle[serviceKey]}
                       <FlexBox
                         component="span"
@@ -127,12 +120,7 @@ export const SystemStatus: FC = () => {
 
                   <FlexBox col relative fullWidth flexGrow={1}>
                     <FlexBox alignCenter fullWidth paddingTop={'8px'}>
-                      <Line
-                        fontWeight={'500'}
-                        fontSize={'0.95em'}
-                        lineHeight={'1.4'}
-                        white
-                      >
+                      <Line semibold white>
                         Status:{' '}
                         <span
                           style={{
