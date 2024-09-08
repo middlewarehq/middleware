@@ -57,10 +57,10 @@ export const TeamsList = () => {
 
   useEffect(() => {
     if (router.query.create === 'true') {
-      showCreate.true();
+      depFn(showCreate.true);
       router.replace(router.pathname, '');
     }
-  }, [router, router.query.create, showCreate]);
+  }, [router, showCreate.true]);
 
   return (
     <>

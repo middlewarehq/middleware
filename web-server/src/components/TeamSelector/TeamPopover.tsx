@@ -330,10 +330,10 @@ export const TeamPopover: FC<{
                   'We getting your teams together, but someone seems missing 🤔'
                 )}
               </Scrollbar>
-              {apiTeams.length && (
-                <FlexBox flex1 marginTop={'5px'}>
-                  <Button variant="contained" onClick={addTeam}>
-                    <FlexBox centered gap1 fullWidth>
+              {apiTeams.length > 0 && (
+                <FlexBox marginTop={'10px'}>
+                  <Button fullWidth variant="outlined" onClick={addTeam}>
+                    <FlexBox>
                       <Add fontSize="small" /> Add new team
                     </FlexBox>
                   </Button>
