@@ -266,7 +266,8 @@ export const TeamsCRUDProvider: React.FC<{
           fetchTeamsAndRepos();
 
           const team = res.payload.team;
-          dispatch(appSlice.actions.setSingleTeam([team]));
+          const singleTeam = { ...team, is_deleted: false };
+          dispatch(appSlice.actions.setSingleTeam([singleTeam]));
 
           callBack?.(res);
         })
