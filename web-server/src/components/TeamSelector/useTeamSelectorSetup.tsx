@@ -52,10 +52,10 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
 
   const fetchAllTeams = useCallback(async () => {
     await Promise.all([
-      dispatch(fetchTeams({ org_id: orgId, providers: integrationList })),
+      dispatch(fetchTeams({ org_id: orgId })),
       dispatch(updateTeamBranchesMap({ orgId }))
     ]);
-  }, [dispatch, integrationList, orgId]);
+  }, [dispatch, orgId]);
 
   const apiTeams = useSelector((state) => state.team.teams);
   const loadingTeams = useSelector(

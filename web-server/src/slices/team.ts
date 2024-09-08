@@ -135,7 +135,7 @@ export const teamSlice = createSlice({
 
 export const fetchTeams = createAsyncThunk(
   'teams/fetchTeams',
-  async (params: { org_id: ID; providers: Integration[] }) => {
+  async (params: { org_id: ID; providers?: Integration[] }) => {
     return await handleApi<{
       teams: Team[];
       teamReposMap: Record<ID, DB_OrgRepo[]>;

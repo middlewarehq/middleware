@@ -257,7 +257,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
 const MoreOptions = ({ teamId }: { teamId: ID }) => {
   const dispatch = useDispatch();
   const { enqueueSnackbar } = useSnackbar();
-  const { orgId, integrationList } = useAuth();
+  const { orgId } = useAuth();
   const anchorEl = useEasyState();
   const loading = useBoolState(false);
   const cancelMenu = useBoolState(false);
@@ -285,7 +285,7 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
               variant: 'success',
               autoHideDuration: 2000
             });
-            dispatch(fetchTeams({ org_id: orgId, providers: integrationList }));
+            dispatch(fetchTeams({ org_id: orgId }));
             handleCloseMenu();
           } else {
             enqueueSnackbar('Failed to delete team', {
@@ -301,7 +301,6 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
       dispatch,
       enqueueSnackbar,
       handleCloseMenu,
-      integrationList,
       loading.false,
       loading.true,
       orgId

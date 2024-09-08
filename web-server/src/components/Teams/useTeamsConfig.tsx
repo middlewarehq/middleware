@@ -86,7 +86,7 @@ export const TeamsCRUDProvider: React.FC<{
   const dispatch = useDispatch();
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
-  const { orgId, integrationList } = useAuth();
+  const { orgId } = useAuth();
 
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
@@ -97,11 +97,10 @@ export const TeamsCRUDProvider: React.FC<{
     dispatch(fetchCurrentOrg());
     dispatch(
       fetchTeams({
-        org_id: orgId,
-        providers: integrationList
+        org_id: orgId
       })
     );
-  }, [dispatch, integrationList, orgId]);
+  }, [dispatch, orgId]);
 
   // team name logic
   const teamName = useEasyState('');
