@@ -251,7 +251,7 @@ export const TeamsCRUDProvider: React.FC<{
           provider: Integration.GITHUB
         })
       )
-        .then((res) => {
+        .then((res: any) => {
           if (res.meta.requestStatus === 'rejected') {
             enqueueSnackbar('Failed to create team', {
               variant: 'error',
@@ -264,10 +264,10 @@ export const TeamsCRUDProvider: React.FC<{
             autoHideDuration: 2000
           });
           fetchTeamsAndRepos();
-          if (res.payload) {
-            const team = (res as { payload: { team: Team } }).payload.team;
-            dispatch(appSlice.actions.setSingleTeam([team]));
-          }
+
+          const team = res.payload.team;
+          dispatch(appSlice.actions.setSingleTeam([team]));
+
           callBack?.(res);
         })
         .finally(isSaveLoading.false);
