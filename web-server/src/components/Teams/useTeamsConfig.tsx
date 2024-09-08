@@ -14,7 +14,7 @@ import {
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
-import { updateTeamBranchesMap } from '@/slices/app';
+import { appSlice, updateTeamBranchesMap } from '@/slices/app';
 import { fetchCurrentOrg } from '@/slices/auth';
 import { fetchTeams, createTeam, updateTeam } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
@@ -262,6 +262,10 @@ export const TeamsCRUDProvider: React.FC<{
             autoHideDuration: 2000
           });
           fetchTeamsAndRepos();
+          if (res.payload) {
+            const team = (res as { payload: { team: Team } }).payload.team;
+            dispatch(appSlice.actions.setSingleTeam([team]));
+          }
           callBack?.(res);
         })
         .finally(isSaveLoading.false);
