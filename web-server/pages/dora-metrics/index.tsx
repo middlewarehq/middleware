@@ -15,9 +15,7 @@ function Page() {
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.metrics_summary === FetchState.REQUEST
   );
-  const {
-    integrations: { github: isGithubIntegrated }
-  } = useAuth();
+  const { integrationList } = useAuth();
 
   return (
     <PageWrapper
@@ -30,7 +28,7 @@ function Page() {
       isLoading={isLoading}
       teamDateSelectorMode="single"
     >
-      {isGithubIntegrated ? <DoraMetricsBody /> : <Loader />}
+      {integrationList.length > 0 ? <DoraMetricsBody /> : <Loader />}
     </PageWrapper>
   );
 }

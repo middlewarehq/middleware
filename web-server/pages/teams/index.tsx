@@ -4,7 +4,6 @@ import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 import { FlexBox } from '@/components/FlexBox';
 import { CreateEditTeams, Loader } from '@/components/Teams/CreateTeams';
 import { TeamsList } from '@/components/TeamsList';
-import { Integration } from '@/constants/integrations';
 import { useRedirectWithSession } from '@/constants/useRoute';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,10 +16,7 @@ import { depFn } from '@/utils/fn';
 function Page() {
   useRedirectWithSession();
   const dispatch = useDispatch();
-  const {
-    orgId,
-    integrations: { github: isGithubIntegrated }
-  } = useAuth();
+  const { orgId, integrationList } = useAuth();
   const teamsList = useSelector((state) => state.team.teams);
   const loading = useBoolState(!Boolean(teamsList.length));
 
@@ -28,8 +24,7 @@ function Page() {
     depFn(loading.true);
     await dispatch(
       fetchTeams({
-        org_id: orgId,
-        provider: Integration.GITHUB
+        org_id: orgId
       })
     );
     depFn(loading.false);
@@ -51,7 +46,7 @@ function Page() {
       showEvenIfNoTeamSelected
       hideAllSelectors
     >
-      {isGithubIntegrated && !loading.value ? (
+      {integrationList.length && !loading.value ? (
         <FlexBox col gap={4}>
           {teamsList.length ? <TeamsList /> : <CreateEditTeams />}
         </FlexBox>

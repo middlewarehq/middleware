@@ -15,7 +15,6 @@ import { FC, useCallback, useMemo } from 'react';
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
-import { Integration } from '@/constants/integrations';
 import { useAuth } from '@/hooks/useAuth';
 import { useEasyState, useBoolState } from '@/hooks/useEasyState';
 import {
@@ -38,7 +37,7 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
   const nextPageToken = useEasyState<string | null>('');
   const loading = useBoolState();
   const { updateWorkflowsForTeam } = useTeamCRUD();
-  const provider = Integration.GITHUB;
+  const provider = repo.provider;
 
   const selectedOptions = useMemo(
     () =>

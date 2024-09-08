@@ -3,7 +3,6 @@ import pluralize, { plural } from 'pluralize';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 
-import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useStateTeamConfig } from '@/hooks/useStateTeamConfig';
@@ -22,10 +21,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   const dispatch = useDispatch();
   const { dateRange, singleTeam, setRange, partiallyUnselected } =
     useStateTeamConfig();
-  const {
-    orgId,
-    integrations: { github: isGithubIntegrations }
-  } = useAuth();
+  const { orgId, integrationList } = useAuth();
   const [showAllTeams, setShowAllTeams] = useState(true);
   const activeBranchMode = useSelector((state) => state.app.branchMode);
   const isAllBranchMode = activeBranchMode === ActiveBranchMode.ALL;
@@ -56,7 +52,7 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
 
   const fetchAllTeams = useCallback(async () => {
     await Promise.all([
-      dispatch(fetchTeams({ org_id: orgId, provider: Integration.GITHUB })),
+      dispatch(fetchTeams({ org_id: orgId })),
       dispatch(updateTeamBranchesMap({ orgId }))
     ]);
   }, [dispatch, orgId]);
@@ -69,8 +65,8 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   useEffect(() => {
     if (!orgId) return;
 
-    if (isGithubIntegrations) fetchAllTeams();
-  }, [fetchAllTeams, isGithubIntegrations, orgId]);
+    if (integrationList.length) fetchAllTeams();
+  }, [fetchAllTeams, integrationList.length, orgId]);
 
   const dateRangeLabel = !partiallyUnselected
     ? `${format(dateRange[0], 'do MMM')} to ${format(dateRange[1], 'do MMM')}`

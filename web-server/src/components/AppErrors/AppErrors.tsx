@@ -34,6 +34,7 @@ const Subtitle: typeof Typography = (props: any) => (
 const providerNameMap: Partial<Record<Integration, string>> = {
   [Integration.GOOGLE]: 'Google Calendar',
   [Integration.GITHUB]: 'GitHub',
+  [Integration.GITLAB]: 'Gitlab',
   [Integration.JIRA]: 'Jira',
   [Integration.BITBUCKET]: 'Bitbucket'
 };

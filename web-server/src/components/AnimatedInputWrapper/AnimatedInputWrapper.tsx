@@ -4,17 +4,26 @@ import styles from './slider.module.css';
 
 const AnimatedInputWrapper = () => {
   return (
-    <div className={styles.placeholder}>
+    <div
+      className={styles.placeholder}
+      style={{ minWidth: '200px', zIndex: 2 }}
+    >
       <AnimatedPlaceHolderWrapper />
     </div>
   );
 };
 
-const popRepos = ['golang/go', 'mozilla/rust', 'apple/swift', 'oven-sh/bun'];
+const popRepos = [
+  'Search for golang/go',
+  'https://gitlab.com/ase/ase',
+  '...or mozilla/rust',
+  'github.com/oven-sh/bun',
+  '...even apple/swift'
+];
+
 const AnimatedPlaceHolderWrapper = () => {
   return (
     <div className={styles.animationWrapper}>
-      <span>Search for</span>
       <AnimatedRepos />
     </div>
   );
@@ -33,7 +42,7 @@ const AnimatedRepos = () => {
     return () => clearInterval(interval);
   });
   return (
-    <div className={styles.textslide}>
+    <div className={styles.textslide} style={{ zIndex: 2, minWidth: '300px' }}>
       <div
         className={styles.text}
         style={{ bottom: animationIndex * 1.4 + 'em' }}
