@@ -141,14 +141,7 @@ const Content = () => {
   return (
     <FlexBox col gap2>
       <FlexBox justifyBetween height={'52px'} alignCenter>
-        <Line
-          white
-          fontSize={'24px'}
-          sx={{
-            opacity: showDoraCTA || showCreationCTA ? 0.4 : 1,
-            transition: 'all 0.2s ease'
-          }}
-        >
+        <Line white fontSize={'24px'}>
           Integrate your Code Providers to fetch DORA for your team
         </Line>
         {showDoraCTA && (
