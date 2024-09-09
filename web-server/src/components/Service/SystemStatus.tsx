@@ -17,7 +17,7 @@ const serviceTitle: Record<ServiceNames, string> = {
   [ServiceNames.SYNC_SERVER]: 'Sync Server'
 };
 
-const serviceColor: Record<ServiceNames, string> = {
+export const serviceColor: Record<ServiceNames, string> = {
   [ServiceNames.API_SERVER]: '#06d6a0',
   [ServiceNames.REDIS]: '#ef476f',
   [ServiceNames.POSTGRES]: '#ff70a6',
@@ -74,16 +74,16 @@ export const SystemStatus: FC = () => {
 
   return (
     <FlexBox col gap={2} padding={'16px'}>
-      <Line bold white huge marginBottom={2}>
+      <Line bold white huge>
         System Status
       </Line>
-      <Divider sx={{ mb: 2, backgroundColor: theme.colors.secondary.light }} />
+      <Divider sx={{ my: 1, backgroundColor: theme.colors.secondary.light }} />
       {loading ? (
         <FlexBox justifyCenter alignCenter fill>
           <CircularProgress size={'60px'} />
         </FlexBox>
       ) : (
-        <FlexBox col gap={2}>
+        <FlexBox grid gridTemplateColumns={'1fr 1fr'} gap={2}>
           {Object.keys(services).map((serviceName) => {
             const serviceKey = serviceName as ServiceNames;
             const { isUp } = services[serviceKey];
