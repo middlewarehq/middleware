@@ -95,7 +95,7 @@ export const TeamsCRUDProvider: React.FC<{
   const fetchTeamsAndRepos = useCallback(() => {
     // refetch session to update the  onboarding state of org
     dispatch(fetchCurrentOrg());
-    dispatch(
+    return dispatch(
       fetchTeams({
         org_id: orgId
       })
@@ -261,11 +261,17 @@ export const TeamsCRUDProvider: React.FC<{
             variant: 'success',
             autoHideDuration: 2000
           });
-          fetchTeamsAndRepos();
+          const createdTeam = res.payload.team;
 
-          const team = res.payload.team;
-          const singleTeam = { ...team, is_deleted: false };
-          dispatch(appSlice.actions.setSingleTeam([singleTeam]));
+          fetchTeamsAndRepos().then((res: any) => {
+            if (res.meta.requestStatus === 'fulfilled') {
+              const { teams } = res.payload;
+              const singleTeam = teams.find(
+                (team: Team) => team.id === createdTeam.id
+              );
+              dispatch(appSlice.actions.setSingleTeam([singleTeam]));
+            }
+          });
 
           callBack?.(res);
         })
