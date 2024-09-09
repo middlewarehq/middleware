@@ -331,9 +331,9 @@ export const TeamPopover: FC<{
                 )}
               </Scrollbar>
               {Boolean(apiTeams.length) && (
-                <FlexBox marginTop={'10px'}>
+                <FlexBox centered marginTop={2}>
                   <Button fullWidth variant="outlined" onClick={addTeam}>
-                    <FlexBox>
+                    <FlexBox centered>
                       <Add fontSize="small" /> Add new team
                     </FlexBox>
                   </Button>

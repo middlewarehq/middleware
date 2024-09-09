@@ -271,7 +271,9 @@ export const TeamsCRUDProvider: React.FC<{
               const singleTeam = teams.find(
                 (team: Team) => team.id === createdTeam.id
               );
-              dispatch(appSlice.actions.setSingleTeam([singleTeam]));
+              if (singleTeam) {
+                dispatch(appSlice.actions.setSingleTeam([singleTeam]));
+              }
             }
           });
 
