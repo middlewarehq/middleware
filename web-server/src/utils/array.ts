@@ -3,6 +3,7 @@ import {
   secondsInDay,
   secondsInHour,
   secondsInMinute,
+  secondsInMonth,
   secondsInWeek
 } from 'date-fns/constants';
 import { last } from 'ramda';
@@ -25,11 +26,11 @@ export const generateArrayWithSteps = (n: number, s: number) => {
   }
   const generatedArray = Array.from(
     { length: Math.floor(n / s) + 1 },
-    (_, index) => Number((index * s).toFixed(0))
+    (_, index) => roundDecimalPlaces(index * s)
   );
   const biggestElement = last(generatedArray);
   if (biggestElement < n) {
-    generatedArray.push(Number((biggestElement + s).toFixed(0)));
+    generatedArray.push(roundDecimalPlaces(biggestElement + s));
   }
   return generatedArray;
 };
@@ -37,73 +38,20 @@ export const generateArrayWithSteps = (n: number, s: number) => {
 export type TickArrayOptions = {
   wholeNumbers?: boolean;
   isTimeBased?: boolean;
+  percentageBased?: boolean;
 };
 
 export const createTickArray = (
   data: { x?: DatumValue; y: number }[],
   options: TickArrayOptions = {}
 ) => {
-  const n: number =
-    data.reduce((acc, cur) => (acc > cur.y ? acc : cur.y), 0) + 1;
+  const n: number = data.reduce((acc, cur) => (acc > cur.y ? acc : cur.y), 0);
   let step = 1;
 
-  if (options.isTimeBased && n > 10) {
-    {
-      if (n < 20) {
-        step = 2;
-      } else if (n < 30) {
-        step = 5;
-      } else if (n < secondsInMinute) {
-        step = 10;
-      } else if (n < 2 * secondsInMinute) {
-        step = 15;
-      } else if (n < 5 * secondsInMinute) {
-        step = 30;
-      } else if (n < 10 * secondsInMinute) {
-        step = secondsInMinute;
-      } else if (n < 20 * secondsInMinute) {
-        step = 2 * secondsInMinute;
-      } else if (n < 30 * secondsInMinute) {
-        step = 5 * secondsInMinute;
-      } else if (n < secondsInHour) {
-        step = 10 * secondsInMinute;
-      } else if (n < 2 * secondsInHour) {
-        step = 15 * secondsInMinute;
-      } else if (n < 5 * secondsInHour) {
-        step = 30 * secondsInMinute;
-      } else if (n < 10 * secondsInHour) {
-        step = secondsInHour;
-      } else if (n < 20 * secondsInHour) {
-        step = 2 * secondsInHour;
-      } else if (n < secondsInDay) {
-        step = 4 * secondsInHour;
-      } else if (n < 2 * secondsInDay) {
-        step = 6 * secondsInHour;
-      } else if (n < 3 * secondsInDay) {
-        step = 8 * secondsInHour;
-      } else if (n < secondsInWeek) {
-        step = secondsInDay;
-      } else if (n < 2 * secondsInWeek) {
-        step = 2 * secondsInDay;
-      } else if (n < 3 * secondsInWeek) {
-        step = 3 * secondsInDay;
-      } else {
-        step = secondsInWeek;
-      }
-      return generateArrayWithSteps(n, step);
-    }
-  }
-  const numberOfDigits = Math.round(n).toString().length;
-  const order = Math.pow(10, numberOfDigits - 1);
-
-  const twoStep = order * 2; // steps of 2, 20, 200...
-  const fiveStep = order * 5; // steps of 5, 50, 500...
-  const tenStep = order * 10; // steps of 10, 100, 1000...
-  if (n < twoStep) step = twoStep / 10;
-  else if (n < fiveStep) step = fiveStep / 10;
-  else if (n < tenStep) step = tenStep / 10;
-
-  if (options.wholeNumbers) step = Math.ceil(step);
+  if (options.isTimeBased && n > 10) step = getTimeBasedStep(n);
+  else if (options.percentageBased && n > 67) step = getStep(n, true);
+  else if (n > 2 || options.wholeNumbers) step = getStep(n);
+  else step = getSmallStep(n);
 
   return generateArrayWithSteps(n, step);
 };
@@ -125,4 +73,120 @@ export const roundDecimalPlaces = (
   roundingDigits: number = 2
 ) => {
   return Number(value?.toFixed(roundingDigits));
+};
+
+const getSmallStep = (n: number) => {
+  const ballPark = n / 3; // get roughly around 3-5 steps
+  const readableIntervals = [0.01, 0.05, 0.1, 0.2, 0.25, 0.5];
+  readableIntervals.sort(
+    (x, y) => Math.abs(ballPark - x) - Math.abs(ballPark - y)
+  );
+  return readableIntervals[0];
+};
+
+const getStep = (n: number, percentageBased: boolean = false) => {
+  const ballPark = n / 3; // get roughly around 3-5 steps
+  let a, twos;
+  a = twos = 2;
+
+  let b, fives;
+  b = fives = 5;
+
+  let c, tens;
+  c = tens = 10;
+
+  let d, twentyFives;
+  d = twentyFives = 5;
+
+  while (a <= ballPark) {
+    twos = a;
+    a *= 10;
+  }
+  while (b <= ballPark) {
+    fives = b;
+    b *= 10;
+  }
+  while (c <= ballPark) {
+    tens = c;
+    c *= 10;
+  }
+  while (d <= ballPark) {
+    twentyFives = d;
+    d *= 5;
+  }
+  const readableIntervals = [
+    1,
+    a,
+    b,
+    c,
+    twos,
+    fives,
+    tens,
+    15,
+    twentyFives,
+    30,
+    250
+  ].filter((val) => {
+    if (!percentageBased) return true;
+    if (n > 67) return 100 % val === 0;
+    return true;
+  });
+
+  readableIntervals.sort(
+    (x, y) => Math.abs(ballPark - x) - Math.abs(ballPark - y)
+  );
+
+  return readableIntervals[0];
+};
+
+const readableTimeIntervals = [
+  10,
+  15,
+  20,
+  30,
+  secondsInMinute,
+  2 * secondsInMinute,
+  5 * secondsInMinute,
+  10 * secondsInMinute,
+  15 * secondsInMinute,
+  20 * secondsInMinute,
+  30 * secondsInMinute,
+  45 * secondsInMinute,
+  secondsInHour,
+  2 * secondsInHour,
+  3 * secondsInHour,
+  4 * secondsInHour,
+  6 * secondsInHour,
+  8 * secondsInHour,
+  12 * secondsInHour,
+  secondsInDay,
+  2 * secondsInDay,
+  3 * secondsInDay,
+  4 * secondsInDay,
+  5 * secondsInDay,
+  6 * secondsInDay,
+  7 * secondsInDay,
+  secondsInWeek,
+  2 * secondsInWeek,
+  3 * secondsInWeek,
+  secondsInMonth
+];
+
+const getTimeBasedStep = (n: number) => {
+  const ballPark = n / 3; // get roughly around 3-5 steps
+
+  let i = 0;
+  let j = 1;
+
+  while (readableTimeIntervals[j] <= ballPark) {
+    i = j;
+    j++;
+  }
+
+  const [a, b] = [
+    Math.abs(ballPark - readableTimeIntervals[i]),
+    Math.abs(ballPark - readableTimeIntervals[j])
+  ];
+
+  return a < b ? readableTimeIntervals[i] : readableTimeIntervals[j];
 };
