@@ -2,13 +2,13 @@ from typing import Dict
 
 from flask import Blueprint
 from voluptuous import Required, Schema, Coerce, All, Optional
-from werkzeug.exceptions import BadRequest, NotFound
+from werkzeug.exceptions import BadRequest
 
 from mhq.api.request_utils import dataschema, queryschema, uuid_validator
 from mhq.api.resources.settings_resource import adapt_configuration_settings_response
 from mhq.service.query_validator import get_query_validator
 from mhq.service.settings import get_settings_service, settings_type_validator
-from mhq.store.models import Organization, Users, SettingType, EntityType
+from mhq.store.models import SettingType, EntityType
 
 app = Blueprint("settings", __name__)
 
@@ -106,7 +106,7 @@ def put_team_settings(
 def get_org_settings(org_id: str, setting_type: SettingType, setter_id: str = None):
 
     query_validator = get_query_validator()
-    org: Organization = query_validator.org_validator(org_id)
+    query_validator.org_validator(org_id)
 
     setter = None
 
@@ -151,7 +151,7 @@ def put_org_settings(
     setting_data: Dict = None,
 ):
     query_validator = get_query_validator()
-    org: Organization = query_validator.org_validator(org_id)
+    query_validator.org_validator(org_id)
 
     setter = None
 

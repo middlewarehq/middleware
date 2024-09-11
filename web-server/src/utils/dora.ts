@@ -23,7 +23,7 @@ export enum Industries {
   OTHER = 'Other'
 }
 
-export const IndustryStandardsDoraScores: { [key in Industries]: number } = {
+export const IndustryStandardsDoraScores: Record<Industries, number> = {
   [Industries.ALL_INDUSTRIES]: 6.3,
   [Industries.EDUCATION]: 6.5,
   [Industries.ENERGY]: 6.1,
@@ -40,12 +40,21 @@ export const IndustryStandardsDoraScores: { [key in Industries]: number } = {
   [Industries.OTHER]: 6.7
 };
 
+/**
+ * Calculates the DORA (DevOps Research and Assessment) score based on the provided parameters.
+ *
+ * @param {Object} params - An object containing the following properties:
+ * @param {number | null} [params.lt] - Lead Time for Changes
+ * @param {number | null} [params.df] - Weekly Deployment Frequency. IMPORTANT: must be weekly
+ * @param {number | null} [params.cfr] - Change Failure Rate
+ * @param {number | null} [params.mttr] - Mean Time to Recovery.
+ */
 export const getDoraScore = ({
   lt,
   df,
   cfr,
   mttr
-}: Partial<Record<'lt' | 'df' | 'cfr' | 'mttr', number>>) => {
+}: Partial<Record<'lt' | 'df' | 'cfr' | 'mttr', number | null>>) => {
   const ltMttrBreakpoints = [
     secondsInMonth * 6,
     secondsInMonth,
@@ -85,7 +94,10 @@ export const getDoraScore = ({
         : null
   };
 
-  const filteredScores = reject(isNil, scores) as Partial<typeof scores>;
+  const filteredScores = reject(isNil, scores) as Record<
+    keyof typeof scores,
+    number
+  >;
 
   const rawAvg = mean(Object.values(filteredScores));
   const avg = rawAvg ? Number(rawAvg.toFixed(1)) : null;

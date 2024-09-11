@@ -2,7 +2,8 @@ import {
   ExtensionTwoTone,
   GroupsTwoTone,
   Analytics,
-  Settings
+  Settings,
+  Dns
 } from '@mui/icons-material';
 
 import { ROUTES } from '@/constants/routes';
@@ -65,6 +66,11 @@ const menuItems = (): MenuItems[] => [
         name: 'Settings',
         icon: Settings,
         link: ROUTES.SETTINGS.PATH
+      },
+      {
+        name: 'System Logs',
+        icon: Dns,
+        link: ROUTES.SYSTEM_LOGS.PATH
       }
     ]
   }

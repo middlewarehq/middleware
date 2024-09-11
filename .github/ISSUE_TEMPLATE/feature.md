@@ -17,7 +17,7 @@ labels: enhancement
 - [ ] TODO 2
 - [ ] TODO 3
 
-## Further Comments / References  
+## Further Comments / References
 
 <!-- Any additional comments for this . -->
 <!-- Add References to similar features provided by any other platform(if possible)  -->

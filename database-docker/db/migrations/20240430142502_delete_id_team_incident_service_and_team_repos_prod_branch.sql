@@ -9,4 +9,3 @@ ADD CONSTRAINT "TeamIncidentService_composite_pkey" PRIMARY KEY (team_id, servic
 ALTER TABLE public."TeamRepos" DROP COLUMN prod_branch;
 
 -- migrate:down
-

@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 from urllib.parse import unquote
 from mhq.store.models.code.pull_requests import PullRequest
 from uuid import UUID
 from werkzeug.exceptions import BadRequest
 
-from mhq.store.models.code.repository import TeamRepos
 from mhq.service.deployments.models.models import Deployment, DeploymentType
 
 

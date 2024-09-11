@@ -17,6 +17,7 @@ import {
   FetchTeamsResponse,
   ImageStatusApiResponse
 } from '@/types/resources';
+import { Industries } from '@/utils/dora';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
 import { fetchTeams } from './team';
@@ -54,6 +55,7 @@ type State = StateFetchConfig<{
   lastSyncedAt: Date | null;
   lastDisabledImageUpdateBannerAt: DateString | null;
   latestImageStatus: ImageStatusApiResponse | null;
+  selectedIndustry: Industries;
   githubRepoStarsCount: number | null;
 }>;
 
@@ -95,6 +97,7 @@ const initialState: State = {
   lastSyncedAt: null,
   lastDisabledImageUpdateBannerAt: null,
   latestImageStatus: null,
+  selectedIndustry: Industries.ALL_INDUSTRIES,
   githubRepoStarsCount: null
 };
 
@@ -196,6 +199,9 @@ export const appSlice = createSlice({
       action: PayloadAction<ImageStatusApiResponse | null>
     ) {
       state.latestImageStatus = action.payload;
+    },
+    setIndustry(state: State, action: PayloadAction<Industries>) {
+      state.selectedIndustry = action.payload;
     }
   },
   extraReducers: (builder) => {

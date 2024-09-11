@@ -8,11 +8,13 @@ import {
   ChangeFailureRateApiResponse,
   LeadTimeApiResponse,
   LeadTimeTrendsApiResponse,
-  DeploymentFrequencyApiResponse,
   DeploymentFrequencyTrends,
   MeanTimeToRestoreApiTrendsResponse,
-  ChangeFailureRateTrendsApiResponse
+  ChangeFailureRateTrendsApiResponse,
+  UpdatedDeploymentFrequencyAnalyticsResponseV2
 } from '@/types/resources';
+
+import { adaptDeploymentFrequencyAndGetBadge } from './adapt_deployment_frequency';
 
 export const getFilters = (filtersArray: any[], teamIds: ID[]) => {
   return teamIds.reduce((objectSoFar, currentTeamId, currentIndex) => {
@@ -250,18 +252,18 @@ export const fetchDeploymentFrequencyStats = async (params: {
   } = params;
 
   const [
-    currDeploymentFrequencyResponse,
-    prevDeploymentFrequencyResponse,
-    currDeploymentFrequencyTrends,
-    prevDeploymentFrequencyTrends
+    currDeploymentFrequencyResponsev2,
+    prevDeploymentFrequencyResponsev2,
+    currDeploymentFrequencyTrendsv2,
+    prevDeploymentFrequencyTrendsv2
   ] = await Promise.all([
-    handleRequest<DeploymentFrequencyApiResponse>(
+    handleRequest<UpdatedDeploymentFrequencyAnalyticsResponseV2>(
       `/teams/${teamId}/deployment_frequency`,
       {
         params: { ...prFilter, ...workflowFilter, ...currStatsTimeObject }
       }
     ),
-    handleRequest<DeploymentFrequencyApiResponse>(
+    handleRequest<UpdatedDeploymentFrequencyAnalyticsResponseV2>(
       `/teams/${teamId}/deployment_frequency`,
       {
         params: {
@@ -288,15 +290,49 @@ export const fetchDeploymentFrequencyStats = async (params: {
       }
     )
   ]);
+  const teams_map = currDeploymentFrequencyResponsev2.teams_map;
+  const users_map = currDeploymentFrequencyResponsev2.users_map;
+
+  const currentDeploymentFrequency = removeMapsFromObj(
+    adaptDeploymentFrequencyAndGetBadge(currDeploymentFrequencyResponsev2)
+  );
 
   return {
+    teams_map,
+    users_map,
     deployment_frequency_stats: {
-      current: currDeploymentFrequencyResponse,
-      previous: prevDeploymentFrequencyResponse
+      current: currentDeploymentFrequency,
+      previous: removeMapsFromObj(
+        adaptDeploymentFrequencyAndGetBadge(
+          prevDeploymentFrequencyResponsev2,
+          currentDeploymentFrequency.duration
+        )
+      )
     },
-    deployment_frequency_trends: {
-      current: currDeploymentFrequencyTrends,
-      previous: prevDeploymentFrequencyTrends
-    }
+    deployment_frequency_trends: combinePreviousAndCurrent(
+      currDeploymentFrequencyTrendsv2,
+      prevDeploymentFrequencyTrendsv2
+    )
+  };
+};
+
+const removeMapsFromObj = (
+  obj: UpdatedDeploymentFrequencyAnalyticsResponseV2 & {
+    duration: 'day' | 'week' | 'month';
+  }
+) => {
+  const temp = { ...obj };
+  delete temp.teams_map;
+  delete temp.users_map;
+  return temp;
+};
+
+const combinePreviousAndCurrent = (
+  current: Record<string, any>,
+  previous: Record<string, any>
+) => {
+  return {
+    current,
+    previous
   };
 };

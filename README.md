@@ -114,9 +114,9 @@ They are:
 
 ### ☁️ Using GitPod
 
-Gitpod enables development on remote machines and helps you get started with Middleware if your machine does not support running the project locally. 
+Gitpod enables development on remote machines and helps you get started with Middleware if your machine does not support running the project locally.
 
-If you want to run the project locally you can [setup using docker](#-using-docker) or [setup everything manually](#-manual-setup). 
+If you want to run the project locally you can [setup using docker](#-using-docker) or [setup everything manually](#-manual-setup).
 
 1. Click the button below to open this project in Gitpod.
 
@@ -162,8 +162,8 @@ Make sure docker is running.
     - The postgres database can be accessed at host: `localhost`, port: `5434`, username: `postgres`, password: `postgres`, db name: `mhq-oss`.
     - The redis server can be accessed at host: `localhost`, port: `6385`.
 
-5. **View the logs**: Although the CLI tracks all logs, the logs of services running inside the container can be viewed in different terminals using the following commands: 
-     
+5. **View the logs**: Although the CLI tracks all logs, the logs of services running inside the container can be viewed in different terminals using the following commands:
+
    **Frontend logs**
    ```bash
    docker exec -it middleware-dev tail --lines 500 -f /var/log/web-server/web-server.log
@@ -205,13 +205,13 @@ To set up middleware locally, follow these steps:
 3. **Run Redis and Postgres Containers**:
 
     If you don't have docker installed, please install docker [over here](https://docs.docker.com/get-docker/)
-  
+
     Run the following commands to run Postgres and Redis using docker.
 
      ```bash
      cd database-docker && docker-compose up -d
      ```
-  
+
     If you don't prefer Docker, you can choose to install [Postgres](https://www.postgresql.org/download/) and [Redis](https://redis.io/docs/latest/operate/oss_and_stack/install/install-redis/) manually.
 
     Once you are done with using or developing Middleware, you can choose to close these running container. (NOTE: Don't do this if you are following this document and trying to run Middleware.)
@@ -222,7 +222,7 @@ To set up middleware locally, follow these steps:
     ```
 
 4. **Generate Encryption keys**:
-    
+
     Generate encryption keys for the project by running the following command in the project root directory:
 
     ```bash
@@ -232,14 +232,14 @@ To set up middleware locally, follow these steps:
 5. **Backend Server Setup**
 
     - Install python version `3.11.6`
-    
+
       - For this you can install python from [over here](https://www.python.org/downloads/) if you don't have it on your machine.
       - Install pyenev
-  
+
         ```bash
         git clone https://github.com/pyenv/pyenv.git ~/.pyenv
         ```
-      
+
       - Add pyenv to your shell's configuration file (.bashrc, .bash_profile, .zshrc, etc.):
 
         ```bash
@@ -251,7 +251,7 @@ To set up middleware locally, follow these steps:
         ```
         source ~/.bashrc
         ```
-    - Move backend directory to create a virtual environment  
+    - Move backend directory to create a virtual environment
 
       ```bash
       cd backend
@@ -263,7 +263,7 @@ To set up middleware locally, follow these steps:
       ```bash
       . venv/bin/activate
         ```
-  
+
     - Install Dependencies
 
       ```bash
@@ -286,22 +286,22 @@ To set up middleware locally, follow these steps:
       ```
 
     - Start the backend servers
-    
+
       - Change Directory to analytics_server
         ```bash
         cd analytics_server
         ```
-     
+
       - For backend analytics server:
         ```bash
         flask --app app --debug run --port 9696
         ```
-     
+
       - For backend sync server:
         ```bash
         flask --app sync_app --debug run --port 9697
         ```
-        NOTE: Open this sync sever in a new terminal window after activating the virtual environment only after starting analytics server. 
+        NOTE: Open this sync sever in a new terminal window after activating the virtual environment only after starting analytics server.
 
 6. **Web Server Setup**
 
@@ -316,7 +316,7 @@ To set up middleware locally, follow these steps:
      cd web-server
      yarn
      ```
-   
+
    - Start the web-server
      ```bash
      yarn dev
@@ -413,7 +413,7 @@ We look forward to your part in keeping Middleware secure!
 
 
 ## License
- 
+
 This project is licensed under the [Apache 2.0](https://github.com/middlewarehq/middleware/blob/main/LICENSE) License - see the LICENSE.md file for details.
 
 

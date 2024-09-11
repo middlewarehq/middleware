@@ -6,10 +6,10 @@ while [[ $# -gt 0 ]]; do
     case $key in
         -t|--target)
         target_path="$2"
-        shift 
-        shift 
+        shift
+        shift
         ;;
-        *)    
+        *)
         echo "Unknown option: $1"
         exit 1
         ;;

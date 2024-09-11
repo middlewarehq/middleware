@@ -79,7 +79,9 @@ class CoreRepoService:
     def get_users(self, user_ids: List[str]) -> List[Users]:
         return (
             self._db.session.query(Users)
-            .filter(and_(Users.id.in_(user_ids), Users.is_deleted == False))
+            .filter(
+                and_(Users.id.in_(user_ids), Users.is_deleted == False)  # noqa E712
+            )
             .all()
         )
 

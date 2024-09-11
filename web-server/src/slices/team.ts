@@ -135,7 +135,7 @@ export const teamSlice = createSlice({
 
 export const fetchTeams = createAsyncThunk(
   'teams/fetchTeams',
-  async (params: { org_id: ID; provider: Integration }) => {
+  async (params: { org_id: ID; providers?: Integration[] }) => {
     return await handleApi<{
       teams: Team[];
       teamReposMap: Record<ID, DB_OrgRepo[]>;
@@ -167,15 +167,13 @@ export const createTeam = createAsyncThunk(
     org_id: ID;
     team_name: string;
     org_repos: Record<string, RepoUniqueDetails[]>;
-    provider: Integration;
   }) => {
-    const { org_id, team_name, org_repos, provider } = params;
+    const { org_id, team_name, org_repos } = params;
     return await handleApi<BaseTeam>(`/resources/orgs/${org_id}/teams/v2`, {
       method: 'POST',
       data: {
         name: team_name,
-        org_repos: org_repos,
-        provider: provider
+        org_repos: org_repos
       }
     });
   }
@@ -188,15 +186,13 @@ export const updateTeam = createAsyncThunk(
     team_name: string;
     org_id: ID;
     org_repos: Record<string, RepoUniqueDetails[]>;
-    provider: Integration;
   }) => {
-    const { team_id, team_name, org_id, org_repos, provider } = params;
+    const { team_id, team_name, org_id, org_repos } = params;
     return await handleApi<BaseTeam>(`/resources/orgs/${org_id}/teams/v2`, {
       method: 'PATCH',
       data: {
         name: team_name,
         org_repos: org_repos,
-        provider: provider,
         id: team_id
       }
     });

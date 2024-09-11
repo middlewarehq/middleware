@@ -266,7 +266,7 @@ def main():
     print("-----------------------\n")
 
     print(f"Setting type {setting_type} added successfully.")
-    print(f"Please fix imports in the updated files and set default settings.")
+    print("Please fix imports in the updated files and set default settings.")
 
 
 main()

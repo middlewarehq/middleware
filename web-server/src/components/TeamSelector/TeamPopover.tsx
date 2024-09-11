@@ -4,7 +4,8 @@ import {
   RadioButtonChecked,
   SearchRounded,
   ClearRounded,
-  Edit
+  Edit,
+  Add
 } from '@mui/icons-material';
 import {
   alpha,
@@ -22,6 +23,7 @@ import {
   useTheme
 } from '@mui/material';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import pluralize from 'pluralize';
 import {
   FC,
@@ -84,7 +86,7 @@ export const TeamPopover: FC<{
   const { team } = useSingleTeamConfig();
   const { addPage } = useOverlayPage();
   const updatingTeamMemberFilter = useBoolState();
-
+  const router = useRouter();
   const isRoleEng = false;
   const activeRouteEvent = useActiveRouteEvent('APP_TEAM_CHANGE_SINGLE');
   const dispatch = useDispatch();
@@ -114,6 +116,11 @@ export const TeamPopover: FC<{
   );
 
   const teamReposMap = useSelector((s) => s.app.teamsProdBranchMap);
+
+  const addTeam = () => {
+    const path = `${ROUTES.TEAMS.PATH}?create=true`;
+    router.push(path);
+  };
 
   return (
     <Popover
@@ -323,6 +330,15 @@ export const TeamPopover: FC<{
                   'We getting your teams together, but someone seems missing 🤔'
                 )}
               </Scrollbar>
+              {Boolean(apiTeams.length) && (
+                <FlexBox centered marginTop={2}>
+                  <Button fullWidth variant="outlined" onClick={addTeam}>
+                    <FlexBox centered>
+                      <Add fontSize="small" /> Add new team
+                    </FlexBox>
+                  </Button>
+                </FlexBox>
+              )}
             </MenuListWrapperSecondary>
           </Stack>
         </FlexBox>

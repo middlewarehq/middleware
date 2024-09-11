@@ -1,15 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import {
-  uniq,
-  groupBy,
-  mapObjIndexed,
-  prop,
-  isNil,
-  reject,
-  find,
-  propEq
-} from 'ramda';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
 import { AsyncSelectOption } from '@/components/AsyncSelect';
@@ -81,25 +71,6 @@ export const reposSlice = createSlice({
     ): void {
       state.teamRepoIds = action.payload;
     },
-    toggleRepo(state: State, action: PayloadAction<BaseRepo>): void {
-      const repo = action.payload;
-      const stateRepos = state.selectionMap[repo.parent] || [];
-      const repoExists = find(propEq('idempotency_key', repo.id), stateRepos);
-
-      state.selectionMap[repo.parent] = (
-        repoExists
-          ? stateRepos.filter(
-              (stateRepo) => stateRepo.idempotency_key !== repo.id
-            )
-          : uniq(
-              stateRepos.concat({
-                idempotency_key: repo.id.toString(),
-                name: repo.name,
-                slug: repo.slug
-              })
-            )
-      ).sort();
-    },
     setRepoWorkflow(
       state: State,
       action: PayloadAction<{
@@ -132,19 +103,6 @@ export const reposSlice = createSlice({
       'repos',
       (state, action) => (state.repos = action.payload)
     );
-
-    addFetchCasesToReducer(
-      builder,
-      fetchSelectedRepos,
-      'selectionMap',
-      refreshState
-    );
-    addFetchCasesToReducer(
-      builder,
-      updatedRepoAndWorkflowSelection,
-      'workflowMap',
-      refreshState
-    );
     addFetchCasesToReducer(
       builder,
       fetchUnassignedRepos,
@@ -153,44 +111,6 @@ export const reposSlice = createSlice({
     );
   }
 });
-
-const refreshState = (
-  state: State,
-  action: {
-    payload: RepoWithMultipleWorkflows[];
-    type: string;
-  }
-) => {
-  if (!action.payload.length) return state;
-
-  if (!state.selectedOrg) state.selectedOrg = action.payload[0].org_name;
-  state.selectionMap = mapObjIndexed(
-    (group: RepoWithMultipleWorkflows[]) =>
-      group
-        .map((repo) => ({
-          idempotency_key: repo.idempotency_key,
-          name: repo.name,
-          slug: repo.slug
-        }))
-        .sort(),
-    groupBy(prop('org_name'), action.payload || [])
-  );
-  state.workflowMap = action.payload.reduce(
-    (map, repo) => ({
-      ...map,
-      [repo.name]: repo.repo_workflows?.length
-        ? repo.repo_workflows.map((wf) => ({
-            value: wf?.provider_workflow_id,
-            name: wf?.name
-          }))
-        : null
-    }),
-    {} as State['workflowMap']
-  );
-
-  state.persistedConfig.selectionMap = state.selectionMap;
-  state.persistedConfig.workflowMap = state.workflowMap;
-};
 
 export const fetchUnassignedRepos = createAsyncThunk(
   'repos/fetchUnassignedRepos',
@@ -203,10 +123,10 @@ export const fetchUnassignedRepos = createAsyncThunk(
 
 export const fetchProviderOrgs = createAsyncThunk(
   'repos/fetchProviderOrgs',
-  async (params: { orgId: ID; provider: Integration }) => {
+  async (params: { orgId: ID; providers: Integration[] }) => {
     return await handleApi<LoadedOrg[]>(
       `/internal/${params.orgId}/git_provider_org`,
-      { params: { provider: params.provider } }
+      { params: { providers: params.providers } }
     );
   }
 );
@@ -214,7 +134,7 @@ export const fetchProviderOrgs = createAsyncThunk(
 export const fetchReposForOrgFromProvider = createAsyncThunk(
   'repos/fetchReposForOrgFromProvider',
   async (
-    params: { orgId: ID; provider: Integration; orgName: string },
+    params: { orgId: ID; providers: Integration[]; orgName: string },
     { getState }
   ) => {
     const {
@@ -225,7 +145,7 @@ export const fetchReposForOrgFromProvider = createAsyncThunk(
       `/internal/${params.orgId}/git_provider_org`,
       {
         params: {
-          provider: params.provider,
+          providers: params.providers,
           org_name: params.orgName,
           team_id: selectedTeam?.value
         }
@@ -243,29 +163,5 @@ export const fetchSelectedRepos = createAsyncThunk(
       `/integrations/selected`,
       { params: { org_id: params.orgId, provider: params.provider } }
     );
-  }
-);
-
-export const updatedRepoAndWorkflowSelection = createAsyncThunk(
-  'repos/updatedRepoAndWorkflowSelection',
-  async (params: {
-    orgId: ID;
-    provider: Integration;
-    workflowMap: RepoWorkflowMap;
-    selections: RepoSelectionMap;
-    onError: (e: Error) => any;
-  }) => {
-    return await handleApi<RepoWithMultipleWorkflows[]>(`/integrations/orgs`, {
-      method: 'PATCH',
-      data: {
-        org_id: params.orgId,
-        orgRepos: params.selections,
-        provider: params.provider,
-        repoWorkflows: reject(isNil, params.workflowMap)
-      }
-    }).catch((e) => {
-      params.onError(e);
-      throw e;
-    });
   }
 );

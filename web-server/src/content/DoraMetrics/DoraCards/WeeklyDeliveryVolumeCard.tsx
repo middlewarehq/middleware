@@ -18,10 +18,9 @@ import {
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
-import { merge } from '@/utils/datatype';
 import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
-import { useAvgWeeklyDeploymentFrequency } from './sharedHooks';
+import { useAvgIntervalBasedDeploymentFrequency } from './sharedHooks';
 
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
@@ -54,7 +53,7 @@ const chartOptions = {
 export const WeeklyDeliveryVolumeCard = () => {
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
-  const deploymentFrequencyProps = useAvgWeeklyDeploymentFrequency();
+  const deploymentFrequencyProps = useAvgIntervalBasedDeploymentFrequency();
 
   const { addPage } = useOverlayPage();
   const deploymentsConfigured = true;
@@ -62,11 +61,19 @@ export const WeeklyDeliveryVolumeCard = () => {
     IntegrationGroup.CODE
   );
 
-  const weekDeliveryVolumeData = useSelector((s) =>
-    merge(
-      s.doraMetrics.metrics_summary?.deployment_frequency_trends.current,
-      s.doraMetrics.metrics_summary?.deployment_frequency_trends.previous
-    )
+  const currentWeekDeliveryVolumeData = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.deployment_frequency_trends.current
+  );
+  const previousWeekDeliveryVolumeData = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.deployment_frequency_trends.previous
+  );
+
+  const weekDeliveryVolumeData = useMemo(
+    () => ({
+      ...currentWeekDeliveryVolumeData,
+      ...previousWeekDeliveryVolumeData
+    }),
+    [currentWeekDeliveryVolumeData, previousWeekDeliveryVolumeData]
   );
 
   const totalDeployments = useSelector(
@@ -81,8 +88,7 @@ export const WeeklyDeliveryVolumeCard = () => {
         label: 'Deployments',
         fill: 'start',
         data: getSortedDatesAsArrayFromMap(weekDeliveryVolumeData).map(
-          (date: keyof typeof weekDeliveryVolumeData) =>
-            weekDeliveryVolumeData[date].count
+          (date) => weekDeliveryVolumeData[date].count
         ),
         backgroundColor: deploymentFrequencyProps?.backgroundColor,
         borderColor: alpha(deploymentFrequencyProps?.backgroundColor, 0.5),

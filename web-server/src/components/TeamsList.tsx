@@ -7,13 +7,13 @@ import {
   MenuItem,
   TextField
 } from '@mui/material';
+import { useRouter } from 'next/router';
 import { useSnackbar } from 'notistack';
 import pluralize from 'pluralize';
 import { ascend } from 'ramda';
-import { FC, MouseEventHandler, useCallback, useMemo } from 'react';
+import { FC, MouseEventHandler, useCallback, useEffect, useMemo } from 'react';
 import { truncate } from 'voca';
 
-import { Integration } from '@/constants/integrations';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
@@ -35,6 +35,8 @@ const HORIZONTAL_SPACE = 3 / 2;
 export const TeamsList = () => {
   const teamsArray = useSelector((state) => state.team.teams);
   const searchQuery = useEasyState('');
+  const router = useRouter();
+  const showCreate = useBoolState(false);
 
   const teamsArrayFiltered = useMemo(() => {
     if (!searchQuery.value) {
@@ -45,7 +47,6 @@ export const TeamsList = () => {
     );
   }, [searchQuery.value, teamsArray]);
 
-  const showCreate = useBoolState(false);
   const handleShowCreateTeam = useCallback(() => {
     depFn(showCreate.toggle);
   }, [showCreate.toggle]);
@@ -53,6 +54,13 @@ export const TeamsList = () => {
   const isLoadingTeams = useSelector(
     (state) => state.team?.requests?.teams === FetchState.REQUEST
   );
+
+  useEffect(() => {
+    if (router.query.create === 'true') {
+      depFn(showCreate.true);
+      router.replace(router.pathname, '');
+    }
+  }, [router, showCreate.true]);
 
   return (
     <>
@@ -286,9 +294,7 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
               variant: 'success',
               autoHideDuration: 2000
             });
-            dispatch(
-              fetchTeams({ org_id: orgId, provider: Integration.GITHUB })
-            );
+            dispatch(fetchTeams({ org_id: orgId }));
             handleCloseMenu();
           } else {
             enqueueSnackbar('Failed to delete team', {
@@ -334,7 +340,12 @@ const MoreOptions = ({ teamId }: { teamId: ID }) => {
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <MenuItem>
-          <FlexBox col width={'150px'} maxWidth={'150px'}>
+          <FlexBox
+            col
+            width={'150px'}
+            maxWidth={'150px'}
+            pt={Number(cancelMenu.value)}
+          >
             <FlexBox onClick={cancelMenu.true} gap1 alignCenter fullWidth>
               <Delete fontSize="small" color="error" />
               <Line semibold error>

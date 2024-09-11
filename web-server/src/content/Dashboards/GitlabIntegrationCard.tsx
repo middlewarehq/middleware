@@ -8,7 +8,7 @@ import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import { FetchState } from '@/constants/ui-states';
-import { integrationsDisplay } from '@/content/Dashboards/githubIntegration';
+import { gitLabIntegrationDisplay } from '@/content/Dashboards/githubIntegration';
 import { useIntegrationHandlers } from '@/content/Dashboards/useIntegrationHandlers';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';
@@ -20,10 +20,10 @@ const cardBorder = 1.5;
 const getRadiusWithPadding = (radius: number, padding: number) =>
   `${radius + padding}px`;
 
-export const GithubIntegrationCard = () => {
+export const GitlabIntegrationCard = () => {
   const theme = useTheme();
   const { integrations } = useAuth();
-  const isGithubIntegrated = integrations.github;
+  const isGitlabIntegrated = integrations.gitlab;
   const sliceLoading = useSelector(
     (s) => s.auth.requests.org === FetchState.REQUEST
   );
@@ -39,7 +39,7 @@ export const GithubIntegrationCard = () => {
 
   return (
     <FlexBox relative>
-      {isGithubIntegrated && (
+      {isGitlabIntegrated && (
         <FlexBox
           title="Linked"
           sx={{
@@ -55,7 +55,7 @@ export const GithubIntegrationCard = () => {
       <FlexBox
         p={`${cardBorder}px`}
         corner={getRadiusWithPadding(cardRadius, cardBorder)}
-        sx={{ background: integrationsDisplay.bg }}
+        sx={{ background: gitLabIntegrationDisplay.bg }}
         relative
         overflow={'unset'}
       >
@@ -73,27 +73,27 @@ export const GithubIntegrationCard = () => {
             fill
             top={0}
             left={0}
-            sx={{ opacity: 0.2, background: integrationsDisplay.bg }}
+            sx={{ opacity: 0.2, background: gitLabIntegrationDisplay.bg }}
           />
           <FlexBox alignCenter gap1 fit>
-            <FlexBox fit color={integrationsDisplay.color}>
-              {integrationsDisplay.icon}
+            <FlexBox fit color={gitLabIntegrationDisplay.color}>
+              {gitLabIntegrationDisplay.icon}
             </FlexBox>
             <Line big medium white>
-              {integrationsDisplay.name}
+              {gitLabIntegrationDisplay.name}
             </Line>
           </FlexBox>
           <FlexBox alignCenter gap1 mt="auto">
             <IntegrationActionsButton
               onClick={async () => {
                 track(
-                  isGithubIntegrated
+                  isGitlabIntegrated
                     ? 'INTEGRATION_UNLINK_TRIGGERED'
                     : 'INTEGRATION_LINK_TRIGGERED',
-                  { integration_name: integrationsDisplay.name }
+                  { integration_name: gitLabIntegrationDisplay.name }
                 );
-                if (!isGithubIntegrated) {
-                  link.github();
+                if (!isGitlabIntegrated) {
+                  link.gitlab();
                   return;
                 }
                 const shouldExecute = window.confirm(
@@ -102,24 +102,24 @@ export const GithubIntegrationCard = () => {
                 if (shouldExecute) {
                   localLoading.true();
                   await unlink
-                    .github()
+                    .gitlab()
                     .then(() => {
-                      enqueueSnackbar('Github unlinked successfully', {
+                      enqueueSnackbar('Gitlab unlinked successfully', {
                         variant: 'success'
                       });
                     })
                     .then(async () => dispatch(fetchCurrentOrg()))
                     .catch((e) => {
-                      console.error('Failed to unlink Github', e);
-                      enqueueSnackbar('Failed to unlink Github', {
+                      console.error('Failed to unlink Gitlab', e);
+                      enqueueSnackbar('Failed to unlink Gitlab', {
                         variant: 'error'
                       });
                     })
                     .finally(localLoading.false);
                 }
               }}
-              label={!isGithubIntegrated ? 'Link' : 'Unlink'}
-              bgOpacity={!isGithubIntegrated ? 0.45 : 0.25}
+              label={!isGitlabIntegrated ? 'Link' : 'Unlink'}
+              bgOpacity={!isGitlabIntegrated ? 0.45 : 0.25}
               endIcon={
                 isLoading && (
                   <CircularProgress
@@ -162,7 +162,7 @@ const IntegrationActionsButton: FC<{
       sx={{
         p: '1px',
         minWidth: 0,
-        background: integrationsDisplay.bg,
+        background: gitLabIntegrationDisplay.bg,
         position: 'relative',
         borderRadius: getRadiusWithPadding(6, 1),
         fontSize: '0.9em'
@@ -176,7 +176,7 @@ const IntegrationActionsButton: FC<{
         left={0}
         sx={{
           opacity: bgOpacity,
-          background: integrationsDisplay.bg,
+          background: gitLabIntegrationDisplay.bg,
           transition: 'all 0.2s',
           ':hover': {
             opacity: bgOpacity * 0.6

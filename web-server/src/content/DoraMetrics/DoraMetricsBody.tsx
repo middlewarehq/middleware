@@ -1,11 +1,11 @@
 import { AutoGraphRounded } from '@mui/icons-material';
 import { Grid, Divider, Button } from '@mui/material';
 import Link from 'next/link';
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useMemo } from 'react';
 
 import { AiButton } from '@/components/AiButton';
 import { DoraMetricsConfigurationSettings } from '@/components/DoraMetricsConfigurationSettings';
-import { DoraScore } from '@/components/DoraScore';
+import { DoraScoreV2 } from '@/components/DoraScoreV2';
 import { EmptyState } from '@/components/EmptyState';
 import { FixedContentRefreshLoader } from '@/components/FixedContentRefreshLoader/FixedContentRefreshLoader';
 import { FlexBox } from '@/components/FlexBox';
@@ -37,10 +37,11 @@ import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
 export const DoraMetricsBody = () => {
   const dispatch = useDispatch();
-  const {
-    orgId,
-    integrations: { github: isGithubIntegrated }
-  } = useAuth();
+  const { orgId, integrationList } = useAuth();
+  const isCodeProviderIntegrated = useMemo(
+    () => integrationList.length > 0,
+    [integrationList.length]
+  );
   const { singleTeamId, dates } = useSingleTeamConfig();
   const branchPayloadForPrFilters = useBranchesForPrFilters();
   const isLoading = useSelector(
@@ -60,14 +61,16 @@ export const DoraMetricsBody = () => {
         .incident_count &&
       !s.doraMetrics.metrics_summary?.lead_time_stats.current.lead_time &&
       !s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
-        .avg_daily_deployment_frequency
+        .avg_deployment_frequency
   );
 
   const { addPage } = useOverlayPage();
 
+  console.log('DEbugging', isCodeProviderIntegrated);
+
   useEffect(() => {
-    if (!singleTeamId) return;
-    if (!isGithubIntegrated) return;
+    // if (!singleTeamId) return;
+    // if (!isCodeProviderIntegrated) return;
     dispatch(
       fetchTeamDoraMetrics({
         orgId,
@@ -83,7 +86,7 @@ export const DoraMetricsBody = () => {
     dispatch,
     orgId,
     singleTeamId,
-    isGithubIntegrated,
+    isCodeProviderIntegrated,
     branchPayloadForPrFilters
   ]);
 
@@ -121,7 +124,7 @@ export const DoraMetricsBody = () => {
     <FlexBox col gap2>
       <FixedContentRefreshLoader show={isLoading} />
       <FlexBox gap={2}>
-        {!!stats.avg && <DoraScore {...stats} />}
+        {!!stats.avg && <DoraScoreV2 {...stats} />}
         <FlexBox fit gap1 ml="auto">
           <AiButton
             size="small"

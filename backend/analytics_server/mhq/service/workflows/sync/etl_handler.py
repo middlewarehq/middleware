@@ -17,7 +17,6 @@ from mhq.service.workflows.sync.etl_workflows_factory import WorkflowETLFactory
 from mhq.store.models.code import (
     OrgRepo,
     RepoWorkflow,
-    RepoWorkflowRunsBookmark,
     RepoWorkflowRuns,
     RepoWorkflowProviders,
 )

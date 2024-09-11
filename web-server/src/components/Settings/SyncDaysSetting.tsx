@@ -1,18 +1,20 @@
-import { FlexBox } from '../FlexBox';
-import { Box, Button, Divider, TextField } from '@mui/material';
 import { LoadingButton } from '@mui/lab';
-import { Line } from '../Text';
-import { FC, useCallback, useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { Box, Button, Divider, TextField } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { useDispatch, useSelector } from '@/store';
+import { FC, useCallback, useEffect, useState } from 'react';
+
+import { FetchState } from '@/constants/ui-states';
+import { useAuth } from '@/hooks/useAuth';
+import { useEasyState } from '@/hooks/useEasyState';
 import {
   getDefaultSyncDaysSettings,
   updateDefaultSyncDaysSettings
 } from '@/slices/org';
-import { FetchState } from '@/constants/ui-states';
-import { useEasyState } from '@/hooks/useEasyState';
+import { useDispatch, useSelector } from '@/store';
 import { depFn } from '@/utils/fn';
+
+import { FlexBox } from '../FlexBox';
+import { Line } from '../Text';
 
 const MAXIMUM_SYNC_DAYS = 366;
 

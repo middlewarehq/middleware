@@ -250,6 +250,7 @@ export type BaseRepo = {
   branch: string;
   deployment_type: DeploymentSources;
   repo_workflows: AdaptedRepoWorkflow[];
+  provider?: Integration;
 };
 
 export enum NotificationType {
@@ -461,7 +462,12 @@ export type RepoWithMultipleWorkflows = Omit<
 
 export type RepoUniqueDetails = Pick<
   RepoWithMultipleWorkflows,
-  'name' | 'slug' | 'default_branch' | 'idempotency_key' | 'deployment_type'
+  | 'name'
+  | 'slug'
+  | 'default_branch'
+  | 'idempotency_key'
+  | 'deployment_type'
+  | 'provider'
 > & { repo_workflows: AdaptedRepoWorkflow[] };
 
 export type RepoContributors = {
@@ -576,12 +582,12 @@ export type TeamDoraMetricsApiResponseType = {
     previous: ChangeFailureRateTrendsApiResponse;
   };
   deployment_frequency_stats: {
-    current: DeploymentFrequencyApiResponse;
-    previous: DeploymentFrequencyApiResponse;
+    current: DeploymentFrequencyAnalyticsResponse;
+    previous: DeploymentFrequencyAnalyticsResponse;
   };
   deployment_frequency_trends: {
-    current: DeploymentFrequencyTrends;
-    previous: DeploymentFrequencyTrends;
+    current: Record<DateString, DeploymentFrequencyTrendBase>;
+    previous: Record<DateString, DeploymentFrequencyTrendBase>;
   };
   lead_time_prs: PR[];
   assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
@@ -663,10 +669,6 @@ export enum AiSummarySource {
   PROJECT_FLOW_ANALYSIS = 'PROJECT_FLOW_ANALYSIS',
   PRS_ANALYSIS = 'PRS_ANALYSIS'
 }
-
-export type OrgAlertSettings = {
-  should_sync_alerts_as_incidents: boolean;
-};
 
 export type OrgDefaultSyncDaysSettings = {
   default_sync_days: number;
@@ -860,9 +862,10 @@ export type DeploymentFrequencyBaseStats = {
 };
 
 export type DeploymentFrequencyAnalyticsResponse = UserAndTeamMapApiReturnType &
-  DeploymentFrequencyBaseStats & {
-    team_analytics: Array<{ team_id: ID } & DeploymentFrequencyBaseStats>;
-    manager_analytics: Array<
+  DeploymentFrequencyBaseStats &
+  DeploymentFrequencyBaseStatsV2 & {
+    team_analytics?: Array<{ team_id: ID } & DeploymentFrequencyBaseStats>;
+    manager_analytics?: Array<
       {
         manager_id: ID;
         team_ids: ID[];

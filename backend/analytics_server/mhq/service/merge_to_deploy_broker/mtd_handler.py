@@ -7,14 +7,12 @@ from mhq.store.models.code import (
     PullRequest,
     OrgRepo,
     RepoWorkflow,
-    BookmarkMergeToDeployBroker,
     RepoWorkflowRuns,
     RepoWorkflowRunsStatus,
 )
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.workflows import WorkflowRepoService
 from mhq.utils.lock import RedisLockService, get_redis_lock_service
-from mhq.utils.time import time_now
 
 DEPLOYMENTS_TO_PROCESS = 500
 

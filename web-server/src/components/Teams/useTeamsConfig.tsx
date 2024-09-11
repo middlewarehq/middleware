@@ -11,11 +11,10 @@ import {
   useEffect
 } from 'react';
 
-import { Integration } from '@/constants/integrations';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
-import { updateTeamBranchesMap } from '@/slices/app';
+import { appSlice, updateTeamBranchesMap } from '@/slices/app';
 import { fetchCurrentOrg } from '@/slices/auth';
 import { fetchTeams, createTeam, updateTeam } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
@@ -88,6 +87,7 @@ export const TeamsCRUDProvider: React.FC<{
   const teamReposMaps = useSelector((s) => s.team.teamReposMaps);
   const teams = useSelector((s) => s.team.teams);
   const { orgId } = useAuth();
+
   const isPageLoading = useSelector(
     (s) => s.team.requests?.teams === FetchState.REQUEST
   );
@@ -95,10 +95,9 @@ export const TeamsCRUDProvider: React.FC<{
   const fetchTeamsAndRepos = useCallback(() => {
     // refetch session to update the  onboarding state of org
     dispatch(fetchCurrentOrg());
-    dispatch(
+    return dispatch(
       fetchTeams({
-        org_id: orgId,
-        provider: Integration.GITHUB
+        org_id: orgId
       })
     );
   }, [dispatch, orgId]);
@@ -247,11 +246,10 @@ export const TeamsCRUDProvider: React.FC<{
         createTeam({
           org_id: orgId,
           team_name: capitalizedTeamName,
-          org_repos: repoPayload,
-          provider: Integration.GITHUB
+          org_repos: repoPayload
         })
       )
-        .then((res) => {
+        .then((res: any) => {
           if (res.meta.requestStatus === 'rejected') {
             enqueueSnackbar('Failed to create team', {
               variant: 'error',
@@ -263,7 +261,20 @@ export const TeamsCRUDProvider: React.FC<{
             variant: 'success',
             autoHideDuration: 2000
           });
-          fetchTeamsAndRepos();
+          const createdTeam = res.payload.team;
+
+          fetchTeamsAndRepos().then((res: any) => {
+            if (res.meta.requestStatus === 'fulfilled') {
+              const { teams } = res.payload;
+              const singleTeam = teams.find(
+                (team: Team) => team.id === createdTeam.id
+              );
+              if (singleTeam) {
+                dispatch(appSlice.actions.setSingleTeam([singleTeam]));
+              }
+            }
+          });
+
           callBack?.(res);
         })
         .finally(isSaveLoading.false);
@@ -290,8 +301,7 @@ export const TeamsCRUDProvider: React.FC<{
           team_id: teamId,
           org_id: orgId,
           team_name: teamName.value,
-          org_repos: repoPayload,
-          provider: Integration.GITHUB
+          org_repos: repoPayload
         })
       )
         .then((res) => {
@@ -446,7 +456,8 @@ const repoToPayload = (repos: BaseRepo[]) => {
       slug: repo.slug,
       default_branch: repo.branch,
       deployment_type: repo.deployment_type,
-      repo_workflows: repo.repo_workflows
+      repo_workflows: repo.repo_workflows,
+      provider: repo.provider
     };
     const orgName = repo.parent;
 
@@ -465,6 +476,8 @@ const DEBOUNCE_TIME = 500;
 const useReposSearch = () => {
   const { orgId } = useAuth();
   const searchResults = useEasyState<BaseRepo[]>([]);
+  const { integrationList } = useAuth();
+
   const isLoading = useBoolState(false);
 
   let cancelTokenSource = axios.CancelToken.source();
@@ -496,7 +509,7 @@ const useReposSearch = () => {
         const response = await axios(
           `/api/internal/${orgId}/git_provider_org`,
           {
-            params: { provider: Integration.GITHUB, search_text: query },
+            params: { providers: integrationList, search_text: query },
             cancelToken: cancelTokenSource.token
           }
         );
@@ -528,5 +541,6 @@ const adaptBaseRepo = (repo: DB_OrgRepo): BaseRepo =>
     branch: repo.default_branch,
     parent: repo.org_name,
     deployment_type: repo.deployment_type,
-    repo_workflows: repo.repo_workflows
+    repo_workflows: repo.repo_workflows,
+    provider: repo.provider
   }) as unknown as BaseRepo;

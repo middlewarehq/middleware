@@ -2,7 +2,6 @@ import json
 
 from typing import List, Dict
 
-from sqlalchemy import or_
 
 from mhq.store.models.code.workflows.filter import WorkflowFilter
 

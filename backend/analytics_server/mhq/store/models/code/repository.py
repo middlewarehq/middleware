@@ -9,7 +9,6 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY, ENUM
 from mhq.store import db
 from mhq.store.models.code.enums import (
     CodeProvider,
-    CodeBookmarkType,
     TeamReposDeploymentType,
 )
 
