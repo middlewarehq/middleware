@@ -27,8 +27,13 @@ type Error = {
 
 type Name = string;
 type ErrorMap = Record<Name, Error>;
+type GithubStarsAPIResponse = {
+  stargazers_count: number;
+};
 export type SerializableDateRange = [string, string];
 export type NetworkType = 'slow-2g' | '2g' | '3g' | '4g';
+
+const githubRepoApiUrl = `https://api.github.com/repos/middlewarehq/middleware`;
 
 // This state contains things that will generally be persisted to localStorage
 type State = StateFetchConfig<{
@@ -49,6 +54,7 @@ type State = StateFetchConfig<{
   lastSyncedAt: Date | null;
   lastDisabledImageUpdateBannerAt: DateString | null;
   latestImageStatus: ImageStatusApiResponse | null;
+  githubRepoStarsCount: number | null;
 }>;
 
 export const DEFAULT_PR_TABLE_COLUMN_STATE_MAP = {
@@ -88,7 +94,8 @@ const initialState: State = {
   prTableColumnsConfig: DEFAULT_PR_TABLE_COLUMN_STATE_MAP,
   lastSyncedAt: null,
   lastDisabledImageUpdateBannerAt: null,
-  latestImageStatus: null
+  latestImageStatus: null,
+  githubRepoStarsCount: null
 };
 
 export const appSlice = createSlice({
@@ -238,6 +245,14 @@ export const appSlice = createSlice({
         }
       }
     );
+    addFetchCasesToReducer(
+      builder,
+      getGithubRepoStars,
+      'githubRepoStarsCount',
+      (state, action) => {
+        state.githubRepoStarsCount = action.payload;
+      }
+    );
   }
 });
 
@@ -266,6 +281,15 @@ export const updateTeamBranchesMap = createAsyncThunk(
     return await handleApi<FetchTeamsResponse>(
       `/resources/orgs/${orgId}/teams/team_branch_map`
     );
+  }
+);
+
+export const getGithubRepoStars = createAsyncThunk(
+  'app/getGithubRepoStars',
+  async () => {
+    const res = await fetch(githubRepoApiUrl);
+    const data: GithubStarsAPIResponse = await res.json();
+    return data.stargazers_count;
   }
 );
 
