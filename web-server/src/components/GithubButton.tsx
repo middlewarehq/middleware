@@ -7,6 +7,7 @@ import {
   useTheme
 } from '@mui/material';
 import { FC, useMemo } from 'react';
+
 import { useSelector } from '@/store';
 
 const githubRepoUrl = `https://github.com/middlewarehq/middleware`;

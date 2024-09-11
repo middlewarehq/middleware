@@ -1,7 +1,8 @@
 import { FC } from 'react';
-import { useDispatch } from '@/store';
-import { getGithubRepoStars } from '@/slices/app';
+
 import { useImageUpdateStatusWorker } from '@/hooks/useImageUpdateStatusWorker';
+import { getGithubRepoStars } from '@/slices/app';
+import { useDispatch } from '@/store';
 
 export const TopLevelLogicComponent: FC = () => {
   const dispatch = useDispatch();
