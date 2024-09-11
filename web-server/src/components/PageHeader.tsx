@@ -11,9 +11,7 @@ import NextLink from 'next/link';
 import { useRouter } from 'next/router';
 import { FC, ReactNode, useMemo, useContext, Fragment } from 'react';
 import { SidebarContext } from 'src/contexts/SidebarContext';
-
 import { TeamSelectorModes } from '@/types/resources';
-
 import { AvatarPageTitle } from './AvatarPageTitle';
 import { BranchSelector } from './BranchSelector';
 import { FlexBox, FlexBoxProps } from './FlexBox';

@@ -1,3 +1,4 @@
+import StarBorderOutlined from '@mui/icons-material/StarBorderOutlined';
 import {
   Button,
   ButtonProps,
@@ -6,7 +7,6 @@ import {
   useTheme
 } from '@mui/material';
 import { FC, useMemo } from 'react';
-import StarBorderOutlined from '@mui/icons-material/StarBorderOutlined';
 import { useSelector } from '@/store';
 
 const githubRepoUrl = `https://github.com/middlewarehq/middleware`;
@@ -42,7 +42,9 @@ export const GithubButton: FC<ButtonProps> = () => {
       onClick={() => window.open(githubRepoUrl, '_blank')}
     >
       <StarBorderOutlined fontSize="small" />
-      <Typography fontWeight="bold" marginLeft={1}>Star</Typography>
+      <Typography fontWeight="bold" marginLeft={1}>
+        Star
+      </Typography>
       <Divider
         orientation="vertical"
         sx={{

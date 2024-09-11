@@ -1,8 +1,7 @@
 import { FC } from 'react';
-
-import { useImageUpdateStatusWorker } from '@/hooks/useImageUpdateStatusWorker';
-import { useDispatch } from 'react-redux';
+import { useDispatch } from '@/store';
 import { getGithubRepoStars } from '@/slices/app';
+import { useImageUpdateStatusWorker } from '@/hooks/useImageUpdateStatusWorker';
 
 export const TopLevelLogicComponent: FC = () => {
   const dispatch = useDispatch();
