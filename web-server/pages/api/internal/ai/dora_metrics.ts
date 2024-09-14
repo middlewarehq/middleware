@@ -103,10 +103,40 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     access_token
   );
 
-  res.send({
+  const responses = {
     ...aggregated_dora_data,
     ...dora_compiled_summary
-  });
+  };
+
+  let status = 'success';
+  let message = '';
+  // let data = {};
+
+  for (let [key, value] of Object.entries(responses) as [string, any][]) {
+    // console.log(key, value);
+    if (value.status === 'error') {
+      status = 'error';
+      message = value.message;
+    }
+  }
+
+  if (status === 'error') {
+    res.status(400).send({
+      message
+    });
+  } else {
+    const simplifiedData = Object.fromEntries(
+      Object.entries(responses).map(([key, value]: [string, any]) => [
+        key,
+        value.data as any
+      ])
+    );
+    console.log(simplifiedData)
+    res.status(200).send({
+      ...simplifiedData
+    });
+  }
+
 });
 
 const getDoraMetricsScore = (
