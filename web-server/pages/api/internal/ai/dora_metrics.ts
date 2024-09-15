@@ -64,80 +64,82 @@ const postSchema = yup.object().shape({
 });
 
 const endpoint = new Endpoint(nullSchema);
-
 endpoint.handle.POST(postSchema, async (req, res) => {
   const { data, model, access_token } = req.payload;
+  const dora_data = data as TeamDoraMetricsApiResponseType;
 
-  const dora_data = data as unknown as TeamDoraMetricsApiResponseType;
+  try {
+    const [
+      doraMetricsScore,
+      leadTimeSummary,
+      CFRSummary,
+      MTTRSummary,
+      deploymentFrequencySummary,
+      doraTrendSummary
+    ] = await Promise.all(
+      [
+        getDoraMetricsScore,
+        getLeadTimeSummary,
+        getCFRSummary,
+        getMTTRSummary,
+        getDeploymentFrequencySummary,
+        getDoraTrendsCorrelationSummary
+      ].map((fn) => fn(dora_data, model, access_token))
+    );
 
-  const [
-    dora_metrics_score,
-    lead_time_trends_summary,
-    change_failure_rate_trends_summary,
-    mean_time_to_recovery_trends_summary,
-    deployment_frequency_trends_summary,
-    dora_trend_summary
-  ] = await Promise.all(
-    [
-      getDoraMetricsScore,
-      getLeadTimeSummary,
-      getCFRSummary,
-      getMTTRSummary,
-      getDeploymentFrequencySummary,
-      getDoraTrendsCorrelationSummary
-    ].map((f) => f(dora_data, model, access_token))
-  );
+    const aggregatedData = {
+      ...doraMetricsScore,
+      ...leadTimeSummary,
+      ...CFRSummary,
+      ...MTTRSummary,
+      ...deploymentFrequencySummary,
+      ...doraTrendSummary
+    };
 
-  const aggregated_dora_data = {
-    ...dora_metrics_score,
-    ...lead_time_trends_summary,
-    ...change_failure_rate_trends_summary,
-    ...mean_time_to_recovery_trends_summary,
-    ...deployment_frequency_trends_summary,
-    ...dora_trend_summary
-  } as AggregatedDORAData;
+    const compiledSummary = await getDORACompiledSummary(
+      aggregatedData,
+      model,
+      access_token
+    );
 
-  const dora_compiled_summary = await getDORACompiledSummary(
-    aggregated_dora_data,
-    model,
-    access_token
-  );
+    const responses = {
+      ...aggregatedData,
+      ...compiledSummary
+    };
 
-  const responses = {
-    ...aggregated_dora_data,
-    ...dora_compiled_summary
-  };
+    const { status, message } = checkForErrors(responses);
 
+    if (status === 'error') {
+      return res.status(400).send({ message });
+    }
+
+    const simplifiedData = Object.fromEntries(
+      Object.entries(responses).map(([key, value]) => [key, value.data])
+    );
+
+    return res.status(200).send(simplifiedData);
+  } catch (error) {
+    return res.status(500).send({
+      message: 'Internal Server Error',
+      error: error.message
+    });
+  }
+});
+
+function checkForErrors(responses: any): { status: string; message: string } {
   let status = 'success';
   let message = '';
-  // let data = {};
 
-  for (let [key, value] of Object.entries(responses) as [string, any][]) {
-    // console.log(key, value);
+  for (const value of Object.values(responses)) {
     if (value.status === 'error') {
       status = 'error';
       message = value.message;
+      break;
     }
   }
 
-  if (status === 'error') {
-    res.status(400).send({
-      message
-    });
-  } else {
-    const simplifiedData = Object.fromEntries(
-      Object.entries(responses).map(([key, value]: [string, any]) => [
-        key,
-        value.data as any
-      ])
-    );
-    console.log(simplifiedData)
-    res.status(200).send({
-      ...simplifiedData
-    });
-  }
-
-});
+  return { status, message };
+}
 
 const getDoraMetricsScore = (
   dora_data: TeamDoraMetricsApiResponseType,
