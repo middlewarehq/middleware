@@ -44,16 +44,21 @@ class AIAnalyticsService:
     def _get_message(self, message: str, role: str = "user"):
         return {"role": role, "content": message}
 
-    def _handle_api_response(self, response) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
+    def _handle_api_response(
+        self, response
+    ) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
         """
         Handles the API response, returning a success or error structure that the frontend can use.
         """
         if response.status_code == HTTPStatus.OK:
-            return {"status": "success", "data": response.json()["choices"][0]["message"]['content']}
+            return {
+                "status": "success",
+                "data": response.json()["choices"][0]["message"]["content"],
+            }
         elif response.status_code == HTTPStatus.UNAUTHORIZED:
             return {
                 "status": "error",
-                "message":"Unauthorized Access: Your access token is either missing, expired, or invalid. Please ensure that you are providing a valid token. ",
+                "message": "Unauthorized Access: Your access token is either missing, expired, or invalid. Please ensure that you are providing a valid token. ",
             }
         else:
             return {
@@ -94,7 +99,9 @@ class AIAnalyticsService:
 
         return self._handle_api_response(response)
 
-    def _fetch_completion(self, messages: List[Dict[str, str]]) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
+    def _fetch_completion(
+        self, messages: List[Dict[str, str]]
+    ) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
         """
         Fetches the completion using the appropriate AI provider based on the LLM.
         """
@@ -109,7 +116,9 @@ class AIAnalyticsService:
             "message": f"Invalid AI provider {self._ai_provider}",
         }
 
-    def get_dora_metrics_score(self, four_keys_data: Dict[str, float]) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
+    def get_dora_metrics_score(
+        self, four_keys_data: Dict[str, float]
+    ) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
         """
         Calculate the DORA metrics score using input data and an LLM (Language Learning Model).
 
