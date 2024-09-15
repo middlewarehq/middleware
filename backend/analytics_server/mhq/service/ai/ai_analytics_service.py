@@ -53,7 +53,7 @@ class AIAnalyticsService:
         elif response.status_code == HTTPStatus.UNAUTHORIZED:
             return {
                 "status": "error",
-                "message": "Unauthorized. Please check your access token.",
+                "message":"Unauthorized Access: Your access token is either missing, expired, or invalid. Please ensure that you are providing a valid token. ",
             }
         else:
             return {
