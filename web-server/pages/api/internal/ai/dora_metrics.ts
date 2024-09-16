@@ -125,13 +125,11 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     });
   }
 });
-
-const checkForErrors = (responses: any): { status: string; message: string } => {
+const checkForErrors = (responses: { [key: string]: { status: string; message: string } }): { status: string; message: string } => {
   const errorResponse = Object.values(responses).find(value => value.status === 'error');
 
   return errorResponse ? { status: 'error', message: errorResponse.message } : { status: 'success', message: '' };
 };
-
 
 const getDoraMetricsScore = (
   dora_data: TeamDoraMetricsApiResponseType,
