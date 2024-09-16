@@ -126,20 +126,12 @@ endpoint.handle.POST(postSchema, async (req, res) => {
   }
 });
 
-function checkForErrors(responses: any): { status: string; message: string } {
-  let status = 'success';
-  let message = '';
+const checkForErrors = (responses: any): { status: string; message: string } => {
+  const errorResponse = Object.values(responses).find(value => value.status === 'error');
 
-  for (const value of Object.values(responses)) {
-    if (value.status === 'error') {
-      status = 'error';
-      message = value.message;
-      break;
-    }
-  }
+  return errorResponse ? { status: 'error', message: errorResponse.message } : { status: 'success', message: '' };
+};
 
-  return { status, message };
-}
 
 const getDoraMetricsScore = (
   dora_data: TeamDoraMetricsApiResponseType,
