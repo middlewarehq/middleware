@@ -44,9 +44,7 @@ class AIAnalyticsService:
     def _get_message(self, message: str, role: str = "user"):
         return {"role": role, "content": message}
 
-    def _handle_api_response(
-        self, response
-    ) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
+    def _handle_api_response(self, response) -> Dict[str, Union[str, int]]:
         """
         Handles the API response, returning a success or error structure that the frontend can use.
         """
@@ -101,7 +99,7 @@ class AIAnalyticsService:
 
     def _fetch_completion(
         self, messages: List[Dict[str, str]]
-    ) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
+    ) -> Dict[str, Union[str, int]]:
         """
         Fetches the completion using the appropriate AI provider based on the LLM.
         """
@@ -118,7 +116,7 @@ class AIAnalyticsService:
 
     def get_dora_metrics_score(
         self, four_keys_data: Dict[str, float]
-    ) -> Union[Dict[str, str], Dict[str, Union[str, int]]]:
+    ) -> Dict[str, Union[str, int]]:
         """
         Calculate the DORA metrics score using input data and an LLM (Language Learning Model).
 
