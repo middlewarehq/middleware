@@ -42,7 +42,15 @@ update_or_add_env_var "BEHIND_COMMITS_COUNT" "$BEHIND_COMMITS_COUNT"
 set -o allexport; source .env; set +o allexport
 cd ./cli || exit
 
-{ yarn && yarn build; } > /dev/null 2>&1
+yarn > /dev/null 2>&1
+
+yarn build
+
+if [[ $? -ne 0 ]]; then
+  echo "Build failed. Please check the errors above."
+  exit 1
+fi
+
 yarn start
 
 cd ..
