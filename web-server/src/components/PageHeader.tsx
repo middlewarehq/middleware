@@ -101,7 +101,7 @@ export const PageHeader: FC<
             {children}
           </FlexBox>
           {Boolean(subRoutes?.length) && <PageTabs subRoutes={subRoutes} />}
-          <GithubButton></GithubButton>
+          <GithubButton />
         </FlexBox>
         {showSelectorSection && (
           <>

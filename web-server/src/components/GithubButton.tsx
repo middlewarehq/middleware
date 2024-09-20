@@ -1,13 +1,9 @@
 import StarBorderOutlined from '@mui/icons-material/StarBorderOutlined';
-import {
-  Button,
-  ButtonProps,
-  Divider,
-  Typography,
-  useTheme
-} from '@mui/material';
+import { Button, ButtonProps, Divider, useTheme } from '@mui/material';
 import { FC, useMemo } from 'react';
 
+import { FlexBox } from '@/components/FlexBox';
+import { Line } from '@/components/Text';
 import { useSelector } from '@/store';
 
 const githubRepoUrl = `https://github.com/middlewarehq/middleware`;
@@ -37,15 +33,17 @@ export const GithubButton: FC<ButtonProps> = () => {
         borderRadius: 0.8,
         borderColor: theme.colors.alpha.trueWhite[10],
         color: 'lightgray',
-        height: '40px',
+        height: 40,
         padding: '0 18px'
       }}
       onClick={() => window.open(githubRepoUrl, '_blank')}
     >
-      <StarBorderOutlined fontSize="small" />
-      <Typography fontWeight="bold" marginLeft={1}>
-        Star
-      </Typography>
+      <FlexBox alignCenter>
+        <StarBorderOutlined fontSize="small" />
+        <Line bold marginLeft={1}>
+          Star
+        </Line>
+      </FlexBox>
       <Divider
         orientation="vertical"
         sx={{
@@ -53,7 +51,7 @@ export const GithubButton: FC<ButtonProps> = () => {
           marginX: 2
         }}
       />
-      <Typography fontWeight="bold">{githubRepoStarsCount}</Typography>
+      <Line bold>{githubRepoStarsCount}</Line>
     </Button>
   );
 };
