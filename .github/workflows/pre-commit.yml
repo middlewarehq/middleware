@@ -29,10 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js 18
+      - name: Setup Node.js 22
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 22
 
       - name: Install dependencies for cli
         run: yarn add eslint@^8.40.0 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev

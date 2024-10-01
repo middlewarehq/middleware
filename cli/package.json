@@ -4,7 +4,7 @@
 	"license": "MIT",
 	"bin": "dist/cli.js",
 	"engines": {
-		"node": "^18.19.0"
+		"node": "^22.x"
 	},
 	"type": "module",
 	"scripts": {

@@ -67,7 +67,7 @@ RUN apt-get update && \
         redis-server \
         supervisor \
         curl \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && mkdir -p /etc/cron.d && mv /app/setup_utils/cronjob.txt /etc/cron.d/cronjob \
     && chmod +x /app/setup_utils/* \
