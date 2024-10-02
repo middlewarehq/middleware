@@ -12,10 +12,7 @@ const formatStarCount = (stars: number) => {
   if (isNaN(stars)) return '';
   if (stars < 1000) return `${stars}`;
 
-  let digit = `${(stars / 1000).toFixed(1)}`;
-  if (digit.endsWith('0')) digit = digit.slice(0, -2);
-
-  return `${digit}k`;
+  return `${Number((stars / 1000).toFixed(1))}k`;
 };
 
 export const GithubButton: FC<ButtonProps> = () => {
