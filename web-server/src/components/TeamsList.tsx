@@ -13,15 +13,17 @@ import pluralize from 'pluralize';
 import { ascend } from 'ramda';
 import { FC, MouseEventHandler, useCallback, useEffect, useMemo } from 'react';
 import { truncate } from 'voca';
-import { appSlice } from '@/slices/app';
+
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { appSlice } from '@/slices/app';
 import { deleteTeam, fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { Team } from '@/types/api/teams';
 import { depFn } from '@/utils/fn';
+
 import { FlexBox } from './FlexBox';
 import { useOverlayPage } from './OverlayPageContext';
 import { CreateEditTeams } from './Teams/CreateTeams';
@@ -61,7 +63,7 @@ export const TeamsList = () => {
     }
     const path = ROUTES.DORA_METRICS.PATH;
     router.push(path);
-  }
+  };
 
   useEffect(() => {
     if (router.query.create === 'true') {
@@ -97,7 +99,12 @@ export const TeamsList = () => {
           }}
         >
           {teamsArrayFiltered.map((team, index) => (
-            <TeamCard onEdit={showCreate.false} key={index} team={team} onView={handleTeamView} />
+            <TeamCard
+              onEdit={showCreate.false}
+              key={index}
+              team={team}
+              onView={handleTeamView}
+            />
           ))}
         </FlexBox>
         {isLoadingTeams && (
