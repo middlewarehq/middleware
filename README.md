@@ -40,7 +40,7 @@ They are:
     - [Using Docker](#-using-docker)
     - [Manual Setup](#%EF%B8%8F-manual-setup)
   - [Usage](#-usage)
-  - [How we Calculate DORA](#-how-we-calculate-dora)
+  - [How we Calculate DORA](#-how-we-calculate-dora-metrics)
   - [Roadmap](#%EF%B8%8F-roadmap)
   - [Contributing guidelines](#%EF%B8%8F-contributing-guidelines)
   - [Developer Automations](#-developer-automations)
@@ -339,36 +339,13 @@ To set up middleware locally, follow these steps:
 - See Dora Metrics for your team.
 - Update settings related to incident filters, excluded pull requests, prod branches etc to get more accurate data.
 
-# 📖 How we Calculate DORA
+## 📖 How we Calculate Dora Metrics
 
-Middleware can display DORA Metrics using exclusively GitHub Data. The aim is to provide DORA metrics to anyone and everyone using their Git data, regardless of other integrations.
+Middleware can display DORA Metrics using exclusively Pull Requests based data. The aim is to provide Dora Metrics to anyone and everyone using their Git data, regardless of other integrations, in as few steps as possible.
 
-DORA metrics are derived from Pull Requests, Deployments, and Incidents.
+In its totality, Dora Metrics are derived from Pull Requests, Deployments, and Incidents.
 
-For simplicity, we synchronize your Pull Request data and classify reverted Pull Requests as incidents and merged Pull Requests as Deployments.
-
-**Lead Time for Changes**
-
-- Lead time consists of First Commit to PR Open time, First Response Time, Rework Time, Merge Time, and Merge to Deploy Time.
-- When calculating DORA using git-based data, PR merges are regarded as deployments, hence the merge to deploy time is considered as 0, while the rest of the time components remain the same.
-
-**Deployment Frequency**
-
-- This metric gauges how frequently code changes are deployed to production.
-- When considering PR merges as deployments, this can also represent the daily/weekly/monthly frequency of PR merges.
-
-**Mean Time to Recover (MTTR)**
-
-- MTTR measures how swiftly a team can restore service after a failure occurs in production.
-- The team's average incident resolution time is utilized to compute its MTTR.
-- When treating Revert PRs as incidents, the resolution time for an incident is calculated from the merging of the original PR to the merging of the revert PR.
-
-**Change Failure Rate (CFR)**
-
-- CFR quantifies the percentage of changes that result in a service impairment or outage in production, aiding in the evaluation of deployment process stability and reliability.
-- CFR is computed by linking incidents to deployments within an interval; each deployment may have several or no incidents.
-- Deployments that can be linked to any incident are considered as causing a failure or outage.
-- The fraction of deployments causing outages to the total deployments in an interval is used to determine the CFR.
+To learn more about how it's done, [look at our documentation here](https://middlewarehq.com/docs/product/oss/calculations).
 
 ## 🛣️ Roadmap
 
@@ -379,6 +356,14 @@ Coming Soon!
 ![contributor Metrics](https://open-source-assets.middlewarehq.com/svgs/middlewarehq-middleware-contributor-metrics-dark-widget-premium.svg)
 
 To get started contributing to middleware check out our [CONTRIBUTING.md](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md).
+
+> [!IMPORTANT]
+> ✨ We offer **SWAG** for solving issues labelled [`advanced`](https://github.com/middlewarehq/middleware/issues?q=is%3Aissue+is%3Aopen+label%3Aadvanced)! ✨  
+> _Please confirm with our team on respective issues before proceeding._
+
+> [!IMPORTANT]
+> 👩‍💻 When new hiring positions open, we look at our open source contributors first! 👨‍💻  
+> _[Join our Slack](https://mhq.link/oss-community) so we can reach out to you._
 
 We appreciate your contributions and look forward to working together to make Middleware even better!
 
