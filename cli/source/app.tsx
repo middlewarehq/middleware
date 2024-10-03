@@ -106,22 +106,24 @@ const CliUi = () => {
       exit();
     }
     await dispatch(appSlice.actions.setAppState(AppStates.TEARDOWN));
-    setTimeout(() => {
+  
+    setTimeout(async () => {
       if (!processRef.current) return;
-
+  
       processRef.current.kill();
       processRef.current.stdout.destroy();
       processRef.current.stderr.destroy();
-
-      runCommand('docker', ['compose', 'down'], runCommandOpts)
-        .promise.catch(async (err: any) => {
-          await runCommand('docker-compose', ['down']).promise;
-        })
-        .finally(async () => {
-          await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
-        });
+  
+      try {
+        await runCommand('docker', ['compose', 'down'], runCommandOpts).promise;
+      } catch (err) {
+        await runCommand('docker-compose', ['down']).promise;
+      } finally {
+        await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
+      }
     }, 200);
   }, [appState, dispatch, runCommandOpts]);
+  
 
   const handleVersionUpdates = useCallback(async () => {
     await isLocalBranchBehindRemote().then((res) => {
