@@ -8,81 +8,76 @@ import { useSelector } from '@/store';
 import { parseLogLine } from '@/utils/logFormater';
 
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
-  const theme = useTheme();
   const services = useSelector((state) => state.service.services);
   const loading = useSelector((state) => state.service.loading);
-  const logs = useMemo(
-    () => services[serviceName]?.logs || [],
-    [serviceName, services]
-  );
+  const theme = useTheme();
+  const logs = useMemo(() => {
+    return services[serviceName].logs || [];
+  }, [serviceName, services]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.scrollTop = container.scrollHeight;
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
     }
   }, [logs]);
 
-  const renderLogLine = (logLine: string, index: number) => {
-    const parsedLog = parseLogLine(logLine);
-    if (!parsedLog) return null;
-
-    const { timestamp, ip, logLevel, message, metadata } = parsedLog;
-
-    return (
-      <Line
-        key={index}
-        mb={1}
-        fontSize="0.875rem"
-        fontFamily="monospace"
-        sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-      >
-        <Line component="span" color="info.main">
-          {timestamp}
-        </Line>{' '}
-        {ip && (
-          <Line component="span" color="primary.main">
-            {ip}{' '}
-          </Line>
-        )}
-        <Line component="span" color={getLevelColor(logLevel, theme)}>
-          [{logLevel}]
-        </Line>{' '}
-        {message}
-        {metadata && (
-          <Line component="span" color="text.secondary" ml={1}>
-            {Object.entries(metadata).map(([key, value]) => (
-              <Line component="span" key={key}>
-                {key}: {JSON.stringify(value)}{' '}
-              </Line>
-            ))}
-          </Line>
-        )}
-      </Line>
-    );
-  };
-
   return (
-    <FlexBox
-      ref={containerRef}
-      col
-      sx={{
-        height: '100%',
-        width: '100%',
-        overflowY: 'auto',
-        p: 2,
-        borderRadius: theme.general.borderRadius
-      }}
-    >
+    <FlexBox ref={containerRef} col>
       {loading ? (
-        <FlexBox alignCenter gap={2}>
-          <CircularProgress size={20} />
+        <FlexBox alignCenter gap2>
+          <CircularProgress size="20px" />
           <Line>Loading...</Line>
         </FlexBox>
       ) : (
-        logs.map(renderLogLine)
+        services &&
+        logs.map((log, index) => {
+          const parsedLog = parseLogLine(log);
+          if (!parsedLog) {
+            return (
+              <Line
+                key={index}
+                marginBottom={'8px'}
+                fontSize={'14px'}
+                fontFamily={'monospace'}
+              >
+                {log}
+              </Line>
+            );
+          }
+          const { timestamp, ip, logLevel, message, metadata } = parsedLog;
+          return (
+            <Line
+              key={index}
+              marginBottom={'8px'}
+              fontSize={'14px'}
+              fontFamily={'monospace'}
+            >
+              <Line component="span" color="info.main">
+                {timestamp}
+              </Line>{' '}
+              {ip && (
+                <Line component="span" color="primary.main">
+                  {ip}{' '}
+                </Line>
+              )}
+              <Line component="span" color={getLevelColor(logLevel, theme)}>
+                [{logLevel}]
+              </Line>{' '}
+              {message}
+              {metadata && (
+                <Line component="span" color="text.secondary" ml={1}>
+                  {Object.entries(metadata).map(([key, value]) => (
+                    <Line component="span" key={key}>
+                      {key}: {JSON.stringify(value)}{' '}
+                    </Line>
+                  ))}
+                </Line>
+              )}
+            </Line>
+          );
+        })
       )}
     </FlexBox>
   );
