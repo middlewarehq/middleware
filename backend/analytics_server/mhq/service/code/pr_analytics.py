@@ -14,9 +14,11 @@ class PullRequestAnalyticsService:
         return self.code_repo_service.get_prs_by_ids(pr_ids)
 
     def get_prs_merged_without_review(
-        self, team_id: str, interval: Interval
+        self, team_id: str, interval: Interval, pr_filter: dict
     ) -> List[PullRequest]:
-        return self.code_repo_service.get_prs_merged_without_review(team_id, interval)
+        return self.code_repo_service.get_prs_merged_without_review(
+            team_id, interval, pr_filter
+        )
 
     def get_team_repos(self, team_id: str) -> List[OrgRepo]:
         return self.code_repo_service.get_team_repos(team_id)

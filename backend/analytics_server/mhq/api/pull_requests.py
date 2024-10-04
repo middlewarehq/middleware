@@ -175,14 +175,21 @@ def get_team_lead_time_trends(
         {
             Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
             Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
         }
     ),
 )
-def merged_without_review(team_id: str, from_time: datetime, to_time: datetime):
+def merged_without_review(
+    team_id: str, from_time: datetime, to_time: datetime, pr_filter: Dict = None
+):
     query_validator = get_query_validator()
     team: Team = query_validator.team_validator(team_id)
     interval: Interval = query_validator.interval_validator(from_time, to_time)
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
     pr_analytics = get_pr_analytics_service()
-    result = pr_analytics.get_prs_merged_without_review(team.id, interval)
-    prs_map = [pr.id for pr in result]
-    return {"PrsWithoutReviewMerged": prs_map}
+    repos = pr_analytics.get_team_repos(team_id)
+    prs = pr_analytics.get_prs_merged_without_review(team.id, interval, pr_filter)
+    repo_id_repo_map = {repo.id: repo for repo in repos}
+    return get_non_paginated_pr_response(prs, repo_id_repo_map, len(prs))
