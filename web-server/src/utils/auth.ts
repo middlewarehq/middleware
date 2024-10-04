@@ -63,8 +63,14 @@ export const getMissingPATScopes = async (pat: string) => {
 
 // Gitlab functions
 
-export const checkGitLabValidity = async (accessToken: string) => {
-  const url = 'https://gitlab.com/api/v4/personal_access_tokens/self';
+export const checkGitLabValidity = async (
+  accessToken: string,
+  customDomain?: string
+) => {
+  const baseUrl = customDomain
+    ? `https://${customDomain}`
+    : 'https://gitlab.com';
+  const url = `${baseUrl}/api/v4/personal_access_tokens/self`;
   try {
     const response = await axios.get(url, {
       headers: {

@@ -79,7 +79,7 @@ export const ConfigureGitlabModalBody: FC<{
     }
 
     depFn(isLoading.true);
-    await checkGitLabValidity(token.value)
+    await checkGitLabValidity(token.value, customDomain.value)
       .then(async (res) => {
         return res;
       })
