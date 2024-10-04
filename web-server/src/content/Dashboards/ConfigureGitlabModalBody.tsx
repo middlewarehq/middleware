@@ -48,10 +48,9 @@ export const ConfigureGitlabModalBody: FC<{
 
   const checkDomainWithRegex = (domain: string) => {
     const regex =
-      /^(https:\/\/)?[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(\/.*)?$/;
+      /^(https?:\/\/)[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(\/.*)?$/;
     return regex.test(domain);
   };
-
   const handleTokenChange = (e: string) => {
     token.set(e);
     showScopeError.set('');
