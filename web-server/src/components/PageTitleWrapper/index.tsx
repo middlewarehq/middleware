@@ -28,7 +28,7 @@ export const PageTitleWrapper: FC<BoxProps> = ({ children, ...props }) => {
       className="MuiPageTitle-wrapper"
       {...props}
       p={4}
-      py={{ lg: 2.5, xs: 2 }}
+      py={{ lg: 2.6, xs: 2 }}
       sx={{ ...props.sx, marginBottom: `0 !important` }}
     >
       {children}
