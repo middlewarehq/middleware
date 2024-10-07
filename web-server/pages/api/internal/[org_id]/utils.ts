@@ -1,8 +1,11 @@
 import axios from 'axios';
 import fetch from 'node-fetch';
+import { head } from 'ramda';
 
+import { Row } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { BaseRepo } from '@/types/resources';
+import { db } from '@/utils/db';
 
 const GITHUB_API_URL = 'https://api.github.com/graphql';
 
@@ -218,7 +221,9 @@ export const searchGitlabRepos = async (
   }
 `;
 
-  const response = await fetch(GITLAB_API_URL, {
+  const APIEndpoint = await replaceURL(GITLAB_API_URL);
+
+  const response = await fetch(APIEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -280,4 +285,23 @@ const convertUrlToQuery = (url: string) => {
     query = query.endsWith('/') ? query.slice(0, -1) : query;
   }
   return query; // of type parent/repo or group/subgroup/repo
+};
+
+const replaceURL = async (url: string): Promise<string> => {
+  const provider_meta = await db('Integration')
+    .where('name', Integration.GITLAB)
+    .then((r: Row<'Integration'>[]) => r.map((item) => item.provider_meta));
+
+  const custom_domain = head(provider_meta || [])?.custom_domain;
+
+  try {
+    if (custom_domain) {
+      const domain = new URL(custom_domain).host;
+      return url.replace('gitlab.com', domain);
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
 };
