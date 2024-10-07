@@ -76,9 +76,15 @@ class GitlabETLHandler(CodeProviderETLHandler):
         :param org_repos: List of OrgRepo objects
         :returns: List of Gitlab repos as OrgRepo objects
         """
-        gitlab_repos: List[GitlabRepo] = [
-            self._api.get_project(org_repo.idempotency_key) for org_repo in org_repos
-        ]
+        gitlab_repos: List[GitlabRepo] = []
+
+        for org_repo in org_repos:
+            try:
+                gitlab_repo = self._api.get_project(org_repo.idempotency_key)
+                gitlab_repos.append(gitlab_repo)
+            except Exception as e:
+                LOG.error(f"Error getting project: {str(e)}")
+                continue
 
         repo_idempotency_key_org_repo_map = {
             org_repo.idempotency_key: org_repo for org_repo in org_repos
@@ -360,7 +366,7 @@ class GitlabETLHandler(CodeProviderETLHandler):
 
 def get_gitlab_etl_handler(org_id: str) -> GitlabETLHandler:
     def _get_custom_gitlab_domain() -> Optional[str]:
-        DEFAULT_DOMAIN = "gitlab.com"
+        DEFAULT_DOMAIN = "https://gitlab.com"
         core_repo_service = CoreRepoService()
         integrations = core_repo_service.get_org_integrations_for_names(
             org_id, [UserIdentityProvider.GITLAB.value]

@@ -1,0 +1,203 @@
+name: Publish OSS Base Docker Image
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: ["main"]
+    paths:
+        - 'Dockerfile.prebuilt'
+  workflow_dispatch:
+
+env:
+  REGISTRY_IMAGE: middlewareeng/oss-base
+  AWS_REGION: ap-south-1
+  RUNNER_SUBNET: subnet-0551adcc31939391b
+  RUNNER_SG: sg-0805fa13c0f7f6e2c
+
+jobs:
+
+  start-runner-arm:
+    name: Start self-hosted ARM EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.start-ec2-runner.outputs.label }}
+      ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Start EC2 runner arm
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          ec2-image-id: ami-07c3226e40486ca7f
+          ec2-instance-type: t4g.medium
+          subnet-id: ${{ env.RUNNER_SUBNET }}
+          security-group-id: ${{ env.RUNNER_SG }}
+          aws-resource-tags: >
+            [
+              {"Key": "Name", "Value": "ec2-github-runner-arm64"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+            ]
+
+  build:
+    name: Build and Push Docker Image
+    needs: start-runner-arm
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ${{ needs.start-runner-arm.outputs.label }}
+
+    steps:
+      - name: Prepare
+        run: |
+          platform=${{ matrix.platform }}
+          BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+          echo "BUILD_DATE=${BUILD_DATE}" >> $GITHUB_ENV
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+          labels: |
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=${{ fromJson('["MIT"]') }}
+          flavor: |
+            latest=auto
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Print build metadata
+        run: echo "${{ toJson(steps.meta.outputs) }}"
+
+      - name: Build and push Docker image by digest
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.prebuilt
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            BUILD_DATE=${{ env.BUILD_DATE }}
+            MERGE_COMMIT_SHA=${{ github.sha }}
+          tags: ${{ github.ref == 'refs/heads/main' && format('middlewareeng/oss-base:latest') || steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=false,name-canonical=true,push=true
+
+      - name: Print build output
+        run: echo "${{ toJson(steps.build.outputs) }}"
+
+      - name: Export digest
+        run: |
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: delete local temp digest
+        run: |
+          rm -rf /tmp/digests
+  merge:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_IMAGE }}
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create tag for new image
+        id: tag
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "DOCKER_TAG=-t middlewareeng/oss-base:latest"
+            echo "DOCKER_TAG=-t middlewareeng/oss-base:latest" >> $GITHUB_ENV
+          else
+            echo "AUTOMATIC TAG"
+            echo "DOCKER_TAG=$(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON")" >> $GITHUB_ENV
+          fi
+
+      - name: Create manifest list and push
+        working-directory: /tmp/digests
+        run: |
+          docker buildx imagetools create ${{ env.DOCKER_TAG }} \
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+
+  stop-runner-arm:
+    name: Stop self-hosted EC2 arm runner
+    needs:
+      - start-runner-arm
+      - build
+      - merge
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Stop EC2 runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: stop
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          label: ${{ needs.start-runner-arm.outputs.label }}
+          ec2-instance-id: ${{ needs.start-runner-arm.outputs.ec2-instance-id }}

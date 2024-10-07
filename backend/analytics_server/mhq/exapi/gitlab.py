@@ -13,9 +13,9 @@ class GithubRateLimitExceeded(Exception):
 
 
 class GitlabApiService:
-    def __init__(self, access_token: str, domain="gitlab.com"):
+    def __init__(self, access_token: str, domain="https://gitlab.com"):
         self._token = access_token
-        self.base_url = f"https://{domain}/api/v4"
+        self.base_url = f"{domain}/api/v4"
         self.headers = {"Authorization": f"Bearer {self._token}"}
 
     def check_pat(self) -> bool:
@@ -28,7 +28,7 @@ class GitlabApiService:
         try:
             response = requests.get(url, headers=self.headers)
         except Exception as e:
-            raise Exception(f"Error in PAT validation, Error: {e.data}")
+            raise Exception(f"Error in PAT validation, Error: {e}")
 
         return response.status_code == 200
 
