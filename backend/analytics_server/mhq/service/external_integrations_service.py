@@ -103,7 +103,7 @@ def get_external_integrations_service(
     org_id: str, user_identity_provider: UserIdentityProvider
 ):
     def _get_custom_gitlab_domain() -> Optional[str]:
-        DEFAULT_DOMAIN = "gitlab.com"
+        DEFAULT_DOMAIN = "https://gitlab.com"
 
         core_repo_service = CoreRepoService()
         integrations = core_repo_service.get_org_integrations_for_names(
