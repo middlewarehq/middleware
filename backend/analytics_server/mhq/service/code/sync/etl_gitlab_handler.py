@@ -83,7 +83,7 @@ class GitlabETLHandler(CodeProviderETLHandler):
                 gitlab_repo = self._api.get_project(org_repo.idempotency_key)
                 gitlab_repos.append(gitlab_repo)
             except Exception as e:
-                LOG.warn(f"Error getting project: {str(e)}")
+                LOG.error(f"Error getting project: {str(e)}")
                 continue
 
         repo_idempotency_key_org_repo_map = {
