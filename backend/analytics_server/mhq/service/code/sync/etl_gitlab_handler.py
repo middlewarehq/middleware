@@ -360,7 +360,7 @@ class GitlabETLHandler(CodeProviderETLHandler):
 
 def get_gitlab_etl_handler(org_id: str) -> GitlabETLHandler:
     def _get_custom_gitlab_domain() -> Optional[str]:
-        DEFAULT_DOMAIN = "gitlab.com"
+        DEFAULT_DOMAIN = "https://gitlab.com"
         core_repo_service = CoreRepoService()
         integrations = core_repo_service.get_org_integrations_for_names(
             org_id, [UserIdentityProvider.GITLAB.value]
