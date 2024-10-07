@@ -44,9 +44,7 @@ RUN mv /app/database-docker/db/ /app/ && rm -rf /app/database-docker/
 RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/15/main/pg_hba.conf
 RUN echo "listen_addresses='*'" >> /etc/postgresql/15/main/postgresql.conf
 RUN sed -i "s/^port = .*/port = ${DB_PORT}/" /etc/postgresql/15/main/postgresql.conf
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install --global yarn
+RUN npm install --global yarn --force
 RUN mkdir -p /var/log/postgres
 RUN touch /var/log/postgres/postgres.log
 RUN mkdir -p /var/log/init_db
