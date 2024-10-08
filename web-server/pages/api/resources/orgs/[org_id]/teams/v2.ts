@@ -6,7 +6,6 @@ import {
 } from 'ramda';
 import * as yup from 'yup';
 
-import { getSelectedReposForOrg } from '@/api/integrations/selected';
 import { syncReposForOrg } from '@/api/internal/[org_id]/sync_repos';
 import {
   getOnBoardingState,
@@ -22,8 +21,12 @@ import {
 } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
-import { OnboardingStep, ReqRepoWithProvider } from '@/types/resources';
-import { db, getFirstRow } from '@/utils/db';
+import {
+  OnboardingStep,
+  RepoWithMultipleWorkflows,
+  ReqRepoWithProvider
+} from '@/types/resources';
+import { db, dbRaw, getFirstRow } from '@/utils/db';
 import groupBy from '@/utils/objectArray';
 
 const repoSchema = yup.object().shape({
@@ -84,17 +87,16 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     .orderBy('name', 'asc');
 
   const teams = await getQuery;
-  const reposWithWorkflows = await getSelectedReposForOrg(
+  const teamReposMap = await getTeamReposMap(
     org_id,
     providers?.length
       ? (providers as Integration[])
       : [Integration.GITHUB, Integration.GITLAB]
-  ).then((res) => res.flat());
+  );
 
   res.send({
     teams: teams,
-    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows),
-    reposWithWorkflows
+    teamReposMap
   });
 });
 
@@ -134,7 +136,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
 
   const providers = Array.from(new Set(orgReposList.map((r) => r.provider)));
   await updateReposWorkflows(org_id, orgReposList);
-  const reposWithWorkflows = await getSelectedReposForOrg(
+  const teamReposMap = await getTeamReposMap(
     org_id,
     providers as Integration[]
   );
@@ -143,7 +145,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
 
   res.send({
     team,
-    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows)
+    teamReposMap
   });
 });
 
@@ -177,14 +179,14 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
 
   const providers = Array.from(new Set(orgReposList.map((r) => r.provider)));
 
-  const reposWithWorkflows = await getSelectedReposForOrg(
+  const teamReposMap = await getTeamReposMap(
     org_id,
     providers as Integration[]
   );
   syncReposForOrg();
   res.send({
     team,
-    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows)
+    teamReposMap
   });
 });
 
@@ -199,6 +201,10 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
     .orderBy('name', 'asc')
     .returning('*')
     .then(getFirstRow);
+
+  await db('TeamRepos')
+    .update('is_active', false)
+    .where('team_id', req.payload.id);
 
   res.send(data);
 });
@@ -301,4 +307,38 @@ const updateReposWorkflows = async (
         .returning('*');
     }
   }
+};
+
+const getTeamReposMap = async (org_id: ID, providers: Integration[]) => {
+  const dbRepos: RepoWithMultipleWorkflows[] = await db(Table.OrgRepo)
+    .leftJoin({ tr: Table.TeamRepos }, function () {
+      this.on('OrgRepo.id', 'tr.org_repo_id');
+    })
+    .where('tr.is_active', true)
+    .leftJoin({ rw: Table.RepoWorkflow }, function () {
+      this.on('OrgRepo.id', 'rw.org_repo_id').andOn(
+        'rw.is_active',
+        '=',
+        dbRaw.raw(true)
+      );
+    })
+    .select('OrgRepo.*')
+    .select(
+      dbRaw.raw(
+        "COALESCE(json_agg(json_build_object('name', rw.name, 'value', rw.provider_workflow_id)) FILTER (WHERE rw.id IS NOT NULL), '[]') as repo_workflows"
+      )
+    )
+    .select('tr.deployment_type', 'tr.team_id')
+    .from('OrgRepo')
+    .where('org_id', org_id)
+    .and.whereIn('OrgRepo.provider', providers)
+    .andWhereNot('OrgRepo.is_active', false)
+    .groupBy(
+      'OrgRepo.id',
+      'rw.org_repo_id',
+      'tr.deployment_type',
+      'tr.team_id'
+    );
+
+  return ramdaGroupBy(prop('team_id'), dbRepos);
 };
