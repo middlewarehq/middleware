@@ -2,14 +2,28 @@ interface ParsedLog {
   timestamp: string;
   logLevel: string;
   message: string;
+  role?: string;
   ip?: string;
 }
 
 const generalLogRegex =/^\[(.*?)\] \[(\d+)\] \[(INFO|ERROR|WARN|DEBUG|WARNING|CRITICAL)\] (.+)$/;
 const httpLogRegex =/^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)"$/;
-const redisLogRegex =/^(\d+):([CMS]) (\d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2})\.\d{3} ([#*]) (.+)$/;
-const postgresLogRegex =/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} UTC) \[(\d+)\] (\w+): (.+)$/;
+const redisLogRegex = /^(?<role>\d+:[XCMS]) (?<timestamp>\d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2}\.\d{3}) (?<loglevel>[\.\-\#\*]) (?<message>.*)$/;
+const postgresLogRegex =/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \w+) \[(\d+)\] (\w+):(.+)(?:\n(?:\s+.*)?)*$/m;
+const postgresMultiLineLogRegex = /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} UTC) \[\d+\] (?<loglevel>[A-Z]+):\s*(?<message>(.|\n)+?)$/;
 const dataSyncLogRegex = /\[(\w+)\]\s(.+?)\sfor\s(\w+)\s(.+)/;
+const validLogLevels = new Set([
+  'DEBUG',
+  'INFO',
+  'NOTICE',
+  'WARNING',
+  'ERROR',
+  'LOG',
+  'FATAL',
+  'PANIC',
+  'STATEMENT',
+  'DETAIL'
+]);
 
 export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
 
@@ -28,56 +42,58 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
     const [, ip, , , timestamp, request, status, bytes, referer, userAgent] = httpLogMatch;
     const [method, path] = request.split(' ');
     return {
-      timestamp: timestamp.replace(/(\d{2})\/(\w{3})\/(\d{4}):(\d{2}:\d{2}:\d{2})/, '$3-$2-$1 $4'),
+      timestamp,
       logLevel: 'INFO', // Assuming all HTTP logs are INFO level
       message: `${method} ${path} ${status} ${bytes} "${referer}" "${userAgent}"`,
       ip
     };
   }
 
-
-  const redisLogMatch = rawLogLine.match(redisLogRegex);
-  if (redisLogMatch) {
-    const [, , role, timestamp, logType, message] = redisLogMatch;
-
+  const redisMatch = rawLogLine.match(redisLogRegex);
+  if (redisMatch) {
+    const { role, timestamp, loglevel, message } = redisMatch.groups;
     let logLevel: string;
-    switch (role) {
-      case 'M':
-        logLevel = 'MAIN';
+    switch (loglevel) {
+      case '.':
+        logLevel = 'DEBUG';
         break;
-      case 'C':
-        logLevel = 'CHILD';
+      case '-':
+        logLevel = 'INFO';
         break;
-      case 'S':
-        logLevel = 'SENTINEL';
+      case '*':
+        logLevel = 'NOTICE';
+        break;
+      case '#':
+        logLevel = 'WARNING';
         break;
       default:
-        logLevel = 'UNKNOWN';
+        logLevel = 'INFO';
     }
-
-    logLevel += logType === '#' ? '_INFO' : '_SYSTEM';
-
     return {
+      role,
       timestamp,
       logLevel,
-      message
+      message: message.trim()
     };
   }
 
+  const postgresMultiLineLogMatch = rawLogLine.match(postgresMultiLineLogRegex);
+  if (postgresMultiLineLogMatch) {
+    const { timestamp, loglevel, message } = postgresMultiLineLogMatch.groups;
+    const normalizedLogLevel = loglevel.toUpperCase();
+
+    return {
+      timestamp: timestamp,
+      logLevel: validLogLevels.has(normalizedLogLevel)
+      ? normalizedLogLevel
+      : 'INFO',
+      message: message.trim()
+    };
+  }
 
   const postgresLogMatch = rawLogLine.match(postgresLogRegex);
   if (postgresLogMatch) {
     const [, timestamp, , logLevel, message] = postgresLogMatch;
-    const validLogLevels = new Set([
-      'DEBUG',
-      'INFO',
-      'NOTICE',
-      'WARNING',
-      'ERROR',
-      'LOG',
-      'FATAL',
-      'PANIC'
-    ]);
 
     const normalizedLogLevel = logLevel.toUpperCase();
     return {
@@ -94,7 +110,7 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
   if (dataSyncLogMatch) {
     const [, logLevel, action, service, message] = dataSyncLogMatch;
     return {
-      timestamp: '', 
+      timestamp: '',
       logLevel: logLevel.toUpperCase(),
       message: `${action} for ${service} ${message}`
     };
