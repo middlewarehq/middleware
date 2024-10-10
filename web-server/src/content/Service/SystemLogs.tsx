@@ -1,5 +1,5 @@
 import { CircularProgress, useTheme } from '@mui/material';
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
@@ -7,9 +7,12 @@ import { ServiceNames } from '@/constants/service';
 import { useSelector } from '@/store';
 import { parseLogLine } from '@/utils/logFormatter';
 
+import { SystemLogsErrorFallback } from './SystemLogsErrorFallback';
+
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   const services = useSelector((state) => state.service.services);
   const loading = useSelector((state) => state.service.loading);
+  const [error, setError] = useState<Error | null>(null);
   const theme = useTheme();
   const logs = useMemo(() => {
     return services[serviceName].logs || [];
@@ -56,11 +59,24 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
           <CircularProgress size="20px" />
           <Line>Loading...</Line>
         </FlexBox>
-      ) : (
-        services &&
+      ) : !error && services ? (
         logs.map((log, index) => {
-          const parsedLog = parseLogLine(log);
-          if (!parsedLog) {
+          try {
+            const parsedLog = parseLogLine(log);
+
+            if (!parsedLog) {
+              return (
+                <Line
+                  key={index}
+                  marginBottom={'8px'}
+                  fontSize={'14px'}
+                  fontFamily={'monospace'}
+                >
+                  {log}
+                </Line>
+              );
+            }
+            const { timestamp, ip, logLevel, message } = parsedLog;
             return (
               <Line
                 key={index}
@@ -68,33 +84,26 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
                 fontSize={'14px'}
                 fontFamily={'monospace'}
               >
-                {log}
+                <Line component="span" color="info.main">
+                  {timestamp}
+                </Line>{' '}
+                {ip && (
+                  <Line component="span" color="primary.main">
+                    {ip}{' '}
+                  </Line>
+                )}
+                <Line component="span" color={getLevelColor(logLevel)}>
+                  [{logLevel}]
+                </Line>{' '}
+                {message}
               </Line>
             );
+          } catch (error: any) {
+            setError(error);
           }
-          const { timestamp, ip, logLevel, message } = parsedLog;
-          return (
-            <Line
-              key={index}
-              marginBottom={'8px'}
-              fontSize={'14px'}
-              fontFamily={'monospace'}
-            >
-              <Line component="span" color="info.main">
-                {timestamp}
-              </Line>{' '}
-              {ip && (
-                <Line component="span" color="primary.main">
-                  {ip}{' '}
-                </Line>
-              )}
-              <Line component="span" color={getLevelColor(logLevel)}>
-                [{logLevel}]
-              </Line>{' '}
-              {message}
-            </Line>
-          );
         })
+      ) : (
+        <SystemLogsErrorFallback error={error} serviceName={serviceName} />
       )}
       <FlexBox ref={containerRef} />
     </FlexBox>
