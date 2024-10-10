@@ -6,11 +6,16 @@ interface ParsedLog {
   ip?: string;
 }
 
-const generalLogRegex =/^\[(.*?)\] \[(\d+)\] \[(INFO|ERROR|WARN|DEBUG|WARNING|CRITICAL)\] (.+)$/;
-const httpLogRegex =/^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)"$/;
-const redisLogRegex = /^(?<role>\d+:[XCMS]) (?<timestamp>\d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2}\.\d{3}) (?<loglevel>[\.\-\#\*]) (?<message>.*)$/;
-const postgresLogRegex =/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \w+) \[(\d+)\] (\w+):(.+)(?:\n(?:\s+.*)?)*$/m;
-const postgresMultiLineLogRegex = /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} UTC) \[\d+\] (?<loglevel>[A-Z]+):\s*(?<message>(.|\n)+?)$/;
+const generalLogRegex =
+  /^\[(.*?)\] \[(\d+)\] \[(INFO|ERROR|WARN|DEBUG|WARNING|CRITICAL)\] (.+)$/;
+const httpLogRegex =
+  /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)"$/;
+const redisLogRegex =
+  /^(?<role>\d+:[XCMS]) (?<timestamp>\d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2}\.\d{3}) (?<loglevel>[\.\-\#\*]) (?<message>.*)$/;
+const postgresLogRegex =
+  /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \w+) \[(\d+)\] (\w+):(.+)(?:\n(?:\s+.*)?)*$/m;
+const postgresMultiLineLogRegex =
+  /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} UTC) \[\d+\] (?<loglevel>[A-Z]+):\s*(?<message>(.|\n)+?)$/;
 const dataSyncLogRegex = /\[(\w+)\]\s(.+?)\sfor\s(\w+)\s(.+)/;
 const validLogLevels = new Set([
   'DEBUG',
@@ -26,7 +31,6 @@ const validLogLevels = new Set([
 ]);
 
 export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
-
   const generalLogMatch = rawLogLine.match(generalLogRegex);
   if (generalLogMatch) {
     const [, timestamp, , logLevel, message] = generalLogMatch;
@@ -39,7 +43,8 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
 
   const httpLogMatch = rawLogLine.match(httpLogRegex);
   if (httpLogMatch) {
-    const [, ip, , , timestamp, request, status, bytes, referer, userAgent] = httpLogMatch;
+    const [, ip, , , timestamp, request, status, bytes, referer, userAgent] =
+      httpLogMatch;
     const [method, path] = request.split(' ');
     return {
       timestamp,
@@ -85,8 +90,8 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
     return {
       timestamp: timestamp,
       logLevel: validLogLevels.has(normalizedLogLevel)
-      ? normalizedLogLevel
-      : 'INFO',
+        ? normalizedLogLevel
+        : 'INFO',
       message: message.trim()
     };
   }
@@ -105,7 +110,6 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
     };
   }
 
-
   const dataSyncLogMatch = rawLogLine.match(dataSyncLogRegex);
   if (dataSyncLogMatch) {
     const [, logLevel, action, service, message] = dataSyncLogMatch;
@@ -115,7 +119,6 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
       message: `${action} for ${service} ${message}`
     };
   }
-
 
   return null;
 };
