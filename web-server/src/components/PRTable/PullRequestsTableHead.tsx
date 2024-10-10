@@ -67,7 +67,7 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
               <Checkbox
                 checked={allPrsSelected}
                 indeterminate={somePrsSelected}
-                onChange={(e) => {
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const isChecked = e.target.checked;
                   if (isChecked && noPrsSelected) {
                     selectedPrIds.set(prs.map((pr) => pr.id));
@@ -95,35 +95,41 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
           </TableSortLabel>
         </TableCell>
 
-        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
-          <TableSortLabel
-            direction={conf.field === 'commits' ? conf.order : 'asc'}
-            active={conf.field === 'commits'}
-            onClick={() => updateSortConf('commits')}
-          >
-            Commits
-          </TableSortLabel>
-        </TableCell>
+        {enabledColumnsSet.has('commits') && (
+          <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+            <TableSortLabel
+              direction={conf.field === 'commits' ? conf.order : 'asc'}
+              active={conf.field === 'commits'}
+              onClick={() => updateSortConf('commits')}
+            >
+              Commits
+            </TableSortLabel>
+          </TableCell>
+        )}
 
-        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
-          <TableSortLabel
-            direction={conf.field === 'additions' ? conf.order : 'asc'}
-            active={conf.field === 'additions'}
-            onClick={() => updateSortConf('additions')}
-          >
-            Lines
-          </TableSortLabel>
-        </TableCell>
+        {enabledColumnsSet.has('lines_changed') && (
+          <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+            <TableSortLabel
+              direction={conf.field === 'additions' ? conf.order : 'asc'}
+              active={conf.field === 'additions'}
+              onClick={() => updateSortConf('additions')}
+            >
+              Lines
+            </TableSortLabel>
+          </TableCell>
+        )}
 
-        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
-          <TableSortLabel
-            direction={conf.field === 'comments' ? conf.order : 'asc'}
-            active={conf.field === 'comments'}
-            onClick={() => updateSortConf('comments')}
-          >
-            Comments
-          </TableSortLabel>
-        </TableCell>
+        {enabledColumnsSet.has('comments') && (
+          <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+            <TableSortLabel
+              direction={conf.field === 'comments' ? conf.order : 'asc'}
+              active={conf.field === 'comments'}
+              onClick={() => updateSortConf('comments')}
+            >
+              Comments
+            </TableSortLabel>
+          </TableCell>
+        )}
 
         {enabledColumnsSet.has('base_branch') && (
           <TableCell
@@ -197,19 +203,6 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             </TableSortLabel>
           </TableCell>
         )}
-        {enabledColumnsSet.has('first_response_time') && (
-          <TableCell align="center" sx={{ p: CELL_PAD, py: 1.5 }}>
-            <TableSortLabel
-              direction={
-                conf.field === 'first_response_time' ? conf.order : 'asc'
-              }
-              active={conf.field === 'first_response_time'}
-              onClick={() => updateSortConf('first_response_time')}
-            >
-              Response <ClockIcon />
-            </TableSortLabel>
-          </TableCell>
-        )}
         {enabledColumnsSet.has('first_commit_to_open') && (
           <TableCell align="center" sx={{ p: CELL_PAD, py: 1.5 }}>
             <TableSortLabel
@@ -220,6 +213,19 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
               onClick={() => updateSortConf('first_commit_to_open')}
             >
               Commit to Open <ClockIcon />
+            </TableSortLabel>
+          </TableCell>
+        )}
+        {enabledColumnsSet.has('first_response_time') && (
+          <TableCell align="center" sx={{ p: CELL_PAD, py: 1.5 }}>
+            <TableSortLabel
+              direction={
+                conf.field === 'first_response_time' ? conf.order : 'asc'
+              }
+              active={conf.field === 'first_response_time'}
+              onClick={() => updateSortConf('first_response_time')}
+            >
+              Response <ClockIcon />
             </TableSortLabel>
           </TableCell>
         )}
