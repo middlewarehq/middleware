@@ -926,16 +926,9 @@ export type DeploymentFrequencyBaseStatsV2 = {
 };
 
 export type UpdatedDeploymentFrequencyAnalyticsResponseV2 =
-  UserAndTeamMapApiReturnType &
-    DeploymentFrequencyBaseStatsV2 & {
-      team_analytics: Array<{ team_id: ID } & DeploymentFrequencyBaseStatsV2>;
-      manager_analytics: Array<
-        {
-          manager_id: ID;
-          team_ids: ID[];
-        } & DeploymentFrequencyBaseStatsV2
-      >;
-    };
+  DeploymentFrequencyBaseStats &
+    UserAndTeamMapApiReturnType &
+    DeploymentFrequencyBaseStatsV2;
 
 export type UpdatedDeployment = {
   id: string;

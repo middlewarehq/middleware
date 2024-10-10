@@ -29,11 +29,11 @@ Please follow the existing code style and conventions used in the project. If yo
     ```
     pip install -r backend/dev-requirements.txt --upgrade
     ```
-    Also install the eslint for both `cli/` and `webserver/`. Please use node 16 for that
+    Also install the eslint for both `cli/` and `webserver/`. Please use node 22 for that
     *NOTE*: If NVM is not installed, install using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating)
     ```
-    nvm install 16
-    nvm use 16
+    nvm install 22
+    nvm use 22
     ```
     ```
     cd cli
@@ -59,8 +59,6 @@ Please follow the existing code style and conventions used in the project. If yo
     ```
     pre-commit run --files [path/to/file]
     ```
-
-*NOTE*: Make sure the terminal is using node 16 for the linting before committing(Until we upgrade node for webserver)
 
 ## Labels
 
