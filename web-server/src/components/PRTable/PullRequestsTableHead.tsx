@@ -197,19 +197,6 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             </TableSortLabel>
           </TableCell>
         )}
-        {enabledColumnsSet.has('first_response_time') && (
-          <TableCell align="center" sx={{ p: CELL_PAD, py: 1.5 }}>
-            <TableSortLabel
-              direction={
-                conf.field === 'first_response_time' ? conf.order : 'asc'
-              }
-              active={conf.field === 'first_response_time'}
-              onClick={() => updateSortConf('first_response_time')}
-            >
-              Response <ClockIcon />
-            </TableSortLabel>
-          </TableCell>
-        )}
         {enabledColumnsSet.has('first_commit_to_open') && (
           <TableCell align="center" sx={{ p: CELL_PAD, py: 1.5 }}>
             <TableSortLabel
@@ -220,6 +207,19 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
               onClick={() => updateSortConf('first_commit_to_open')}
             >
               Commit to Open <ClockIcon />
+            </TableSortLabel>
+          </TableCell>
+        )}
+        {enabledColumnsSet.has('first_response_time') && (
+          <TableCell align="center" sx={{ p: CELL_PAD, py: 1.5 }}>
+            <TableSortLabel
+              direction={
+                conf.field === 'first_response_time' ? conf.order : 'asc'
+              }
+              active={conf.field === 'first_response_time'}
+              onClick={() => updateSortConf('first_response_time')}
+            >
+              Response <ClockIcon />
             </TableSortLabel>
           </TableCell>
         )}
