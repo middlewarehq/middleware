@@ -202,9 +202,22 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
     .returning('*')
     .then(getFirstRow);
 
-  await db('TeamRepos')
+  const activeTeamReposIds = await db('TeamRepos')
     .update('is_active', false)
-    .where('team_id', req.payload.id);
+    .where('team_id', req.payload.id)
+    .andWhere('is_active', true)
+    .returning('org_repo_id')
+    .then((result) => result.map((row) => row.org_repo_id));
+
+  const activeOrgReposIds = await db('TeamRepos')
+    .where('is_active', true)
+    .whereIn('org_repo_id', activeTeamReposIds)
+    .then((result) => result.map((row) => row.org_repo_id));
+
+  await db('OrgRepo')
+    .update('is_active', false)
+    .whereIn('id', activeTeamReposIds)
+    .whereNotIn('id', activeOrgReposIds);
 
   res.send(data);
 });
