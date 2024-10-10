@@ -67,7 +67,7 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
               <Checkbox
                 checked={allPrsSelected}
                 indeterminate={somePrsSelected}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   const isChecked = e.target.checked;
                   if (isChecked && noPrsSelected) {
                     selectedPrIds.set(prs.map((pr) => pr.id));
