@@ -95,7 +95,7 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
           </TableSortLabel>
         </TableCell>
 
-        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+        {enabledColumnsSet.has('commits') && (<TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
           <TableSortLabel
             direction={conf.field === 'commits' ? conf.order : 'asc'}
             active={conf.field === 'commits'}
@@ -104,8 +104,9 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             Commits
           </TableSortLabel>
         </TableCell>
+        )}
 
-        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+        {enabledColumnsSet.has('lines_changed') && (<TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
           <TableSortLabel
             direction={conf.field === 'additions' ? conf.order : 'asc'}
             active={conf.field === 'additions'}
@@ -114,8 +115,9 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             Lines
           </TableSortLabel>
         </TableCell>
+        )}
 
-        <TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
+        {enabledColumnsSet.has('comments') && (<TableCell sx={{ minWidth: '40%', p: CELL_PAD, py: 1.5 }}>
           <TableSortLabel
             direction={conf.field === 'comments' ? conf.order : 'asc'}
             active={conf.field === 'comments'}
@@ -124,6 +126,7 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             Comments
           </TableSortLabel>
         </TableCell>
+      )}
 
         {enabledColumnsSet.has('base_branch') && (
           <TableCell
