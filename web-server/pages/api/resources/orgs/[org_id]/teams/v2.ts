@@ -310,35 +310,46 @@ const updateReposWorkflows = async (
 };
 
 const getTeamReposMap = async (org_id: ID, providers: Integration[]) => {
-  const dbRepos: RepoWithMultipleWorkflows[] = await db(Table.OrgRepo)
-    .leftJoin({ tr: Table.TeamRepos }, function () {
-      this.on('OrgRepo.id', 'tr.org_repo_id');
-    })
-    .where('tr.is_active', true)
-    .leftJoin({ rw: Table.RepoWorkflow }, function () {
+  const baseQuery = db(Table.OrgRepo)
+    .where('org_id', org_id)
+    .andWhere('OrgRepo.is_active', true)
+    .whereIn('OrgRepo.provider', providers);
+
+  const teamJoin = baseQuery
+    .leftJoin({ tr: Table.TeamRepos }, 'OrgRepo.id', 'tr.org_repo_id')
+    .andWhere('tr.is_active', true);
+
+  const workflowJoin = teamJoin.leftJoin(
+    { rw: Table.RepoWorkflow },
+    function () {
       this.on('OrgRepo.id', 'rw.org_repo_id').andOn(
         'rw.is_active',
-        '=',
-        dbRaw.raw(true)
+        'tr.is_active'
       );
-    })
+    }
+  );
+
+  const dbRepos: RepoWithMultipleWorkflows[] = await workflowJoin
     .select('OrgRepo.*')
     .select(
       dbRaw.raw(
-        "COALESCE(json_agg(json_build_object('name', rw.name, 'value', rw.provider_workflow_id)) FILTER (WHERE rw.id IS NOT NULL), '[]') as repo_workflows"
+        "COALESCE(json_agg(rw.*) FILTER (WHERE rw.id IS NOT NULL), '[]') as repo_workflows"
       )
     )
     .select('tr.deployment_type', 'tr.team_id')
-    .from('OrgRepo')
-    .where('org_id', org_id)
-    .and.whereIn('OrgRepo.provider', providers)
-    .andWhereNot('OrgRepo.is_active', false)
-    .groupBy(
-      'OrgRepo.id',
-      'rw.org_repo_id',
-      'tr.deployment_type',
-      'tr.team_id'
-    );
+    .groupBy('OrgRepo.id', 'tr.deployment_type', 'tr.team_id');
 
-  return ramdaGroupBy(prop('team_id'), dbRepos);
+  const repoWithWorkflows = dbRepos.map((repo) => {
+    const updatedWorkflows = repo.repo_workflows.map((workflow) => ({
+      name: workflow.name,
+      value: workflow.provider_workflow_id
+    }));
+
+    return {
+      ...repo,
+      repo_workflows: updatedWorkflows
+    };
+  });
+
+  return ramdaGroupBy(prop('team_id'), repoWithWorkflows);
 };
