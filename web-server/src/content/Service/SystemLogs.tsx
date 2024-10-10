@@ -6,7 +6,7 @@ import { Line } from '@/components/Text';
 import { ServiceNames } from '@/constants/service';
 import { useSelector } from '@/store';
 import { TextField, Button } from '@mui/material';
-import './search-functionality.css'; 
+import './search-functionality.css';
 
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   const services = useSelector((state) => state.service.services);
@@ -27,7 +27,7 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
         .map((log, index) => (log.includes(searchLog) ? index : -1))
         .filter((index) => index !== -1);
       setSearchResults(indices);
-      setHighlightedIndex(indices.length ? 0 : -1); 
+      setHighlightedIndex(indices.length ? 0 : -1);
     } else {
       setSearchResults([]);
       setHighlightedIndex(-1);
