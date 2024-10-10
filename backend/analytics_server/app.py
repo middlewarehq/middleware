@@ -1,6 +1,7 @@
 from os import getenv
 
-from flask import Flask
+from flask import Flask, jsonify
+from werkzeug.exceptions import HTTPException 
 
 from env import load_app_env
 
@@ -35,6 +36,20 @@ app.register_blueprint(ai_api)
 
 configure_db_with_app(app)
 initialize_database(app)
+
+def handle_exception(e):
+    if isinstance(e, HTTPException):
+        return jsonify({
+            "error": e.name,
+            "description": e.description,
+            "status_code": e.code
+        }), e.code
+
+    return jsonify({
+        "error": "Internal Server Error",
+        "description": str(e),
+        "status_code": 500
+    }), 500
 
 if __name__ == "__main__":
     app.run(port=ANALYTICS_SERVER_PORT)
