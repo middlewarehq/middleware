@@ -358,11 +358,11 @@ Coming Soon!
 To get started contributing to middleware check out our [CONTRIBUTING.md](https://github.com/middlewarehq/middleware/blob/main/CONTRIBUTING.md).
 
 > [!IMPORTANT]
-> ✨ We offer **SWAG** for solving issues labelled [`advanced`](https://github.com/middlewarehq/middleware/issues?q=is%3Aissue+is%3Aopen+label%3Aadvanced)! ✨  
+> ✨ We offer **SWAG** for solving issues labelled [`advanced`](https://github.com/middlewarehq/middleware/issues?q=is%3Aissue+is%3Aopen+label%3Aadvanced)! ✨
 > _Please confirm with our team on respective issues before proceeding._
 
 > [!IMPORTANT]
-> 👩‍💻 When new hiring positions open, we look at our open source contributors first! 👨‍💻  
+> 👩‍💻 When new hiring positions open, we look at our open source contributors first! 👨‍💻
 > _[Join our Slack](https://mhq.link/oss-community) so we can reach out to you._
 
 We appreciate your contributions and look forward to working together to make Middleware even better!

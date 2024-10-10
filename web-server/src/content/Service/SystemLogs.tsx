@@ -45,12 +45,12 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
 
   useEffect(() => {
     if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      containerRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs]);
 
   return (
-    <FlexBox ref={containerRef} col>
+    <FlexBox col>
       {loading ? (
         <FlexBox alignCenter gap2>
           <CircularProgress size="20px" />
@@ -96,6 +96,7 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
           );
         })
       )}
+      <FlexBox ref={containerRef} />
     </FlexBox>
   );
 };
