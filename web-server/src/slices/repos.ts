@@ -8,11 +8,7 @@ import { Integration } from '@/constants/integrations';
 import { RootState } from '@/store/index';
 import { LoadedOrg } from '@/types/github';
 import { StateFetchConfig } from '@/types/redux';
-import {
-  BaseRepo,
-  RepoUniqueDetails,
-  RepoWithMultipleWorkflows
-} from '@/types/resources';
+import { BaseRepo, RepoUniqueDetails } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 
 type RepoSelectionMap = Record<BaseRepo['parent'], RepoUniqueDetails[]>;
@@ -152,16 +148,6 @@ export const fetchReposForOrgFromProvider = createAsyncThunk(
       }
     ).then((repos) =>
       repos.map((repo) => ({ ...repo, id: repo.id.toString() }))
-    );
-  }
-);
-
-export const fetchSelectedRepos = createAsyncThunk(
-  'repos/fetchSelectedRepos',
-  async (params: { orgId: ID; provider: Integration }) => {
-    return await handleApi<RepoWithMultipleWorkflows[]>(
-      `/integrations/selected`,
-      { params: { org_id: params.orgId, provider: params.provider } }
     );
   }
 );
