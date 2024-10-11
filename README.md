@@ -305,7 +305,7 @@ To set up middleware locally, follow these steps:
 
 6. **Web Server Setup**
 
-   - Install NodeJs 16.17 (LTS) either [manually](https://nodejs.org/en/download) or using a tool like [nvm](https://github.com/nvm-sh/nvm) or [volta](https://volta.sh/).
+   - Install NodeJs 22.x either [manually](https://nodejs.org/en/download) or using a tool like [nvm](https://github.com/nvm-sh/nvm) or [volta](https://volta.sh/).
 
    - Install `yarn` package manager
      ```bash
