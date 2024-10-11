@@ -1,13 +1,16 @@
-import { CircularProgress, useTheme } from '@mui/material';
-import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
+import { CopyAll } from '@mui/icons-material';
+import { Button, CircularProgress, Typography, useTheme } from '@mui/material';
+import { useSnackbar } from 'notistack';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import CopyToClipboard from 'react-copy-to-clipboard';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
+import { track } from '@/constants/events';
+import { ParsedLog } from '@/constants/log-formatter';
 import { ServiceNames } from '@/constants/service';
 import { useSelector } from '@/store';
 import { parseLogLine } from '@/utils/logFormatter';
-
-import { SystemLogsErrorFallback } from './SystemLogsErrorFallback';
 
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   const services = useSelector((state) => state.service.services);
@@ -19,6 +22,14 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   }, [serviceName, services]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const { enqueueSnackbar } = useSnackbar();
+  const errorBody = useMemo(
+    () => ({
+      message: error?.message?.replace('\\n', '\n'),
+      stack: error?.stack?.replace('\\n', '\n')
+    }),
+    [error?.message, error?.stack]
+  );
 
   const getLevelColor = useCallback(
     (level: string) => {
@@ -52,6 +63,100 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
     }
   }, [logs]);
 
+  useEffect(() => {
+    if (error) {
+      track('ERR_FALLBACK_SHOWN', { err: errorBody });
+      console.error(error);
+    }
+  }, [errorBody, error]);
+
+  const SystemLogErrorMessage = useCallback(
+    ({ errorBody }: { errorBody: any }) => {
+      return (
+        <FlexBox alignCenter gap={1}>
+          <Line tiny color="warning.main" fontWeight="bold">
+            <Typography variant="h6">
+              Something went wrong displaying the logs.
+            </Typography>
+            An error occurred while processing the logs. Please report this
+            issue.
+          </Line>
+          <CopyToClipboard
+            text={JSON.stringify(errorBody, null, '  ')}
+            onCopy={() => {
+              enqueueSnackbar(`Error logs copied to clipboard`, {
+                variant: 'success'
+              });
+            }}
+          >
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<CopyAll />}
+              sx={{ fontWeight: 'bold' }}
+            >
+              Copy Logs
+            </Button>
+          </CopyToClipboard>
+          <Button
+            variant="contained"
+            size="small"
+            href="https://github.com/middlewarehq/middleware/issues/new/choose"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Report Issue
+          </Button>
+        </FlexBox>
+      );
+    },
+    [enqueueSnackbar]
+  );
+
+  const PlainLog = useCallback(
+    ({ log, index }: { log: string; index: number }) => {
+      return (
+        <Line
+          key={index}
+          marginBottom={'8px'}
+          fontSize={'14px'}
+          fontFamily={'monospace'}
+        >
+          {log}
+        </Line>
+      );
+    },
+    []
+  );
+
+  const FormattedLog = useCallback(
+    ({ log, index }: { log: ParsedLog; index: number }) => {
+      const { timestamp, ip, logLevel, message } = log;
+      return (
+        <Line
+          key={index}
+          marginBottom={'8px'}
+          fontSize={'14px'}
+          fontFamily={'monospace'}
+        >
+          <Line component="span" color="info.main">
+            {timestamp}
+          </Line>{' '}
+          {ip && (
+            <Line component="span" color="primary.main">
+              {ip}{' '}
+            </Line>
+          )}
+          <Line component="span" color={getLevelColor(logLevel)}>
+            [{logLevel}]
+          </Line>{' '}
+          {message}
+        </Line>
+      );
+    },
+    [getLevelColor]
+  );
+
   return (
     <FlexBox col>
       {loading ? (
@@ -65,45 +170,23 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
             const parsedLog = parseLogLine(log);
 
             if (!parsedLog) {
-              return (
-                <Line
-                  key={index}
-                  marginBottom={'8px'}
-                  fontSize={'14px'}
-                  fontFamily={'monospace'}
-                >
-                  {log}
-                </Line>
-              );
+              return <PlainLog log={log} index={index} key={index} />;
             }
-            const { timestamp, ip, logLevel, message } = parsedLog;
-            return (
-              <Line
-                key={index}
-                marginBottom={'8px'}
-                fontSize={'14px'}
-                fontFamily={'monospace'}
-              >
-                <Line component="span" color="info.main">
-                  {timestamp}
-                </Line>{' '}
-                {ip && (
-                  <Line component="span" color="primary.main">
-                    {ip}{' '}
-                  </Line>
-                )}
-                <Line component="span" color={getLevelColor(logLevel)}>
-                  [{logLevel}]
-                </Line>{' '}
-                {message}
-              </Line>
-            );
+            return <FormattedLog log={parsedLog} index={index} key={index} />;
           } catch (error: any) {
             setError(error);
+            return null;
           }
         })
       ) : (
-        <SystemLogsErrorFallback error={error} serviceName={serviceName} />
+        services && (
+          <>
+            {logs.map((log, index) => (
+              <PlainLog log={log} index={index} key={index} />
+            ))}
+            <SystemLogErrorMessage errorBody={errorBody} />
+          </>
+        )
       )}
       <FlexBox ref={containerRef} />
     </FlexBox>

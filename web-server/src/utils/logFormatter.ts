@@ -1,34 +1,13 @@
-interface ParsedLog {
-  timestamp: string;
-  logLevel: string;
-  message: string;
-  role?: string;
-  ip?: string;
-}
-
-const generalLogRegex =
-  /^\[(.*?)\] \[(\d+)\] \[(INFO|ERROR|WARN|DEBUG|WARNING|CRITICAL)\] (.+)$/;
-const httpLogRegex =
-  /^(\S+) (\S+) (\S+) \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)"$/;
-const redisLogRegex =
-  /^(?<role>\d+:[XCMS]) (?<timestamp>\d{2} \w{3} \d{4} \d{2}:\d{2}:\d{2}\.\d{3}) (?<loglevel>[\.\-\#\*]) (?<message>.*)$/;
-const postgresLogRegex =
-  /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} \w+) \[(\d+)\] (\w+):(.+)(?:\n(?:\s+.*)?)*$/m;
-const postgresMultiLineLogRegex =
-  /^(?<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} UTC) \[\d+\] (?<loglevel>[A-Z]+):\s*(?<message>(.|\n)+?)$/;
-const dataSyncLogRegex = /\[(\w+)\]\s(.+?)\sfor\s(\w+)\s(.+)/;
-const validLogLevels = new Set([
-  'DEBUG',
-  'INFO',
-  'NOTICE',
-  'WARNING',
-  'ERROR',
-  'LOG',
-  'FATAL',
-  'PANIC',
-  'STATEMENT',
-  'DETAIL'
-]);
+import {
+  ParsedLog,
+  generalLogRegex,
+  httpLogRegex,
+  redisLogRegex,
+  postgresLogRegex,
+  postgresMultiLineLogRegex,
+  dataSyncLogRegex,
+  validLogLevels
+} from '../constants/log-formatter';
 
 export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
   const generalLogMatch = rawLogLine.match(generalLogRegex);
