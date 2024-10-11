@@ -3,7 +3,7 @@
   top: 0;
   background-color: #1a172f;
   z-index: 1;
-  padding: 0 0 20px 0;
+  padding: 8px 0 20px 0;
   border-bottom: 1px solid #ccc;
   display: flex;
   justify-content: space-between;
@@ -17,13 +17,11 @@
   flex: 1;
 }
 
-
 .sticky-search-container .nav-button {
   flex-shrink: 0;
-  padding: 6px 12px;
-
+  padding: 0px 12px;
+  display: block;
 }
-
 
 @media (max-width: 600px) {
   .sticky-search-container {

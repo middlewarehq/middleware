@@ -1,3 +1,4 @@
+import { TextField, Button } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useEffect, useRef, useMemo, useState } from 'react';
 
@@ -5,7 +6,6 @@ import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { ServiceNames } from '@/constants/service';
 import { useSelector } from '@/store';
-import { TextField, Button } from '@mui/material';
 import './search-functionality.css';
 
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
@@ -46,10 +46,14 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
     }
   };
 
-
   useEffect(() => {
-    if (highlightedIndex !== -1 && searchResults[highlightedIndex] !== undefined) {
-      const element = document.getElementById(`log-${searchResults[highlightedIndex]}`);
+    if (
+      highlightedIndex !== -1 &&
+      searchResults[highlightedIndex] !== undefined
+    ) {
+      const element = document.getElementById(
+        `log-${searchResults[highlightedIndex]}`
+      );
       if (element) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
@@ -72,20 +76,52 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
           size="small"
           className="search-input"
         />
-        <Button
-          onClick={handlePrev}
-          disabled={highlightedIndex <= 0}
-          className="nav-button"
-        >
-          Previous
-        </Button>
-        <Button
-          onClick={handleNext}
-          disabled={highlightedIndex >= searchResults.length - 1}
-          className="nav-button"
-        >
-          Next
-        </Button>
+        <FlexBox gap2>
+          <Button
+            onClick={handlePrev}
+            disabled={highlightedIndex <= 0}
+            className="nav-button"
+          >
+            Prev
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 22 22"
+              stroke="currentColor"
+              strokeWidth={2}
+              width="20px"
+              height="20px"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 10l7-7m0 0l7 7m-7-7v18"
+              />
+            </svg>
+          </Button>
+          <Button
+            onClick={handleNext}
+            disabled={highlightedIndex >= searchResults.length - 1}
+            className="nav-button"
+          >
+            Next
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 22 22"
+              stroke="currentColor"
+              strokeWidth={2}
+              width="20px"
+              height="20px"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
+            </svg>
+          </Button>
+        </FlexBox>
       </FlexBox>
 
       {loading ? (
@@ -107,13 +143,21 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
               fontSize={'14px'}
               fontFamily={'monospace'}
               style={{
-                backgroundColor: isCurrent ? 'yellow' : isHighlighted ? 'lightyellow' : 'transparent',
-                color: isCurrent || isHighlighted ? 'black' : 'inherit',
+                backgroundColor: isCurrent
+                  ? '#ffff00a3'
+                  : isHighlighted
+                  ? '#ffffe0d4'
+                  : 'transparent',
+                color: isCurrent || isHighlighted ? 'black' : 'inherit'
               }}
             >
               {log.split(searchLog).map((part, idx) => (
                 <span key={idx}>
-                  {idx > 0 && <span style={{ backgroundColor: 'yellow', color: 'black' }}>{searchLog}</span>}
+                  {idx > 0 && (
+                    <span style={{ backgroundColor: '#ffff00a3', color: 'black' }}>
+                      {searchLog}
+                    </span>
+                  )}
                   {part}
                 </span>
               ))}
