@@ -195,33 +195,46 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const data = await db('Team')
-    .update('is_deleted', true)
-    .where('id', req.payload.id)
-    .orderBy('name', 'asc')
-    .returning('*')
-    .then(getFirstRow);
+  const data = await dbRaw.transaction(async (trx) => {
+    const deletedTeamRow = await trx('Team')
+      .update({
+        is_deleted: true,
+        updated_at: new Date()
+      })
+      .where('id', req.payload.id)
+      .orderBy('name', 'asc')
+      .returning('*')
+      .then(getFirstRow);
 
-  const inactiveTeamReposIds: string[] = await db('TeamRepos')
-    .update('is_active', false)
-    .where('team_id', req.payload.id)
-    .andWhere('is_active', true)
-    .returning('org_repo_id')
-    .then((result) => result.map((row) => row.org_repo_id));
+    const inactiveTeamReposIds: string[] = await trx('TeamRepos')
+      .update({
+        is_active: false,
+        updated_at: new Date()
+      })
+      .where('team_id', req.payload.id)
+      .andWhere('is_active', true)
+      .returning('org_repo_id')
+      .then((result) => result.map((row) => row.org_repo_id));
 
-  const activeOrgReposIds: string[] = await db('TeamRepos')
-    .where('is_active', true)
-    .whereIn('org_repo_id', inactiveTeamReposIds)
-    .distinct('org_repo_id')
-    .then((result) => result.map((row) => row.org_repo_id));
+    const activeOrgReposIds: string[] = await trx('TeamRepos')
+      .where('is_active', true)
+      .whereIn('org_repo_id', inactiveTeamReposIds)
+      .distinct('org_repo_id')
+      .then((result) => result.map((row) => row.org_repo_id));
 
-  const orgReposToBeInactivate = inactiveTeamReposIds.filter(
-    (id) => !activeOrgReposIds.includes(id)
-  );
+    const orgReposToBeInactivate = inactiveTeamReposIds.filter(
+      (id) => !activeOrgReposIds.includes(id)
+    );
 
-  await db('OrgRepo')
-    .update('is_active', false)
-    .whereIn('id', orgReposToBeInactivate);
+    await trx('OrgRepo')
+      .update({
+        is_active: false,
+        updated_at: new Date()
+      })
+      .whereIn('id', orgReposToBeInactivate);
+
+    return deletedTeamRow;
+  });
 
   res.send(data);
 });
