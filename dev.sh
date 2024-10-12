@@ -1,5 +1,46 @@
 #!/bin/bash
 
+REQUIRED_NODE_VERSION=22.9.0
+REQUIRED_YARN_VERSION=1.22.22
+
+version_ge() {
+  [ "$(printf '%s\n' "$@" | sort -V | head -n 1)" == "$1" ]
+}
+
+# Check Node.js version
+check_node_version() {
+  if ! command -v node &> /dev/null; then
+    echo "Node.js is not installed. Please install Node.js v$REQUIRED_NODE_VERSION or higher."
+    exit 1
+  fi
+
+  NODE_VERSION=$(node -v | sed 's/v//')
+  if ! version_ge "$NODE_VERSION" "$REQUIRED_NODE_VERSION"; then
+    echo "Current Node.js version ($NODE_VERSION) is incompatible. Please install v$REQUIRED_NODE_VERSION or higher."
+    exit 1
+  fi
+}
+
+# Check Yarn version
+check_yarn_version() {
+  if ! command -v yarn &> /dev/null; then
+    echo "Yarn is not installed. Please install Yarn v$REQUIRED_YARN_VERSION or higher."
+    exit 1
+  fi
+
+  YARN_VERSION=$(yarn -v)
+  if ! version_ge "$YARN_VERSION" "$REQUIRED_YARN_VERSION"; then
+    echo "Current Yarn version ($YARN_VERSION) is incompatible. Please install v$REQUIRED_YARN_VERSION or higher."
+    exit 1
+  fi
+}
+
+check_node_version
+check_yarn_version
+
+echo "Node.js and Yarn versions are compatible. Proceeding..."
+
+
 [ ! -f .env ] && cp env.example .env
 
 check_internet_connection() {
