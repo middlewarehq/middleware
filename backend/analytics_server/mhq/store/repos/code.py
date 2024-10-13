@@ -369,26 +369,15 @@ class CodeRepoService:
 
     @rollback_on_exc
     def get_prs_merged_without_review(
-        self, team_id: str, interval: Interval, pr_filter: PRFilter = None
+        self, repo_ids: List[str], interval: Interval, pr_filter: PRFilter = None
     ) -> List[PullRequest]:
-        AllOrg = self.get_team_repos(team_id)
-        AllOrg_ids = [tr.id for tr in AllOrg]
         query = (
             self._db.session.query(PullRequest)
-            .filter(PullRequest.repo_id.in_(AllOrg_ids))
+            .filter(PullRequest.repo_id.in_(repo_ids))
             .filter(PullRequest.state == PullRequestState.MERGED)
-            .filter(PullRequest.merge_time == None)
-            .filter(
-                or_(
-                    PullRequest.created_at.between(
-                        interval.from_time, interval.to_time
-                    ),
-                    PullRequest.updated_at.between(
-                        interval.from_time, interval.to_time
-                    ),
-                )
-            )
+            .filter(PullRequest.merge_time.is_(None))
         )
+        query = self._filter_prs_merged_in_interval(query, interval)
         query = self._filter_prs(query, pr_filter)
 
         return query.all()
