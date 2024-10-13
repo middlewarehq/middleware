@@ -10,6 +10,7 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+  margin-bottom: 10px;
 }
 
 .sticky-search-container .search-input {
@@ -19,8 +20,7 @@
 
 .sticky-search-container .nav-button {
   flex-shrink: 0;
-  padding: 0px 12px;
-  display: block;
+  padding: 6px 12px;
 }
 
 @media (max-width: 600px) {

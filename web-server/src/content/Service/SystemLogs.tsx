@@ -79,7 +79,8 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
         <FlexBox gap2>
           <Button
             onClick={handlePrev}
-            disabled={highlightedIndex <= 0}
+            // disabled={highlightedIndex <= 0}
+            sx={{ display: highlightedIndex <= 0 ? 'none':'block' }}
             className="nav-button"
           >
             Prev
@@ -90,7 +91,7 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
               stroke="currentColor"
               strokeWidth={2}
               width="20px"
-              height="20px"
+              height="15px"
             >
               <path
                 strokeLinecap="round"
@@ -101,7 +102,8 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
           </Button>
           <Button
             onClick={handleNext}
-            disabled={highlightedIndex >= searchResults.length - 1}
+            // disabled={highlightedIndex >= searchResults.length - 1}
+            sx={{ display: highlightedIndex >= searchResults.length - 1  ? 'none':'block' }}
             className="nav-button"
           >
             Next
@@ -112,7 +114,7 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
               stroke="currentColor"
               strokeWidth={2}
               width="20px"
-              height="20px"
+              height="15px"
             >
               <path
                 strokeLinecap="round"
@@ -144,17 +146,17 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
               fontFamily={'monospace'}
               style={{
                 backgroundColor: isCurrent
-                  ? '#ffff00a3'
+                  ? '#ffff004d'
                   : isHighlighted
-                  ? '#ffffe0d4'
+                  ? '#ffffe080'
                   : 'transparent',
-                color: isCurrent || isHighlighted ? 'black' : 'inherit'
+                color: isCurrent || isHighlighted ? 'white' : 'inherit'
               }}
             >
               {log.split(searchLog).map((part, idx) => (
                 <span key={idx}>
                   {idx > 0 && (
-                    <span style={{ backgroundColor: '#ffff00a3', color: 'black' }}>
+                    <span style={{ backgroundColor: 'yellow', color: 'black'}}>
                       {searchLog}
                     </span>
                   )}
