@@ -206,7 +206,8 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
       .returning('*')
       .then(getFirstRow);
 
-    const inactiveTeamReposIds: string[] = await trx('TeamRepos')
+    // 1. Mark inactive and Get Repo Ids of this deleted team. Ex: [ '123', '456', '789' ]
+    const deletedTeamRepoIds: string[] = await trx('TeamRepos')
       .update({
         is_active: false,
         updated_at: new Date()
@@ -216,14 +217,16 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
       .returning('org_repo_id')
       .then((result) => result.map((row) => row.org_repo_id));
 
-    const activeOrgReposIds: string[] = await trx('TeamRepos')
+    // 2. Get Repo Ids which are still used across other teams. Ex: [ '456', '789' ]
+    const activeRepoIds: string[] = await trx('TeamRepos')
       .where('is_active', true)
-      .whereIn('org_repo_id', inactiveTeamReposIds)
+      .whereIn('org_repo_id', deletedTeamRepoIds)
       .distinct('org_repo_id')
       .then((result) => result.map((row) => row.org_repo_id));
 
-    const orgReposToBeInactivate = inactiveTeamReposIds.filter(
-      (id) => !activeOrgReposIds.includes(id)
+    // 3. Repo Ids which are nowhere used. Ex: [ '123' ]
+    const orgRepoIdsToBeInactivate = deletedTeamRepoIds.filter(
+      (id) => !activeRepoIds.includes(id)
     );
 
     await trx('OrgRepo')
@@ -231,7 +234,7 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
         is_active: false,
         updated_at: new Date()
       })
-      .whereIn('id', orgReposToBeInactivate);
+      .whereIn('id', orgRepoIdsToBeInactivate);
 
     return deletedTeamRow;
   });
