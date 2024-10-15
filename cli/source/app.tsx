@@ -131,7 +131,7 @@ const CliUi = () => {
 
   useEffect(() => {
     if (appState !== AppStates.TERMINATED) return;
-    process.exit(0);
+    process.exit();
   }, [appState, exit]);
 
   useInput((input) => {
