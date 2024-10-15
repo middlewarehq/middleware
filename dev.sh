@@ -2,7 +2,7 @@
 
 REQUIRED_NODE_VERSION=22.0.0
 REQUIRED_YARN_VERSION=1.22.22
-REQUIRED_DOCKER_VERSION=22.3.1
+REQUIRED_DOCKER_VERSION=24.0.0
 
 version_at_least() {
   [ "$(printf '%s\n' "$@" | sort -V | head -n 1)" == "$1" ]
