@@ -6,7 +6,6 @@ import {
 } from 'ramda';
 import * as yup from 'yup';
 
-import { getSelectedReposForOrg } from '@/api/integrations/selected';
 import { syncReposForOrg } from '@/api/internal/[org_id]/sync_repos';
 import {
   getOnBoardingState,
@@ -22,8 +21,12 @@ import {
 } from '@/constants/integrations';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { BaseTeam } from '@/types/api/teams';
-import { OnboardingStep, ReqRepoWithProvider } from '@/types/resources';
-import { db, getFirstRow } from '@/utils/db';
+import {
+  OnboardingStep,
+  RepoWithMultipleWorkflows,
+  ReqRepoWithProvider
+} from '@/types/resources';
+import { db, dbRaw, getFirstRow } from '@/utils/db';
 import groupBy from '@/utils/objectArray';
 
 const repoSchema = yup.object().shape({
@@ -84,17 +87,16 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     .orderBy('name', 'asc');
 
   const teams = await getQuery;
-  const reposWithWorkflows = await getSelectedReposForOrg(
+  const teamReposMap = await getTeamReposMap(
     org_id,
     providers?.length
       ? (providers as Integration[])
       : [Integration.GITHUB, Integration.GITLAB]
-  ).then((res) => res.flat());
+  );
 
   res.send({
     teams: teams,
-    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows),
-    reposWithWorkflows
+    teamReposMap
   });
 });
 
@@ -134,7 +136,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
 
   const providers = Array.from(new Set(orgReposList.map((r) => r.provider)));
   await updateReposWorkflows(org_id, orgReposList);
-  const reposWithWorkflows = await getSelectedReposForOrg(
+  const teamReposMap = await getTeamReposMap(
     org_id,
     providers as Integration[]
   );
@@ -143,7 +145,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
 
   res.send({
     team,
-    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows)
+    teamReposMap
   });
 });
 
@@ -177,14 +179,14 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
 
   const providers = Array.from(new Set(orgReposList.map((r) => r.provider)));
 
-  const reposWithWorkflows = await getSelectedReposForOrg(
+  const teamReposMap = await getTeamReposMap(
     org_id,
     providers as Integration[]
   );
   syncReposForOrg();
   res.send({
     team,
-    teamReposMap: ramdaGroupBy(prop('team_id'), reposWithWorkflows)
+    teamReposMap
   });
 });
 
@@ -193,12 +195,49 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
     return res.send(getTeamV2Mock);
   }
 
-  const data = await db('Team')
-    .update('is_deleted', true)
-    .where('id', req.payload.id)
-    .orderBy('name', 'asc')
-    .returning('*')
-    .then(getFirstRow);
+  const data = await dbRaw.transaction(async (trx) => {
+    const deletedTeamRow = await trx('Team')
+      .update({
+        is_deleted: true,
+        updated_at: new Date()
+      })
+      .where('id', req.payload.id)
+      .orderBy('name', 'asc')
+      .returning('*')
+      .then(getFirstRow);
+
+    // 1. Mark inactive and Get Repo Ids of this deleted team. Ex: [ '123', '456', '789' ]
+    const deletedTeamRepoIds: string[] = await trx('TeamRepos')
+      .update({
+        is_active: false,
+        updated_at: new Date()
+      })
+      .where('team_id', req.payload.id)
+      .andWhere('is_active', true)
+      .returning('org_repo_id')
+      .then((result) => result.map((row) => row.org_repo_id));
+
+    // 2. Get Repo Ids which are still used across other teams. Ex: [ '456', '789' ]
+    const activeRepoIds: string[] = await trx('TeamRepos')
+      .where('is_active', true)
+      .whereIn('org_repo_id', deletedTeamRepoIds)
+      .distinct('org_repo_id')
+      .then((result) => result.map((row) => row.org_repo_id));
+
+    // 3. Repo Ids which are nowhere used. Ex: [ '123' ]
+    const orgRepoIdsToBeInactivate = deletedTeamRepoIds.filter(
+      (id) => !activeRepoIds.includes(id)
+    );
+
+    await trx('OrgRepo')
+      .update({
+        is_active: false,
+        updated_at: new Date()
+      })
+      .whereIn('id', orgRepoIdsToBeInactivate);
+
+    return deletedTeamRow;
+  });
 
   res.send(data);
 });
@@ -301,4 +340,49 @@ const updateReposWorkflows = async (
         .returning('*');
     }
   }
+};
+
+const getTeamReposMap = async (org_id: ID, providers: Integration[]) => {
+  const baseQuery = db(Table.OrgRepo)
+    .where('org_id', org_id)
+    .andWhere('OrgRepo.is_active', true)
+    .whereIn('OrgRepo.provider', providers);
+
+  const teamJoin = baseQuery
+    .leftJoin({ tr: Table.TeamRepos }, 'OrgRepo.id', 'tr.org_repo_id')
+    .andWhere('tr.is_active', true);
+
+  const workflowJoin = teamJoin.leftJoin(
+    { rw: Table.RepoWorkflow },
+    function () {
+      this.on('OrgRepo.id', 'rw.org_repo_id').andOn(
+        'rw.is_active',
+        'tr.is_active'
+      );
+    }
+  );
+
+  const dbRepos: RepoWithMultipleWorkflows[] = await workflowJoin
+    .select('OrgRepo.*')
+    .select(
+      dbRaw.raw(
+        "COALESCE(json_agg(rw.*) FILTER (WHERE rw.id IS NOT NULL), '[]') as repo_workflows"
+      )
+    )
+    .select('tr.deployment_type', 'tr.team_id')
+    .groupBy('OrgRepo.id', 'tr.deployment_type', 'tr.team_id');
+
+  const repoWithWorkflows = dbRepos.map((repo) => {
+    const updatedWorkflows = repo.repo_workflows.map((workflow) => ({
+      name: workflow.name,
+      value: workflow.provider_workflow_id
+    }));
+
+    return {
+      ...repo,
+      repo_workflows: updatedWorkflows
+    };
+  });
+
+  return ramdaGroupBy(prop('team_id'), repoWithWorkflows);
 };
