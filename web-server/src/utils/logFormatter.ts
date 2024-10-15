@@ -1,18 +1,18 @@
+import { LogLevel } from '@/types/resources';
+
 import {
   ParsedLog,
   generalLogRegex,
   httpLogRegex,
   redisLogRegex,
   postgresLogRegex,
-  postgresMultiLineLogRegex,
-  dataSyncLogRegex,
-  validLogLevels
+  dataSyncLogRegex
 } from '../constants/log-formatter';
 
 export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
   const generalLogMatch = rawLogLine.match(generalLogRegex);
   if (generalLogMatch) {
-    const [, timestamp, , logLevel, message] = generalLogMatch;
+    const [_fullLog, timestamp, _unused, logLevel, message] = generalLogMatch;
     return {
       timestamp,
       logLevel,
@@ -22,12 +22,22 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
 
   const httpLogMatch = rawLogLine.match(httpLogRegex);
   if (httpLogMatch) {
-    const [, ip, , , timestamp, request, status, bytes, referer, userAgent] =
-      httpLogMatch;
+    const [
+      _fullLog,
+      ip,
+      _unused,
+      _unused2,
+      timestamp,
+      request,
+      status,
+      bytes,
+      referer,
+      userAgent
+    ] = httpLogMatch;
     const [method, path] = request.split(' ');
     return {
       timestamp,
-      logLevel: 'INFO', // Assuming all HTTP logs are INFO level
+      logLevel: LogLevel.INFO, // Assuming all HTTP logs are INFO level
       message: `${method} ${path} ${status} ${bytes} "${referer}" "${userAgent}"`,
       ip
     };
@@ -39,19 +49,19 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
     let logLevel: string;
     switch (loglevel) {
       case '.':
-        logLevel = 'DEBUG';
+        logLevel = LogLevel.DEBUG;
         break;
       case '-':
-        logLevel = 'INFO';
+        logLevel = LogLevel.INFO;
         break;
       case '*':
-        logLevel = 'NOTICE';
+        logLevel = LogLevel.NOTICE;
         break;
       case '#':
-        logLevel = 'WARNING';
+        logLevel = LogLevel.WARNING;
         break;
       default:
-        logLevel = 'INFO';
+        logLevel = LogLevel.INFO;
     }
     return {
       role,
@@ -61,37 +71,19 @@ export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
     };
   }
 
-  const postgresMultiLineLogMatch = rawLogLine.match(postgresMultiLineLogRegex);
-  if (postgresMultiLineLogMatch) {
-    const { timestamp, loglevel, message } = postgresMultiLineLogMatch.groups;
-    const normalizedLogLevel = loglevel.toUpperCase();
-
-    return {
-      timestamp: timestamp,
-      logLevel: validLogLevels.has(normalizedLogLevel)
-        ? normalizedLogLevel
-        : 'INFO',
-      message: message.trim()
-    };
-  }
-
   const postgresLogMatch = rawLogLine.match(postgresLogRegex);
   if (postgresLogMatch) {
-    const [, timestamp, , logLevel, message] = postgresLogMatch;
-
-    const normalizedLogLevel = logLevel.toUpperCase();
+    const { timestamp, loglevel, message } = postgresLogMatch.groups;
     return {
-      timestamp,
-      logLevel: validLogLevels.has(normalizedLogLevel)
-        ? normalizedLogLevel
-        : 'INFO',
-      message
+      timestamp: timestamp,
+      logLevel: loglevel,
+      message: message.trim()
     };
   }
 
   const dataSyncLogMatch = rawLogLine.match(dataSyncLogRegex);
   if (dataSyncLogMatch) {
-    const [, logLevel, action, service, message] = dataSyncLogMatch;
+    const [_fullLog, logLevel, action, service, message] = dataSyncLogMatch;
     return {
       timestamp: '',
       logLevel: logLevel.toUpperCase(),

@@ -1039,3 +1039,16 @@ export type DB_OrgRepo = {
   deployment_type: 'PR_MERGE' | 'WORKFLOW';
   repo_workflows: RepoWorkflow[];
 };
+
+export enum LogLevel {
+  'DEBUG' = 'DEBUG',
+  'INFO' = 'INFO',
+  'NOTICE' = 'NOTICE',
+  'WARNING' = 'WARNING',
+  'ERROR' = 'ERROR',
+  'LOG' = 'LOG',
+  'FATAL' = 'FATAL',
+  'PANIC' = 'PANIC',
+  'STATEMENT' = 'STATEMENT',
+  'DETAIL' = 'DETAIL'
+}
