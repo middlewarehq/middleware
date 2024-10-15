@@ -14,6 +14,7 @@ import { ascend } from 'ramda';
 import { FC, MouseEventHandler, useCallback, useEffect, useMemo } from 'react';
 import { truncate } from 'voca';
 
+import DoraIcon from '@/assets/dora-icon.svg';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
@@ -57,7 +58,7 @@ export const TeamsList = () => {
     (state) => state.team?.requests?.teams === FetchState.REQUEST
   );
 
-  const handleTeamView = (team) => {
+  const handleTeamView = (team: Team) => {
     if (team) {
       dispatch(appSlice.actions.setSingleTeam([team]));
     }
@@ -193,6 +194,7 @@ const SearchFilter: FC<{
 type TeamCardProps = {
   team: Team;
   onEdit: () => void;
+  onView: (team: Team) => void;
 };
 
 const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
@@ -269,16 +271,16 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
         </FlexBox>
       </FlexBox>
       <FlexBox col justifyBetween minHeight={'70px'} alignCenter>
-        <Button
+        <FlexBox
+          title={'View team'}
+          centered
+          width={'1.2em'}
+          maxWidth={'1.2em'}
+          pointer
           onClick={() => onView(team)}
-          size="small"
-          sx={{ minWidth: '100px' }}
-          variant="contained"
         >
-          <FlexBox centered fullWidth>
-            Dora {'->'}
-          </FlexBox>
-        </Button>
+          <DoraIcon />
+        </FlexBox>
         <EditTeam teamId={teamId} onEdit={onEdit} />
         <FlexBox pointer>
           <MoreOptions teamId={team.id} />
