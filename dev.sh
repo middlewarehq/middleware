@@ -8,57 +8,55 @@ version_at_least() {
   [ "$(printf '%s\n' "$@" | sort -V | head -n 1)" == "$1" ]
 }
 
-# Check Node.js version
-check_node_version() {
+check_versions() {
+  local node_version yarn_version docker_version
+  local errors=()
+
+  # Check Node.js version
   if ! command -v node &> /dev/null; then
-    echo "Node.js is not installed. Please install Node.js v$REQUIRED_NODE_VERSION or higher."
-    exit 1
+    errors+=("Node.js is not installed. Please install Node.js v$REQUIRED_NODE_VERSION or higher.")
+  else
+    node_version=$(node -v | sed 's/v//')
+    if ! version_at_least "$node_version" "$REQUIRED_NODE_VERSION"; then
+      errors+=("Current Node.js version ($node_version) is incompatible. Please install v$REQUIRED_NODE_VERSION or higher.")
+    fi
   fi
 
-  NODE_VERSION=$(node -v | sed 's/v//')
-  if ! version_at_least "$NODE_VERSION" "$REQUIRED_NODE_VERSION"; then
-    echo "Current Node.js version ($NODE_VERSION) is incompatible. Please install v$REQUIRED_NODE_VERSION or higher."
-    exit 1
-  fi
-}
-
-# Check Yarn version
-check_yarn_version() {
+  # Check Yarn version
   if ! command -v yarn &> /dev/null; then
-    echo "Yarn is not installed. Please install Yarn v$REQUIRED_YARN_VERSION or higher."
-    exit 1
+    errors+=("Yarn is not installed. Please install Yarn v$REQUIRED_YARN_VERSION or higher.")
+  else
+    yarn_version=$(yarn -v)
+    if ! version_at_least "$yarn_version" "$REQUIRED_YARN_VERSION"; then
+      errors+=("Current Yarn version ($yarn_version) is incompatible. Please install v$REQUIRED_YARN_VERSION or higher.")
+    fi
   fi
 
-  YARN_VERSION=$(yarn -v)
-  if ! version_at_least "$YARN_VERSION" "$REQUIRED_YARN_VERSION"; then
-    echo "Current Yarn version ($YARN_VERSION) is incompatible. Please install v$REQUIRED_YARN_VERSION or higher."
-    exit 1
-  fi
-}
-
-# Check Docker version
-check_docker_version() {
+  # Check Docker version
   if ! command -v docker &> /dev/null; then
-    echo "Docker is not installed. Please install Docker v$REQUIRED_DOCKER_VERSION or higher."
+    errors+=("Docker is not installed. Please install Docker v$REQUIRED_DOCKER_VERSION or higher.")
+  else
+    docker_version=$(docker --version | awk '{print $3}' | sed 's/,//')
+    if ! version_at_least "$docker_version" "$REQUIRED_DOCKER_VERSION"; then
+      errors+=("Current Docker version ($docker_version) is incompatible. Please install v$REQUIRED_DOCKER_VERSION or higher.")
+    fi
+  fi
+
+  # Display errors, if any
+  if [ ${#errors[@]} -ne 0 ]; then
+    for error in "${errors[@]}"; do
+      echo "$error"
+    done
     exit 1
   fi
 
-  DOCKER_VERSION=$(docker --version | awk '{print $3}' | sed 's/,//')
-  if ! version_at_least "$DOCKER_VERSION" "$REQUIRED_DOCKER_VERSION"; then
-    echo "Current Docker version ($DOCKER_VERSION) is incompatible. Please install v$REQUIRED_DOCKER_VERSION or higher."
-    exit 1
-  fi
+  echo "Node.js, Yarn, and Docker versions are compatible. Proceeding..."
 }
 
-check_node_version
-check_yarn_version
-check_docker_version
-
-echo "Node.js, Yarn and Docker versions are compatible. Proceeding..."
+check_versions
 
 [ ! -f .env ] && cp env.example .env
 
-# Create .env file if it doesn't exist
 check_internet_connection() {
   curl -s https://www.google.com > /dev/null 2>&1
   if [[ $? -ne 0 ]]; then
