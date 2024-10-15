@@ -55,7 +55,6 @@ check_versions() {
 
 check_versions
 
-
 [ ! -f .env ] && cp env.example .env
 
 check_internet_connection() {
