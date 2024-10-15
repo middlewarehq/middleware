@@ -58,7 +58,6 @@ echo "Node.js, Yarn and Docker versions are compatible. Proceeding..."
 
 [ ! -f .env ] && cp env.example .env
 
-
 # Create .env file if it doesn't exist
 check_internet_connection() {
   curl -s https://www.google.com > /dev/null 2>&1
