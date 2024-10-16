@@ -42,6 +42,61 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
   const somePrsSelected =
     selectedPrIds.value.length > 0 && selectedPrIds.value.length < prs.length;
   const allPrsSelected = selectedPrIds.value.length === prs.length;
+  const downloadCsv = () => {
+    if (!prs?.length) return;
+
+    const headers = [
+      'Pull Request',
+      enabledColumnsSet.has('commits') ? 'Commits' : '',
+      enabledColumnsSet.has('lines_changed') ? 'Lines Changed' : '',
+      enabledColumnsSet.has('comments') ? 'Comments' : '',
+      enabledColumnsSet.has('base_branch') ? 'Base Branch' : '',
+      enabledColumnsSet.has('head_branch') ? 'Head Branch' : '',
+      enabledColumnsSet.has('changed_files') ? 'Files Changed' : '',
+      enabledColumnsSet.has('rework_cycles') ? 'Rework Cycles' : '',
+      enabledColumnsSet.has('author') ? 'Author' : '',
+      enabledColumnsSet.has('reviewers') ? 'Reviewer' : '',
+      enabledColumnsSet.has('first_commit_to_open') ? 'Commit to Open' : '',
+      enabledColumnsSet.has('first_response_time') ? 'Response Time' : '',
+      enabledColumnsSet.has('rework_time') ? 'Rework Time' : '',
+      enabledColumnsSet.has('merge_time') ? 'Merge Time' : '',
+      enabledColumnsSet.has('merge_to_deploy') ? 'Merge to Deploy' : '',
+      enabledColumnsSet.has('lead_time') ? 'Lead Time' : '',
+      enabledColumnsSet.has('created_at') ? 'Created At' : '',
+      enabledColumnsSet.has('updated_at') ? 'Updated At' : ''
+    ].filter(Boolean);
+
+    const rows = prs.map((pr) => [
+      pr.number,
+      enabledColumnsSet.has('commits') ? pr.commits : '',
+      enabledColumnsSet.has('lines_changed') ? pr.lines_changed : '',
+      enabledColumnsSet.has('comments') ? pr.comments : '',
+      enabledColumnsSet.has('base_branch') ? pr.base_branch : '',
+      enabledColumnsSet.has('head_branch') ? pr.head_branch : '',
+      enabledColumnsSet.has('changed_files') ? pr.changed_files : '',
+      enabledColumnsSet.has('rework_cycles') ? pr.rework_cycles : '',
+      enabledColumnsSet.has('author') ? pr.author : '',
+      enabledColumnsSet.has('reviewers') ? pr.reviewers.join(', ') : '',
+      enabledColumnsSet.has('first_commit_to_open') ? pr.first_commit_to_open : '',
+      enabledColumnsSet.has('first_response_time') ? pr.first_response_time : '',
+      enabledColumnsSet.has('rework_time') ? pr.rework_time : '',
+      enabledColumnsSet.has('merge_time') ? pr.merge_time : '',
+      enabledColumnsSet.has('merge_to_deploy') ? pr.merge_to_deploy : '',
+      enabledColumnsSet.has('lead_time') ? pr.lead_time : '',
+      enabledColumnsSet.has('created_at') ? pr.created_at : '',
+      enabledColumnsSet.has('updated_at') ? pr.updated_at : ''
+    ]);
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const blob = new Blob([decodeURIComponent(encodedUri)], {
+      type: 'text/csv;charset=utf-8;'
+    });
+    saveAs(blob, 'pull_requests.csv');
+  };
 
   return (
     <TableHead>
@@ -295,6 +350,7 @@ export const PullRequestsTableHead: FC<PullRequestsTableHeadProps> = ({
             </TableSortLabel>
           </TableCell>
         )}
+        <button onClick={downloadCsv}>Download CSV</button>
       </TableRow>
     </TableHead>
   );
