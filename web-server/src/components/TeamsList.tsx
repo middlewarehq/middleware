@@ -14,10 +14,12 @@ import { ascend } from 'ramda';
 import { FC, MouseEventHandler, useCallback, useEffect, useMemo } from 'react';
 import { truncate } from 'voca';
 
+import DoraIcon from '@/assets/dora-icon.svg';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import { appSlice } from '@/slices/app';
 import { deleteTeam, fetchTeams } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { Team } from '@/types/api/teams';
@@ -36,6 +38,7 @@ export const TeamsList = () => {
   const teamsArray = useSelector((state) => state.team.teams);
   const searchQuery = useEasyState('');
   const router = useRouter();
+  const dispatch = useDispatch();
   const showCreate = useBoolState(false);
 
   const teamsArrayFiltered = useMemo(() => {
@@ -54,6 +57,14 @@ export const TeamsList = () => {
   const isLoadingTeams = useSelector(
     (state) => state.team?.requests?.teams === FetchState.REQUEST
   );
+
+  const handleTeamView = (team: Team) => {
+    if (team) {
+      dispatch(appSlice.actions.setSingleTeam([team]));
+    }
+    const path = ROUTES.DORA_METRICS.PATH;
+    router.push(path);
+  };
 
   useEffect(() => {
     if (router.query.create === 'true') {
@@ -89,7 +100,12 @@ export const TeamsList = () => {
           }}
         >
           {teamsArrayFiltered.map((team, index) => (
-            <TeamCard onEdit={showCreate.false} key={index} team={team} />
+            <TeamCard
+              onEdit={showCreate.false}
+              key={index}
+              team={team}
+              onView={handleTeamView}
+            />
           ))}
         </FlexBox>
         {isLoadingTeams && (
@@ -178,9 +194,10 @@ const SearchFilter: FC<{
 type TeamCardProps = {
   team: Team;
   onEdit: () => void;
+  onView: (team: Team) => void;
 };
 
-const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
+const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
   const { name: teamName, id: teamId } = team;
   const teamReposMap = useSelector((state) => state.team.teamReposMaps);
   const assignedReposToTeam = useMemo(
@@ -253,7 +270,17 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit }) => {
           </FlexBox>
         </FlexBox>
       </FlexBox>
-      <FlexBox col justifyBetween height={'70px'}>
+      <FlexBox col justifyBetween minHeight={'70px'} alignCenter>
+        <FlexBox
+          title={'View Dora Metrics'}
+          centered
+          width={'1.2em'}
+          maxWidth={'1.2em'}
+          pointer
+          onClick={() => onView(team)}
+        >
+          <DoraIcon />
+        </FlexBox>
         <EditTeam teamId={teamId} onEdit={onEdit} />
         <FlexBox pointer>
           <MoreOptions teamId={team.id} />
