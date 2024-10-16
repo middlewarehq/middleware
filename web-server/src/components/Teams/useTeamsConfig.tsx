@@ -8,7 +8,8 @@ import {
   SyntheticEvent,
   useCallback,
   useMemo,
-  useEffect
+  useEffect,
+  useRef
 } from 'react';
 
 import { FetchState } from '@/constants/ui-states';
@@ -480,7 +481,7 @@ const useReposSearch = () => {
 
   const isLoading = useBoolState(false);
 
-  let cancelTokenSource = axios.CancelToken.source();
+  const controllerRef = useRef<AbortController | null>(null);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
@@ -498,26 +499,26 @@ const useReposSearch = () => {
     async (query) => {
       depFn(isLoading.true);
       // cancel the previous request if it exists
-      if (cancelTokenSource || !query) {
-        cancelTokenSource.cancel('Operation canceled due to new request.');
+      if (controllerRef.current) {
+          controllerRef.current.abort('Operation canceled due to new request.');
       }
       if (!query) return depFn(isLoading.false);
       // create a new cancel token
-      cancelTokenSource = axios.CancelToken.source();
+      controllerRef.current = new AbortController();
 
       try {
         const response = await axios(
           `/api/internal/${orgId}/git_provider_org`,
           {
             params: { providers: integrationList, search_text: query },
-            cancelToken: cancelTokenSource.token
+            signal: controllerRef.current.signal
           }
         );
         const data = response.data;
         depFn(searchResults.set, data);
         depFn(isLoading.false);
       } catch (error: any) {
-        if (!axios.isCancel(error)) {
+        if (error.name !== 'CanceledError') {
           depFn(isLoading.false);
           console.error(error);
         }
