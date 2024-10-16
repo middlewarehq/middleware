@@ -79,7 +79,6 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
         <FlexBox gap2>
           <Button
             onClick={handlePrev}
-            // disabled={highlightedIndex <= 0}
             sx={{ display: highlightedIndex <= 0 ? 'none':'block' }}
             className="nav-button"
           >
@@ -102,7 +101,6 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
           </Button>
           <Button
             onClick={handleNext}
-            // disabled={highlightedIndex >= searchResults.length - 1}
             sx={{ display: highlightedIndex >= searchResults.length - 1  ? 'none':'block' }}
             className="nav-button"
           >
@@ -150,7 +148,7 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
                   : isHighlighted
                   ? '#ffffe080'
                   : 'transparent',
-                color: isCurrent || isHighlighted ? 'white' : 'inherit'
+                color: isCurrent || isHighlighted ? '#ffffffcc' : 'inherit'
               }}
             >
               {log.split(searchLog).map((part, idx) => (
