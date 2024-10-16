@@ -272,7 +272,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
       </FlexBox>
       <FlexBox col justifyBetween minHeight={'70px'} alignCenter>
         <FlexBox
-          title={'View team'}
+          title={'View Dora Metrics'}
           centered
           width={'1.2em'}
           maxWidth={'1.2em'}
