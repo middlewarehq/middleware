@@ -112,6 +112,7 @@ const CliUi = () => {
       processRef.current.kill();
       processRef.current.stdout.destroy();
       processRef.current.stderr.destroy();
+
       runCommand('docker', ['compose', 'down'], runCommandOpts)
         .promise.catch(async (err: any) => {
           await runCommand('docker-compose', ['down']).promise;
@@ -119,7 +120,6 @@ const CliUi = () => {
         .finally(async () => {
           await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
         });
-
     }, 200);
   }, [appState, dispatch, runCommandOpts]);
 
@@ -131,7 +131,10 @@ const CliUi = () => {
 
   useEffect(() => {
     if (appState !== AppStates.TERMINATED) return;
-    process.exit();
+    exit();
+    if(processRef.current) {
+      process.exit(0);
+      }
   }, [appState, exit]);
 
   useInput((input) => {
@@ -389,8 +392,8 @@ const CliUi = () => {
                           )
                             ? 'yellow'
                             : Object.values(preCheck).includes(
-                              PreCheckStates.FAILED
-                            )
+                                  PreCheckStates.FAILED
+                                )
                               ? 'red'
                               : 'green'
                         }
