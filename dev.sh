@@ -50,7 +50,6 @@ check_versions() {
     exit 1
   fi
 
-  echo "Node.js, Yarn, and Docker versions are compatible. Proceeding..."
 }
 
 check_versions
