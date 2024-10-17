@@ -53,7 +53,6 @@ check_versions() {
     exit 1
   fi
 
-  echo "All required versions are met."
 }
 
 check_versions
