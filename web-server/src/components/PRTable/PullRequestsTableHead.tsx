@@ -7,7 +7,6 @@ import {
   TableSortLabel
 } from '@mui/material';
 import { FC } from 'react';
-import { saveAs } from 'file-saver';
 import { DarkTooltip } from '@/components/Shared';
 import { EasyState } from '@/hooks/useEasyState';
 import { TableSort } from '@/hooks/useTableSort';
