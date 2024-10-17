@@ -390,8 +390,8 @@ const CliUi = () => {
                           )
                             ? 'yellow'
                             : Object.values(preCheck).includes(
-                              PreCheckStates.FAILED
-                            )
+                                  PreCheckStates.FAILED
+                                )
                               ? 'red'
                               : 'green'
                         }
