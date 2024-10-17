@@ -132,9 +132,7 @@ const CliUi = () => {
   useEffect(() => {
     if (appState !== AppStates.TERMINATED) return;
     exit();
-    if(processRef.current) {
-      process.exit(0);
-      }
+    process.exit(0);
   }, [appState, exit]);
 
   useInput((input) => {
@@ -392,8 +390,8 @@ const CliUi = () => {
                           )
                             ? 'yellow'
                             : Object.values(preCheck).includes(
-                                  PreCheckStates.FAILED
-                                )
+                              PreCheckStates.FAILED
+                            )
                               ? 'red'
                               : 'green'
                         }
