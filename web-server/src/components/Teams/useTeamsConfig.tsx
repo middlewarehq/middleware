@@ -1,5 +1,5 @@
 import { debounce } from '@mui/material';
-import axios from 'axios';
+import axios, { CanceledError } from 'axios';
 import { useSnackbar } from 'notistack';
 import { equals } from 'ramda';
 import {
@@ -518,7 +518,7 @@ const useReposSearch = () => {
         depFn(searchResults.set, data);
         depFn(isLoading.false);
       } catch (error: any) {
-        if (error.name !== 'CanceledError') {
+        if (!(error instanceof CanceledError)) {
           depFn(isLoading.false);
           console.error(error);
         }
