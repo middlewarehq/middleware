@@ -9,10 +9,10 @@ export const useSystemLogs = ({
 }) => {
   const services = useSelector((state) => state.service.services);
   const loading = useSelector((state) => state.service.loading);
-
-  const logs = useMemo(() => {
-    return services[serviceName]?.logs || [];
-  }, [serviceName, services]);
+  const logs = useMemo(
+    () => services[serviceName]?.logs || [],
+    [serviceName, services]
+  );
 
   return {
     services,

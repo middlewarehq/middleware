@@ -1,7 +1,7 @@
 import { LogLevel } from '@/types/resources';
+import { ParsedLog } from '@/types/resources';
 
 import {
-  ParsedLog,
   generalLogRegex,
   httpLogRegex,
   redisLogRegex,

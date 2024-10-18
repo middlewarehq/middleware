@@ -2,15 +2,9 @@ import { useTheme } from '@mui/material';
 import { useCallback } from 'react';
 
 import { Line } from '@/components/Text';
-import { ParsedLog } from '@/constants/log-formatter';
+import { ParsedLog } from '@/types/resources';
 
-export const FormattedLog = ({
-  log,
-  index
-}: {
-  log: ParsedLog;
-  index: number;
-}) => {
+export const FormattedLog = ({ log }: { log: ParsedLog; index: number }) => {
   const theme = useTheme();
   const getLevelColor = useCallback(
     (level: string) => {
@@ -40,17 +34,12 @@ export const FormattedLog = ({
 
   const { timestamp, ip, logLevel, message } = log;
   return (
-    <Line
-      key={index}
-      marginBottom={'8px'}
-      fontSize={'14px'}
-      fontFamily={'monospace'}
-    >
-      <Line component="span" color="info.main">
+    <Line medium marginBottom={'8px'} fontFamily={'monospace'}>
+      <Line component="span" color="info">
         {timestamp}
       </Line>{' '}
       {ip && (
-        <Line component="span" color="primary.main">
+        <Line component="span" color="primary">
           {ip}{' '}
         </Line>
       )}

@@ -1052,3 +1052,11 @@ export enum LogLevel {
   'STATEMENT' = 'STATEMENT',
   'DETAIL' = 'DETAIL'
 }
+
+export interface ParsedLog {
+  timestamp: string;
+  logLevel: string;
+  message: string;
+  role?: string;
+  ip?: string;
+}

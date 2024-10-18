@@ -1,11 +1,3 @@
-export interface ParsedLog {
-  timestamp: string;
-  logLevel: string;
-  message: string;
-  role?: string;
-  ip?: string;
-}
-
 export const generalLogRegex =
   /^\[(.*?)\] \[(\d+)\] \[(INFO|ERROR|WARN|DEBUG|WARNING|CRITICAL)\] (.+)$/;
 export const httpLogRegex =

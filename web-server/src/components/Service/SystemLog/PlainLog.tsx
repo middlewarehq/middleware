@@ -1,13 +1,8 @@
 import { Line } from '@/components/Text';
 
-export const PlainLog = ({ log, index }: { log: string; index: number }) => {
+export const PlainLog = ({ log }: { log: string; index: number }) => {
   return (
-    <Line
-      key={index}
-      marginBottom={'8px'}
-      fontSize={'14px'}
-      fontFamily={'monospace'}
-    >
+    <Line medium marginBottom={'8px'} fontFamily={'monospace'}>
       {log}
     </Line>
   );
