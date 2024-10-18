@@ -42,5 +42,22 @@ jobs:
         run: yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
         working-directory: web-server
 
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Create and activate virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+
+      - name: Install pre-commit
+        run: |
+          source venv/bin/activate
+          python -m pip install pre-commit
+
       - name: Run pre-commit hooks
         uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: --all-files
