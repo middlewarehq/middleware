@@ -2,7 +2,7 @@ import { Line } from '@/components/Text';
 
 export const PlainLog = ({ log }: { log: string; index: number }) => {
   return (
-    <Line medium marginBottom={'8px'} fontFamily={'monospace'}>
+    <Line mono marginBottom={1}>
       {log}
     </Line>
   );

@@ -34,7 +34,7 @@ export const FormattedLog = ({ log }: { log: ParsedLog; index: number }) => {
 
   const { timestamp, ip, logLevel, message } = log;
   return (
-    <Line medium marginBottom={'8px'} fontFamily={'monospace'}>
+    <Line mono marginBottom={1}>
       <Line component="span" color="info">
         {timestamp}
       </Line>{' '}
