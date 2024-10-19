@@ -1,0 +1,11 @@
+{
+  "eslint.workingDirectories": [
+    { "directory": "./cli", "!cwd": true },
+    { "directory": "./web-server", "!cwd": true }
+  ],
+  "eslint.run": "onSave",
+  "eslint.lintTask.enable": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  }
+}
