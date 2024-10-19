@@ -1,17 +1,18 @@
-import CircularProgress from '@mui/material/CircularProgress';
-import { useEffect, useRef, useMemo } from 'react';
+import { CircularProgress } from '@mui/material';
+import { useEffect, useRef } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import { FlexBox } from '@/components/FlexBox';
+import { FormattedLog } from '@/components/Service/SystemLog/FormattedLog';
+import { PlainLog } from '@/components/Service/SystemLog/PlainLog';
+import { SystemLogsErrorFallback } from '@/components/Service/SystemLog/SystemLogsErrorFllback';
 import { Line } from '@/components/Text';
 import { ServiceNames } from '@/constants/service';
-import { useSelector } from '@/store';
+import { useSystemLogs } from '@/hooks/useSystemLogs';
+import { parseLogLine } from '@/utils/logFormatter';
 
 export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
-  const services = useSelector((state) => state.service.services);
-  const loading = useSelector((state) => state.service.loading);
-  const logs = useMemo(() => {
-    return services[serviceName].logs || [];
-  }, [serviceName, services]);
+  const { services, loading, logs } = useSystemLogs({ serviceName });
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -22,26 +23,29 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
   }, [logs]);
 
   return (
-    <FlexBox col>
-      {loading ? (
-        <FlexBox alignCenter gap2>
-          <CircularProgress size="20px" />
-          <Line>Loading...</Line>
-        </FlexBox>
-      ) : (
-        services &&
-        logs.map((log, index) => (
-          <Line
-            key={index}
-            marginBottom={'8px'}
-            fontSize={'14px'}
-            fontFamily={'monospace'}
-          >
-            {log}
-          </Line>
-        ))
+    <ErrorBoundary
+      FallbackComponent={({ error }) => (
+        <SystemLogsErrorFallback error={error} serviceName={serviceName} />
       )}
-      <FlexBox ref={containerRef} />
-    </FlexBox>
+    >
+      <FlexBox col>
+        {loading ? (
+          <FlexBox alignCenter gap2>
+            <CircularProgress size="20px" />
+            <Line>Loading...</Line>
+          </FlexBox>
+        ) : (
+          services &&
+          logs.map((log, index) => {
+            const parsedLog = parseLogLine(log);
+            if (!parsedLog) {
+              return <PlainLog log={log} index={index} key={index} />;
+            }
+            return <FormattedLog log={parsedLog} index={index} key={index} />;
+          })
+        )}
+        <FlexBox ref={containerRef} />
+      </FlexBox>
+    </ErrorBoundary>
   );
 };
