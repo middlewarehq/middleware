@@ -88,8 +88,8 @@
     "box-server-start": "yarn install && yarn box-server-start-wo-install",
     "start": "NEXT_MANUAL_SIG_HANDLE=true next start",
     "export": "next export",
-    "lint": "eslint src/**/*.{js,,ts,tsx}",
-    "lint-fix": "eslint --fix --ignore-pattern 'node_modules/*' 'src/**/*.{js,ts,tsx}'",
+    "lint": "eslint --config .eslintrc.js 'src/**/*.{js,ts,tsx}'",
+    "lint-fix": "eslint --fix --config .eslintrc.js --ignore-pattern 'node_modules/*' 'src/**/*.{js,ts,tsx}'",
     "format": "prettier --write \"./**/*.{ts,tsx,js,jsx,json}\" --config ./.prettierrc",
     "quality-check": "concurrently -c \"auto\" --kill-others-on-fail \"yarn lint-fix\" \"yarn tsc\"",
     "qc": "yarn quality-check",
@@ -121,12 +121,13 @@
     "dotenv": "^16.0.3",
     "eslint": "^8.40.0",
     "eslint-config-next": "13.5.6",
+    "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-react": "^7.29.4",
     "eslint-plugin-unused-imports": "^3.0.0",
     "pm2": "^5.2.0",
-    "prettier": "^3.0.3"
+    "prettier": "^3.3.3"
   },
   "engines": {
     "node": "^22.x"

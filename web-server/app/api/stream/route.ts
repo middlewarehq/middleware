@@ -210,4 +210,4 @@ export async function GET(): Promise<Response> {
 // It forces the route to be dynamically rendered on each request, which is crucial for our
 // real-time streaming functionality. Without this, Next.js might try to pre-render the route
 // during build time, leading to timeouts or incorrect behavior.
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
