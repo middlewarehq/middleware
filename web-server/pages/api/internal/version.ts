@@ -1,5 +1,6 @@
-import { Endpoint, nullSchema } from '@/api-helpers/global';
 import axios from 'axios';
+
+import { Endpoint, nullSchema } from '@/api-helpers/global';
 
 const dockerRepoName = 'middlewareeng/middleware';
 const githubOrgName = 'middlewarehq';
@@ -111,8 +112,7 @@ function isUpdateAvailable({
   localVersionInfo: ProjectVersionInfo;
   dockerLatestRemoteTag: TagCompressed;
 }): boolean {
-
-  const estimatesBuildTimeInMs: number = 30*60*1000;
+  const estimatesBuildTimeInMs: number = 30 * 60 * 1000;
 
   const env = process.env.NEXT_PUBLIC_APP_ENVIRONMENT;
 
@@ -125,15 +125,16 @@ function isUpdateAvailable({
 
   const localBuildDate = new Date(localVersionInfo.current_build_date);
   const latestRemoteDate = new Date(dockerLatestRemoteTag.last_updated);
-  return latestRemoteDate.getTime() - localBuildDate.getTime() > estimatesBuildTimeInMs;
+  return (
+    latestRemoteDate.getTime() - localBuildDate.getTime() >
+    estimatesBuildTimeInMs
+  );
 }
 
 async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
   const versionInfo = getProjectVersionInfo();
 
-  const [dockerRemoteTags] = await Promise.all([
-    fetchDockerHubTags(),
-  ]);
+  const [dockerRemoteTags] = await Promise.all([fetchDockerHubTags()]);
 
   dockerRemoteTags.sort(
     (a, b) =>

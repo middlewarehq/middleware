@@ -27,6 +27,11 @@ module.exports = {
     }
   },
   rules: {
+    quotes: [
+      'warn',
+      'single',
+      { avoidEscape: true, allowTemplateLiterals: true }
+    ],
     'no-unsafe-optional-chaining': [
       'error',
       { disallowArithmeticOperators: true }
