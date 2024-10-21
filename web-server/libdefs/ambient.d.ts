@@ -84,6 +84,6 @@ declare namespace NodeJS {
     DB_USER: string;
     MERGE_COMMIT_SHA: string;
     BUILD_DATE: string;
-    BEHIND_COMMITS_COUNT?: string
+    BEHIND_COMMITS_COUNT?: string;
   }
 }
