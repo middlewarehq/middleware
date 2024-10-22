@@ -500,7 +500,7 @@ const useReposSearch = () => {
       depFn(isLoading.true);
       // cancel the previous request if it exists
       if (controllerRef.current) {
-          controllerRef.current.abort('Operation canceled due to new request.');
+        controllerRef.current.abort('Operation canceled due to new request.');
       }
       if (!query) return depFn(isLoading.false);
       // create a new cancel token
