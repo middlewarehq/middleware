@@ -24,39 +24,24 @@ Please follow the existing code style and conventions used in the project. If yo
 
 ## Making Commits
 
-1. Pre-commit should be installed as a dev dependency already. If not then Create a virual environment [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments) or [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) and run the following command from project root dir:
+> [!NOTE]
+> 👩‍💻 tl;dr - Run [`./local-setup.sh`](https://github.com/middlewarehq/middleware/blob/main/local-setup.sh), make changes, create a PR.
 
-    ```
-    pip install -r backend/dev-requirements.txt --upgrade
-    ```
-    Also install the eslint for both `cli/` and `webserver/`. Please use node 22 for that
-    *NOTE*: If NVM is not installed, install using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating)
-    ```
-    nvm install 22
-    nvm use 22
-    ```
-    ```
-    cd cli
-    yarn add eslint@^8.40.0 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
-    ```
-    ```
-    cd web-server
-    yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
-    ```
-    Then install it:
-    ```
-    pre-commit install
-    ```
+
+1. Run [`./local-setup.sh`](https://github.com/middlewarehq/middleware/blob/main/local-setup.sh).
+
+    It'll run a bunch of checks for installed commands and binaries, such as node, jq, python, etc. It should work on all operating systems, but it's been tested best on MacOS.
+
+    _If you run into issues, please look at the local-setup.sh file. It should be straight-forward enough for you to run it appropriately on your OS. We'll appreciate an issue being created for this, if it didn't work out of the box for you._
+
 2. Then after adding the changes to staging, commit it normally. You will observe pre-commit hooks running.
 
     *NOTE*: The pre-commit hooks modifies the files and you have to again add the modified changes to staging and then commit
 
 3. You can run the pre-commit without committing anything as
-    ```
+    ```bash
     pre-commit run --all-files
-    ```
-    or
-    ```
+    // or
     pre-commit run --files [path/to/file]
     ```
 
@@ -66,6 +51,7 @@ We use the following labels to categorize and prioritize issues:
 
 - `bug`: Indicates that the issue reports a bug in the current implementation.
 - `feature`: Indicates that the issue requests a new feature or enhancement.
+- `advanced`: Issues that might take more time and effort. We offer swag to anyone completing any `advanced` tagged issues.
 - `documentation`: Indicates that the issue involves updating or adding documentation.
 - `help wanted`: Indicates that the issue is open for contributions and help from the community.
 - `good first issue`: Indicates that the issue is suitable for newcomers to the project.
