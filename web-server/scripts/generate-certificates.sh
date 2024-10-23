@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CERT_DIR="./certificates"
+CERT_DIR="../certificates"
 CERT_KEY="$CERT_DIR/localhost.key"
 CERT_CRT="$CERT_DIR/localhost.crt"
 
