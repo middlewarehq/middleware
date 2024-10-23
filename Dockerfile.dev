@@ -64,7 +64,7 @@ RUN crontab /etc/cron.d/cronjob
 RUN /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
 
 WORKDIR /app/web-server
-RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn install
+RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn install --frozen-lockfile
 
 
 ENV POSTGRES_DB_ENABLED=true

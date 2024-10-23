@@ -105,7 +105,7 @@ RUN apt-get update && \
     && chmod 0644 /etc/cron.d/cronjob \
     && crontab /etc/cron.d/cronjob \
     && cd /app/web-server \
-    && yarn install --network-timeout 1000000 && yarn build \
+    && yarn install --frozen-lockfile --network-timeout 1000000 && yarn build \
     && rm -rf ./artifacts \
     && cd /app/ \
     && tar cfz web-server.tar.gz ./web-server \
