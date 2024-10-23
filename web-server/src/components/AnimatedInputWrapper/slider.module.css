@@ -1,29 +1,29 @@
-.animationWrapper{
-    position: absolute;
-    top: 50%;
-    transform: translate(0%, -50%);
-    font-size: 1em;
-    display: flex;
-    gap: 4px;
+.animationWrapper {
+  position: absolute;
+  top: 50%;
+  transform: translate(0%, -50%);
+  font-size: 1em;
+  display: flex;
+  gap: 4px;
 }
 
-.placeholder{
-    height: 1.4em;
-    width: 10rem;
-    position: relative;
+.placeholder {
+  height: 1.4em;
+  width: 10rem;
+  position: relative;
 }
 
-.repo{
-    height: 1.4em;
+.repo {
+  height: 1.4em;
 }
 
-.text{
-    position: relative;
-    transition: all 0.5s ease;
+.text {
+  position: relative;
+  transition: all 0.5s ease;
 }
 
-.textslide{
-    display: flex;
-    height: 1.4em;
-    align-items: flex-start;
+.textslide {
+  display: flex;
+  height: 1.4em;
+  align-items: flex-start;
 }

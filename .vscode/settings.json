@@ -1,0 +1,12 @@
+{
+  "eslint.workingDirectories": [
+    { "directory": "./cli", "changeProcessCWD": true },
+    { "directory": "./web-server", "changeProcessCWD": true }
+  ],
+  "eslint.run": "onSave",
+  "eslint.lintTask.enable": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "editor.formatOnSave": false
+}

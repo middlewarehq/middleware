@@ -1,12 +1,14 @@
 {
   "workbench.editor.labelFormat": "short",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.eslint": "always"
   },
+  "editor.formatOnSave": false,
+  "eslint.workingDirectories": [{ "mode": "auto" }],
   "tsEssentialPlugins.autoImport.changeSorting": {
     "createContext": ["react"]
   },
   "tsEssentialPlugins.patchOutline": true,
   "editor.linkedEditing": true,
-  "tsEssentialPlugins.enableMethodSnippets": false,
+  "tsEssentialPlugins.enableMethodSnippets": false
 }
