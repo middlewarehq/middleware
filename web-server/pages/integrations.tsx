@@ -1,6 +1,6 @@
-import { Add } from '@mui/icons-material';
+import { AddRounded, InfoRounded } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
-import { Button, Divider, Card } from '@mui/material';
+import { Button, Card, Divider } from '@mui/material';
 import { differenceInMilliseconds } from 'date-fns';
 import { millisecondsInMinute } from 'date-fns/constants';
 import { useEffect, useMemo } from 'react';
@@ -87,9 +87,12 @@ const Content = () => {
 
   const showForceSyncBtn = useMemo(() => {
     if (!hasCodeProviderLinked) return false;
+    if (!teamCount) return false;
+
     if (!lastSyncMap.length) return true;
+
     return lastSyncMap.every((diff) => diff >= TIME_LIMIT_FOR_FORCE_SYNC);
-  }, [hasCodeProviderLinked, lastSyncMap]);
+  }, [hasCodeProviderLinked, lastSyncMap, teamCount]);
 
   const enableForceSyncBtn = useMemo(() => {
     const diff = differenceInMilliseconds(
@@ -138,13 +141,17 @@ const Content = () => {
   );
 
   return (
-    <FlexBox col gap2>
-      <FlexBox justifyBetween height={'52px'} alignCenter>
+    <FlexBox col gap2 fill>
+      <FlexBox justifyBetween height={'52px'} alignCenter gap2>
         <Line white fontSize={'24px'}>
-          Integrate your Code Providers to fetch DORA for your team
+          Link your Code Services to view Dora Metrics for your team
         </Line>
         {showDoraCTA && (
-          <Button href={ROUTES.DORA_METRICS.PATH} variant="contained">
+          <Button
+            href={ROUTES.DORA_METRICS.PATH}
+            variant="contained"
+            sx={{ flexShrink: 0 }}
+          >
             <FlexBox centered fullWidth p={2 / 3}>
               Continue to Dora {'->'}
             </FlexBox>
@@ -153,13 +160,47 @@ const Content = () => {
       </FlexBox>
 
       <Divider sx={{ mb: '10px' }} />
-      {showForceSyncBtn && (
-        <FlexBox component={Card} justifyBetween p={1} alignCenter>
-          <Line>
-            Initiate force sync will force a sync of all integrations. This is
-            useful if you have made changes to your integrations outside of
-            middleware.
+      <FlexBox gap={2}>
+        <GithubIntegrationCard />
+        <GitlabIntegrationCard />
+      </FlexBox>
+      {showCreationCTA && (
+        <FlexBox mt={'56px'} col fit alignStart>
+          <Line fontSize={'24px'} semibold white>
+            Make a team to get started!
           </Line>
+          <Line fontSize={'16px'} mt="9px">
+            Just add the team's name, add repos and you're good to go.
+          </Line>
+          <Button
+            variant="contained"
+            sx={{ mt: 3 }}
+            href={ROUTES.TEAMS.PATH}
+            startIcon={<AddRounded />}
+            size="large"
+          >
+            <FlexBox gap1>
+              <Line white>Create Team</Line>
+            </FlexBox>
+          </Button>
+        </FlexBox>
+      )}
+
+      {showForceSyncBtn && (
+        <FlexBox component={Card} justifyBetween p={1} alignCenter mt="auto">
+          <FlexBox fit gap1 centered ml={1}>
+            <InfoRounded fontSize="small" />
+            <FlexBox col>
+              <Line>
+                <Line bold>Initiate force sync</Line> will force a sync of all
+                linked integrations.
+              </Line>
+              <Line tiny secondary>
+                This is useful if you want to view updated data right now,
+                instead of waiting for the next sync cycle.
+              </Line>
+            </FlexBox>
+          </FlexBox>
           <LoadingButton
             type="submit"
             variant="outlined"
@@ -190,31 +231,6 @@ const Content = () => {
           >
             Initiate Force Sync
           </LoadingButton>
-        </FlexBox>
-      )}
-
-      <FlexBox gap={2}>
-        <GithubIntegrationCard />
-        <GitlabIntegrationCard />
-      </FlexBox>
-      {showCreationCTA && (
-        <FlexBox mt={'56px'} col fit alignStart>
-          <Line fontSize={'24px'} semibold white>
-            Create team structure to see DORA
-          </Line>
-          <Line fontSize={'16px'} mt="9px">
-            Just add team's name, add repos and you're good to go.
-          </Line>
-          <Button
-            variant="contained"
-            sx={{ mt: '24px' }}
-            href={ROUTES.TEAMS.PATH}
-          >
-            <FlexBox gap1>
-              <Add />
-              <Line white>Create Team</Line>
-            </FlexBox>
-          </Button>
         </FlexBox>
       )}
     </FlexBox>
