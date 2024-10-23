@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 
 import { Row } from '@/constants/db';
 import {
-  ChangeTimeThresholds,
+  changeTimeThresholds,
   updatedDeploymentFrequencyThresholds
 } from '@/content/DoraMetrics/MetricsClassificationsThreshold';
 import { useAuth } from '@/hooks/useAuth';
@@ -83,17 +83,17 @@ export const useLeadTimeProps = () => {
   );
 
   return useMemo(() => {
-    if (leadTime <= ChangeTimeThresholds.elite)
+    if (leadTime <= changeTimeThresholds.elite)
       return {
         ...commonProps.elite,
         count: leadTime
       };
-    else if (leadTime < ChangeTimeThresholds.high)
+    else if (leadTime < changeTimeThresholds.high)
       return {
         ...commonProps.high,
         count: leadTime
       };
-    else if (leadTime < ChangeTimeThresholds.medium)
+    else if (leadTime < changeTimeThresholds.medium)
       return {
         ...commonProps.medium,
         count: leadTime
