@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-sync-scripts */
 import { CacheProvider, EmotionCache } from '@emotion/react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers';

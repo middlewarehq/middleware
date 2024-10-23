@@ -1,8 +1,8 @@
 import * as yup from 'yup';
 
+import { getSelectedIncidentServices } from '@/api/internal/[org_id]/incident_services';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
-import { getSelectedIncidentServices } from '@/api/internal/[org_id]/incident_services';
 import {
   TeamIncidentServicesApiResponse,
   TeamSelectedIncidentServicesBFFApiResponse,

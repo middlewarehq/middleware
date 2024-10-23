@@ -1,8 +1,9 @@
 import { Box, Typography, Container, Button, styled } from '@mui/material';
 import Head from 'next/head';
-import type { ReactElement } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
+
+import type { ReactElement } from 'react';
 
 const MainContent = styled(Box)(
   () => `
