@@ -1,4 +1,4 @@
-<img width="672" alt="image" src="https://github.com/user-attachments/assets/829aba7f-40a8-4adc-b8f3-87d0e724aa2e"># Contributing Guidelines
+# Contributing Guidelines
 
 Thank you for considering contributing to **Middleware**! We welcome contributions from everyone.
 
