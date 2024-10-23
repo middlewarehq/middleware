@@ -1,4 +1,4 @@
-# Contributing Guidelines
+<img width="672" alt="image" src="https://github.com/user-attachments/assets/829aba7f-40a8-4adc-b8f3-87d0e724aa2e"># Contributing Guidelines
 
 Thank you for considering contributing to **Middleware**! We welcome contributions from everyone.
 
@@ -34,11 +34,21 @@ Please follow the existing code style and conventions used in the project. If yo
 
     _If you run into issues, please look at the local-setup.sh file. It should be straight-forward enough for you to run it appropriately on your OS. We'll appreciate an issue being created for this, if it didn't work out of the box for you._
 
-2. Then after adding the changes to staging, commit it normally. You will observe pre-commit hooks running.
+2. Run [`./dev.sh`](https://github.com/middlewarehq/middleware/blob/main/local-setup.sh).
+
+    This is the actual dev server. We recommend going over the [README](https://github.com/middlewarehq/middleware#-developer-setup) for some additional details.
+    Wait for everything to run.
+   
+    You'll see a "Status: Container ready! 🚀🚀" along with all statuses shown below for various services also being ready.  
+    At this point you can load up http://localhost:3333 and you're ready to start!
+    <img width="672" alt="image" src="https://github.com/user-attachments/assets/f3897386-a624-4044-aae3-6fca2b1cdd44">
+
+
+4. Then after adding the changes to staging, commit it normally. You will observe pre-commit hooks running.
 
     *NOTE*: The pre-commit hooks modifies the files and you have to again add the modified changes to staging and then commit
 
-3. You can run the pre-commit without committing anything as
+5. You can run the pre-commit without committing anything as
     ```bash
     pre-commit run --all-files
     // or
