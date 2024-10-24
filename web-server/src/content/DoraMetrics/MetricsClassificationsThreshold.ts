@@ -5,7 +5,7 @@ import {
   secondsInWeek
 } from 'date-fns/constants';
 
-export const ChangeTimeThresholds = {
+export const changeTimeThresholds = {
   elite: secondsInDay,
   high: secondsInWeek,
   medium: secondsInMonth

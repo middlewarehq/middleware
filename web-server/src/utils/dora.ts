@@ -55,6 +55,7 @@ export const getDoraScore = ({
   cfr,
   mttr
 }: Partial<Record<'lt' | 'df' | 'cfr' | 'mttr', number | null>>) => {
+  // MTTR / Failed Deployment Recovery Time
   const ltMttrBreakpoints = [
     secondsInMonth * 6,
     secondsInMonth,
@@ -64,6 +65,7 @@ export const getDoraScore = ({
     0
   ];
 
+  // DF / Deployment Frequency
   const deployBreakpoints = [
     1 / (4 * 6), // ~once in 6 months
     1 / 4, // once in 4 weeks (~monthly)

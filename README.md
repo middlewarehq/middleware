@@ -150,10 +150,13 @@ Make sure docker is running.
     `./dev.sh` creates a `.env` file with required development environments and runs a CLI with does all the heavy lifting from tracking the container with `docker compose watch` to providing you with logs from different services.\
     The usage is as follows:
    ```bash
+   ./local-setup.sh # Optional; See note
    ./dev.sh
    ```
    You may update the `env.example` and set `ENVIRONMENT=prod` to run it in production setup.\
    Further if any changes are required to be made to ports, you may update the `docker-compose.yml` file, accordingly.
+
+   **Note** about `local-setup.sh`: While you don't need to run this script, it takes care of any local environment setup for automatic linting without which your PRs may fail the linter check.
 4. **Access the Application**:
    Once the project is running, access the application through your web browser at http://localhost:3333.
    Further, other services can be accessed at:

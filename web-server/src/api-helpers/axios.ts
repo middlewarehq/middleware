@@ -1,6 +1,27 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import axiosRetry, { isNetworkOrIdempotentRequestError } from 'axios-retry';
-import { last } from 'ramda';
+import { last, mapObjIndexed } from 'ramda';
+
+import { isObj } from '@/utils/datatype';
+import { isoDateString } from '@/utils/date';
+
+axios.defaults.paramsSerializer = {
+  ...axios.defaults.paramsSerializer,
+  serialize: (args) => {
+    const processedArgs = mapObjIndexed((val) => {
+      try {
+        if (Array.isArray(val)) return JSON.stringify(val);
+        if (val.constructor === Date) return isoDateString(val);
+        if (isObj(val)) return JSON.stringify(val);
+      } catch {}
+      return val;
+    }, args);
+    const filteredArgs = Object.fromEntries(
+      Object.entries(processedArgs).filter(([_, v]) => v !== undefined)
+    );
+    return new URLSearchParams(filteredArgs).toString();
+  }
+};
 
 export const internal = axios.create({
   baseURL: process.env.INTERNAL_API_BASE_URL

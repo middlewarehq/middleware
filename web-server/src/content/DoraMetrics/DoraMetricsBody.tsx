@@ -66,11 +66,7 @@ export const DoraMetricsBody = () => {
 
   const { addPage } = useOverlayPage();
 
-  console.log('DEbugging', isCodeProviderIntegrated);
-
   useEffect(() => {
-    // if (!singleTeamId) return;
-    // if (!isCodeProviderIntegrated) return;
     dispatch(
       fetchTeamDoraMetrics({
         orgId,
