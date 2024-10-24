@@ -172,3 +172,8 @@ def adapt_team_repos(team_repos: List[TeamRepos]) -> List[Dict[str, any]]:
         }
         for team_repo in team_repos
     ]
+
+def get_non_paginated_merged_without_review(prs: List[PullRequest]) -> List[Dict[str,any]]:
+    return {
+        "data": []
+    }
