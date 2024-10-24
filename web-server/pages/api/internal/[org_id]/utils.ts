@@ -1,5 +1,4 @@
 import axios from 'axios';
-import fetch from 'node-fetch';
 import { head } from 'ramda';
 
 import { Row } from '@/constants/db';
