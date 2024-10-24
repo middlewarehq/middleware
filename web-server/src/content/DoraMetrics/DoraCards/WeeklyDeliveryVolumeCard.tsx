@@ -12,6 +12,7 @@ import {
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { useAuth } from '@/hooks/useAuth';
+import { useCountUp } from '@/hooks/useCountUp';
 import {
   useCurrentDateRangeLabel,
   useStateDateConfig
@@ -54,6 +55,11 @@ export const WeeklyDeliveryVolumeCard = () => {
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
   const deploymentFrequencyProps = useAvgIntervalBasedDeploymentFrequency();
+
+  const deploymentFrequencyCount = useCountUp(
+    deploymentFrequencyProps.count || 0,
+    1500
+  );
 
   const { addPage } = useOverlayPage();
   const deploymentsConfigured = true;
@@ -205,7 +211,7 @@ export const WeeklyDeliveryVolumeCard = () => {
                     sx={{ fontSize: '3em' }}
                   >
                     {deploymentFrequencyProps.count ? (
-                      `${deploymentFrequencyProps.count}`
+                      `${deploymentFrequencyCount}`
                     ) : (
                       <Line>No Deployments</Line>
                     )}
