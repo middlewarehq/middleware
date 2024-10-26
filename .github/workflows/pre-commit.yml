@@ -39,7 +39,7 @@ jobs:
         working-directory: cli
 
       - name: Install dependencies for web-server
-        run: yarn add eslint@^8.40.0 eslint-config-next@13.5.6 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
+        run: yarn add eslint@^8.40.0 eslint-config-next@15.0.1 eslint-plugin-import@^2.29.0 eslint-plugin-prettier@^5.0.1 eslint-plugin-react@^7.29.4 eslint-plugin-unused-imports@^3.0.0 --dev
         working-directory: web-server
 
       - name: Setup Python 3.11
