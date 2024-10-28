@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 
+const FRAME_DURATION_MS = 16; // Average frame duration for 60fps
+
 export const useCountUp = (
   targetValue: number,
-  duration: number = 1000,
+  duration: number = 1500,
   decimalPlaces: number = 0
 ): number => {
   const [count, setCount] = useState<number>(0);
 
   useEffect(() => {
     let start = 0;
-    const increment = targetValue / (duration / 16);
+    const increment = targetValue / (duration / FRAME_DURATION_MS);
 
     const animateCount = () => {
       start += increment;

@@ -57,8 +57,7 @@ export const WeeklyDeliveryVolumeCard = () => {
   const deploymentFrequencyProps = useAvgIntervalBasedDeploymentFrequency();
 
   const deploymentFrequencyCount = useCountUp(
-    deploymentFrequencyProps.count || 0,
-    1500
+    deploymentFrequencyProps.count || 0
   );
 
   const { addPage } = useOverlayPage();

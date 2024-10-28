@@ -77,10 +77,7 @@ export const MeanTimeToRestoreCard = () => {
     ]
   );
 
-  const meanTimeToRestoreCount = useCountUp(
-    meanTimeToRestoreProps.count || 0,
-    1500
-  );
+  const meanTimeToRestoreCount = useCountUp(meanTimeToRestoreProps.count || 0);
 
   const { addPage } = useOverlayPage();
 

@@ -101,7 +101,7 @@ export const ChangeTimeCard = () => {
     [activeModeProps.backgroundColor, mergedLeadTimeTrends]
   );
 
-  const leadTimeDuration = useCountUp(activeModeProps.count || 0, 1500);
+  const leadTimeDuration = useCountUp(activeModeProps.count || 0);
 
   return (
     <CardRoot
