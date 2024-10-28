@@ -59,7 +59,7 @@ export const TeamProductionBranchSelector: FC<{
 }> = ({ onClose }) => {
   const dispatch = useDispatch();
   const { orgId, integrationSet } = useAuth();
-  const { team, singleTeamId, dates } = useSingleTeamConfig();
+  const { singleTeamId, dates } = useSingleTeamConfig();
   const branches = useStateBranchConfig();
   const isCodeIntegrationLinked = integrationSet.has(IntegrationGroup.CODE);
   const isSaving = useEasyState<boolean>(false);
@@ -150,15 +150,12 @@ export const TeamProductionBranchSelector: FC<{
             }
 
             const fetchDoraArgs = {
-              org_id: orgId,
-              team_id: singleTeamId,
-              from_date: dates.start,
-              to_date: dates.end,
+              orgId: orgId,
+              teamId: singleTeamId,
+              fromDate: dates.start,
+              toDate: dates.end,
               branches:
-                activeBranchMode === ActiveBranchMode.PROD ? null : branches,
-              manager_teams_array: [
-                { team_ids: [singleTeamId], manager_id: team?.manager_id }
-              ]
+                activeBranchMode === ActiveBranchMode.PROD ? null : branches
             };
             await dispatch(fetchTeamDoraMetrics(fetchDoraArgs));
             enqueueSnackbar('Updated Successfully', {
@@ -189,7 +186,6 @@ export const TeamProductionBranchSelector: FC<{
       dates.start,
       dates.end,
       branches,
-      team?.manager_id,
       enqueueSnackbar,
       updateActiveProdBranch
     ]

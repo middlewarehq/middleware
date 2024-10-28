@@ -540,6 +540,17 @@ export const Columns = {
       anonymous
     }
     return Columns;
+  }),
+  [Table.TeamRelations]: objectEnumFromFn(() => {
+    enum Columns {
+      created_at,
+      updated_at,
+      user_id,
+      relation,
+      related_user_id,
+      org_id
+    }
+    return Columns;
   })
 };
 

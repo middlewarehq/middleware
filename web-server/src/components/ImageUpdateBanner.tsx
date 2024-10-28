@@ -44,7 +44,6 @@ export const Transition = forwardRef(function Transition(
 });
 
 export const ImageUpdateBanner = () => {
-  const theme = useTheme();
   const { addModal } = useModal();
   const dispatch = useDispatch();
 

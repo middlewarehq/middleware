@@ -178,7 +178,7 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
     fromDate: Date;
     toDate: Date;
     branches: string;
-    branch_mode: ActiveBranchMode;
+    branch_mode?: ActiveBranchMode;
   }) => {
     return await handleApi<TeamDoraMetricsApiResponseType>(
       `internal/team/${params.teamId}/dora_metrics`,
@@ -188,7 +188,7 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
           from_date: params.fromDate,
           to_date: params.toDate,
           branches: params.branches,
-          branch_mode: params.branch_mode
+          branch_mode: params.branch_mode || ActiveBranchMode.ALL
         }
       }
     );

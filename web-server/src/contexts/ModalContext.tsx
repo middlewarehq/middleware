@@ -18,7 +18,7 @@ import {
   useTheme,
   alpha,
   lighten,
-  SxProps
+  DialogContentProps
 } from '@mui/material';
 import {
   endOfDay,
@@ -70,7 +70,7 @@ export type ModalT = {
    */
   close?: () => any;
   showCloseIcon?: boolean;
-  sx?: SxProps;
+  sx?: DialogContentProps['sx'];
 };
 
 type NewModal = Omit<ModalT, 'key'>;

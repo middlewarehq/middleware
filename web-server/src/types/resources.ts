@@ -628,7 +628,7 @@ export enum TeamSettings {
 export type FetchTeamsResponse = {
   teams: Team[];
   teamReposProdBranchMap: Record<ID, TeamRepoBranchDetails[]>;
-  teamReposMap: Record<ID, DB_OrgRepo[]>;
+  teamReposMap: Record<ID, Row<'OrgRepo'>[]>;
 };
 
 export type FetchTeamSettingsAPIResponse<T extends {} = {}> = {

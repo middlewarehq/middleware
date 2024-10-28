@@ -158,7 +158,7 @@ export const AIAnalysis = () => {
               })
               .catch((r: AxiosError) => {
                 enqueueSnackbar(
-                  r.response?.data?.message || 'Something went wrong!',
+                  (r.response?.data as any)?.message || 'Something went wrong!',
                   {
                     variant: 'error',
                     anchorOrigin: {

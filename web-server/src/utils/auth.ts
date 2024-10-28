@@ -51,7 +51,7 @@ export const getMissingPATScopes = async (pat: string) => {
       }
     });
 
-    const scopesString = response.headers['x-oauth-scopes'];
+    const scopesString = response.headers['x-oauth-scopes'] as string;
     if (!scopesString) return PAT_SCOPES;
 
     const userScopes = scopesString.split(',').map((scope) => scope.trim());

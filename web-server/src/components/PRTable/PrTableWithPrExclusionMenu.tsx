@@ -1,16 +1,16 @@
 import { Button, Divider } from '@mui/material';
 import { useRouter } from 'next/router';
-import { FC, useMemo, useCallback, useEffect } from 'react';
+import { FC, useCallback, useEffect } from 'react';
 
 import { PullRequestsTableHeadProps } from '@/components/PRTable/PullRequestsTableHead';
 import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useEasyState } from '@/hooks/useEasyState';
-import { useFeature } from '@/hooks/useFeature';
 import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
 import { updateExcludedPrs, fetchExcludedPrs } from '@/slices/team';
 import { useDispatch, useSelector } from '@/store';
 import { PR } from '@/types/resources';
+import { depFn } from '@/utils/fn';
 
 import { PullRequestsTable } from './PullRequestsTable';
 
@@ -39,27 +39,25 @@ export const PrTableWithPrExclusionMenu: FC<
 
     dispatch(
       updateExcludedPrs({
-        userId,
         teamId,
         excludedPrs: [...excludedPrs, ...selectedPrs]
       })
-    ).then(() => onUpdateCallback());
+    ).then(() => {
+      onUpdateCallback();
+      depFn(selectedPrIds.reset);
+    });
   }, [
     dispatch,
     excludedPrs,
     onUpdateCallback,
     propPrs,
+    selectedPrIds.reset,
     selectedPrIds.value,
-    teamId,
-    userId
+    teamId
   ]);
 
   const isUserRoute = router.pathname.includes('/user');
-  const isPrExclusionEnabled = useFeature('enable_pr_exclusion');
-  const enablePrSelection = useMemo(
-    () => !isUserRoute && isPrExclusionEnabled,
-    [isPrExclusionEnabled, isUserRoute]
-  );
+  const enablePrSelection = !isUserRoute;
 
   useEffect(() => {
     dispatch(fetchExcludedPrs({ teamId }));
@@ -70,7 +68,7 @@ export const PrTableWithPrExclusionMenu: FC<
       propPrs={propPrs}
       selectionMenu={
         enablePrSelection && (
-          <FlexBox>
+          <FlexBox gap1>
             {Boolean(selectedPrIds.value.length) && (
               <Button
                 sx={{ p: 1.5 }}
@@ -78,7 +76,7 @@ export const PrTableWithPrExclusionMenu: FC<
                 disabled={!selectedPrIds.value.length}
                 onClick={updateExcludedPrsHandler}
               >
-                Exclude From Team Analytics
+                Exclude For Team
               </Button>
             )}
             {Boolean(excludedPrs?.length) &&
@@ -111,7 +109,6 @@ export const ExcludedPrTable: FC<{
   onUpdateCallback: () => void;
 }> = ({ onUpdateCallback }) => {
   const dispatch = useDispatch();
-  const { userId } = useAuth();
   const teamId = useSingleTeamConfig().singleTeamId;
 
   const excludedPrs = useSelector((s) => s.team.excludedPrs);
@@ -122,19 +119,11 @@ export const ExcludedPrTable: FC<{
     const filteredPrs = excludedPrs.filter((p) => !selectedPrIdsSet.has(p.id));
     dispatch(
       updateExcludedPrs({
-        userId,
         teamId,
         excludedPrs: [...filteredPrs]
       })
     ).then(() => onUpdateCallback());
-  }, [
-    dispatch,
-    excludedPrs,
-    onUpdateCallback,
-    selectedPrIds.value,
-    teamId,
-    userId
-  ]);
+  }, [dispatch, excludedPrs, onUpdateCallback, selectedPrIds.value, teamId]);
 
   return (
     <FlexBox col gap1>

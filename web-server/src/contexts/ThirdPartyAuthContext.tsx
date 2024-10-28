@@ -21,6 +21,7 @@ type CodeProviderIntegrations =
   | Integration.GITLAB
   | Integration.BITBUCKET;
 export interface AuthContextValue extends AuthState {
+  userId: string | null;
   orgId: string | null;
   role: UserRole;
   integrations: Org['integrations'];
@@ -32,6 +33,7 @@ export interface AuthContextValue extends AuthState {
 
 export const AuthContext = createContext<AuthContextValue>({
   ...initialAuthState,
+  userId: '00000000-0000-0000-0000-000000000000',
   orgId: null,
   role: UserRole.MOM,
   integrations: {},
@@ -142,6 +144,7 @@ export const AuthProvider: FC = (props) => {
     <AuthContext.Provider
       value={{
         ...state,
+        userId: '00000000-0000-0000-0000-000000000000',
         orgId: state.org?.id,
         role,
         integrations,
