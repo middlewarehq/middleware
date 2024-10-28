@@ -7,12 +7,14 @@ import { FlexBox } from '@/components/FlexBox';
 import { FormattedLog } from '@/components/Service/SystemLog/FormattedLog';
 import { PlainLog } from '@/components/Service/SystemLog/PlainLog';
 import { SystemLogsErrorFallback } from '@/components/Service/SystemLog/SystemLogsErrorFllback';
+import { SomethingWentWrong } from '@/components/SomethingWentWrong/SomethingWentWrong';
 import { Line } from '@/components/Text';
 import { ServiceNames } from '@/constants/service';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { parseLogLine } from '@/utils/logFormatter';
 import './searchfunctionality.css';
-export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
+
+export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
   const { services, loading, logs } = useSystemLogs({ serviceName });
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,6 +61,11 @@ export const SystemLogs = ({ serviceName }: { serviceName: ServiceNames }) => {
       containerRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [logs]);
+
+  if (!serviceName)
+    return (
+      <SomethingWentWrong desc="Unspecified Service. This might be a product bug. Please contact us to let us know.;" />
+    );
 
   return (
     <ErrorBoundary

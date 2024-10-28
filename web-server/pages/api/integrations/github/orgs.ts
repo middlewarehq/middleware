@@ -4,7 +4,6 @@ import * as yup from 'yup';
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { Row, Table } from '@/constants/db';
 import { selectedDBReposMock } from '@/mocks/github';
-import { DB_OrgRepo } from '@/types/resources';
 import { db } from '@/utils/db';
 
 const patchSchema = yup.object().shape({
@@ -19,11 +18,11 @@ const endpoint = new Endpoint(nullSchema);
 type ReqOrgRepo = { org: string; repos: string[] };
 type ReqRepo = { org: string; name: string };
 
-const reqRepoComparator = (reqRepo: ReqRepo) => (tableRepo: DB_OrgRepo) =>
+const reqRepoComparator = (reqRepo: ReqRepo) => (tableRepo: Row<'OrgRepo'>) =>
   reqRepo.org === tableRepo.org_name && reqRepo.name === tableRepo.name;
-const dbRepoComparator = (tableRepo: DB_OrgRepo) => (reqRepo: ReqRepo) =>
+const dbRepoComparator = (tableRepo: Row<'OrgRepo'>) => (reqRepo: ReqRepo) =>
   reqRepo.org === tableRepo.org_name && reqRepo.name === tableRepo.name;
-const dbRepoFilter = (reqRepos: ReqRepo[]) => (tableRepo: DB_OrgRepo) =>
+const dbRepoFilter = (reqRepos: ReqRepo[]) => (tableRepo: Row<'OrgRepo'>) =>
   reqRepos.some(dbRepoComparator(tableRepo));
 
 endpoint.handle.PATCH(patchSchema, async (req, res) => {

@@ -66,7 +66,7 @@ const postSchema = yup.object().shape({
 const endpoint = new Endpoint(nullSchema);
 endpoint.handle.POST(postSchema, async (req, res) => {
   const { data, model, access_token } = req.payload;
-  const dora_data = data as TeamDoraMetricsApiResponseType;
+  const dora_data = data as unknown as TeamDoraMetricsApiResponseType;
 
   try {
     const [
@@ -76,16 +76,14 @@ endpoint.handle.POST(postSchema, async (req, res) => {
       MTTRSummary,
       deploymentFrequencySummary,
       doraTrendSummary
-    ] = await Promise.all(
-      [
-        getDoraMetricsScore,
-        getLeadTimeSummary,
-        getCFRSummary,
-        getMTTRSummary,
-        getDeploymentFrequencySummary,
-        getDoraTrendsCorrelationSummary
-      ].map((fn) => fn(dora_data, model, access_token))
-    );
+    ] = await Promise.all([
+      getDoraMetricsScore(dora_data, model, access_token),
+      getLeadTimeSummary(dora_data, model, access_token),
+      getCFRSummary(dora_data, model, access_token),
+      getMTTRSummary(dora_data, model, access_token),
+      getDeploymentFrequencySummary(dora_data, model, access_token),
+      getDoraTrendsCorrelationSummary(dora_data, model, access_token)
+    ]);
 
     const aggregatedData = {
       ...doraMetricsScore,
@@ -107,18 +105,28 @@ endpoint.handle.POST(postSchema, async (req, res) => {
       ...compiledSummary
     };
 
-    const { status, message } = checkForErrors(responses);
+    const { status, message } = checkForErrors(
+      responses as unknown as Record<
+        string,
+        { status: string; message: string }
+      >
+    );
 
     if (status === 'error') {
       return res.status(400).send({ message });
     }
 
     const simplifiedData = Object.fromEntries(
-      Object.entries(responses).map(([key, value]) => [key, value.data])
+      Object.entries(responses).map(([key, value]) => [
+        key,
+        // TODO: PLEASE FIX THIS TYPE LATER
+        // @ts-ignore
+        value.data
+      ])
     );
 
     return res.status(200).send(simplifiedData);
-  } catch (error) {
+  } catch (error: any) {
     return res.status(500).send({
       message: 'Internal Server Error',
       error: error.message

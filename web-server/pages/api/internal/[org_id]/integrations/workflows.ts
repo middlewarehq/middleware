@@ -3,7 +3,6 @@ import * as yup from 'yup';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
 import { CIProvider, Integration } from '@/constants/integrations';
-import { mockWorkflows } from '@/mocks/workflows';
 import { RepoWorkflowResponse, RepoWorkflow } from '@/types/resources';
 
 const pathSchema = yup.object().shape({
@@ -20,8 +19,6 @@ const getSchema = yup.object().shape({
 const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.GET(getSchema, async (req, res) => {
-  if (req.meta?.features?.use_mock_data) return res.send(mockWorkflows);
-
   const { org_id, provider, org_name, repo_name, repo_slug, next_page_token } =
     req.payload;
 

@@ -26,7 +26,6 @@ import { MiniSwitch } from '@/components/Shared';
 import { Line } from '@/components/Text';
 import { TrendsLineChart } from '@/components/TrendsLineChart';
 import { track } from '@/constants/events';
-import { ProcessChartWithContainer } from '@/content/PullRequests/ProcessChartWithContainer';
 import { ClipPathEnum } from '@/content/PullRequests/useChangeTimePipeline';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
 import { useBoolState } from '@/hooks/useEasyState';
@@ -40,70 +39,12 @@ import { getDurationString } from '@/utils/date';
 
 import { LeadTimeStatsCore } from './LeadTimeStatsCore';
 
-// export const TeamInsightsBody: FC = () => {
-//   const router = useRouter();
-
-//   const cycleTimeArgs = useMemo(() => {
-//     const [min, max] = router.query?.params || [];
-
-//     if (min || max)
-//       return {
-//         cycle_time: { min: Number(min), max: Number(max) }
-//       };
-
-//     return null;
-//   }, [router.query?.params]);
-//   const pageRefreshCallback = usePageRefreshCallback();
-//   const { isLoading, refreshDataCallback } = usePageData(
-//     fetchTeamInsights,
-//     'teamInsights',
-//     cycleTimeArgs
-//   );
-//   const prUpdateCallback = useCallback(() => {
-//     refreshDataCallback();
-//     pageRefreshCallback();
-//   }, [pageRefreshCallback, refreshDataCallback]);
-//   const prs = useSelector((state) => state.collab.teamInsights.curr.data);
-
-//   const isErrored = useSelector(
-//     (state) => state.collab.requests.teamInsights === FetchState.FAILURE
-//   );
-
-//   if (isLoading) return <FullContentLoader />;
-
-//   if (isErrored) return <SomethingWentWrong />;
-
-//   if (!prs.length)
-//     return (
-//       <>
-//         <Title cycleTime={cycleTimeArgs?.cycle_time} />
-//         <Typography variant="subtitle1" fontSize="large">
-//           No pull requests were found in this date range
-//         </Typography>
-//       </>
-//     );
-
-//   return (
-//     <>
-//       <Title cycleTime={cycleTimeArgs?.cycle_time} />
-//       <Typography variant="h4" mt={2} fontSize="large">
-//         List of PRs in this time range
-//       </Typography>
-//       <PrTableWithPrExclusionMenu
-//         propPrs={prs}
-//         onUpdateCallback={prUpdateCallback}
-//       />
-//     </>
-//   );
-// };
-
 export const TeamInsightsBodyRouterless: FC<{
   min?: number;
   max?: number;
   referrer?: 'dora_metrics';
 }> = ({ min, max, referrer }) => {
   const theme = useTheme();
-  const isLeadTimeActive = true;
 
   const cycleTimeArgs = useMemo(() => {
     if (min || max)
@@ -142,10 +83,6 @@ export const TeamInsightsBodyRouterless: FC<{
     if (showBreakdownStatsInGraph.value) return leadTimeBreakdownSegments;
     return [trendsSeriesMap.totalLeadTimeTrends];
   }, [showBreakdownStatsInGraph.value, trendsSeriesMap]);
-
-  // if (isLoading) return <MiniLoader label="Loading PRs..." />;
-
-  // if (isErrored) return <SomethingWentWrong />;
 
   if (!prs.length)
     return (
@@ -194,44 +131,31 @@ export const TeamInsightsBodyRouterless: FC<{
             </FlexBox>
           </AccordionSummary>
           <AccordionDetails>
-            {referredByDoraMetrics ? (
-              <FlexBox col>
-                <FlexBox alignCenter gap1>
-                  Show Breakdown
-                  <MiniSwitch
-                    onChange={showBreakdownStatsInGraph.toggle}
-                    defaultChecked={false}
-                  />
-                </FlexBox>
-                <FlexBox
-                  fullWidth
-                  height={'300px'}
-                  alignCenter
-                  justifyCenter
-                  p={1}
-                >
-                  <TrendsLineChart series={series} isTimeBased />
-                </FlexBox>
-                <LegendsMenu series={series} />
-              </FlexBox>
-            ) : (
-              <FlexBox col fullWidth relative gap={2}>
-                <ProcessChartWithContainer
-                  chartId="process-chart-overlaid"
-                  minHeight="25vh"
-                  maxHeight="300px"
-                  borderRadius={1}
-                  legendOutside
-                  hideTitle
+            <FlexBox col>
+              <FlexBox alignCenter gap1>
+                Show Breakdown
+                <MiniSwitch
+                  onChange={showBreakdownStatsInGraph.toggle}
+                  defaultChecked={false}
                 />
               </FlexBox>
-            )}
+              <FlexBox
+                fullWidth
+                height={'300px'}
+                alignCenter
+                justifyCenter
+                p={1}
+              >
+                <TrendsLineChart series={series} isTimeBased />
+              </FlexBox>
+              <LegendsMenu series={series} />
+            </FlexBox>
           </AccordionDetails>
         </Accordion>
       </FlexBox>
       <Divider />
       <Title cycleTime={cycleTimeArgs?.cycle_time} />
-      <PrBreakdownAndInsights prs={prs} prUpdateCallback={prUpdateCallback} />
+      <PrBreakdownAndInsights prs={prs} />
       <Line white bold mt={2}>
         {prs.length} Pull {pluralize('request', prs.length)} submitted by the
         team
@@ -246,9 +170,7 @@ export const TeamInsightsBodyRouterless: FC<{
 
 export const PrBreakdownAndInsights: FC<{
   prs: PR[];
-  prevPrs?: PR[];
-  prUpdateCallback: () => void;
-}> = ({ prs, prevPrs, prUpdateCallback }) => {
+}> = ({ prs }) => {
   const { changeTimeDetailsArray } = useComputedPrChangeTime(prs);
 
   if (!prs.length) return null;

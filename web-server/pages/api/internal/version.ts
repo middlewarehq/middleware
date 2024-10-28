@@ -5,11 +5,10 @@ import { Endpoint, nullSchema } from '@/api-helpers/global';
 const dockerRepoName = 'middlewareeng/middleware';
 const githubOrgName = 'middlewarehq';
 const githubRepoName = 'middleware';
-const defaultBranch = 'main';
 
 const endpoint = new Endpoint(nullSchema);
 
-endpoint.handle.GET(nullSchema, async (req, res) => {
+endpoint.handle.GET(nullSchema, async (_req, res) => {
   return res.send(await checkNewImageRelease());
 });
 
@@ -70,18 +69,6 @@ type TagCompressed = {
   name: string;
   last_updated: string;
   digest: string;
-};
-
-type GitHubCommit = {
-  sha: string;
-  commit: {
-    author: {
-      name: string;
-      email: string;
-      date: string;
-    };
-    message: string;
-  };
 };
 
 function getProjectVersionInfo(): ProjectVersionInfo {
