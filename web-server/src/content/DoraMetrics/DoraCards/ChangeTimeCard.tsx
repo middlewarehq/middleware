@@ -19,6 +19,7 @@ import {
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { usePropsForChangeTimeCard } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
+import { useCountUp } from '@/hooks/useCountUp';
 import { useSelector } from '@/store';
 import { ChangeTimeModes } from '@/types/resources';
 import { merge } from '@/utils/datatype';
@@ -99,6 +100,8 @@ export const ChangeTimeCard = () => {
     ],
     [activeModeProps.backgroundColor, mergedLeadTimeTrends]
   );
+
+  const leadTimeDuration = useCountUp(activeModeProps.count || 0);
 
   return (
     <CardRoot
@@ -293,7 +296,7 @@ export const ChangeTimeCard = () => {
                     color={activeModeProps.color}
                     sx={{ fontSize: '3em' }}
                   >
-                    {getDurationString(activeModeProps.count) || 0}
+                    {getDurationString(leadTimeDuration) || 0}
                   </Line>
                   {Boolean(activeModeProps.count || prevChangeTime) && (
                     <DoraMetricsComparisonPill

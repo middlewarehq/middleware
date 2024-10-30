@@ -12,6 +12,7 @@ import {
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
+import { useCountUp } from '@/hooks/useCountUp';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
 import { getDurationString } from '@/utils/date';
 
@@ -75,6 +76,8 @@ export const MeanTimeToRestoreCard = () => {
       meanTimeToRestoreProps.backgroundColor
     ]
   );
+
+  const meanTimeToRestoreCount = useCountUp(meanTimeToRestoreProps.count || 0);
 
   const { addPage } = useOverlayPage();
 
@@ -168,7 +171,7 @@ export const MeanTimeToRestoreCard = () => {
                     lineHeight={1}
                   >
                     {meanTimeToRestoreProps.count ? (
-                      getDurationString(meanTimeToRestoreProps.count)
+                      getDurationString(meanTimeToRestoreCount)
                     ) : (
                       <NoIncidentsLabel />
                     )}

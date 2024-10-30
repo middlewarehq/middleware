@@ -13,6 +13,7 @@ import {
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { useAuth } from '@/hooks/useAuth';
+import { useCountUp } from '@/hooks/useCountUp';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
 import {
   useStateDateConfig,
@@ -78,6 +79,12 @@ export const ChangeFailureRateCard = () => {
     (s) =>
       s.doraMetrics.metrics_summary?.mean_time_to_restore_stats.current
         .incident_count
+  );
+
+  const changeFailureRateCount = useCountUp(
+    changeFailureRateProps.count || 0,
+    1500, // animation duration
+    2 // decimal place
   );
 
   const series = useMemo(
@@ -195,7 +202,7 @@ export const ChangeFailureRateCard = () => {
                     lineHeight={1}
                   >
                     {changeFailureRateProps.count ? (
-                      `${Number(changeFailureRateProps.count.toFixed(2))}%`
+                      `${Number(changeFailureRateCount.toFixed(2))}%`
                     ) : (
                       <NoIncidentsLabel
                         deploymentsCount={
