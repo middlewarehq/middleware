@@ -1,6 +1,8 @@
-const analyzer = require('@next/bundle-analyzer');
-const { loadEnvConfig } = require('@next/env');
-const images = require('next-images');
+import pkg from '@next/env';
+const { loadEnvConfig } = pkg;
+
+import analyzer from '@next/bundle-analyzer';
+import images from 'next-images';
 
 loadEnvConfig('../.env');
 
@@ -112,4 +114,4 @@ const plugins =
     ? compose(genericPlugins, staticOverrides)
     : compose(genericPlugins, { ...staticOverrides, ...webpackOverride });
 
-module.exports = plugins;
+export default plugins;

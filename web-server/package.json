@@ -75,6 +75,7 @@
     "voca": "^1.4.0",
     "yup": "0.32.11"
   },
+  "type": "module",
   "scripts": {
     "knip": "knip",
     "prod-tun": "bash -c \"$PROD_TUNNEL\"",
