@@ -1,10 +1,17 @@
 import { useTheme } from '@mui/material';
-import React,{ useCallback } from 'react';
+import React, { useCallback } from 'react';
 
 import { Line } from '@/components/Text';
 import { ParsedLog } from '@/types/resources';
 
-export const FormattedLog = ({ log, style }: { log: ParsedLog; index: number; style?: React.CSSProperties }) => {
+export const FormattedLog = ({
+  log,
+  style
+}: {
+  log: ParsedLog;
+  index: number;
+  style?: React.CSSProperties;
+}) => {
   const theme = useTheme();
   const getLevelColor = useCallback(
     (level: string) => {
