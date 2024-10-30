@@ -80,7 +80,7 @@
     "prod-tun": "bash -c \"$PROD_TUNNEL\"",
     "stage-tun": "bash -c \"$STAGE_TUNNEL\"",
     "http": "node http-server",
-    "dev": "[ -e ../.env ] && set -a && . ../.env; NEXT_MANUAL_SIG_HANDLE=true node server.js",
+    "dev": "bash ./scripts/generate-certificates.sh && [ -e ../.env ] && set -a && . ../.env; NEXT_MANUAL_SIG_HANDLE=true node server.js",
     "dev-prod": "NEXT_MANUAL_SIG_HANDLE=true yarn env prod && next",
     "build": "./scripts/build.sh",
     "zip": "./scripts/zip.sh",
