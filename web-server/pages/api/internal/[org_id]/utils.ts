@@ -102,7 +102,7 @@ export const searchGithubReposWithNames = async (
           }
       `;
 
-  const queryString = `${searchString} in:name`;
+  const queryString = `${searchString} in:name fork:true`;
 
   const response = await fetch(GITHUB_API_URL, {
     method: 'POST',
