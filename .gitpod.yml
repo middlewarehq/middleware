@@ -1,8 +1,6 @@
-# Ports to expose
 tasks:
-  - init: |
+  - before: nvm install 22
     command: ./dev.sh
-    openMode: split-right
 
 ports:
   - port: 3333
