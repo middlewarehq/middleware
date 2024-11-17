@@ -63,6 +63,13 @@ RUN chmod 0644 /etc/cron.d/cronjob
 RUN crontab /etc/cron.d/cronjob
 RUN /app/setup_utils/generate_config_ini.sh -t /app/backend/analytics_server/mhq/config
 
+ARG CACHEBUST=1
+RUN apt-get update && \
+    apt-get install -y mkcert && \
+    apt-get install -y libnss3-tools && \
+    mkcert -install && \
+    mkcert localhost
+
 WORKDIR /app/web-server
 RUN --mount=type=cache,target=/root/.yarn YARN_CACHE_FOLDER=/root/.yarn yarn install --frozen-lockfile
 

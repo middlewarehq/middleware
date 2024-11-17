@@ -194,6 +194,3 @@ tsconfig.tsbuildinfo
 
 # Sentry
 .sentryclirc
-
-#certificates
-certificates/

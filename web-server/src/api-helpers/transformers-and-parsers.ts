@@ -24,8 +24,8 @@ export const parseError = (err: any) => {
     payload: dbErrorIfPresent
       ? dbErrorIfPresent
       : typeof payload === 'object'
-      ? transformInternalApiErrors(payload) || payload
-      : { message: payload }
+        ? transformInternalApiErrors(payload) || payload
+        : { message: payload }
   };
 
   if (stack) response.payload.stack = stack;

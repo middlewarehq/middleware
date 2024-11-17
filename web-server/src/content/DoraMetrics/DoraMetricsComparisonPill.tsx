@@ -90,18 +90,18 @@ export const DoraMetricsComparisonPill: FC<
     change > MEANINGFUL_CHANGE_THRESHOLD
       ? 'positive'
       : change < -MEANINGFUL_CHANGE_THRESHOLD
-      ? 'negative'
-      : 'neutral';
+        ? 'negative'
+        : 'neutral';
   const color = darken(
     state === 'positive'
       ? positive
         ? theme.colors.success.main
         : theme.colors.warning.main
       : state === 'negative'
-      ? positive
-        ? theme.colors.warning.main
-        : theme.colors.success.main
-      : '#DDD',
+        ? positive
+          ? theme.colors.warning.main
+          : theme.colors.success.main
+        : '#DDD',
     state === 'neutral' ? 0.5 : 0
   );
 

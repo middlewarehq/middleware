@@ -90,10 +90,10 @@ const getBg = (stat: number) => ({
     stat >= 8
       ? commonProps.elite.bg
       : stat >= 6
-      ? commonProps.high.bg
-      : stat >= 4
-      ? commonProps.medium.bg
-      : commonProps.low.bg
+        ? commonProps.high.bg
+        : stat >= 4
+          ? commonProps.medium.bg
+          : commonProps.low.bg
 });
 
 const IndustryDropdown = () => {
