@@ -271,8 +271,8 @@ export const WeeklyDeliveryVolumeCard = () => {
                       {deploymentFrequencyProps.count || totalDeployments
                         ? `See details ->`
                         : deploymentsConfigured
-                        ? `Nothing was deployed between ${dateRangeLabel}`
-                        : `Deployments not configured for any repos. Configure here ->`}
+                          ? `Nothing was deployed between ${dateRangeLabel}`
+                          : `Deployments not configured for any repos. Configure here ->`}
                     </Line>
                   </Line>
 
