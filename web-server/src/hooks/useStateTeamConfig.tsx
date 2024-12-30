@@ -84,8 +84,8 @@ export const useStateTeamConfig = () => {
       const newRange = dateRangeUpdateHandler(range, dateRange);
       dispatch(
         appSlice.actions.setDateRange({
-          dateRange: newRange.map(
-            (date) => date?.toISOString()
+          dateRange: newRange.map((date) =>
+            date?.toISOString()
           ) as SerializableDateRange,
           dateMode: dateMode
         })

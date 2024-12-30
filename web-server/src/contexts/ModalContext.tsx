@@ -337,11 +337,11 @@ export const ModalDatePicker: FC<
             !date.value
               ? 'Not set'
               : differenceInHours(today, date.value) < 1
-              ? `${intlFormatDistance(date.value, today)} on a ${format(
-                  date.value,
-                  'eeee'
-                )}`
-              : 'Today'
+                ? `${intlFormatDistance(date.value, today)} on a ${format(
+                    date.value,
+                    'eeee'
+                  )}`
+                : 'Today'
           }
           FormHelperTextProps={{
             sx: { m: 0, textAlign: 'right' }
@@ -376,11 +376,11 @@ export const StaticModalDatePicker: FC<
             {!date.value
               ? 'Not set'
               : !isToday(date.value)
-              ? `${intlFormatDistance(date.value, today)} on a ${format(
-                  date.value,
-                  'eeee'
-                )}`
-              : 'Today'}
+                ? `${intlFormatDistance(date.value, today)} on a ${format(
+                    date.value,
+                    'eeee'
+                  )}`
+                : 'Today'}
           </Box>
         </Box>
         <FlexBox flex1 />
