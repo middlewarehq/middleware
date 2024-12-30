@@ -1,33 +1,32 @@
 import { useState, useEffect } from 'react';
 
-const FRAME_DURATION_MS = 16; // Average frame duration for 60fps
+const STEPS = 7; // number of steps to reach the target value
+const INTERVAL = 75; // in ms
 
 export const useCountUp = (
   targetValue: number,
-  duration: number = 1500,
   decimalPlaces: number = 0
 ): number => {
   const [count, setCount] = useState<number>(0);
 
   useEffect(() => {
-    let start = 0;
-    const increment = targetValue / (duration / FRAME_DURATION_MS);
+    let currentStep = 0;
+    const stepValue = targetValue / STEPS;
 
-    const animateCount = () => {
-      start += increment;
+    const timer = setInterval(() => {
+      currentStep++;
 
-      if (start >= targetValue) {
+      if (currentStep >= STEPS) {
         setCount(parseFloat(targetValue.toFixed(decimalPlaces)));
+        clearInterval(timer);
       } else {
-        setCount(parseFloat(start.toFixed(decimalPlaces)));
-        requestAnimationFrame(animateCount);
+        const newValue = stepValue * currentStep;
+        setCount(parseFloat(newValue.toFixed(decimalPlaces)));
       }
-    };
+    }, INTERVAL);
 
-    animateCount();
-
-    return () => {};
-  }, [targetValue, duration, decimalPlaces]);
+    return () => clearInterval(timer);
+  }, [targetValue, decimalPlaces]);
 
   return count;
 };
