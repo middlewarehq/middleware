@@ -81,11 +81,7 @@ export const ChangeFailureRateCard = () => {
         .incident_count
   );
 
-  const changeFailureRateCount = useCountUp(
-    changeFailureRateProps.count || 0,
-    1500, // animation duration
-    2 // decimal place
-  );
+  const changeFailureRateCount = useCountUp(changeFailureRateProps.count || 0);
 
   const series = useMemo(
     () => [
