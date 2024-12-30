@@ -53,7 +53,19 @@ export const DoraMetricsConfigurationSettings = () => {
           Settings
         </FlexBox>
       </Button>
-      <Menu anchorEl={anchorEl.current} open={open.value} onClose={open.false}>
+      <Menu
+        anchorEl={anchorEl.current}
+        open={open.value}
+        onClose={open.false}
+        MenuListProps={{
+          sx: {
+            padding: 0
+          }
+        }}
+        sx={{
+          padding: 0
+        }}
+      >
         <MenuItem
           onClick={() => {
             open.false();
