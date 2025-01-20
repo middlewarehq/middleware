@@ -598,7 +598,7 @@ const CliUi = () => {
             <Text bold underline color="#7e57c2">
               Access Info
             </Text>
-            <Text bold>{`http://localhost:${frontend_port}`}</Text>
+            <Text bold>{`https://localhost:${frontend_port}`}</Text>
             <Text bold>{`http://localhost:${analytics_server_port}`}</Text>
             <Text bold>{`redis://${redis_host}:${redis_port}/0`}</Text>
             <Text
