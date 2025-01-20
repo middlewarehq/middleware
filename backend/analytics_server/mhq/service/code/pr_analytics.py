@@ -1,7 +1,9 @@
 from mhq.store.models.code import OrgRepo, PullRequest
 from mhq.store.repos.code import CodeRepoService
 
+
 from typing import List, Optional
+from mhq.utils.time import Interval
 
 
 class PullRequestAnalyticsService:
@@ -10,6 +12,16 @@ class PullRequestAnalyticsService:
 
     def get_prs_by_ids(self, pr_ids: List[str]) -> List[PullRequest]:
         return self.code_repo_service.get_prs_by_ids(pr_ids)
+
+    def get_prs_merged_without_review(
+        self, team_id: str, interval: Interval, pr_filter: dict
+    ) -> List[PullRequest]:
+        team_repos = self.code_repo_service.get_team_repos(team_id)
+        repo_ids = [team_repo.id for team_repo in team_repos]
+
+        return self.code_repo_service.get_prs_merged_without_review(
+            repo_ids, interval, pr_filter
+        )
 
     def get_team_repos(self, team_id: str) -> List[OrgRepo]:
         return self.code_repo_service.get_team_repos(team_id)
