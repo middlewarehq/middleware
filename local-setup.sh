@@ -16,6 +16,7 @@ if [[ "$1" != "-y" ]]; then
     echo -e "${YELLOW}- Check for Node Version Manager (nvm) or Node.js version manager (n) and install Node.js if not found${NC}"
     echo -e "${YELLOW}- Check for Node.js (version 22) and install if not found${NC}"
     echo -e "${YELLOW}- Check for 'jq' (globally, for JSON parsing) and install if not found${NC}"
+    echo -e "${YELLOW}- Check for yarn and install if not found${NC}"
     echo -e "${YELLOW}- Check and install necessary JavaScript dependencies for the cli and web-server (locally)${NC}"
     echo -e "${YELLOW}- Set up Python virtual environment and install backend dependencies (locally)${NC}"
     echo -e "${YELLOW}Do you want to proceed? (y/N)${NC}"
@@ -32,6 +33,11 @@ echo ""
 if command -v node &> /dev/null && [[ "$(node -v)" == v22* ]]; then
     echo -e "${GREEN}Node.js 22 is already installed. Skipping Node.js installation.${NC}"
 else
+    # Source nvm if already installed in system
+    if [ -f "$HOME/.nvm/nvm.sh" ]; then
+        source ~/.nvm/nvm.sh
+    fi
+
     # Check for nvm or n installation
     if command -v nvm &> /dev/null; then
         echo -e "${GREEN}nvm is already installed.${NC}"
@@ -108,6 +114,31 @@ webserver_linting_packages=(
     eslint-plugin-unused-imports
     prettier
 )
+
+# Install yarn if not installed
+if ! command -v yarn &> /dev/null; then
+    echo -e "${YELLOW}Yarn is not installed. Installing Yarn...${NC}"
+
+    # If it's a Linux system
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Check if 'curl' is available and install Yarn on Ubuntu/Debian
+        if command -v curl &> /dev/null; then
+            curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+            echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+            sudo apt update && sudo apt install yarn
+        else
+            echo -e "${RED}'curl' is not installed. Please install curl or download Yarn manually.${NC}"
+            exit 1
+        fi
+    # If it's a macOS system, install using Homebrew
+    elif command -v brew &> /dev/null; then
+        brew install yarn
+    else
+        echo -e "${RED}No suitable installation method found. Please install Yarn manually.${NC}"
+    fi
+else
+    echo -e "${GREEN}Yarn is already installed.${NC}"
+fi
 
 # Navigate to the cli directory and install eslint
 echo -e "${BLUE}Navigating to cli directory and installing eslint...${NC}"
