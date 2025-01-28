@@ -38,8 +38,9 @@ Please follow the existing code style and conventions used in the project. If yo
 
     This is the actual dev server. We recommend going over the [README](https://github.com/middlewarehq/middleware#-developer-setup) for some additional details.
     Wait for everything to run.
-   
-    You'll see a "Status: Container ready! 🚀🚀" along with all statuses shown below for various services also being ready.  
+
+    You'll see a "Status: Container ready! 🚀🚀" along with all statuses shown below for various services also being ready.
+
     At this point you can load up http://localhost:3333 and you're ready to start!
     <img width="672" alt="image" src="https://github.com/user-attachments/assets/f3897386-a624-4044-aae3-6fca2b1cdd44">
 

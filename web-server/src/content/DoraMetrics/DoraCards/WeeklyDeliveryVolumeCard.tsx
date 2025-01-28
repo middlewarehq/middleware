@@ -204,11 +204,12 @@ export const WeeklyDeliveryVolumeCard = () => {
                     color={deploymentFrequencyProps.color}
                     sx={{ fontSize: '3em' }}
                   >
-                    {deploymentFrequencyProps.count ? (
-                      `${deploymentFrequencyProps.count}`
-                    ) : (
-                      <Line>No Deployments</Line>
-                    )}
+                    <Line>
+                      {getDeploymentCountString(
+                        deploymentFrequencyProps.count,
+                        totalDeployments
+                      )}
+                    </Line>
                   </Line>
                   {Boolean(
                     deploymentFrequencyProps.count ||
@@ -313,4 +314,12 @@ export const WeeklyDeliveryVolumeCard = () => {
       </FlexBox>
     </CardRoot>
   );
+};
+
+const getDeploymentCountString = (count: number, totalDeployments: number) => {
+  if (totalDeployments === 0) return 'No Deployments';
+  if (count) return `${count}`;
+
+  // backend doesn't send decimals, so if total deps exist, count cannot be zero, it's less than 1
+  return '<1';
 };
