@@ -12,8 +12,8 @@
 <br/>
 <a href="https://opensource.org/licenses/Apache-2.0"><img src="https://img.shields.io/badge/apache%202.0-purple.svg?style=for-the-badge&label=license" alt="license" /></a>
 <img src="https://img.shields.io/github/stars/middlewarehq/middleware?style=for-the-badge" alt="Stars" />
+<img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=d3133c9b-3562-4048-863a-04bee8ad4818" />
 </p>
-
 <p align="center"><a href="https://mhq.link/oss-community">Join our Open Source Community</a></p>
 
 ![Middleware Opensource](https://github.com/middlewarehq/middleware/blob/main/media_files/banner.gif)
