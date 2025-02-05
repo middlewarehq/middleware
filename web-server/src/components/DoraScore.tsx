@@ -39,10 +39,10 @@ export const DoraScore: FC<DoraScoreProps> = ({
             stats.avg >= 8
               ? commonProps.elite.bg
               : stats.avg >= 6
-              ? commonProps.high.bg
-              : stats.avg >= 4
-              ? commonProps.medium.bg
-              : commonProps.low.bg
+                ? commonProps.high.bg
+                : stats.avg >= 4
+                  ? commonProps.medium.bg
+                  : commonProps.low.bg
         }}
       >
         <Line fontSize={small ? '2em' : '2.4em'} bold white>

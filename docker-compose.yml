@@ -1,4 +1,5 @@
 volumes:
+  certs:
   dev_postgres_data:
     driver: local
   dev_keys:
@@ -26,9 +27,9 @@ services:
     ports:
       - "127.0.0.1:${ANALYTICS_SERVER_PORT:-9696}:${ANALYTICS_SERVER_PORT:-9696}"
       - "127.0.0.1:${SYNC_SERVER_PORT:-9697}:${SYNC_SERVER_PORT:-9697}"
-      - "127.0.0.1:${PORT:-3333}:${PORT:-3333}"
       - "127.0.0.1:${DB_PORT:-5434}:${DB_PORT:-5434}"
       - "127.0.0.1:${REDIS_PORT:-6385}:${REDIS_PORT:-6385}"
+      - "127.0.0.1:3333:3333"
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -36,6 +37,7 @@ services:
     volumes:
       - dev_postgres_data:/var/lib/postgresql/15/main
       - dev_keys:/app/backend/analytics_server/mhq/config
+      - certs:/etc/letsencrypt
 
     develop:
       watch:
@@ -80,3 +82,10 @@ services:
         - action: sync+restart
           path: ./setup_utils/
           target: /app/setup_utils
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certs:/etc/letsencrypt
+      - ./certs:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"

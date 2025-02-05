@@ -25,8 +25,8 @@ export const getBranchesAndRepoFilter = async (params: {
       ignoreBranches || useProdBranches
         ? null
         : branchMode === ActiveBranchMode.ALL
-        ? '^'
-        : branches,
+          ? '^'
+          : branches,
     repo_filters: useProdBranches ? teamRepoFiltersMap[teamId] : null
   };
 };
@@ -56,8 +56,8 @@ export const getBranchesAndRepoFilterAsPayload = async (params: {
             ignoreBranches || useProdBranches
               ? null
               : branchMode === ActiveBranchMode.ALL
-              ? '^'
-              : branches,
+                ? '^'
+                : branches,
           repo_filters: useProdBranches ? teamRepoFiltersMap[teamId] : null
         }
       ).then(({ pr_filter }) => ({

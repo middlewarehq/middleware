@@ -162,8 +162,8 @@ export const BranchSelector: FC = () => {
             {isAllMode
               ? 'All Branches'
               : isProdMode
-              ? 'Production Branches'
-              : names.join(', ')}
+                ? 'Production Branches'
+                : names.join(', ')}
           </Typography>
         </LightTooltip>
       </HeaderBtn>

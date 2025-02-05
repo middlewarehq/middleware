@@ -854,8 +854,8 @@ export const MiniLeadTimeStat: FC<{
     !commit && !deploy
       ? 'TOTAL'
       : Boolean(commit) !== Boolean(deploy)
-      ? 'PARTIAL'
-      : null;
+        ? 'PARTIAL'
+        : null;
 
   return (
     <FlexBox
