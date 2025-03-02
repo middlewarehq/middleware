@@ -1,4 +1,5 @@
-import { CircularProgress } from '@mui/material';
+import { ExpandCircleDown } from '@mui/icons-material';
+import { Button, CircularProgress } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -9,19 +10,55 @@ import { SystemLogsErrorFallback } from '@/components/Service/SystemLog/SystemLo
 import { SomethingWentWrong } from '@/components/SomethingWentWrong/SomethingWentWrong';
 import { Line } from '@/components/Text';
 import { ServiceNames } from '@/constants/service';
+import { useBoolState } from '@/hooks/useEasyState';
 import { useSystemLogs } from '@/hooks/useSystemLogs';
 import { parseLogLine } from '@/utils/logFormatter';
 
+import { MotionBox } from '../../components/MotionComponents';
+
 export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
   const { services, loading, logs } = useSystemLogs({ serviceName });
-
+  const showScrollDownButton = useBoolState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const scrollDown = () => {
+    containerRef.current.scrollIntoView({ behavior: 'smooth' });
+  };
+
   useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            showScrollDownButton.false();
+          } else {
+            showScrollDownButton.true();
+          }
+        });
+      },
+      {
+        threshold: 0
+      }
+    );
+
+    const containerElement = containerRef.current;
+
     if (containerRef.current) {
-      containerRef.current.scrollIntoView({ behavior: 'smooth' });
+      observer.observe(containerElement);
     }
-  }, [logs]);
+
+    return () => {
+      if (containerElement) {
+        observer.unobserve(containerElement);
+      }
+    };
+  }, [showScrollDownButton]);
+
+  useEffect(() => {
+    if (containerRef.current && !showScrollDownButton.value) {
+      scrollDown();
+    }
+  }, [logs, showScrollDownButton.value]);
 
   if (!serviceName)
     return (
@@ -51,6 +88,29 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
           })
         )}
         <FlexBox ref={containerRef} />
+
+        {showScrollDownButton.value && (
+          <Button
+            onClick={scrollDown}
+            component={MotionBox}
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              ease: 'easeOut'
+            }}
+            bottom={20}
+            sx={{
+              position: 'fixed',
+              marginLeft: `calc(${
+                containerRef.current
+                  ? containerRef.current.clientWidth / 2 - 67
+                  : 0
+              }px)`
+            }}
+          >
+            <ExpandCircleDown fontSize="large" color="secondary" />
+          </Button>
+        )}
       </FlexBox>
     </ErrorBoundary>
   );
