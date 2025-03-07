@@ -43,8 +43,7 @@ initialize_database(app)
 def handle_http_exception(e):
     """Handle HTTP exceptions by returning JSON"""
     response = jsonify({
-        "error": True,
-        "message": e.description,
+        "error": e.description,
         "status_code": e.code,
         "path": request.path
     })
@@ -56,8 +55,7 @@ def handle_http_exception(e):
 def handle_exception(e):
     """Handle non-HTTP exceptions by returning JSON"""
     error_details = {
-        "error": True,
-        "message": str(e) or "Internal Server Error",
+        "error": str(e) or "Internal Server Error",
         "status_code": 500,
         "path": request.path,
         "exception_type": e.__class__.__name__
