@@ -41,6 +41,7 @@
     "@types/ramda": "^0.29.12",
     "@types/react": "^18.0.32",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "@typescript-eslint/parser": "^6.10.0",
     "ava": "^5.2.0",
     "chalk": "^5.2.0",
     "concurrently": "^8.2.2",
