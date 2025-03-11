@@ -39,10 +39,56 @@ class ContainerCache {
 const containerStatusCache = new ContainerCache();
 
 // Container Rebuild logic
-export const shouldRebuildContainers = (): boolean => {
+export const shouldRebuildContainers = async (
+  containerId: string = 'middleware-dev'
+): Promise<boolean> => {
   const skipRebuild = process.env['SKIP_CONTAINER_REBUILD'] === 'true';
   const isDev = process.env['NODE_ENV'] === 'development';
-  return !(skipRebuild && isDev);
+
+  if (skipRebuild && isDev) {
+    return false;
+  }
+
+  try {
+    // Check if container exists and is running
+    const isRunning = await containerExistsAndRunning(containerId);
+    if (isRunning) {
+      const container = docker.getContainer(containerId);
+      const data = await container.inspect();
+
+      // If container in healthy and dev mode, avoid rebuild
+      if (isDev && data.State.Health?.Status === 'healthy') {
+        return false;
+      }
+
+      if (data.State.Health?.Status === 'unhealthy') {
+        return true;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    return true;
+  }
+};
+
+export const shouldOnlyRestartApp = async (
+  containerId: string = 'middleware-dev'
+): Promise<boolean> => {
+  const isDev = process.env['NODE_ENV'] === 'development';
+  if (!isDev) return false;
+
+  try {
+    const isRunning = await containerExistsAndRunning(containerId);
+    if (!isRunning) return false;
+
+    const container = docker.getContainer(containerId);
+    const data = await container.inspect();
+
+    return data.State.Health?.Status === 'healthy';
+  } catch {
+    return false;
+  }
 };
 
 export const containerExistsAndRunning = async (
