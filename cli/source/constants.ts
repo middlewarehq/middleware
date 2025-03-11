@@ -16,6 +16,7 @@ export enum AppStates {
   PREREQ_CHECK = 'PREREQ_CHECK',
   INIT = 'INIT',
   DOCKER_READY = 'DOCKER_READY',
+  APP_RESTART = 'APP_RESTART',
   TEARDOWN = 'TEARDOWN',
   TERMINATED = 'TERMINATED'
 }
@@ -30,7 +31,8 @@ export enum PreCheckProperties {
   DAEMON = 'daemon',
   PORTS = 'ports',
   COMPOSE_FILE = 'compose file',
-  DOCKER_FILE = 'docker file'
+  DOCKER_FILE = 'docker file',
+  CONTAINER_STATUS = 'container status'
 }
 
 export enum LogSource {
