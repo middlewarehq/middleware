@@ -34,3 +34,10 @@ class IncidentType(Enum):
 
 class IncidentBookmarkType(Enum):
     SERVICE = "SERVICE"
+
+
+PR_FILTER_PATTERNS = {
+    "fix #1234": r"(?i)fix #(\d+)",
+    "fix(1234)": r"(?i)fix\((\d+)\)",
+    "fix-1234": r"(?i)fix-(\d+)",
+}

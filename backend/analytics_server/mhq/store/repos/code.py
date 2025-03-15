@@ -242,6 +242,29 @@ class CodeRepoService:
         return query.all()
 
     @rollback_on_exc
+    def get_prs_by_title_match_strings(
+        self, repo_ids: List[str], match_strings: List[str]
+    ) -> List[PullRequest]:
+        query = (
+            self._db.session.query(PullRequest)
+            .options(defer(PullRequest.data))
+            .filter(
+                and_(
+                    PullRequest.repo_id.in_(repo_ids),
+                    or_(
+                        *[
+                            PullRequest.title.ilike(f"{match_string}%")
+                            for match_string in match_strings
+                        ]
+                    ),
+                )
+            )
+            .order_by(PullRequest.updated_in_db_at.desc())
+        )
+
+        return query.all()
+
+    @rollback_on_exc
     def get_reverted_prs_by_numbers(
         self, repo_ids: List[str], numbers: List[str]
     ) -> List[PullRequest]:

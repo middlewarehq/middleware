@@ -4,11 +4,12 @@ from typing import Any, Dict, Optional, List
 from mhq.service.settings.default_settings_data import get_default_setting_data
 from mhq.service.settings.models import (
     ConfigurationSettings,
-    DefaultSyncDaysSetting,
     ExcludedPRsSetting,
     IncidentSettings,
     IncidentSourcesSetting,
     IncidentTypesSetting,
+    DefaultSyncDaysSetting,
+    IncidentPrsSetting,
 )
 from mhq.store.models.core.users import Users
 from mhq.store.models.incidents import IncidentSource, IncidentType
@@ -66,6 +67,17 @@ class SettingsService:
             default_sync_days=data.get("default_sync_days", None)
         )
 
+    def _adapt_incident_prs_setting_setting_from_setting_data(
+        self, data: Dict[str, any]
+    ):
+        return IncidentPrsSetting(
+            include_revert_prs=data.get("include_revert_prs", True),
+            title_filters=data.get("title_filters", []),
+            head_branch_filters=data.get("head_branch_filters", []),
+            pr_mapping_field=data.get("pr_mapping_field", ""),
+            pr_mapping_pattern=data.get("pr_mapping_pattern", ""),
+        )
+
     # ADD NEW DICT TO DATACLASS ADAPTERS HERE
 
     def _handle_config_setting_from_db_setting(
@@ -87,6 +99,11 @@ class SettingsService:
 
         if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING:
             return self._adapt_default_sync_days_setting_from_setting_data(setting_data)
+
+        if setting_type == SettingType.INCIDENT_PRS_SETTING:
+            return self._adapt_incident_prs_setting_setting_from_setting_data(
+                setting_data
+            )
 
         # ADD NEW HANDLE FROM DB SETTINGS HERE
 
@@ -131,7 +148,14 @@ class SettingsService:
         setting = self.get_settings(setting_type, entity_type, entity_id)
 
         if not setting:
-            setting = self.save_settings(setting_type, entity_type, entity_id)
+            try:
+                setting = self.save_settings(setting_type, entity_type, entity_id)
+            except Exception as e:
+                if "UniqueViolation" in str(e) and "Settings_pkey" in str(e):
+                    # If another concurrent request already created the settings, fetch that settings
+                    setting = self.get_settings(setting_type, entity_type, entity_id)
+                else:
+                    raise e
 
         return setting
 
@@ -182,6 +206,15 @@ class SettingsService:
             default_sync_days=data.get("default_sync_days", None)
         )
 
+    def _adapt_incident_prs_setting_setting_from_json(self, data: Dict[str, any]):
+        return IncidentPrsSetting(
+            include_revert_prs=data.get("include_revert_prs", True),
+            title_filters=data.get("title_filters", []),
+            head_branch_filters=data.get("head_branch_filters", []),
+            pr_mapping_field=data.get("pr_mapping_field", ""),
+            pr_mapping_pattern=data.get("pr_mapping_pattern", ""),
+        )
+
     # ADD NEW DICT TO API ADAPTERS HERE
 
     def _handle_config_setting_from_json_data(
@@ -203,6 +236,9 @@ class SettingsService:
 
         if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING:
             return self._adapt_default_sync_days_setting_from_json(setting_data)
+
+        if setting_type == SettingType.INCIDENT_PRS_SETTING:
+            return self._adapt_incident_prs_setting_setting_from_json(setting_data)
 
         # ADD NEW HANDLE FROM JSON DATA HERE
 
@@ -242,6 +278,17 @@ class SettingsService:
     ):
         return {"default_sync_days": specific_setting.default_sync_days}
 
+    def _adapt_incident_prs_setting_setting_json_data(
+        self, specific_setting: IncidentPrsSetting
+    ):
+        return {
+            "include_revert_prs": specific_setting.include_revert_prs,
+            "title_filters": specific_setting.title_filters,
+            "head_branch_filters": specific_setting.head_branch_filters,
+            "pr_mapping_field": specific_setting.pr_mapping_field,
+            "pr_mapping_pattern": specific_setting.pr_mapping_pattern,
+        }
+
     # ADD NEW DATACLASS TO JSON DATA ADAPTERS HERE
 
     def _handle_config_setting_to_db_setting(
@@ -272,6 +319,11 @@ class SettingsService:
             specific_setting, DefaultSyncDaysSetting
         ):
             return self._adapt_default_sync_days_setting_json_data(specific_setting)
+
+        if setting_type == SettingType.INCIDENT_PRS_SETTING and isinstance(
+            specific_setting, IncidentPrsSetting
+        ):
+            return self._adapt_incident_prs_setting_setting_json_data(specific_setting)
 
         # ADD NEW HANDLE TO DB SETTINGS HERE
 
