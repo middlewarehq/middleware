@@ -97,6 +97,7 @@ export const fetchMeanTimeToRestoreStats = async (params: {
     teamId,
     currTrendsTimeObject,
     prevTrendsTimeObject,
+    prFilter,
     currStatsTimeObject,
     prevStatsTimeObject
   } = params;
@@ -110,28 +111,30 @@ export const fetchMeanTimeToRestoreStats = async (params: {
     handleRequest<MeanTimeToRestoreApiResponse>(
       `/teams/${teamId}/mean_time_to_recovery`,
       {
-        params: { ...currStatsTimeObject }
+        params: { ...currStatsTimeObject, ...prFilter }
       }
     ),
     handleRequest<MeanTimeToRestoreApiResponse>(
       `/teams/${teamId}/mean_time_to_recovery`,
       {
         params: {
-          ...prevStatsTimeObject
+          ...prevStatsTimeObject,
+          ...prFilter
         }
       }
     ),
     handleRequest<MeanTimeToRestoreApiTrendsResponse>(
       `/teams/${teamId}/mean_time_to_recovery/trends`,
       {
-        params: { ...currTrendsTimeObject }
+        params: { ...currTrendsTimeObject, ...prFilter }
       }
     ),
     handleRequest<MeanTimeToRestoreApiTrendsResponse>(
       `/teams/${teamId}/mean_time_to_recovery/trends`,
       {
         params: {
-          ...prevTrendsTimeObject
+          ...prevTrendsTimeObject,
+          ...prFilter
         }
       }
     )
