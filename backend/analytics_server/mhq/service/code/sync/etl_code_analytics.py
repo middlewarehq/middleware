@@ -54,6 +54,20 @@ class CodeETLAnalyticsService:
     @staticmethod
     def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
         pr_events.sort(key=lambda x: x.created_at)
+
+        first_ready_event = next(
+            (
+                e
+                for e in pr_events
+                if e.data.get("state") == PullRequestState.OPEN.value
+            ),
+            None,
+        )
+
+        first_open_time = (
+            first_ready_event.created_at if first_ready_event else pr.created_at
+        )
+
         first_review = pr_events[0] if pr_events else None
         approved_reviews = list(
             filter(
@@ -87,7 +101,8 @@ class CodeETLAnalyticsService:
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
 
-        cycle_time = pr.state_changed_at - pr.created_at
+        cycle_time = pr.state_changed_at - first_open_time
+
         if isinstance(cycle_time, timedelta):
             cycle_time = cycle_time.total_seconds()
 
