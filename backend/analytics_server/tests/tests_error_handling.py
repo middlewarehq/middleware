@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request
 
 flask_app = Flask(__name__)
 
+
 @flask_app.errorhandler(Exception)
 def handle_exception(e):
     """Handle non-HTTP exceptions by returning JSON"""
@@ -17,10 +18,12 @@ def handle_exception(e):
     }
     if flask_app.debug:
         import traceback
+
         error_details["traceback"] = traceback.format_exc()
     response = jsonify(error_details)
     response.status_code = 500
     return response
+
 
 @flask_app.errorhandler(NotFound)
 @flask_app.errorhandler(BadRequest)
@@ -32,22 +35,27 @@ def handle_http_exception(e):
     response.status_code = e.code
     return response
 
+
 # Added test routes
 @flask_app.route("/test-bad-request")
 def bad_request_endpoint():
     raise BadRequest("Invalid input")
 
+
 @flask_app.route("/test-exception")
 def exception_endpoint():
     raise ValueError("Something went wrong")
+
 
 @flask_app.route("/test-debug-exception")
 def debug_exception_endpoint():
     raise ValueError("Debug exception")
 
+
 @flask_app.route("/test-prod-exception")
 def prod_exception_endpoint():
     raise ValueError("Production exception")
+
 
 class TestErrorHandlers(unittest.TestCase):
 
@@ -107,6 +115,7 @@ class TestErrorHandlers(unittest.TestCase):
         response = self.app.get("/test-prod-exception")
         data = json.loads(response.data)
         self.assertNotIn("traceback", data)
+
 
 if __name__ == "__main__":
     unittest.main()
