@@ -112,9 +112,9 @@ class GithubETLHandler(CodeProviderETLHandler):
             if not prs:
                 break
 
-            if prs[-1].updated_at.astimezone(tz=pytz.UTC) <= bookmark:
+            if prs[-1].updated_at.replace(tzinfo=pytz.UTC) <= bookmark:
                 prs_to_process += [
-                    pr for pr in prs if pr.updated_at.astimezone(tz=pytz.UTC) > bookmark
+                    pr for pr in prs if pr.updated_at.replace(tzinfo=pytz.UTC) > bookmark
                 ]
                 break
 
@@ -125,7 +125,7 @@ class GithubETLHandler(CodeProviderETLHandler):
             state_changed_at = pr.merged_at if pr.merged_at else pr.closed_at
             if (
                 pr.state.upper() != PullRequestState.OPEN.value
-                and state_changed_at.astimezone(tz=pytz.UTC) < bookmark
+                and state_changed_at.replace(tzinfo=pytz.UTC) < bookmark
             ):
                 continue
             if pr not in filtered_prs:
@@ -224,9 +224,9 @@ class GithubETLHandler(CodeProviderETLHandler):
         state_changed_at = None
         if state != PullRequestState.OPEN:
             state_changed_at = (
-                pr.merged_at.astimezone(pytz.UTC)
+                pr.merged_at.replace(tzinfo=pytz.UTC)
                 if pr.merged_at
-                else pr.closed_at.astimezone(pytz.UTC)
+                else pr.closed_at.replace(tzinfo=pytz.UTC)
             )
 
         merge_commit_sha: Optional[str] = self._get_merge_commit_sha(pr.raw_data, state)
@@ -236,8 +236,8 @@ class GithubETLHandler(CodeProviderETLHandler):
             number=str(pr.number),
             title=pr.title,
             url=pr.html_url,
-            created_at=pr.created_at.astimezone(pytz.UTC),
-            updated_at=pr.updated_at.astimezone(pytz.UTC),
+            created_at=pr.created_at.replace(tzinfo=pytz.UTC),
+            updated_at=pr.updated_at.replace(tzinfo=pytz.UTC),
             state_changed_at=state_changed_at,
             state=state,
             base_branch=pr.base.ref,
@@ -300,7 +300,7 @@ class GithubETLHandler(CodeProviderETLHandler):
                     pull_request_id=str(pr_model.id),
                     type=PullRequestEventType.REVIEW.value,
                     data=review.raw_data,
-                    created_at=review.submitted_at.astimezone(pytz.UTC),
+                    created_at=review.submitted_at.replace(tzinfo=pytz.UTC),
                     idempotency_key=str(review.id),
                     org_repo_id=pr_model.repo_id,
                     actor_username=username,
