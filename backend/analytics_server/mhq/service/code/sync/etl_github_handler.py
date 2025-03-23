@@ -185,21 +185,28 @@ class GithubETLHandler(CodeProviderETLHandler):
             )
 
         pr_model = self.code_etl_analytics_service.create_pr_metrics(
-            pr_model, pr_events_model_list, pr_commits_model_list,pr_earliest_ready_for_review
+            pr_model, pr_events_model_list, pr_commits_model_list, pr_earliest_ready_for_review
         )
 
         return pr_model, pr_events_model_list, pr_commits_model_list
     
-    @staticmethod
-    def get_first_ready_for_review_event(events: List) -> Optional[object]:
+    def get_first_ready_for_review_event(self, events: List) -> Optional[datetime]:
+        """
+        Find the earliest 'ready_for_review' event from a list of PR timeline events.
+        params:
+            events: List of PR timeline events
+        returns:
+            The earliest ready_for_review event's datetime or None if no such event exists
+        """
         ready_events = [
             event for event in events
             if getattr(event, "event", None) == "ready_for_review" and hasattr(event, "created_at")
         ]
         if not ready_events:
             return None
+        
         earliest_event = min(ready_events, key=lambda e: e.created_at)
-        return earliest_event
+        return earliest_event.created_at
     
     def get_revert_prs_mapping(
         self, prs: List[PullRequest]
