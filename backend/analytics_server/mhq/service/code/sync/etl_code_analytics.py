@@ -1,5 +1,5 @@
-from datetime import timedelta
-from typing import List
+from datetime import datetime,timedelta,timezone
+from typing import List,Optional
 
 from mhq.service.code.sync.models import PRPerformance
 from mhq.store.models.code import (
@@ -18,11 +18,12 @@ class CodeETLAnalyticsService:
         pr: PullRequest,
         pr_events: List[PullRequestEvent],
         pr_commits: List[PullRequestCommit],
+        pr_earliest_event:Optional[object]
     ) -> PullRequest:
         if pr.state == PullRequestState.OPEN:
             return pr
 
-        pr_performance = self.get_pr_performance(pr, pr_events)
+        pr_performance = self.get_pr_performance(pr, pr_events,pr_earliest_event)
 
         pr.first_response_time = (
             pr_performance.first_review_time
@@ -52,7 +53,7 @@ class CodeETLAnalyticsService:
         return pr
 
     @staticmethod
-    def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
+    def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent],pr_earliest_event:Optional[object]):
         pr_events.sort(key=lambda x: x.created_at)
         first_review = pr_events[0] if pr_events else None
         approved_reviews = list(
@@ -86,8 +87,12 @@ class CodeETLAnalyticsService:
             ).total_seconds()
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
+        cycle_time = pr.state_changed_at - (
+        pr_earliest_event.created_at.astimezone(timezone.utc) 
+        if pr_earliest_event and isinstance(pr_earliest_event.created_at, datetime) 
+        else pr.created_at
+        )
 
-        cycle_time = pr.state_changed_at - pr.created_at
         if isinstance(cycle_time, timedelta):
             cycle_time = cycle_time.total_seconds()
 

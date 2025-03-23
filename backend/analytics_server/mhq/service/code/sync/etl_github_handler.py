@@ -147,7 +147,7 @@ class GithubETLHandler(CodeProviderETLHandler):
                 continue
 
             pr_model, event_models, pr_commit_models = self.process_pr(
-                str(org_repo.id), github_pr
+                str(org_repo.id), github_pr, github_repo
             )
             pull_requests.append(pr_model)
             pr_events += event_models
@@ -157,7 +157,7 @@ class GithubETLHandler(CodeProviderETLHandler):
         return pull_requests, pr_commits, pr_events
 
     def process_pr(
-        self, repo_id: str, pr: GithubPullRequest
+        self, repo_id: str, pr: GithubPullRequest,github_repo:GithubRepository
     ) -> Tuple[PullRequest, List[PullRequestEvent], List[PullRequestCommit]]:
         pr_model: Optional[PullRequest] = self.code_repo_service.get_repo_pr_by_number(
             repo_id, pr.number
@@ -172,6 +172,8 @@ class GithubETLHandler(CodeProviderETLHandler):
         pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
             reviews, pr_model, pr_event_model_list
         )
+        pr_timeline_events=self._api.get_pr_timeline(github_repo,pr.number)
+        pr_earliest_ready_for_review= self.get_first_ready_for_review_event(pr_timeline_events)
         if pr.merged_at:
             commits: List[Dict] = list(
                 map(
@@ -183,11 +185,22 @@ class GithubETLHandler(CodeProviderETLHandler):
             )
 
         pr_model = self.code_etl_analytics_service.create_pr_metrics(
-            pr_model, pr_events_model_list, pr_commits_model_list
+            pr_model, pr_events_model_list, pr_commits_model_list,pr_earliest_ready_for_review
         )
 
         return pr_model, pr_events_model_list, pr_commits_model_list
-
+    
+    @staticmethod
+    def get_first_ready_for_review_event(events: List) -> Optional[object]:
+        ready_events = [
+            event for event in events
+            if getattr(event, "event", None) == "ready_for_review" and hasattr(event, "created_at")
+        ]
+        if not ready_events:
+            return None
+        earliest_event = min(ready_events, key=lambda e: e.created_at)
+        return earliest_event
+    
     def get_revert_prs_mapping(
         self, prs: List[PullRequest]
     ) -> List[PullRequestRevertPRMapping]:

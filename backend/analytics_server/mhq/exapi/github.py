@@ -113,6 +113,10 @@ class GithubApiService:
 
     def get_pr_reviews(self, pr: GithubPullRequest) -> GithubPaginatedList:
         return pr.get_reviews()
+    
+    def get_pr_timeline(self, github_repo:GithubRepository, pr_number:int):
+            issue = github_repo.get_issue(pr_number)
+            return issue.get_timeline()
 
     def get_contributors(
         self, org_login: str, repo_name: str
