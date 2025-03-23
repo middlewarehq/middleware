@@ -346,6 +346,49 @@ def test__to_pr_commits_given_a_list_of_commits_returns_a_list_of_pr_commits():
     for commit, expected_commit in zip(pr_commits, expected_pr_commits):
         assert compare_objects_as_dicts(commit, expected_commit) is True
 
+def test_get_first_ready_for_review_event_returns_earliest_ready_event():
+    class MockTimelineEvent:
+        def __init__(self, event_type, created_at):
+            self.event = event_type
+            self.created_at = created_at
+
+    earlier_date = datetime(2024, 1, 1, 10, 0, 0, tzinfo=pytz.UTC)
+    later_date = datetime(2024, 1, 2, 10, 0, 0, tzinfo=pytz.UTC)
+
+    events = [
+        MockTimelineEvent("other_event", earlier_date),
+        MockTimelineEvent("ready_for_review", later_date),
+        MockTimelineEvent("ready_for_review", earlier_date),
+        MockTimelineEvent("another_event", later_date),
+    ]
+
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    result = github_etl_handler.get_first_ready_for_review_event(events)
+
+    assert result == earlier_date
+
+def test_get_first_ready_for_review_event_returns_none_when_no_ready_events():
+    class MockTimelineEvent:
+        def __init__(self, event_type, created_at):
+            self.event = event_type
+            self.created_at = created_at
+
+    date = datetime(2024, 1, 1, 10, 0, 0, tzinfo=pytz.UTC)
+    events = [
+        MockTimelineEvent("other_event", date),
+        MockTimelineEvent("another_event", date),
+    ]
+
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    result = github_etl_handler.get_first_ready_for_review_event(events)
+
+    assert result is None
+
+def test_get_first_ready_for_review_event_handles_empty_list():
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    result = github_etl_handler.get_first_ready_for_review_event([])
+
+    assert result is None
 
 def test__dt_from_github_dt_string_given_date_string_returns_correct_datetime():
     date_string = "2024-04-18T10:53:15Z"
