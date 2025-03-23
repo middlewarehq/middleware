@@ -206,7 +206,7 @@ class GithubETLHandler(CodeProviderETLHandler):
             return None
         
         earliest_event = min(ready_events, key=lambda e: e.created_at)
-        return earliest_event.created_at
+        return earliest_event.created_at.astimezone(pytz.UTC)
     
     def get_revert_prs_mapping(
         self, prs: List[PullRequest]

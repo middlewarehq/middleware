@@ -92,7 +92,7 @@ class CodeETLAnalyticsService:
             pr_earliest_event
             if pr_earliest_event and isinstance(pr_earliest_event, datetime)
             else pr.created_at
-        ).astimezone(timezone.utc)
+        )
 
         cycle_time = pr.state_changed_at - first_open_time
 
