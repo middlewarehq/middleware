@@ -114,7 +114,9 @@ class GithubETLHandler(CodeProviderETLHandler):
 
             if prs[-1].updated_at.replace(tzinfo=pytz.UTC) <= bookmark:
                 prs_to_process += [
-                    pr for pr in prs if pr.updated_at.replace(tzinfo=pytz.UTC) > bookmark
+                    pr
+                    for pr in prs
+                    if pr.updated_at.replace(tzinfo=pytz.UTC) > bookmark
                 ]
                 break
 
