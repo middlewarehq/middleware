@@ -211,30 +211,26 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
 
   const renderVisibleRepos = (
     <FlexBox alignCenter gap={1}>
-      <AvatarGroup 
-        max={VISIBLE_REPOS_COUNT} 
-        sx={{ 
+      <AvatarGroup
+        max={VISIBLE_REPOS_COUNT}
+        sx={{
           marginRight: 1,
-          '& .MuiAvatar-root': { 
+          '& .MuiAvatar-root': {
             border: '1px solid #f0f0f0',
-            width: 28, 
-            height: 28 
+            width: 28,
+            height: 28
           }
         }}
       >
         {visibleReposName.map((repo) => (
-          <Avatar 
-            key={repo.id || repo.name} 
-            src={`https://github.com/${repo.org_name}.png?size=20`}
+          <Avatar
+            key={repo.id || repo.name}
+            src={`https://github.com/${repo.org_name}.png?size=28`}
           />
         ))}
       </AvatarGroup>
       <Line secondary sx={{ fontSize: '0.85rem' }}>
-        {visibleReposName.map((repo, index) => (
-          <span key={repo.id || repo.name}>
-            {repo.name}{index < visibleReposName.length - 1 ? ', ' : ''}
-          </span>
-        ))}
+        {visibleReposName.map(repo => repo.name).join(', ')}
       </Line>
     </FlexBox>
   );
@@ -253,31 +249,31 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
   }, [teamName]);
 
   return (
-    <FlexBox 
-      component={Card} 
-      p={2.5} 
-      minHeight={'150px'} 
-      sx={{ 
+    <FlexBox
+      component={Card}
+      p={2.5}
+      minHeight={'150px'}
+      sx={{
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
         '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }
       }}
-        >
+    >
       <FlexBox fullWidth col gap={2} flex={1}>
         <FlexBox justifyBetween alignCenter>
           <FlexBox
-        title={minifiedName === teamName ? null : teamName}
-        tooltipPlacement="right"
-        alignCenter
-        gap={1}
+            title={minifiedName === teamName ? null : teamName}
+            tooltipPlacement="right"
+            alignCenter
+            gap={1}
           >
-        <Line big semibold sx={{ color: 'primary.dark' }}>
-          {minifiedName}
-        </Line>
+            <Line big semibold sx={{ color: 'primary.dark' }}>
+              {minifiedName}
+            </Line>
           </FlexBox>
           <FlexBox gap={1}>
-        <EditTeam teamId={teamId} onEdit={onEdit} />
-        <MoreOptions teamId={team.id} />
+            <EditTeam teamId={teamId} onEdit={onEdit} />
+            <MoreOptions teamId={team.id} />
           </FlexBox>
         </FlexBox>
 
@@ -285,48 +281,48 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
 
         <FlexBox col gap={2} flex={1}>
           <FlexBox gap={1} alignCenter>
-        <Line bigish bold sx={{ color: 'text.primary' }}>
-          {assignedReposToTeam.length}{' '}
-          {pluralize('Repository', assignedReposToTeam.length)}
-        </Line>
+            <Line bigish bold sx={{ color: 'text.primary' }}>
+              {assignedReposToTeam.length}{' '}
+              {pluralize('Repository', assignedReposToTeam.length)}
+            </Line>
           </FlexBox>
 
           {Boolean(assignedReposToTeam.length) && (
-        <FlexBox col gap={1}>
-          {renderVisibleRepos}
-          
-          {assignedReposToTeam.length > VISIBLE_REPOS_COUNT && (
-            <FlexBox
-          inline
-          sx={{
-            userSelect: 'none',
-            ml: 1
-          }}
-          title={
-            <FlexBox maxWidth={'250px'}>{tooltipRepos}</FlexBox>
-          }
-            >
-          <Line info>
-            +{assignedReposToTeam.length - VISIBLE_REPOS_COUNT} more
-          </Line>
+            <FlexBox col gap={1}>
+              {renderVisibleRepos}
+
+              {assignedReposToTeam.length > VISIBLE_REPOS_COUNT && (
+                <FlexBox
+                  inline
+                  sx={{
+                    userSelect: 'none',
+                    ml: 1
+                  }}
+                  title={
+                    <FlexBox maxWidth={'250px'}>{tooltipRepos}</FlexBox>
+                  }
+                >
+                  <Line info>
+                    +{assignedReposToTeam.length - VISIBLE_REPOS_COUNT} more
+                  </Line>
+                </FlexBox>
+              )}
             </FlexBox>
-          )}
-        </FlexBox>
           )}
         </FlexBox>
 
         <FlexBox justifyCenter mt={1}>
           <Button
-        sx={{ width: '100%' }}
-        variant="contained"
-        onClick={() => onView(team)}
-        startIcon={<DoraIcon style={{ width: 20, height: 20 }} />}
+            sx={{ width: '100%' }}
+            variant="contained"
+            onClick={() => onView(team)}
+            startIcon={<DoraIcon style={{ width: 20, height: 20 }} />}
           >
-        View DORA Metrics
+            View DORA Metrics
           </Button>
         </FlexBox>
       </FlexBox>
-        </FlexBox>
+    </FlexBox>
   );
 
 };
