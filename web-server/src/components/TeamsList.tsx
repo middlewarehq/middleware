@@ -230,7 +230,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
         ))}
       </AvatarGroup>
       <Line secondary sx={{ fontSize: '0.85rem' }}>
-        {visibleReposName.map(repo => repo.name).join(', ')}
+        {visibleReposName.map((repo) => repo.name).join(', ')}
       </Line>
     </FlexBox>
   );
@@ -298,9 +298,7 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
                     userSelect: 'none',
                     ml: 1
                   }}
-                  title={
-                    <FlexBox maxWidth={'250px'}>{tooltipRepos}</FlexBox>
-                  }
+                  title={<FlexBox maxWidth={'250px'}>{tooltipRepos}</FlexBox>}
                 >
                   <Line info>
                     +{assignedReposToTeam.length - VISIBLE_REPOS_COUNT} more
