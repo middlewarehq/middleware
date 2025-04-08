@@ -1,4 +1,3 @@
-
 import { Add, Delete, Edit, MoreVert } from '@mui/icons-material';
 import {
   Button,
@@ -297,7 +296,6 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
                   sx={{
                     userSelect: 'none',
                     mr: 20
-
                   }}
                   title={<FlexBox maxWidth={'250px'}>{tooltipRepos}</FlexBox>}
                 >
@@ -323,7 +321,6 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
       </FlexBox>
     </FlexBox>
   );
-
 };
 
 const MoreOptions = ({ teamId }: { teamId: ID }) => {
