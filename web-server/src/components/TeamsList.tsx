@@ -296,11 +296,12 @@ const TeamCard: React.FC<TeamCardProps> = ({ team, onEdit, onView }) => {
                   inline
                   sx={{
                     userSelect: 'none',
-                    ml: 1
+                    mr: 20
+
                   }}
                   title={<FlexBox maxWidth={'250px'}>{tooltipRepos}</FlexBox>}
                 >
-                  <Line info>
+                  <Line info sx={{ ml: 10 }}>
                     +{assignedReposToTeam.length - VISIBLE_REPOS_COUNT} more
                   </Line>
                 </FlexBox>
