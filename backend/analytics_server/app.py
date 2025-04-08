@@ -38,17 +38,17 @@ app.register_blueprint(ai_api)
 configure_db_with_app(app)
 initialize_database(app)
 
+
 # HTTP Error handler
 @app.errorhandler(HTTPException)
 def handle_http_exception(e):
     """Handle HTTP exceptions by returning JSON"""
-    response = jsonify({
-        "error": e.description,
-        "status_code": e.code,
-        "path": request.path
-    })
+    response = jsonify(
+        {"error": e.description, "status_code": e.code, "path": request.path}
+    )
     response.status_code = e.code
     return response
+
 
 # Error handler
 @app.errorhandler(Exception)
@@ -58,15 +58,16 @@ def handle_exception(e):
         "error": str(e) or "Internal Server Error",
         "status_code": 500,
         "path": request.path,
-        "exception_type": e.__class__.__name__
+        "exception_type": e.__class__.__name__,
     }
-    
+
     if app.debug:
         error_details["traceback"] = traceback.format_exc()
-    
+
     response = jsonify(error_details)
     response.status_code = 500
     return response
+
 
 app.register_error_handler(Exception, handle_exception)
 app.register_error_handler(HTTPException, handle_http_exception)
