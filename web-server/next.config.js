@@ -81,7 +81,7 @@ const staticOverrides = {
       },
       {
         source: '/org-logo/:path*',
-        destination: 'https://logo.clearbit.com/:path*'
+        destination: 'https://www.logo.dev/:path*'
       }
     ];
   }
