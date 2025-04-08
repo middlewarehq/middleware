@@ -78,10 +78,6 @@ const staticOverrides = {
       {
         source: '/.well-known/microsoft-identity-association.json',
         destination: '/api/auth-x/well-known/ms'
-      },
-      {
-        source: '/org-logo/:path*',
-        destination: 'https://logo.dev/:path*'
       }
     ];
   }
