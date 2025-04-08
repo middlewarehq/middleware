@@ -81,7 +81,7 @@ const staticOverrides = {
       },
       {
         source: '/org-logo/:path*',
-        destination: 'https://www.logo.dev/:path*'
+        destination: 'https://logo.dev/:path*'
       }
     ];
   }
