@@ -1,9 +1,11 @@
 from typing import Dict, List, Any, Optional
+from mhq.store.models.incidents.enums import IncidentType
 from mhq.store.models.settings.configuration_settings import SettingType
 from mhq.service.settings.configuration_settings import (
     get_settings_service,
     IncidentSettings,
     IncidentTypesSetting,
+    IncidentPrsSetting,
 )
 from mhq.store.models.incidents import IncidentFilter
 
@@ -106,4 +108,19 @@ class ConfigurationsIncidentFilterProcessor:
         incident_types = []
         if setting and isinstance(setting, IncidentTypesSetting):
             incident_types = setting.incident_types
+
+        if SettingType.INCIDENT_PRS_SETTING in self.setting_types:
+            incident_prs_setting: Optional[IncidentPrsSetting] = (
+                self.setting_type_to_settings_map.get(SettingType.INCIDENT_PRS_SETTING)
+            )
+            if (
+                isinstance(incident_prs_setting, IncidentPrsSetting)
+                and not incident_prs_setting.include_revert_prs
+            ):
+                incident_types = [
+                    incident_type
+                    for incident_type in incident_types
+                    if incident_type != IncidentType.REVERT_PR
+                ]
+
         return incident_types

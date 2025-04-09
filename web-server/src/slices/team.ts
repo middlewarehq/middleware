@@ -14,7 +14,9 @@ import {
   PR,
   BaseRepo,
   RepoUniqueDetails,
-  DB_OrgRepo
+  DB_OrgRepo,
+  TeamIncidentPRsSettingsResponse,
+  IncidentPRsSettings
 } from '@/types/resources';
 import { addFetchCasesToReducer } from '@/utils/redux';
 import { getUrlParam } from '@/utils/url';
@@ -32,6 +34,7 @@ type State = StateFetchConfig<{
   teamRepos: DB_OrgRepo[];
   teamReposProductionBranches: TeamRepoBranchDetails[];
   teamIncidentFilters: null | TeamIncidentSettingsResponse;
+  teamIncidentPRsFilters: null | TeamIncidentPRsSettingsResponse;
   excludedPrs: PR[];
   teamReposMaps: null | Record<ID, DB_OrgRepo[]>;
 }>;
@@ -47,6 +50,7 @@ const initialState: State = {
   teamRepos: [],
   teamReposProductionBranches: [],
   teamIncidentFilters: null,
+  teamIncidentPRsFilters: null,
   excludedPrs: [],
   teamReposMaps: {}
 };
@@ -112,6 +116,22 @@ export const teamSlice = createSlice({
       'teamIncidentFilters',
       (state, action) => {
         state.teamIncidentFilters = action.payload;
+      }
+    );
+    addFetchCasesToReducer(
+      builder,
+      fetchTeamIncidentPRsFilter,
+      'teamIncidentPRsFilters',
+      (state, action) => {
+        state.teamIncidentPRsFilters = action.payload;
+      }
+    );
+    addFetchCasesToReducer(
+      builder,
+      updateTeamIncidentPRsFilter,
+      'teamIncidentPRsFilters',
+      (state, action) => {
+        state.teamIncidentPRsFilters = action.payload;
       }
     );
     addFetchCasesToReducer(
@@ -248,6 +268,32 @@ export const updateTeamIncidentsFilter = createAsyncThunk(
     );
   }
 );
+
+export const fetchTeamIncidentPRsFilter = createAsyncThunk(
+  'teams/fetchTeamIncidentPRsFilter',
+  async (params: { team_id: ID }) => {
+    return await handleApi<TeamIncidentPRsSettingsResponse>(
+      `/internal/team/${params.team_id}/incident_prs_filter`,
+      {
+        method: 'GET'
+      }
+    );
+  }
+);
+
+export const updateTeamIncidentPRsFilter = createAsyncThunk(
+  'teams/updateTeamIncidentPRsFilter',
+  async (params: { team_id: ID; setting: IncidentPRsSettings }) => {
+    return await handleApi<TeamIncidentPRsSettingsResponse>(
+      `/internal/team/${params.team_id}/incident_prs_filter`,
+      {
+        method: 'PUT',
+        data: { setting: params.setting }
+      }
+    );
+  }
+);
+
 export const fetchExcludedPrs = createAsyncThunk(
   'teams/fetchExcludedPrs',
   async (params: { teamId: ID }) => {
