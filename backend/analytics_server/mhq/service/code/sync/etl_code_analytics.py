@@ -10,6 +10,7 @@ from mhq.store.models.code import (
     PullRequestState,
 )
 from mhq.utils.time import Interval
+from mhq.utils.log import LOG
 
 
 class CodeETLAnalyticsService:
@@ -54,6 +55,9 @@ class CodeETLAnalyticsService:
 
     @staticmethod
     def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent],pr_earliest_event:Optional[datetime]):
+        LOG.info(
+            f"Calculating PR performance for {pr.id} with {len(pr_events)} events"
+        )
         pr_events.sort(key=lambda x: x.created_at)
         first_review = pr_events[0] if pr_events else None
         approved_reviews = list(
@@ -87,7 +91,6 @@ class CodeETLAnalyticsService:
             ).total_seconds()
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
-
         first_open_time = (
             pr_earliest_event
             if pr_earliest_event and isinstance(pr_earliest_event, datetime)
@@ -95,6 +98,13 @@ class CodeETLAnalyticsService:
         )
 
         cycle_time = pr.state_changed_at - first_open_time
+
+        LOG.info( 
+            f"PR {pr.id} performance: "
+            f"rework_time={rework_time}, "
+            f"merge_time={merge_time}, "
+            f"cycle_time={cycle_time}"
+        )
 
         if isinstance(cycle_time, timedelta):
             cycle_time = cycle_time.total_seconds()
