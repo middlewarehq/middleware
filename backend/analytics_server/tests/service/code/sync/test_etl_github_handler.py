@@ -347,7 +347,42 @@ def test__to_pr_commits_given_a_list_of_commits_returns_a_list_of_pr_commits():
         assert compare_objects_as_dicts(commit, expected_commit) is True
 
 
-def test__dt_from_github_dt_string_given_date_string_returns_correct_datetime():
-    date_string = "2024-04-18T10:53:15Z"
-    expected = datetime(2024, 4, 18, 10, 53, 15, tzinfo=pytz.UTC)
-    assert GithubETLHandler._dt_from_github_dt_string(date_string) == expected
+def test_get_first_ready_for_review_event_returns_earliest_ready_event():
+    earlier_date = datetime(2024, 1, 1, 10, 0, 0, tzinfo=pytz.UTC)
+    later_date = datetime(2024, 1, 2, 10, 0, 0, tzinfo=pytz.UTC)
+
+    events = [
+        {"event": "other_event", "created_at": earlier_date.isoformat()},
+        {"event": "ready_for_review", "created_at": later_date.isoformat()},
+        {"event": "ready_for_review", "created_at": earlier_date.isoformat()},
+        {"event": "another_event", "created_at": later_date.isoformat()},
+    ]
+
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    result = github_etl_handler.get_first_ready_for_review_event(events)
+
+    # The method should parse the string date back to a datetime object
+    expected_date = datetime.fromisoformat(
+        earlier_date.isoformat().replace("Z", "+00:00")
+    )
+    assert result == expected_date
+
+
+def test_get_first_ready_for_review_event_returns_none_when_no_ready_events():
+    date = datetime(2024, 1, 1, 10, 0, 0, tzinfo=pytz.UTC)
+    events = [
+        {"event": "other_event", "created_at": date.isoformat()},
+        {"event": "another_event", "created_at": date.isoformat()},
+    ]
+
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    result = github_etl_handler.get_first_ready_for_review_event(events)
+
+    assert result is None
+
+
+def test_get_first_ready_for_review_event_handles_empty_list():
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    result = github_etl_handler.get_first_ready_for_review_event([])
+
+    assert result is None
