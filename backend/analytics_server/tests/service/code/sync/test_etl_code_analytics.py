@@ -9,6 +9,8 @@ from tests.factories.models.code import (
     get_pull_request_commit,
 )
 
+# Updated code with None as the third argument in get_pr_performance calls
+
 
 def test_pr_performance_returns_first_review_tat_for_first_review():
     pr_service = CodeETLAnalyticsService()
@@ -16,14 +18,14 @@ def test_pr_performance_returns_first_review_tat_for_first_review():
     t2 = t1 + timedelta(hours=1)
     pr = get_pull_request(created_at=t1, updated_at=t1)
     pr_event = get_pull_request_event(pull_request_id=pr.id, created_at=t2)
-    performance = pr_service.get_pr_performance(pr, [pr_event])
+    performance = pr_service.get_pr_performance(pr, [pr_event], None)
     assert performance.first_review_time == 3600
 
 
 def test_pr_performance_returns_minus1_first_review_tat_for_no_reviews():
     pr_service = CodeETLAnalyticsService()
     pr = get_pull_request()
-    performance = pr_service.get_pr_performance(pr, [])
+    performance = pr_service.get_pr_performance(pr, [], None)
     assert performance.first_review_time == -1
 
 
@@ -35,7 +37,7 @@ def test_pr_performance_returns_minus1_first_approved_review_tat_for_no_approved
     pr_event_1 = get_pull_request_event(
         pull_request_id=pr.id, state="REJECTED", created_at=t2
     )
-    performance = pr_service.get_pr_performance(pr, [pr_event_1])
+    performance = pr_service.get_pr_performance(pr, [pr_event_1], None)
     assert performance.merge_time == -1
 
 
@@ -46,7 +48,7 @@ def test_pr_performance_returns_merge_time_minus1_for_merged_pr_without_review()
     pr = get_pull_request(
         state=PullRequestState.MERGED, state_changed_at=t2, created_at=t1, updated_at=t2
     )
-    performance = pr_service.get_pr_performance(pr, [])
+    performance = pr_service.get_pr_performance(pr, [], None)
     assert performance.merge_time == -1
 
 
@@ -61,7 +63,7 @@ def test_pr_performance_returns_blocking_reviews():
         created_at=t1,
         updated_at=t2,
     )
-    performance = pr_service.get_pr_performance(pr, [])
+    performance = pr_service.get_pr_performance(pr, [], None)
     assert performance.blocking_reviews == 0
 
 
@@ -88,7 +90,7 @@ def test_pr_performance_returns_rework_time():
         pull_request_id=pr.id, state=PullRequestEventState.APPROVED.value, created_at=t4
     )
     performance = pr_service.get_pr_performance(
-        pr, [changes_requested_1, comment2, approval]
+        pr, [changes_requested_1, comment2, approval], None
     )
 
     assert performance.rework_time == (t4 - t2).total_seconds()
@@ -104,7 +106,7 @@ def test_pr_performance_returns_rework_time_0_for_approved_prs():
     approval = get_pull_request_event(
         pull_request_id=pr.id, state=PullRequestEventState.APPROVED.value, created_at=t2
     )
-    performance = pr_service.get_pr_performance(pr, [approval])
+    performance = pr_service.get_pr_performance(pr, [approval], None)
 
     assert performance.rework_time == 0
 
@@ -130,7 +132,7 @@ def test_pr_performance_returns_rework_time_as_per_first_approved_prs():
         pull_request_id=pr.id, state=PullRequestEventState.APPROVED.value, created_at=t4
     )
     performance = pr_service.get_pr_performance(
-        pr, [changes_requested_1, approval, approval_2]
+        pr, [changes_requested_1, approval, approval_2], None
     )
 
     assert performance.rework_time == (t3 - t2).total_seconds()
@@ -150,7 +152,9 @@ def test_pr_performance_returns_rework_time_for_open_prs():
     approval = get_pull_request_event(
         pull_request_id=pr.id, state=PullRequestEventState.APPROVED.value, created_at=t3
     )
-    performance = pr_service.get_pr_performance(pr, [changes_requested_1, approval])
+    performance = pr_service.get_pr_performance(
+        pr, [changes_requested_1, approval], None
+    )
 
     assert performance.rework_time == (t3 - t2).total_seconds()
 
@@ -165,7 +169,7 @@ def test_pr_performance_returns_rework_time_minus1_for_non_approved_prs():
         state=PullRequestEventState.CHANGES_REQUESTED.value,
         created_at=t2,
     )
-    performance = pr_service.get_pr_performance(pr, [changes_requested_1])
+    performance = pr_service.get_pr_performance(pr, [changes_requested_1], None)
 
     assert performance.rework_time == -1
 
@@ -176,7 +180,7 @@ def test_pr_performance_returns_rework_time_minus1_for_merged_prs_without_review
     pr = get_pull_request(
         state=PullRequestState.MERGED, state_changed_at=t1, created_at=t1, updated_at=t1
     )
-    performance = pr_service.get_pr_performance(pr, [])
+    performance = pr_service.get_pr_performance(pr, [], None)
 
     assert performance.rework_time == -1
 
@@ -188,7 +192,7 @@ def test_pr_performance_returns_cycle_time_for_merged_pr():
     pr = get_pull_request(
         state=PullRequestState.MERGED, state_changed_at=t2, created_at=t1, updated_at=t2
     )
-    performance = pr_service.get_pr_performance(pr, [])
+    performance = pr_service.get_pr_performance(pr, [], None)
 
     assert performance.cycle_time == 86400
 
@@ -196,7 +200,7 @@ def test_pr_performance_returns_cycle_time_for_merged_pr():
 def test_pr_performance_returns_cycle_time_minus1_for_non_merged_pr():
     pr_service = CodeETLAnalyticsService()
     pr = get_pull_request()
-    performance = pr_service.get_pr_performance(pr, [])
+    performance = pr_service.get_pr_performance(pr, [], None)
 
     assert performance.cycle_time == -1
 
