@@ -232,7 +232,7 @@ def test_pr_performance_filters_out_bot_events_with_user_data():
         pull_request_id=pr.id,
         reviewer="github-actions",
         created_at=t2,
-        data={"user": {"type": "Bot"}},
+        data={"user": {"type": "Bot"},"state":"COMMENTED"},
     )
 
     human_event = get_pull_request_event(
@@ -257,7 +257,7 @@ def test_pr_performance_with_only_bot_events_returns_no_first_review():
         pull_request_id=pr.id,
         reviewer="github-actions",
         created_at=t2,
-        data={"user": {"type": "Bot"}},
+        data={"user": {"type": "Bot"},"state":"COMMENTED"},
     )
 
     performance = pr_service.get_pr_performance(pr, [bot_event1, bot_event2])
