@@ -209,11 +209,11 @@ def test_pr_performance_filters_out_bot_events():
     pr = get_pull_request(created_at=t1, updated_at=t1)
 
     bot_event = get_pull_request_event(
-        pull_request_id=pr.id, actor_username="dependabot[bot]", created_at=t2
+        pull_request_id=pr.id, reviewer="dependabot[bot]", created_at=t2
     )
 
     human_event = get_pull_request_event(
-        pull_request_id=pr.id, actor_username="developer", created_at=t3
+        pull_request_id=pr.id, reviewer="developer", created_at=t3
     )
 
     performance = pr_service.get_pr_performance(pr, [bot_event, human_event])
@@ -230,13 +230,13 @@ def test_pr_performance_filters_out_bot_events_with_user_data():
 
     bot_event = get_pull_request_event(
         pull_request_id=pr.id,
-        actor_username="github-actions",
+        reviewer="github-actions",
         created_at=t2,
         data={"user": {"type": "Bot"}},
     )
 
     human_event = get_pull_request_event(
-        pull_request_id=pr.id, actor_username="developer", created_at=t3
+        pull_request_id=pr.id, reviewer="developer", created_at=t3
     )
 
     performance = pr_service.get_pr_performance(pr, [bot_event, human_event])
@@ -251,11 +251,11 @@ def test_pr_performance_with_only_bot_events_returns_no_first_review():
     pr = get_pull_request(created_at=t1, updated_at=t1)
 
     bot_event1 = get_pull_request_event(
-        pull_request_id=pr.id, actor_username="dependabot[bot]", created_at=t2
+        pull_request_id=pr.id, reviewer="dependabot[bot]", created_at=t2
     )
     bot_event2 = get_pull_request_event(
         pull_request_id=pr.id,
-        actor_username="github-actions",
+        reviewer="github-actions",
         created_at=t2,
         data={"user": {"type": "Bot"}},
     )
@@ -273,7 +273,7 @@ def test_pr_performance_counts_bot_blocking_reviews():
 
     bot_event = get_pull_request_event(
         pull_request_id=pr.id,
-        actor_username="dependabot[bot]",
+        reviewer="dependabot[bot]",
         state=PullRequestEventState.CHANGES_REQUESTED.value,
         created_at=t2,
     )
