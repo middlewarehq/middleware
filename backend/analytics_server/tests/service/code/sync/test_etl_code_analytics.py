@@ -201,6 +201,89 @@ def test_pr_performance_returns_cycle_time_minus1_for_non_merged_pr():
     assert performance.cycle_time == -1
 
 
+def test_pr_performance_filters_out_bot_events():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t1 + timedelta(hours=2)
+    pr = get_pull_request(created_at=t1, updated_at=t1)
+
+    bot_event = get_pull_request_event(
+        pull_request_id=pr.id, actor_username="dependabot[bot]", created_at=t2
+    )
+
+    human_event = get_pull_request_event(
+        pull_request_id=pr.id, actor_username="developer", created_at=t3
+    )
+
+    performance = pr_service.get_pr_performance(pr, [bot_event, human_event])
+
+    assert performance.first_review_time == (t3 - t1).total_seconds()
+
+
+def test_pr_performance_filters_out_bot_events_with_user_data():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t1 + timedelta(hours=2)
+    pr = get_pull_request(created_at=t1, updated_at=t1)
+
+    bot_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        actor_username="github-actions",
+        created_at=t2,
+        data={"user": {"type": "Bot"}},
+    )
+
+    human_event = get_pull_request_event(
+        pull_request_id=pr.id, actor_username="developer", created_at=t3
+    )
+
+    performance = pr_service.get_pr_performance(pr, [bot_event, human_event])
+
+    assert performance.first_review_time == (t3 - t1).total_seconds()
+
+
+def test_pr_performance_with_only_bot_events_returns_no_first_review():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    pr = get_pull_request(created_at=t1, updated_at=t1)
+
+    bot_event1 = get_pull_request_event(
+        pull_request_id=pr.id, actor_username="dependabot[bot]", created_at=t2
+    )
+    bot_event2 = get_pull_request_event(
+        pull_request_id=pr.id,
+        actor_username="github-actions",
+        created_at=t2,
+        data={"user": {"type": "Bot"}},
+    )
+
+    performance = pr_service.get_pr_performance(pr, [bot_event1, bot_event2])
+
+    assert performance.first_review_time == -1
+
+
+def test_pr_performance_counts_bot_blocking_reviews():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    pr = get_pull_request(created_at=t1, updated_at=t1)
+
+    bot_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        actor_username="dependabot[bot]",
+        state=PullRequestEventState.CHANGES_REQUESTED.value,
+        created_at=t2,
+    )
+
+    performance = pr_service.get_pr_performance(pr, [bot_event])
+
+    assert performance.first_review_time == -1
+    assert performance.blocking_reviews == 1
+
+
 def test_pr_rework_cycles_returns_zero_cycles_when_pr_approved():
     pr_service = CodeETLAnalyticsService()
     pr = get_pull_request(reviewers=["dhruv", "jayant"])

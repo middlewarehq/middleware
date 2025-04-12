@@ -53,8 +53,19 @@ class CodeETLAnalyticsService:
 
     @staticmethod
     def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
-        pr_events.sort(key=lambda x: x.created_at)
-        first_review = pr_events[0] if pr_events else None
+        pr_events_no_bots = [
+            event
+            for event in pr_events
+            if (
+                not event.actor_username.endswith("[bot]")
+                and not (
+                    event.data.get("user")
+                    and event.data.get("user", {}).get("type") == "Bot"
+                )
+            )
+        ]
+        pr_events_no_bots.sort(key=lambda x: x.created_at)
+        first_review = pr_events_no_bots[0] if pr_events_no_bots else None
         approved_reviews = list(
             filter(
                 lambda x: x.data["state"] == PullRequestEventState.APPROVED.value,
