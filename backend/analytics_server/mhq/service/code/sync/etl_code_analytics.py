@@ -21,7 +21,18 @@ class CodeETLAnalyticsService:
     ) -> PullRequest:
         if pr.state == PullRequestState.OPEN:
             return pr
-
+        # Filter bots from PR events
+        pr_events = [
+            event
+            for event in pr_events
+            if (
+                not event.actor_username.endswith("[bot]")
+                and not (
+                    event.data.get("user")
+                    and event.data.get("user", {}).get("type") == "Bot"
+                )
+            )
+        ]
         pr_performance = self.get_pr_performance(pr, pr_events)
 
         pr.first_response_time = (

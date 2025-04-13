@@ -500,3 +500,104 @@ def test_rework_cycles_returs_1_for_multiple_approvals():
         )
         == 1
     )
+
+
+def test_create_pr_metrics_filters_bot_events():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t2 + timedelta(hours=1)
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t1, updated_at=t1)
+    bot_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="test-bot[bot]",
+        state=PullRequestEventState.COMMENTED.value,
+        created_at=t2,
+    )
+    human_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="human_user",
+        state=PullRequestEventState.APPROVED.value,
+        created_at=t3,
+    )
+    pr_metrics = pr_service.create_pr_metrics(pr, [bot_event, human_event], [])
+    assert "human_user" in pr_metrics.reviewers
+    assert "test-bot[bot]" not in pr_metrics.reviewers
+
+
+def test_create_pr_metrics_no_bot_first_response_time():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t1, updated_at=t1)
+    first_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="reviewer",
+        state=PullRequestEventState.COMMENTED.value,
+        created_at=t2,
+    )
+    pr_metrics = pr_service.create_pr_metrics(pr, [first_review_event], [])
+    assert pr_metrics.first_response_time == 3600
+
+
+def test_create_pr_metrics_no_bot_rework_time():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t2 + timedelta(hours=1)
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t1, updated_at=t1)
+    changes_requested_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="reviewer",
+        state=PullRequestEventState.CHANGES_REQUESTED.value,
+        created_at=t2,
+    )
+    approval_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="reviewer",
+        state=PullRequestEventState.APPROVED.value,
+        created_at=t3,
+    )
+    pr_metrics = pr_service.create_pr_metrics(
+        pr, [changes_requested_event, approval_event], []
+    )
+    assert pr_metrics.rework_time == 3600
+
+
+def test_create_pr_metrics_no_human_first_response_time():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t1, updated_at=t1)
+    first_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="test-bot[bot]",
+        state=PullRequestEventState.COMMENTED.value,
+        created_at=t2,
+    )
+    pr_metrics = pr_service.create_pr_metrics(pr, [first_review_event], [])
+    assert pr_metrics.first_response_time is None
+
+
+def test_create_pr_metrics_no_human_rework_time():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t2 + timedelta(hours=1)
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t1, updated_at=t1)
+    changes_requested_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="test-bot[bot]",
+        state=PullRequestEventState.CHANGES_REQUESTED.value,
+        created_at=t2,
+    )
+    approval_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="test-bot[bot]",
+        state=PullRequestEventState.APPROVED.value,
+        created_at=t3,
+    )
+    pr_metrics = pr_service.create_pr_metrics(
+        pr, [changes_requested_event, approval_event], []
+    )
+    assert pr_metrics.rework_time is None
