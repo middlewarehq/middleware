@@ -1020,6 +1020,7 @@ export type IntegrationsLinkedAtMap = Record<keyof IntegrationsMap, DateString>;
 export type ImageStatusApiResponse = {
   latest_docker_image: string;
   is_update_available: boolean;
+  current_docker_image_build_date: DateString;
 };
 
 export type DB_OrgRepo = {

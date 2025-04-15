@@ -23,6 +23,7 @@ type CheckNewVersionResponse = {
   current_github_commit: string;
   is_update_available: boolean;
   latest_docker_image_build_date: Date;
+  current_docker_image_build_date: Date;
 };
 
 type DockerHubAPIResponse = {
@@ -142,7 +143,8 @@ async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
       dockerLatestRemoteTag: latestTag,
       localVersionInfo: versionInfo
     }),
-    latest_docker_image_build_date: latestRemoteDate
+    latest_docker_image_build_date: latestRemoteDate,
+    current_docker_image_build_date: new Date(versionInfo.current_build_date)
   };
 }
 
