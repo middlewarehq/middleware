@@ -620,6 +620,27 @@ export type TeamIncidentSettingsResponse = {
   setting: IncidentSettings;
 };
 
+export type IncidentPRsSettings = {
+  include_revert_prs: boolean;
+  title_filters: string[];
+  head_branch_filters: string[];
+  pr_mapping_field: string;
+  pr_mapping_pattern: string;
+};
+
+export type TeamIncidentPRsSettingApiResponse = {
+  created_at: Date;
+  updated_at: Date;
+  team_id: ID;
+  setting: IncidentPRsSettings;
+};
+
+export type TeamIncidentPRsSettingsResponse = {
+  setting: IncidentPRsSettings;
+};
+
+export const IncidentPRMappingOptions = ['fix #1234', 'fix(1234)', 'fix-1234'];
+
 export enum TeamSettings {
   TEAM_MEMBER_METRICS_FILTER_SETTING = 'TEAM_MEMBER_METRICS_FILTER_SETTING',
   EXCLUDED_TICKET_TYPES_SETTING = 'EXCLUDED_TICKET_TYPES_SETTING'
