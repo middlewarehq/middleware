@@ -30,6 +30,7 @@ from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.core import CoreRepoService
 from mhq.utils.log import LOG
 from mhq.utils.time import time_now, ISO_8601_DATE_FORMAT
+from types import SimpleNamespace
 
 PR_PROCESSING_CHUNK_SIZE = 100
 
@@ -149,7 +150,7 @@ class GithubETLHandler(CodeProviderETLHandler):
                 continue
 
             pr_model, event_models, pr_commit_models = self.process_pr(
-                str(org_repo.id), github_pr
+                str(org_repo.id), github_pr, org_repo.org_name, org_repo.name
             )
             pull_requests.append(pr_model)
             pr_events += event_models
@@ -159,7 +160,7 @@ class GithubETLHandler(CodeProviderETLHandler):
         return pull_requests, pr_commits, pr_events
 
     def process_pr(
-        self, repo_id: str, pr: GithubPullRequest
+        self, repo_id: str, pr: GithubPullRequest, org_name: str, org_repo: str
     ) -> Tuple[PullRequest, List[PullRequestEvent], List[PullRequestCommit]]:
         pr_model: Optional[PullRequest] = self.code_repo_service.get_repo_pr_by_number(
             repo_id, pr.number
@@ -174,6 +175,10 @@ class GithubETLHandler(CodeProviderETLHandler):
         pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
             reviews, pr_model, pr_event_model_list
         )
+        pr_timeline_events = self._api.get_pr_timeline(org_name, org_repo, pr.number)
+        pr_earliest_ready_for_review = self.get_first_ready_for_review_event(
+            pr_timeline_events
+        )
         if pr.merged_at:
             commits: List[Dict] = list(
                 map(
@@ -185,10 +190,42 @@ class GithubETLHandler(CodeProviderETLHandler):
             )
 
         pr_model = self.code_etl_analytics_service.create_pr_metrics(
-            pr_model, pr_events_model_list, pr_commits_model_list
+            pr_model,
+            pr_events_model_list,
+            pr_commits_model_list,
+            pr_earliest_ready_for_review,
         )
 
         return pr_model, pr_events_model_list, pr_commits_model_list
+
+    def get_first_ready_for_review_event(
+        self, timeline: List[Dict]
+    ) -> Optional[datetime]:
+        """
+        Find the earliest 'ready_for_review' event from a list of PR timeline events.
+
+        Args:
+            timeline: List of PR timeline events
+
+        Returns:
+            The earliest ready_for_review event's datetime or None if no such event exists
+        """
+        ready_events = []
+        for event in timeline:
+            if event.get("event") == "ready_for_review" and "created_at" in event:
+                try:
+                    created_at = datetime.fromisoformat(
+                        event["created_at"].replace("Z", "+00:00")
+                    )
+                    ready_events.append(SimpleNamespace(created_at=created_at))
+                except (ValueError, KeyError):
+                    continue
+
+        if not ready_events:
+            return None
+
+        earliest_event = min(ready_events, key=lambda e: e.created_at)
+        return earliest_event.created_at.astimezone(pytz.UTC)
 
     def get_revert_prs_mapping(
         self, prs: List[PullRequest]
