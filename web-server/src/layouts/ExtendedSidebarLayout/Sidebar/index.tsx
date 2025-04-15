@@ -7,10 +7,14 @@ import {
   useTheme,
   lighten
 } from '@mui/material';
+import { format } from 'date-fns';
 import { useContext, useMemo } from 'react';
 
+import { FlexBox } from '@/components/FlexBox';
 import Scrollbar from '@/components/Scrollbar';
+import { Line } from '@/components/Text';
 import { SidebarContext } from '@/contexts/SidebarContext';
+import { useSelector } from '@/store';
 
 import SidebarMenu from './SidebarMenu';
 import SidebarTopSection from './SidebarTopSection';
@@ -61,6 +65,13 @@ function Sidebar() {
 const SidebarContent = () => {
   const theme = useTheme();
 
+  const imageStatus = useSelector((s) => s.app.latestImageStatus);
+
+  const formattedDate = format(
+    new Date(imageStatus.current_docker_image_build_date),
+    'dd MMM yyyy HH:mm:ss'
+  );
+
   return (
     <>
       <Scrollbar>
@@ -75,6 +86,11 @@ const SidebarContent = () => {
         <SidebarMenu />
       </Scrollbar>
       <Divider sx={{ background: theme.colors.alpha.trueWhite[10] }} />
+      <FlexBox justifyCenter alignCenter height="60px">
+        <Line small medium secondary>
+          Build: {formattedDate}
+        </Line>
+      </FlexBox>
     </>
   );
 };
