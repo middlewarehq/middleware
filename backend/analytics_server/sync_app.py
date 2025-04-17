@@ -45,12 +45,7 @@ def handle_exception(e):
     if app.debug:
         error_details["traceback"] = traceback.format_exc()
 
-    response = jsonify(error_details)
-    response.status_code = 500
-    return response
-
-app.register_error_handler(Exception, handle_exception)
-app.register_error_handler(HTTPException, handle_http_exception)
+    return jsonify(error_details), 500
 
 if __name__ == "__main__":
     app.run(port=SYNC_SERVER_PORT)
