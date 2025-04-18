@@ -53,7 +53,7 @@ export const searchGithubRepos = async (
 };
 
 const searchRepoWithURL = async (searchString: string) => {
-  const apiUrl = `https://api.github.com/repos/${searchString}`;
+  const apiUrl = await getGitHubRestApiUrl(`repos/${searchString}`);
   const response = await axios.get<GithubRepo>(apiUrl);
   const repo = response.data;
   return [
@@ -104,7 +104,9 @@ export const searchGithubReposWithNames = async (
 
   const queryString = `${searchString} in:name fork:true`;
 
-  const response = await fetch(GITHUB_API_URL, {
+  const githubApiUrl = await getGitHubGraphQLUrl();
+
+  const response = await fetch(githubApiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -304,3 +306,23 @@ const replaceURL = async (url: string): Promise<string> => {
 
   return url;
 };
+
+const getGitHubCustomDomain = async (): Promise<string | null> => {
+  const provider_meta = await db('Integration')
+    .where('name', Integration.GITHUB)
+    .then((r: Row<'Integration'>[]) => r.map((item) => item.provider_meta));
+
+  return head(provider_meta || [])?.custom_domain || null;
+};
+
+const getGitHubRestApiUrl = async (path: string): Promise<string> => {
+  const customDomain = await getGitHubCustomDomain();
+  const baseUrl = customDomain ? `https://${customDomain}/api/v3` : GITHUB_API_URL;
+  return `${baseUrl}/${path}`.replace(/\/+/g, '/');
+};
+
+const getGitHubGraphQLUrl = async (): Promise<string> => {
+  const customDomain = await getGitHubCustomDomain();
+  return customDomain ? `https://${customDomain}/api/graphql` : GITHUB_API_URL;
+};
+

@@ -22,11 +22,20 @@ class GithubRateLimitExceeded(Exception):
 
 
 class GithubApiService:
-    def __init__(self, access_token: str):
+    def __init__(self, access_token: str, domain = "https://api.github.com"):
         self._token = access_token
-        self._g = Github(self._token, per_page=PAGE_SIZE)
-        self.base_url = "https://api.github.com"
+        self.base_url = self._get_api_url(domain)
+        self._g = Github(
+            self._token, 
+            base_url=self.base_url,
+            per_page=PAGE_SIZE
+        )
         self.headers = {"Authorization": f"Bearer {self._token}"}
+    def _get_api_url(self, domain: str) -> str:
+        if domain == "https://api.github.com":
+            return domain
+        else:
+            return f"{domain}/api/v3"
 
     @contextlib.contextmanager
     def temp_config(self, per_page: int = 30):
