@@ -3,6 +3,8 @@ import { isNil, reject } from 'ramda';
 
 import { Integration } from '@/constants/integrations';
 
+const DEFAULT_GH_URL = 'https://api.github.com';
+
 export const unlinkProvider = async (orgId: string, provider: Integration) => {
   return await axios.delete(`/api/resources/orgs/${orgId}/integration`, {
     params: { provider }
@@ -28,10 +30,17 @@ export const linkProvider = async (
 // GitHub functions
 
 export async function checkGitHubValidity(
-  good_stuff: string
+  good_stuff: string,
+  customDomain?: string
 ): Promise<boolean> {
   try {
-    await axios.get('https://api.github.com/user', {
+    // if customDomain is provded, the host will be customDomain/api/v3
+    // else it will be api.github.com(default)
+    const baseUrl = customDomain
+      ? `${customDomain}/api/v3`
+      : DEFAULT_GH_URL;
+
+    await axios.get(`${baseUrl}/user`, {
       headers: {
         Authorization: `token ${good_stuff}`
       }
@@ -43,9 +52,12 @@ export async function checkGitHubValidity(
 }
 
 const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
-export const getMissingPATScopes = async (pat: string) => {
+export const getMissingPATScopes = async (pat: string, customDomain?: string) => {
+  const baseUrl = customDomain
+    ? `${customDomain}/api/v3`
+    : DEFAULT_GH_URL;
   try {
-    const response = await axios.get('https://api.github.com', {
+    const response = await axios.get(baseUrl, {
       headers: {
         Authorization: `token ${pat}`
       }

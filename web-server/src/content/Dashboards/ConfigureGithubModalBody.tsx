@@ -25,10 +25,12 @@ export const ConfigureGithubModalBody: FC<{
   const token = useEasyState('');
   const { orgId } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
+  const customDomain = useEasyState('');
   const dispatch = useDispatch();
   const isLoading = useBoolState();
 
   const showError = useEasyState<string>('');
+  const showDomainError = useEasyState<string>('');
 
   const setError = useCallback(
     (error: string) => {
@@ -42,6 +44,10 @@ export const ConfigureGithubModalBody: FC<{
     token.set(e);
     showError.set('');
   };
+  const handleDomainChange = (e: string) => {
+    customDomain.set(e);
+    showDomainError.set('');
+  };
 
   const handleSubmission = useCallback(async () => {
     if (!token.value) {
@@ -49,13 +55,13 @@ export const ConfigureGithubModalBody: FC<{
       return;
     }
     depFn(isLoading.true);
-    checkGitHubValidity(token.value)
+    checkGitHubValidity(token.value, customDomain.valueRef.current)
       .then(async (isValid) => {
         if (!isValid) throw new Error('Invalid token');
       })
       .then(async () => {
         try {
-          const res = await getMissingPATScopes(token.value);
+          const res = await getMissingPATScopes(token.value, customDomain.valueRef.current);
           if (res.length) {
             throw new Error(`Token is missing scopes: ${res.join(', ')}`);
           }
@@ -66,7 +72,9 @@ export const ConfigureGithubModalBody: FC<{
       })
       .then(async () => {
         try {
-          return await linkProvider(token.value, orgId, Integration.GITHUB);
+          return await linkProvider(token.value, orgId, Integration.GITHUB, {
+            custom_domain: customDomain.valueRef.current
+          });
         } catch (e: any) {
           throw new Error(
             `Failed to link Github${e?.message ? `: ${e?.message}` : ''}`,
@@ -102,6 +110,13 @@ export const ConfigureGithubModalBody: FC<{
     setError,
     token.value
   ]);
+  const isDomainInputFocus = useBoolState(false);
+
+  const focusDomainInput = useCallback(() => {
+    if (!customDomain.value)
+      document.getElementById('gitlab-custom-domain')?.focus();
+    else handleSubmission();
+  }, [customDomain.value, handleSubmission]);
 
   return (
     <FlexBox gap2>
@@ -115,6 +130,7 @@ export const ConfigureGithubModalBody: FC<{
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
                 handleSubmission();
+                focusDomainInput();
                 return;
               }
             }}
@@ -150,6 +166,37 @@ export const ConfigureGithubModalBody: FC<{
             </Line>
           </FlexBox>
         </FlexBox>
+        <FlexBox gap2 col>
+            <FlexBox alignBase gap1>
+              Custom domain
+            </FlexBox>
+            <TextField
+              id="github-custom-domain"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  handleSubmission();
+                  return;
+                }
+              }}
+              error={!!showDomainError.value}
+              sx={{ width: '100%' }}
+              value={customDomain.value}
+              onChange={(e) => handleDomainChange(e.currentTarget.value)}
+              label={
+                isDomainInputFocus.value || customDomain.value
+                  ? 'Custom Domain'
+                  : '(Optional)'
+              }
+              onFocus={isDomainInputFocus.true}
+              onBlur={isDomainInputFocus.false}
+            />
+          </FlexBox>
+          <Line error tiny mt={1} minHeight={'18px'}>
+            {showDomainError.value}
+          </Line>
 
         <FlexBox justifyBetween alignCenter mt={'auto'}>
           <FlexBox col sx={{ opacity: 0.8 }}>
