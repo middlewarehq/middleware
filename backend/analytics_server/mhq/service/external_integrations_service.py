@@ -26,7 +26,7 @@ class ExternalIntegrationsService:
         self.custom_domain = custom_domain
 
     def get_github_organizations(self):
-        github_api_service = GithubApiService(self.access_token)
+        github_api_service = GithubApiService(self.access_token, self.custom_domain)
         try:
             orgs: [GithubOrganization] = github_api_service.get_org_list()
         except GithubException as e:
@@ -34,21 +34,21 @@ class ExternalIntegrationsService:
         return orgs
 
     def get_github_org_repos(self, org_login: str, page_size: int, page: int):
-        github_api_service = GithubApiService(self.access_token)
+        github_api_service = GithubApiService(self.access_token, self.custom_domain)
         try:
             return github_api_service.get_repos_raw(org_login, page_size, page)
         except GithubException as e:
             raise e
 
     def get_github_personal_repos(self, page_size: int, page: int):
-        github_api_service = GithubApiService(self.access_token)
+        github_api_service = GithubApiService(self.access_token, self.custom_domain)
         try:
             return github_api_service.get_user_repos_raw(page_size, page)
         except GithubException as e:
             raise e
 
     def get_repo_workflows(self, gh_org_name: str, gh_org_repo_name: str):
-        github_api_service = GithubApiService(self.access_token)
+        github_api_service = GithubApiService(self.access_token, self.custom_domain)
         try:
             workflows = github_api_service.get_repo_workflows(
                 gh_org_name, gh_org_repo_name
