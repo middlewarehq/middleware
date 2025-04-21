@@ -72,18 +72,21 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
 
     if (!query) return;
 
-    // Find all highlighted elements
-    const elements = Array.from(document.querySelectorAll('span[style*="background-color: yellow"]'));
-    setHighlightedElements(elements as HTMLElement[]);
-    setTotalMatches(elements.length);
-    setCurrentMatch(1);
+    useEffect(() => {
+      const elements = Array.from(
+        containerRef.current?.querySelectorAll('span[style*="background-color: yellow"]') ?? []
+      ) as HTMLElement[];
+      setHighlightedElements(elements);
+      setTotalMatches(elements.length);
+      setCurrentMatch(elements.length ? 1 : 0);
 
-    if (elements.length > 0) {
-      const firstElement = elements[0] as HTMLElement;
-      firstElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      updateHighlight(firstElement);
-    }
-  }, [updateHighlight]);
+      if (elements.length) {
+        updateHighlight(elements[0]);
+        elements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, [searchQuery, logs, updateHighlight]);
+
+  }, []);
 
   const handleNavigate = useCallback((direction: 'prev' | 'next') => {
     if (highlightedElements.length === 0) return;
@@ -110,7 +113,7 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
       )}
     >
       <FlexBox col>
-        <LogSearch 
+        <LogSearch
           onSearch={handleSearch}
           onNavigate={handleNavigate}
           currentMatch={currentMatch}
@@ -122,16 +125,17 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
             <Line>Loading...</Line>
           </FlexBox>
         ) : (
-          services &&
-          logs.map((log, index) => {
-            const parsedLog = parseLogLine(log);
-            if (!parsedLog) {
-              return <PlainLog log={log} index={index} key={index} searchQuery={searchQuery} />;
-            }
-            return <FormattedLog log={parsedLog} index={index} key={index} searchQuery={searchQuery} />;
-          })
+          <FlexBox ref={containerRef} col sx={{ overflowY: 'auto', maxHeight: '100%' }}>
+            {services &&
+              logs.map((log, index) => {
+                const parsedLog = parseLogLine(log);
+                if (!parsedLog) {
+                  return <PlainLog log={log} index={index} key={index} searchQuery={searchQuery} />;
+                }
+                return <FormattedLog log={parsedLog} index={index} key={index} searchQuery={searchQuery} />;
+              })}
+          </FlexBox>
         )}
-        <FlexBox ref={containerRef} />
 
         {showScrollDownButton.value && (
           <Button
@@ -145,11 +149,10 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
             bottom={20}
             sx={{
               position: 'fixed',
-              marginLeft: `calc(${
-                containerRef.current
+              marginLeft: `calc(${containerRef.current
                   ? containerRef.current.clientWidth / 2 - 67
                   : 0
-              }px)`
+                }px)`
             }}
           >
             <ExpandCircleDown fontSize="large" color="secondary" />
