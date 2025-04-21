@@ -1,13 +1,13 @@
 import { ExpandCircleDown } from '@mui/icons-material';
 import { Button, CircularProgress } from '@mui/material';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { FlexBox } from '@/components/FlexBox';
 import { FormattedLog } from '@/components/Service/SystemLog/FormattedLog';
+import { LogSearch } from '@/components/Service/SystemLog/LogSearch';
 import { PlainLog } from '@/components/Service/SystemLog/PlainLog';
 import { SystemLogsErrorFallback } from '@/components/Service/SystemLog/SystemLogsErrorFllback';
-import { SomethingWentWrong } from '@/components/SomethingWentWrong/SomethingWentWrong';
 import { Line } from '@/components/Text';
 import { ServiceNames } from '@/constants/service';
 import { useBoolState } from '@/hooks/useEasyState';
@@ -18,52 +18,90 @@ import { MotionBox } from '../../components/MotionComponents';
 
 export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
   const { services, loading, logs } = useSystemLogs({ serviceName });
-  const showScrollDownButton = useBoolState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const scrollDown = () => {
-    containerRef.current.scrollIntoView({ behavior: 'smooth' });
-  };
+  const showScrollDownButton = useBoolState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentMatch, setCurrentMatch] = useState(0);
+  const [totalMatches, setTotalMatches] = useState(0);
+  const [highlightedElements, setHighlightedElements] = useState<HTMLElement[]>([]);
+  const currentHighlightRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            showScrollDownButton.false();
-          } else {
-            showScrollDownButton.true();
-          }
-        });
-      },
-      {
-        threshold: 0
-      }
-    );
+    const container = containerRef.current;
+    if (!container) return;
 
-    const containerElement = containerRef.current;
-
-    if (containerRef.current) {
-      observer.observe(containerElement);
-    }
-
-    return () => {
-      if (containerElement) {
-        observer.unobserve(containerElement);
-      }
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      showScrollDownButton.set(scrollTop < scrollHeight - clientHeight - 100);
     };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
   }, [showScrollDownButton]);
 
-  useEffect(() => {
-    if (containerRef.current && !showScrollDownButton.value) {
-      scrollDown();
+  const scrollToBottom = useCallback(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
-  }, [logs, showScrollDownButton.value]);
+  }, []);
 
-  if (!serviceName)
-    return (
-      <SomethingWentWrong desc="Unspecified Service. This might be a product bug. Please contact us to let us know.;" />
-    );
+  const updateHighlight = useCallback((element: HTMLElement | null) => {
+    if (currentHighlightRef.current) {
+      currentHighlightRef.current.style.backgroundColor = 'yellow';
+      currentHighlightRef.current.style.color = 'black';
+    }
+
+    if (element) {
+      element.style.backgroundColor = 'rgb(255, 161, 10)';
+      element.style.color = 'white';
+      currentHighlightRef.current = element;
+    } else {
+      currentHighlightRef.current = null;
+    }
+  }, []);
+
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+    setCurrentMatch(0);
+    setTotalMatches(0);
+    setHighlightedElements([]);
+    updateHighlight(null);
+
+    if (!query) return;
+
+    // Find all highlighted elements
+    const elements = Array.from(document.querySelectorAll('span[style*="background-color: yellow"]'));
+    setHighlightedElements(elements as HTMLElement[]);
+    setTotalMatches(elements.length);
+    setCurrentMatch(1);
+
+    if (elements.length > 0) {
+      const firstElement = elements[0] as HTMLElement;
+      firstElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      updateHighlight(firstElement);
+    }
+  }, [updateHighlight]);
+
+  const handleNavigate = useCallback((direction: 'prev' | 'next') => {
+    if (highlightedElements.length === 0) return;
+
+    let newIndex = currentMatch;
+    if (direction === 'next') {
+      newIndex = currentMatch < totalMatches ? currentMatch + 1 : 1;
+    } else {
+      newIndex = currentMatch > 1 ? currentMatch - 1 : totalMatches;
+    }
+
+    setCurrentMatch(newIndex);
+    const element = highlightedElements[newIndex - 1];
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      updateHighlight(element);
+    }
+  }, [currentMatch, totalMatches, highlightedElements, updateHighlight]);
 
   return (
     <ErrorBoundary
@@ -72,6 +110,12 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
       )}
     >
       <FlexBox col>
+        <LogSearch 
+          onSearch={handleSearch}
+          onNavigate={handleNavigate}
+          currentMatch={currentMatch}
+          totalMatches={totalMatches}
+        />
         {loading ? (
           <FlexBox alignCenter gap2>
             <CircularProgress size="20px" />
@@ -82,16 +126,16 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
           logs.map((log, index) => {
             const parsedLog = parseLogLine(log);
             if (!parsedLog) {
-              return <PlainLog log={log} index={index} key={index} />;
+              return <PlainLog log={log} index={index} key={index} searchQuery={searchQuery} />;
             }
-            return <FormattedLog log={parsedLog} index={index} key={index} />;
+            return <FormattedLog log={parsedLog} index={index} key={index} searchQuery={searchQuery} />;
           })
         )}
         <FlexBox ref={containerRef} />
 
         {showScrollDownButton.value && (
           <Button
-            onClick={scrollDown}
+            onClick={scrollToBottom}
             component={MotionBox}
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}

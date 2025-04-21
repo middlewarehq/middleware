@@ -4,7 +4,32 @@ import { useCallback } from 'react';
 import { Line } from '@/components/Text';
 import { ParsedLog } from '@/types/resources';
 
-export const FormattedLog = ({ log }: { log: ParsedLog; index: number }) => {
+interface FormattedLogProps {
+  log: ParsedLog;
+  index: number;
+  searchQuery?: string;
+}
+
+const HighlightedText = ({ text, searchQuery }: { text: string; searchQuery?: string }) => {
+  if (!searchQuery) return <>{text}</>;
+
+  const parts = text.split(new RegExp(`(${searchQuery})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === searchQuery.toLowerCase() ? (
+          <span key={i} style={{ backgroundColor: 'yellow', color: 'black' }}>
+            {part}
+          </span>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+};
+
+export const FormattedLog = ({ log, searchQuery }: FormattedLogProps) => {
   const theme = useTheme();
   const getLevelColor = useCallback(
     (level: string) => {
@@ -36,17 +61,17 @@ export const FormattedLog = ({ log }: { log: ParsedLog; index: number }) => {
   return (
     <Line mono marginBottom={1}>
       <Line component="span" color="info">
-        {timestamp}
+        <HighlightedText text={timestamp} searchQuery={searchQuery} />
       </Line>{' '}
       {ip && (
         <Line component="span" color="primary">
-          {ip}{' '}
+          <HighlightedText text={ip} searchQuery={searchQuery} />{' '}
         </Line>
       )}
       <Line component="span" color={getLevelColor(logLevel)}>
-        [{logLevel}]
+        [<HighlightedText text={logLevel} searchQuery={searchQuery} />]
       </Line>{' '}
-      {message}
+      <HighlightedText text={message} searchQuery={searchQuery} />
     </Line>
   );
 };
