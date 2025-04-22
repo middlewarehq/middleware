@@ -61,16 +61,6 @@ export const LogSearch = ({ onSearch, onNavigate, currentMatch, totalMatches }: 
     onSearch('');
   }, [onSearch]);
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (event.key === 'Enter' && event.shiftKey) {
-        onNavigate('prev');
-      } else if (event.key === 'Enter') {
-        onNavigate('next');
-      }
-    },
-    [onNavigate]
-  );
 
   return (
     <SearchContainer>
@@ -80,7 +70,6 @@ export const LogSearch = ({ onSearch, onNavigate, currentMatch, totalMatches }: 
         placeholder="Search logs..."
         value={searchQuery}
         onChange={handleSearchChange}
-        onKeyDown={handleKeyDown}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">

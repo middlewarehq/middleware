@@ -1,6 +1,6 @@
 import { ExpandCircleDown } from '@mui/icons-material';
 import { Button, CircularProgress } from '@mui/material';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -26,18 +26,6 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
   const [highlightedElements, setHighlightedElements] = useState<HTMLElement[]>([]);
   const currentHighlightRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      showScrollDownButton.set(scrollTop < scrollHeight - clientHeight - 100);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [showScrollDownButton]);
 
   const scrollToBottom = useCallback(() => {
     if (containerRef.current) {
@@ -65,28 +53,36 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
-    setCurrentMatch(0);
-    setTotalMatches(0);
-    setHighlightedElements([]);
-    updateHighlight(null);
-
-    if (!query) return;
-
-    useEffect(() => {
-      const elements = Array.from(
-        containerRef.current?.querySelectorAll('span[style*="background-color: yellow"]') ?? []
-      ) as HTMLElement[];
-      setHighlightedElements(elements);
-      setTotalMatches(elements.length);
-      setCurrentMatch(elements.length ? 1 : 0);
-
-      if (elements.length) {
-        updateHighlight(elements[0]);
-        elements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, [searchQuery, logs, updateHighlight]);
-
-  }, []);
+  
+    // Reset states only when query is empty or below a threshold
+    if (!query || query.length < 3) {
+      setCurrentMatch(0);
+      setTotalMatches(0);
+      setHighlightedElements([]);
+      updateHighlight(null);
+      return;
+    }
+  
+    // Let the effect handle DOM updates
+  }, [updateHighlight]);
+  
+  useLayoutEffect(() => {
+    if (!searchQuery || searchQuery.length < 3) return;
+  
+    const elements = Array.from(
+      containerRef.current?.querySelectorAll('span[style*="background-color: yellow"]') ?? []
+    ) as HTMLElement[];
+  
+    setHighlightedElements(elements);
+    setTotalMatches(elements.length);
+    setCurrentMatch(elements.length ? 1 : 0);
+  
+    if (elements.length) {
+      updateHighlight(elements[0]);
+      elements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [searchQuery, logs, updateHighlight]);
+  
 
   const handleNavigate = useCallback((direction: 'prev' | 'next') => {
     if (highlightedElements.length === 0) return;
@@ -105,6 +101,19 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
       updateHighlight(element);
     }
   }, [currentMatch, totalMatches, highlightedElements, updateHighlight]);
+
+  useEffect(() => {
+    if (!loading && logs.length && containerRef.current) {
+      // Defer scrolling until after the DOM paints
+      requestAnimationFrame(() => {
+        containerRef.current?.scrollTo({
+          top: containerRef.current.scrollHeight,
+          behavior: 'auto',
+        });
+      });
+    }
+  }, [loading, logs]);
+  
 
   return (
     <ErrorBoundary
