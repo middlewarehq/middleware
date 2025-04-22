@@ -15,7 +15,7 @@ import { useDispatch } from '@/store';
 import {
   checkGitHubValidity,
   linkProvider,
-  getMissingPATScopes
+  getMissingTokenScopes
 } from '@/utils/auth';
 import { depFn } from '@/utils/fn';
 
@@ -27,7 +27,6 @@ export const ConfigureGithubModalBody: FC<{
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const isLoading = useBoolState();
-
   const showError = useEasyState<string>('');
 
   const setError = useCallback(
@@ -49,49 +48,35 @@ export const ConfigureGithubModalBody: FC<{
       return;
     }
     depFn(isLoading.true);
-    checkGitHubValidity(token.value)
-      .then(async (isValid) => {
-        if (!isValid) throw new Error('Invalid token');
-      })
-      .then(async () => {
-        try {
-          const res = await getMissingPATScopes(token.value);
-          if (res.length) {
-            throw new Error(`Token is missing scopes: ${res.join(', ')}`);
-          }
-        } catch (e) {
-          // @ts-ignore
-          throw new Error(e?.message, e);
-        }
-      })
-      .then(async () => {
-        try {
-          return await linkProvider(token.value, orgId, Integration.GITHUB);
-        } catch (e: any) {
-          throw new Error(
-            `Failed to link Github${e?.message ? `: ${e?.message}` : ''}`,
-            e
-          );
-        }
-      })
-      .then(() => {
-        dispatch(fetchCurrentOrg());
-        dispatch(
-          fetchTeams({
-            org_id: orgId
-          })
+    try {
+      const { isValid, tokenType } = await checkGitHubValidity(token.value);
+      if (!isValid) {
+        throw new Error('Invalid token');
+      }
+
+      const missingScopes = await getMissingTokenScopes(token.value, tokenType);
+      if (missingScopes.length) {
+        throw new Error(
+          `Token is missing ${tokenType === 'PAT' ? 'scopes' : 'permissions'}: ${missingScopes.join(', ')}`
         );
-        enqueueSnackbar('Github linked successfully', {
-          variant: 'success',
-          autoHideDuration: 2000
-        });
-        onClose();
-      })
-      .catch((e) => {
-        setError(e.message);
-        console.error(`Error while linking token: ${e.message}`, e);
-      })
-      .finally(isLoading.false);
+      }
+
+      await linkProvider(token.value, orgId, Integration.GITHUB, { tokenType });
+      dispatch(fetchCurrentOrg());
+      dispatch(fetchTeams({ org_id: orgId }));
+      enqueueSnackbar(`GitHub linked successfully with ${tokenType}`, {
+        variant: 'success',
+        autoHideDuration: 2000
+      });
+      onClose();
+    } catch (e: any) {
+      setError(
+        `Failed to link GitHub${e?.message ? `: ${e?.message}` : ''}`
+      );
+      console.error(`Error while linking token: ${e.message}`, e);
+    } finally {
+      depFn(isLoading.false);
+    }
   }, [
     dispatch,
     enqueueSnackbar,
@@ -106,7 +91,7 @@ export const ConfigureGithubModalBody: FC<{
   return (
     <FlexBox gap2>
       <FlexBox gap={2} minWidth={'400px'} col>
-        <FlexBox>Enter you Github token below.</FlexBox>
+        <FlexBox>Enter your GitHub Personal Access Token (PAT) or Fine-Grained Token (FGT) below.</FlexBox>
         <FlexBox fullWidth minHeight={'80px'} col>
           <TextField
             onKeyDown={(e) => {
@@ -124,7 +109,7 @@ export const ConfigureGithubModalBody: FC<{
             onChange={(e) => {
               handleChange(e.currentTarget.value);
             }}
-            label="Github Personal Access Token"
+            label="GitHub Token (PAT or FGT)"
             type="password"
           />
           <Line error tiny mt={1}>
@@ -143,7 +128,7 @@ export const ConfigureGithubModalBody: FC<{
                     textUnderlineOffset: '2px'
                   }}
                 >
-                  Generate new classic token
+                  Generate new token
                 </Line>
               </Link>
               <Line ml={'5px'}>{' ->'}</Line>
@@ -153,9 +138,9 @@ export const ConfigureGithubModalBody: FC<{
 
         <FlexBox justifyBetween alignCenter mt={'auto'}>
           <FlexBox col sx={{ opacity: 0.8 }}>
-            <Line>Learn more about Github</Line>
+            <Line>Learn more about GitHub</Line>
             <Line>
-              Personal Access Token (PAT)
+              Personal Access Tokens and Fine-Grained Tokens
               <Link
                 ml={1 / 2}
                 href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
@@ -209,12 +194,10 @@ const TokenPermissions = () => {
       },
       {
         height: '120px',
-
         top: '378px'
       },
       {
         height: '120px',
-
         top: '806px'
       }
     ].map((item) => ({ ...item, ...baseStyles }));

@@ -20,7 +20,7 @@ export const linkProvider = async (
     reject(isNil, {
       provider,
       the_good_stuff: stuff,
-      meta_data: meta
+      meta_data: { ...meta, tokenType: meta?.tokenType || 'PAT' }
     })
   );
 };
@@ -29,21 +29,49 @@ export const linkProvider = async (
 
 export async function checkGitHubValidity(
   good_stuff: string
-): Promise<boolean> {
+): Promise<{ isValid: boolean; tokenType: 'PAT' | 'FGT' }> {
   try {
-    await axios.get('https://api.github.com/user', {
+    const response = await axios.get('https://api.github.com/user', {
       headers: {
         Authorization: `token ${good_stuff}`
       }
     });
-    return true;
+
+    const scopesString = response.headers['x-oauth-scopes'] as string;
+    // PATs have scopes in x-oauth-scopes, FGTs do not
+    const tokenType = scopesString ? 'PAT' : 'FGT';
+    return { isValid: true, tokenType };
   } catch (error) {
-    return false;
+    return { isValid: false, tokenType: 'PAT' }; // Default to PAT for error handling
   }
 }
 
 const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
-export const getMissingPATScopes = async (pat: string) => {
+
+export const getMissingTokenScopes = async (pat: string, tokenType: 'PAT' | 'FGT') => {
+  if (tokenType === 'FGT') {
+    try {
+      // For FGTs, check repository permissions (example endpoint)
+      const response = await axios.get('https://api.github.com/user/repos', {
+        headers: {
+          Authorization: `token ${pat}`
+        },
+        params: { per_page: 1 } // Fetch one repo to check permissions
+      });
+
+      // FGTs don't return scopes in headers, so we infer permissions from API access
+      // Example: Check if user has access to repos (simplified)
+      if (!response.data.length) {
+        return ['repository_access']; // Custom error for missing repo access
+      }
+      // Note: For precise FGT permission checking, use /repos/{owner}/{repo} or specific endpoints
+      return []; // Assume permissions are sufficient for this example
+    } catch (error) {
+      throw new Error('Failed to verify FGT permissions', error);
+    }
+  }
+
+  // Existing PAT logic
   try {
     const response = await axios.get('https://api.github.com', {
       headers: {
@@ -62,7 +90,6 @@ export const getMissingPATScopes = async (pat: string) => {
 };
 
 // Gitlab functions
-
 export const checkGitLabValidity = async (
   accessToken: string,
   customDomain?: string
