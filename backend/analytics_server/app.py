@@ -69,8 +69,5 @@ def handle_exception(e):
     return response
 
 
-app.register_error_handler(Exception, handle_exception)
-app.register_error_handler(HTTPException, handle_http_exception)
-
 if __name__ == "__main__":
     app.run(port=int(ANALYTICS_SERVER_PORT))
