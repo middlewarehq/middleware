@@ -48,7 +48,10 @@ export async function checkGitHubValidity(
 
 const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
 
-export const getMissingTokenScopes = async (pat: string, tokenType: 'PAT' | 'FGT') => {
+export const getMissingTokenScopes = async (
+  pat: string,
+  tokenType: 'PAT' | 'FGT'
+) => {
   if (tokenType === 'FGT') {
     try {
       const response = await axios.get('https://api.github.com/user/repos', {

@@ -57,7 +57,9 @@ export const ConfigureGithubModalBody: FC<{
       const missingScopes = await getMissingTokenScopes(token.value, tokenType);
       if (missingScopes.length) {
         throw new Error(
-          `Token is missing ${tokenType === 'PAT' ? 'scopes' : 'permissions'}: ${missingScopes.join(', ')}`
+          `Token is missing ${
+            tokenType === 'PAT' ? 'scopes' : 'permissions'
+          }: ${missingScopes.join(', ')}`
         );
       }
 
@@ -70,9 +72,7 @@ export const ConfigureGithubModalBody: FC<{
       });
       onClose();
     } catch (e: any) {
-      setError(
-        `Failed to link GitHub${e?.message ? `: ${e?.message}` : ''}`
-      );
+      setError(`Failed to link GitHub${e?.message ? `: ${e?.message}` : ''}`);
       console.error(`Error while linking token: ${e.message}`, e);
     } finally {
       depFn(isLoading.false);
@@ -91,7 +91,10 @@ export const ConfigureGithubModalBody: FC<{
   return (
     <FlexBox gap2>
       <FlexBox gap={2} minWidth={'400px'} col>
-        <FlexBox>Enter your GitHub Personal Access Token (PAT) or Fine-Grained Token (FGT) below.</FlexBox>
+        <FlexBox>
+          Enter your GitHub Personal Access Token (PAT) or Fine-Grained Token
+          (FGT) below.
+        </FlexBox>
         <FlexBox fullWidth minHeight={'80px'} col>
           <TextField
             onKeyDown={(e) => {
