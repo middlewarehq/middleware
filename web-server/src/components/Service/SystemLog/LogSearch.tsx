@@ -1,7 +1,20 @@
-import { Button, InputAdornment, TextField, Typography, Box } from '@mui/material';
-import { Search as SearchIcon, Clear as ClearIcon, NavigateNext, NavigateBefore } from '@mui/icons-material';
-import { useState, useCallback } from 'react';
+import {
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  NavigateNext,
+  NavigateBefore
+} from '@mui/icons-material';
+import {
+  Button,
+  InputAdornment,
+  TextField,
+  Typography,
+  Box
+} from '@mui/material';
 import { styled } from '@mui/material/styles';
+import debounce from 'lodash/debounce';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+
 import { MotionBox } from '@/components/MotionComponents';
 
 const SearchContainer = styled('div')(() => ({
@@ -12,14 +25,14 @@ const SearchContainer = styled('div')(() => ({
   paddingBottom: 8,
   alignItems: 'center',
   backdropFilter: 'blur(10px)',
-  borderRadius: 5,
+  borderRadius: 5
 }));
 
 const SearchControls = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   gap: theme.spacing(1),
-  marginTop: 8,
+  marginTop: 8
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -28,13 +41,13 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     transition: 'all 0.2s ease-in-out',
     '&:hover': {
       backgroundColor: theme.palette.background.paper,
-      boxShadow: `0 0 0 1px ${theme.palette.primary.main}`,
+      boxShadow: `0 0 0 1px ${theme.palette.primary.main}`
     },
     '&.Mui-focused': {
       backgroundColor: theme.palette.background.paper,
-      boxShadow: `0 0 0 2px ${theme.palette.primary.main}`,
-    },
-  },
+      boxShadow: `0 0 0 2px ${theme.palette.primary.main}`
+    }
+  }
 }));
 
 interface LogSearchProps {
@@ -44,23 +57,54 @@ interface LogSearchProps {
   totalMatches: number;
 }
 
-export const LogSearch = ({ onSearch, onNavigate, currentMatch, totalMatches }: LogSearchProps) => {
+export const LogSearch = ({
+  onSearch,
+  onNavigate,
+  currentMatch,
+  totalMatches
+}: LogSearchProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((query: string) => {
+        onSearch(query);
+      }, 300),
+    [onSearch]
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedSearch.cancel();
+    };
+  }, [debouncedSearch]);
 
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const query = event.target.value;
       setSearchQuery(query);
-      onSearch(query);
+      debouncedSearch(query);
     },
-    [onSearch]
+    [debouncedSearch]
   );
 
   const handleClear = useCallback(() => {
     setSearchQuery('');
     onSearch('');
-  }, [onSearch]);
+    debouncedSearch.cancel();
+  }, [onSearch, debouncedSearch]);
 
+  const handleNavigate = useCallback(
+    (direction: 'prev' | 'next') => {
+      onNavigate(direction);
+    },
+    [onNavigate]
+  );
+
+  const showSearchControls = useMemo(
+    () => searchQuery && totalMatches > 0,
+    [searchQuery, totalMatches]
+  );
 
   return (
     <SearchContainer>
@@ -84,10 +128,10 @@ export const LogSearch = ({ onSearch, onNavigate, currentMatch, totalMatches }: 
                 color="action"
               />
             </InputAdornment>
-          ),
+          )
         }}
       />
-      {searchQuery && totalMatches > 0 && (
+      {showSearchControls && (
         <MotionBox
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -95,18 +139,18 @@ export const LogSearch = ({ onSearch, onNavigate, currentMatch, totalMatches }: 
           transition={{
             type: 'tween',
             ease: 'easeOut',
-            duration: 0.3,
+            duration: 0.3
           }}
         >
           <SearchControls>
             <Button
               size="small"
-              onClick={() => onNavigate('prev')}
+              onClick={() => handleNavigate('prev')}
               disabled={currentMatch === 1}
               startIcon={<NavigateBefore />}
               sx={{
                 minWidth: '20px',
-                padding: '4px 8px',
+                padding: '4px 8px'
               }}
             />
             <Typography variant="body2" color="text.secondary">
@@ -114,12 +158,12 @@ export const LogSearch = ({ onSearch, onNavigate, currentMatch, totalMatches }: 
             </Typography>
             <Button
               size="small"
-              onClick={() => onNavigate('next')}
+              onClick={() => handleNavigate('next')}
               disabled={currentMatch === totalMatches}
               startIcon={<NavigateNext />}
               sx={{
                 minWidth: '20px',
-                padding: '4px 8px',
+                padding: '4px 8px'
               }}
             />
           </SearchControls>
@@ -127,4 +171,5 @@ export const LogSearch = ({ onSearch, onNavigate, currentMatch, totalMatches }: 
       )}
     </SearchContainer>
   );
-}; 
+};
+
