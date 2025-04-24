@@ -8,7 +8,9 @@ from mhq.store.models.code import (
     PullRequestCommit,
     PullRequestEventState,
     PullRequestState,
+    PullRequestEventType,
 )
+from mhq.service.code.sync.utils.timeline import TimelineEventUtils
 from mhq.utils.time import Interval
 
 
@@ -53,18 +55,24 @@ class CodeETLAnalyticsService:
 
     @staticmethod
     def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
-        pr_events.sort(key=lambda x: x.created_at)
-        first_review = pr_events[0] if pr_events else None
+        review_events = TimelineEventUtils.get_sorted_events_by_type(
+            pr_events, PullRequestEventType.REVIEW.value
+        )
+        ready_for_review_events = TimelineEventUtils.get_sorted_events_by_type(
+            pr_events, PullRequestEventType.READY_FOR_REVIEW.value
+        )
+        review_events.sort(key=lambda x: x.created_at)
+        first_review = review_events[0] if review_events else None
         approved_reviews = list(
             filter(
                 lambda x: x.data["state"] == PullRequestEventState.APPROVED.value,
-                pr_events,
+                review_events,
             )
         )
         blocking_reviews = list(
             filter(
                 lambda x: x.data["state"] != PullRequestEventState.APPROVED.value,
-                pr_events,
+                review_events,
             )
         )
 
@@ -86,8 +94,12 @@ class CodeETLAnalyticsService:
             ).total_seconds()
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
-
-        cycle_time = pr.state_changed_at - pr.created_at
+        pr_ready_time = (
+            ready_for_review_events[0].created_at
+            if ready_for_review_events
+            else pr.created_at
+        )
+        cycle_time = pr.state_changed_at - pr_ready_time
         if isinstance(cycle_time, timedelta):
             cycle_time = cycle_time.total_seconds()
 
@@ -101,7 +113,7 @@ class CodeETLAnalyticsService:
             merge_time=merge_time,
             cycle_time=cycle_time if pr.state == PullRequestState.MERGED else -1,
             blocking_reviews=len(blocking_reviews),
-            approving_reviews=len(pr_events) - len(blocking_reviews),
+            approving_reviews=len(review_events) - len(blocking_reviews),
             requested_reviews=len(pr.requested_reviews),
         )
 
@@ -118,23 +130,25 @@ class CodeETLAnalyticsService:
         if not pr_commits:
             return 0
 
-        pr_events.sort(key=lambda x: x.created_at)
+        review_events = TimelineEventUtils.get_sorted_events_by_type(
+            pr_events, PullRequestEventType.REVIEW.value
+        )
         pr_commits.sort(key=lambda x: x.created_at)
 
         first_blocking_review = None
         last_relevant_approval_review = None
         pr_reviewers = dict.fromkeys(pr.reviewers, True)
 
-        for pr_event in pr_events:
+        for review_event in review_events:
             if (
-                pr_event.state != PullRequestEventState.APPROVED.value
-                and pr_reviewers.get(pr_event.actor_username)
+                review_event.state != PullRequestEventState.APPROVED.value
+                and pr_reviewers.get(review_event.actor_username)
                 and not first_blocking_review
             ):
-                first_blocking_review = pr_event
+                first_blocking_review = review_event
 
-            if pr_event.state == PullRequestEventState.APPROVED.value:
-                last_relevant_approval_review = pr_event
+            if review_event.state == PullRequestEventState.APPROVED.value:
+                last_relevant_approval_review = review_event
                 break
 
         if not first_blocking_review:
@@ -161,7 +175,7 @@ class CodeETLAnalyticsService:
                 and x.actor_username != pr.author
                 and pr_reviewers.get(x.actor_username)
                 and x.created_at in interval,
-                pr_events,
+                review_events,
             )
         )
         all_events = sorted(pr_commits + blocking_reviews, key=lambda x: x.created_at)

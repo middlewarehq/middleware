@@ -1,7 +1,11 @@
 from datetime import timedelta
 
 from mhq.service.code.sync.etl_code_analytics import CodeETLAnalyticsService
-from mhq.store.models.code import PullRequestState, PullRequestEventState
+from mhq.store.models.code import (
+    PullRequestState,
+    PullRequestEventState,
+    PullRequestEventType,
+)
 from mhq.utils.time import time_now
 from tests.factories.models.code import (
     get_pull_request,
@@ -500,3 +504,113 @@ def test_rework_cycles_returs_1_for_multiple_approvals():
         )
         == 1
     )
+
+
+def test_pr_performance_calculates_cycle_time_from_ready_for_review_event():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=2)
+    t3 = t1 + timedelta(hours=5)
+
+    pr = get_pull_request(
+        state=PullRequestState.MERGED, state_changed_at=t3, created_at=t1, updated_at=t3
+    )
+
+    ready_for_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t2,
+    )
+
+    performance = pr_service.get_pr_performance(pr, [ready_for_review_event])
+
+    expected_cycle_time = (t3 - t2).total_seconds()
+    assert performance.cycle_time == expected_cycle_time
+
+
+def test_pr_performance_uses_pr_creation_time_when_no_ready_for_review_event():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=3)
+
+    pr = get_pull_request(
+        state=PullRequestState.MERGED, state_changed_at=t2, created_at=t1, updated_at=t2
+    )
+
+    performance = pr_service.get_pr_performance(pr, [])
+
+    expected_cycle_time = (t2 - t1).total_seconds()
+    assert performance.cycle_time == expected_cycle_time
+
+
+def test_pr_performance_uses_earliest_ready_for_review_event():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t1 + timedelta(hours=2)
+    t4 = t1 + timedelta(hours=5)
+
+    pr = get_pull_request(
+        state=PullRequestState.MERGED, state_changed_at=t4, created_at=t1, updated_at=t4
+    )
+
+    first_ready_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t2,
+    )
+
+    second_ready_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t3,
+    )
+
+    performance = pr_service.get_pr_performance(
+        pr, [second_ready_event, first_ready_event]
+    )
+
+    expected_cycle_time = (t4 - t2).total_seconds()
+    assert performance.cycle_time == expected_cycle_time
+
+
+def test_pr_performance_includes_review_and_ready_for_review_events():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t1 + timedelta(hours=2)
+    t4 = t1 + timedelta(hours=3)
+    t5 = t1 + timedelta(hours=4)
+
+    pr = get_pull_request(
+        state=PullRequestState.MERGED, state_changed_at=t5, created_at=t1, updated_at=t5
+    )
+
+    ready_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t2,
+    )
+
+    review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.REVIEW.value,
+        state=PullRequestEventState.CHANGES_REQUESTED.value,
+        created_at=t3,
+    )
+
+    approval_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.REVIEW.value,
+        state=PullRequestEventState.APPROVED.value,
+        created_at=t4,
+    )
+
+    performance = pr_service.get_pr_performance(
+        pr, [ready_event, review_event, approval_event]
+    )
+
+    assert performance.cycle_time == (t5 - t2).total_seconds()
+    assert performance.first_review_time == (t3 - t1).total_seconds()
+    assert performance.rework_time == (t4 - t3).total_seconds()
+    assert performance.merge_time == (t5 - t4).total_seconds()
