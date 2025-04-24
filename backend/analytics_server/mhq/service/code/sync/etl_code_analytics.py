@@ -22,7 +22,7 @@ class CodeETLAnalyticsService:
     ) -> PullRequest:
         if pr.state == PullRequestState.OPEN:
             return pr
- 
+
         non_bot_pr_events = self.filter_non_bot_events(pr_events)
         pr_performance = self.get_pr_performance(pr, non_bot_pr_events)
 
@@ -41,7 +41,11 @@ class CodeETLAnalyticsService:
             pr_performance.cycle_time if pr_performance.cycle_time != -1 else None
         )
         pr.reviewers = list(
-            {e.actor_username for e in non_bot_pr_events if e.actor_username != pr.author}
+            {
+                e.actor_username
+                for e in non_bot_pr_events
+                if e.actor_username != pr.author
+            }
         )
 
         if pr_commits:
@@ -175,12 +179,17 @@ class CodeETLAnalyticsService:
                 rework_cycles += 1
 
         return rework_cycles
-    
-    def filter_non_bot_events(self, pr_events: List[PullRequestEvent]) -> List[PullRequestEvent]:
+
+    def filter_non_bot_events(
+        self, pr_events: List[PullRequestEvent]
+    ) -> List[PullRequestEvent]:
         """Filter out events created by bot users using regex patterns."""
-        
-        bot_pattern = re.compile(r'bot|[bB][oO][tT]|\[bot\]|automated|jenkins|ci-|github-actions', re.IGNORECASE)
-        
+
+        bot_pattern = re.compile(
+            r"bot|[bB][oO][tT]|\[bot\]|automated|jenkins|ci-|github-actions",
+            re.IGNORECASE,
+        )
+
         return [
             event
             for event in pr_events
