@@ -601,3 +601,29 @@ def test_create_pr_metrics_no_human_rework_time():
         pr, [changes_requested_event, approval_event], []
     )
     assert pr_metrics.rework_time is None
+
+def test_create_pr_metrics_filters_bot_type_events():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)
+    t3 = t2 + timedelta(hours=1)
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t1, updated_at=t1)
+    
+    bot_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="github_app",
+        state=PullRequestEventState.COMMENTED.value,
+        created_at=t2,
+        data={"user": {"type": "Bot"}},
+    )
+    
+    human_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="human_user",
+        state=PullRequestEventState.APPROVED.value,
+        created_at=t3,
+    )
+    
+    pr_metrics = pr_service.create_pr_metrics(pr, [bot_event, human_event], [])
+    assert "human_user" in pr_metrics.reviewers
+    assert "github_app" not in pr_metrics.reviewers
