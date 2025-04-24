@@ -30,10 +30,15 @@ def get_github_commit_dict(
 
 
 @dataclass
+class GitHubUser:
+    login: str
+
+
+@dataclass
 class GithubPullRequestReview:
     id: str
     submitted_at: datetime
-    user_login: str
+    user: GitHubUser
 
     @property
     def raw_data(self):
@@ -41,7 +46,7 @@ class GithubPullRequestReview:
             "id": self.id,
             "submitted_at": self.submitted_at,
             "user": {
-                "login": self.user_login,
+                "login": self.user.login,
             },
         }
 
@@ -51,8 +56,8 @@ def get_github_pull_request_review(
     submitted_at: datetime = time_now(),
     user_login: str = "abc",
 ) -> GithubPullRequestReview:
-
-    return GithubPullRequestReview(review_id, submitted_at, user_login)
+    # Create with a proper GitHubUser instance
+    return GithubPullRequestReview(review_id, submitted_at, GitHubUser(user_login))
 
 
 Branch = namedtuple("Branch", ["ref"])
