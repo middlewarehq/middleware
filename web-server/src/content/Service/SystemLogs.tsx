@@ -1,6 +1,6 @@
 import { ExpandCircleDown } from '@mui/icons-material';
 import { Button, CircularProgress } from '@mui/material';
-import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react';
+import { useEffect, useRef, useState, useCallback, useLayoutEffect, memo } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -16,7 +16,7 @@ import { parseLogLine } from '@/utils/logFormatter';
 
 import { MotionBox } from '../../components/MotionComponents';
 
-export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
+const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   const { services, loading, logs } = useSystemLogs({ serviceName });
   const containerRef = useRef<HTMLDivElement>(null);
   const showScrollDownButton = useBoolState(false);
@@ -25,7 +25,7 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
   const [totalMatches, setTotalMatches] = useState(0);
   const [highlightedElements, setHighlightedElements] = useState<HTMLElement[]>([]);
   const currentHighlightRef = useRef<HTMLElement | null>(null);
-
+  const isInitialLoad = useRef(true);
 
   const scrollToBottom = useCallback(() => {
     if (containerRef.current) {
@@ -103,17 +103,26 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
   }, [currentMatch, totalMatches, highlightedElements, updateHighlight]);
 
   useEffect(() => {
-    if (!loading && logs.length && containerRef.current) {
-      // Defer scrolling until after the DOM paints
+    if (!loading && logs.length && containerRef.current && isInitialLoad.current) {
+      isInitialLoad.current = false;
       requestAnimationFrame(() => {
         containerRef.current?.scrollTo({
           top: containerRef.current.scrollHeight,
-          behavior: 'auto',
+          behavior: 'auto'
         });
       });
     }
   }, [loading, logs]);
-  
+
+  const renderLogs = useCallback(() => {
+    return logs.map((log, index) => {
+      const parsedLog = parseLogLine(log);
+      if (!parsedLog) {
+        return <PlainLog log={log} index={index} key={index} searchQuery={searchQuery} />;
+      }
+      return <FormattedLog log={parsedLog} index={index} key={index} searchQuery={searchQuery} />;
+    });
+  }, [logs, searchQuery]);
 
   return (
     <ErrorBoundary
@@ -135,14 +144,7 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
           </FlexBox>
         ) : (
           <FlexBox ref={containerRef} col sx={{ overflowY: 'auto', maxHeight: '100%' }}>
-            {services &&
-              logs.map((log, index) => {
-                const parsedLog = parseLogLine(log);
-                if (!parsedLog) {
-                  return <PlainLog log={log} index={index} key={index} searchQuery={searchQuery} />;
-                }
-                return <FormattedLog log={parsedLog} index={index} key={index} searchQuery={searchQuery} />;
-              })}
+            {services && renderLogs()}
           </FlexBox>
         )}
 
@@ -170,4 +172,7 @@ export const SystemLogs = ({ serviceName }: { serviceName?: ServiceNames }) => {
       </FlexBox>
     </ErrorBoundary>
   );
-};
+});
+
+
+export { SystemLogs };

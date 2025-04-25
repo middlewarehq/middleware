@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import debounce from 'lodash/debounce';
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 
 import { MotionBox } from '@/components/MotionComponents';
 
@@ -57,7 +57,7 @@ interface LogSearchProps {
   totalMatches: number;
 }
 
-export const LogSearch = ({
+const LogSearch = memo(({
   onSearch,
   onNavigate,
   currentMatch,
@@ -171,5 +171,9 @@ export const LogSearch = ({
       )}
     </SearchContainer>
   );
-};
+});
+
+LogSearch.displayName = 'LogSearch';
+
+export { LogSearch };
 
