@@ -1,4 +1,5 @@
 import contextlib
+import dataclasses
 from datetime import datetime
 from http import HTTPStatus
 from typing import Any, Optional, Dict, Tuple, List
@@ -14,7 +15,7 @@ from github.Repository import Repository as GithubRepository
 from mhq.exapi.models.github import GitHubContributor
 from mhq.exapi.types.timeline import (
     GitHubReadyForReviewEventDict,
-    GitHubReviewEventDict,
+    GitHubReviewEventFullDict,
 )
 from mhq.exapi.models.timeline import (
     GitHubTimeline,
@@ -192,7 +193,13 @@ class GithubApiService:
             query_params = {"per_page": PAGE_SIZE, "page": page}
 
             response = requests.get(
-                github_url, headers=self.headers, params=query_params
+                github_url,
+                headers={
+                    **self.headers,
+                    "Accept": "application/vnd.github.mockingbird-preview+json",
+                },
+                params=query_params,
+                timeout=15,
             )
 
             if response.status_code != HTTPStatus.OK:
@@ -274,7 +281,17 @@ class GithubApiService:
             id=typed_dict["id"],
             node_id=typed_dict["node_id"],
             url=typed_dict["url"],
-            actor=GitHubUser(**typed_dict["actor"]) if typed_dict["actor"] else None,
+            actor=(
+                GitHubUser(
+                    **{
+                        k: v
+                        for k, v in typed_dict["actor"].items()
+                        if k in {f.name for f in dataclasses.fields(GitHubUser)}
+                    },
+                )
+                if typed_dict["actor"]
+                else None
+            ),
             event=typed_dict["event"],
             commit_id=typed_dict.get("commit_id"),
             commit_url=typed_dict.get("commit_url"),
@@ -292,7 +309,7 @@ class GithubApiService:
         Returns:
             GitHubReviewEvent object
         """
-        typed_dict = GitHubReviewEventDict(
+        typed_dict = GitHubReviewEventFullDict(
             id=event_data.get("id"),
             node_id=event_data.get("node_id"),
             user=event_data.get("user"),
@@ -310,7 +327,17 @@ class GithubApiService:
         return GitHubReviewEvent(
             id=typed_dict["id"],
             node_id=typed_dict["node_id"],
-            user=GitHubUser(**typed_dict["user"]) if typed_dict["user"] else None,
+            user=(
+                GitHubUser(
+                    **{
+                        k: v
+                        for k, v in typed_dict["user"].items()
+                        if k in {f.name for f in dataclasses.fields(GitHubUser)}
+                    },
+                )
+                if typed_dict["user"]
+                else None
+            ),
             body=typed_dict["body"],
             commit_id=typed_dict["commit_id"],
             submitted_at=typed_dict["submitted_at"],

@@ -175,8 +175,9 @@ class GithubETLHandler(CodeProviderETLHandler):
         )
         pr_commits_model_list: List = []
 
+        owner_login = pr.base.repo.owner.login
         timeline: List[GitHubTimeline] = self._api.get_pr_timeline(
-            pr.user.login, pr.base.repo.name, pr.number
+            owner_login, pr.base.repo.name, pr.number
         )
         reviews: List[GitHubReviewEvent] = TimelineEventUtils.get_review_events(
             timeline

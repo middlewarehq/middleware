@@ -61,7 +61,6 @@ class CodeETLAnalyticsService:
         ready_for_review_events = TimelineEventUtils.get_sorted_events_by_type(
             pr_events, PullRequestEventType.READY_FOR_REVIEW.value
         )
-        review_events.sort(key=lambda x: x.created_at)
         first_review = review_events[0] if review_events else None
         approved_reviews = list(
             filter(
