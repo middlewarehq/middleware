@@ -86,6 +86,7 @@ def get_pull_request_event(
     idempotency_key=None,
     org_repo_id=None,
     data=None,
+    actor_username=None,
 ):
     return PullRequestEvent(
         id=id or uuid4(),
@@ -103,7 +104,7 @@ def get_pull_request_event(
         created_at=created_at or time_now(),
         idempotency_key=idempotency_key or str(randint(10, 100)),
         org_repo_id=org_repo_id or uuid4(),
-        actor_username=reviewer or "randomuser",
+        actor_username=reviewer or actor_username or "randomuser",
     )
 
 

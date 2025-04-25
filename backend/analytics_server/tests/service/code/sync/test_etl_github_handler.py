@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from datetime import datetime
 
 import pytz
@@ -194,7 +195,7 @@ def test__to_pr_model_given_a_github_pr_and_db_pr_returns_updated_pr_model():
 
 def test__to_pr_events_given_an_empty_list_of_events_returns_an_empty_list():
     pr_model = get_pull_request()
-    assert GithubETLHandler._to_pr_events([], pr_model, []) == []
+    assert GithubETLHandler._to_pr_events([], None, pr_model, []) == []
 
 
 def test__to_pr_events_given_a_list_of_only_new_events_returns_a_list_of_pr_events():
@@ -203,26 +204,32 @@ def test__to_pr_events_given_a_list_of_only_new_events_returns_a_list_of_pr_even
     event2 = get_github_pull_request_review()
     events = [event1, event2]
 
-    pr_events = GithubETLHandler._to_pr_events(events, pr_model, [])
+    pr_events = GithubETLHandler._to_pr_events(events, None, pr_model, [])
+
+    # Create expected event data without submitted_at field
+    event1_data = asdict(event1)
+    event1_data.pop("submitted_at", None)
+    event2_data = asdict(event2)
+    event2_data.pop("submitted_at", None)
 
     expected_pr_events = [
         get_pull_request_event(
             pull_request_id=str(pr_model.id),
             org_repo_id=pr_model.repo_id,
-            data=event1.raw_data,
+            data=event1_data,
             created_at=event1.submitted_at,
             type="REVIEW",
             idempotency_key=event1.id,
-            reviewer=event1.user_login,
+            actor_username=event1.user.login,
         ),
         get_pull_request_event(
             pull_request_id=str(pr_model.id),
             org_repo_id=pr_model.repo_id,
-            data=event2.raw_data,
+            data=event2_data,
             created_at=event2.submitted_at,
             type="REVIEW",
             idempotency_key=event2.id,
-            reviewer=event2.user_login,
+            actor_username=event2.user.login,
         ),
     ]
 
@@ -236,28 +243,34 @@ def test__to_pr_events_given_a_list_of_new_events_and_old_events_returns_a_list_
     event2 = get_github_pull_request_review()
     events = [event1, event2]
 
+    # Create event data without submitted_at field for the old event
+    event1_data = asdict(event1)
+    event1_data.pop("submitted_at", None)
+    event2_data = asdict(event2)
+    event2_data.pop("submitted_at", None)
+
     old_event = get_pull_request_event(
         pull_request_id=str(pr_model.id),
         org_repo_id=pr_model.repo_id,
-        data=event1.raw_data,
+        data=event1_data,
         created_at=event1.submitted_at,
         type="REVIEW",
         idempotency_key=event1.id,
-        reviewer=event1.user_login,
+        actor_username=event1.user.login,
     )
 
-    pr_events = GithubETLHandler._to_pr_events(events, pr_model, [old_event])
+    pr_events = GithubETLHandler._to_pr_events(events, None, pr_model, [old_event])
 
     expected_pr_events = [
         old_event,
         get_pull_request_event(
             pull_request_id=str(pr_model.id),
             org_repo_id=pr_model.repo_id,
-            data=event2.raw_data,
+            data=event2_data,
             created_at=event2.submitted_at,
             type="REVIEW",
             idempotency_key=event2.id,
-            reviewer=event2.user_login,
+            actor_username=event2.user.login,
         ),
     ]
 

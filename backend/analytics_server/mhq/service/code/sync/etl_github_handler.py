@@ -1,11 +1,11 @@
+from dataclasses import asdict
 import uuid
 from datetime import datetime
-from typing import List, Dict, Optional, Tuple, Set
+from typing import Any, List, Dict, Optional, Tuple, Set
 
 import pytz
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
-from github.PullRequestReview import PullRequestReview as GithubPullRequestReview
 from github.Repository import Repository as GithubRepository
 
 from mhq.exapi.github import GithubApiService
@@ -26,10 +26,16 @@ from mhq.store.models.code import (
     PullRequestRevertPRMapping,
     CodeProvider,
 )
+from mhq.exapi.models.timeline import (
+    GitHubTimeline,
+    GitHubReviewEvent,
+    GitHubReadyForReviewEvent,
+)
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.core import CoreRepoService
 from mhq.utils.log import LOG
 from mhq.utils.time import time_now, ISO_8601_DATE_FORMAT
+from mhq.service.code.sync.utils.timeline import TimelineEventUtils
 
 PR_PROCESSING_CHUNK_SIZE = 100
 
@@ -169,11 +175,21 @@ class GithubETLHandler(CodeProviderETLHandler):
         )
         pr_commits_model_list: List = []
 
-        reviews: List[GithubPullRequestReview] = list(self._api.get_pr_reviews(pr))
+        owner_login = pr.base.repo.owner.login
+        timeline: List[GitHubTimeline] = self._api.get_pr_timeline(
+            owner_login, pr.base.repo.name, pr.number
+        )
+        reviews: List[GitHubReviewEvent] = TimelineEventUtils.get_review_events(
+            timeline
+        )
+        ready_for_review: Optional[GitHubReadyForReviewEvent] = (
+            TimelineEventUtils.get_earliest_ready_for_review_event(timeline)
+        )
         pr_model: PullRequest = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
         pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
-            reviews, pr_model, pr_event_model_list
+            reviews, ready_for_review, pr_model, pr_event_model_list
         )
+
         if pr.merged_at:
             commits: List[Dict] = list(
                 map(
@@ -282,33 +298,81 @@ class GithubETLHandler(CodeProviderETLHandler):
 
     @staticmethod
     def _to_pr_events(
-        reviews: [GithubPullRequestReview],
+        reviews: List[GitHubReviewEvent],
+        ready_for_review: Optional[GitHubReadyForReviewEvent],
         pr_model: PullRequest,
-        pr_events_model: [PullRequestEvent],
+        pr_events_model: List[PullRequestEvent],
     ) -> List[PullRequestEvent]:
         pr_events: List[PullRequestEvent] = []
         pr_event_id_map = {event.idempotency_key: event.id for event in pr_events_model}
 
+        # Process reviews
         for review in reviews:
             if not review.submitted_at:
-                continue  # Discard incomplete reviews
-
-            actor = review.raw_data.get("user", {})
-            username = actor.get("login", "") if actor else ""
+                continue  # Skip incomplete reviews
 
             pr_events.append(
-                PullRequestEvent(
-                    id=pr_event_id_map.get(str(review.id), uuid.uuid4()),
-                    pull_request_id=str(pr_model.id),
-                    type=PullRequestEventType.REVIEW.value,
-                    data=review.raw_data,
-                    created_at=review.submitted_at.replace(tzinfo=pytz.UTC),
+                GithubETLHandler._create_pr_event(
+                    event_id=pr_event_id_map.get(str(review.id), uuid.uuid4()),
+                    pr_id=str(pr_model.id),
+                    event_type=PullRequestEventType.REVIEW.value,
+                    event_data=asdict(review),
+                    created_at=review.submitted_at,
                     idempotency_key=str(review.id),
-                    org_repo_id=pr_model.repo_id,
-                    actor_username=username,
+                    repo_id=pr_model.repo_id,
+                    actor=review.user,
                 )
             )
+
+        # Process ready_for_review event
+        if ready_for_review:
+            pr_events.append(
+                GithubETLHandler._create_pr_event(
+                    event_id=pr_event_id_map.get(
+                        str(ready_for_review.id), uuid.uuid4()
+                    ),
+                    pr_id=str(pr_model.id),
+                    event_type=PullRequestEventType.READY_FOR_REVIEW.value,
+                    event_data=asdict(ready_for_review),
+                    created_at=ready_for_review.created_at,
+                    idempotency_key=str(ready_for_review.id),
+                    repo_id=pr_model.repo_id,
+                    actor=ready_for_review.actor,
+                )
+            )
+
         return pr_events
+
+    @staticmethod
+    def _create_pr_event(
+        event_id: uuid.UUID,
+        pr_id: str,
+        event_type: str,
+        event_data: Dict[str, Any],
+        created_at: datetime,
+        idempotency_key: str,
+        repo_id: str,
+        actor: Any,
+    ) -> PullRequestEvent:
+        """Helper method to create a PullRequestEvent with consistent formatting"""
+        data_copy = event_data.copy()
+        if "submitted_at" in data_copy:
+            del data_copy["submitted_at"]
+        if "created_at" in data_copy:
+            del data_copy["created_at"]
+
+        username = actor.login if actor else ""
+
+        return PullRequestEvent(
+            id=event_id,
+            pull_request_id=pr_id,
+            type=event_type,
+            data=data_copy,
+            created_at=created_at,
+            idempotency_key=idempotency_key,
+            org_repo_id=repo_id,
+            actor_username=username,
+        )
 
     def _to_pr_commits(
         self,

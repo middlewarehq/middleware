@@ -29,6 +29,7 @@ class PullRequestEventState(Enum):
 
 class PullRequestEventType(Enum):
     REVIEW = "REVIEW"
+    READY_FOR_REVIEW = "READY_FOR_REVIEW"
 
 
 class PullRequestRevertPRMappingActorType(Enum):
