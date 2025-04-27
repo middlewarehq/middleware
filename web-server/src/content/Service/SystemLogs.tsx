@@ -106,10 +106,12 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     isNavigatingRef.current = true;
     requestAnimationFrame(() => {
       let newIndex = currentMatchRef.current;
+      const total = totalMatchesRef.current;
+
       if (direction === 'next') {
-        newIndex = currentMatchRef.current < totalMatchesRef.current ? currentMatchRef.current + 1 : 1;
+        newIndex = newIndex < total ? newIndex + 1 : 1;
       } else {
-        newIndex = currentMatchRef.current > 1 ? currentMatchRef.current - 1 : totalMatchesRef.current;
+        newIndex = newIndex > 1 ? newIndex - 1 : total;
       }
 
       setCurrentMatch(newIndex);
