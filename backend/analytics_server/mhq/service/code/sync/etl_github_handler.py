@@ -181,9 +181,9 @@ class GithubETLHandler(CodeProviderETLHandler):
             pr_commits_model_list: List[PullRequestCommit] = self._to_pr_commits(
                 commits, pr_model
             )
-
+        non_bot_pr_events_model_list = self._github_bot_filter(pr_events_model_list)
         pr_model = self.code_etl_analytics_service.create_pr_metrics(
-            pr_model, pr_events_model_list, pr_commits_model_list
+            pr_model, non_bot_pr_events_model_list, pr_commits_model_list
         )
 
         return pr_model, pr_events_model_list, pr_commits_model_list
@@ -353,6 +353,17 @@ class GithubETLHandler(CodeProviderETLHandler):
     def _dt_from_github_dt_string(dt_string: str) -> datetime:
         dt_without_timezone = datetime.strptime(dt_string, ISO_8601_DATE_FORMAT)
         return dt_without_timezone.replace(tzinfo=pytz.UTC)
+
+    @staticmethod
+    def _github_bot_filter(pr_events: List[PullRequestEvent]) -> List[PullRequestEvent]:
+        filtered_events = []
+        for pr_event in pr_events:
+            pr_event_data = (
+                pr_event.data.get("user") or pr_event.data.get("actor") or {}
+            )
+            if not (pr_event_data.get("type") == "Bot"):
+                filtered_events.append(pr_event)
+        return filtered_events
 
 
 def get_github_etl_handler(org_id: str) -> GithubETLHandler:

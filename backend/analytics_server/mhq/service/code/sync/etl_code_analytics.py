@@ -10,7 +10,7 @@ from mhq.store.models.code import (
     PullRequestState,
 )
 from mhq.utils.time import Interval
-import re
+from mhq.utils.string import is_bot_name
 
 
 class CodeETLAnalyticsService:
@@ -184,20 +184,4 @@ class CodeETLAnalyticsService:
         self, pr_events: List[PullRequestEvent]
     ) -> List[PullRequestEvent]:
         """Filter out events created by bot users using regex patterns."""
-
-        bot_pattern = re.compile(
-            r"bot|[bB][oO][tT]|\[bot\]|automated|jenkins|ci-|github-actions",
-            re.IGNORECASE,
-        )
-
-        return [
-            event
-            for event in pr_events
-            if (
-                not bool(bot_pattern.search(event.actor_username))
-                and not (
-                    event.data.get("user")
-                    and event.data.get("user", {}).get("type") == "Bot"
-                )
-            )
-        ]
+        return [event for event in pr_events if (not is_bot_name(event.actor_username))]

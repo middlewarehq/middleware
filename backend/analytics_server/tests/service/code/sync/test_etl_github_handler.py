@@ -351,3 +351,32 @@ def test__dt_from_github_dt_string_given_date_string_returns_correct_datetime():
     date_string = "2024-04-18T10:53:15Z"
     expected = datetime(2024, 4, 18, 10, 53, 15, tzinfo=pytz.UTC)
     assert GithubETLHandler._dt_from_github_dt_string(date_string) == expected
+
+
+def test__github_bot_filter_given_bot_events_returns_empty_list():
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    bot_event = get_pull_request_event()
+    bot_event.data = {"user": {"type": "Bot", "login": "dependabot"}}
+    result = github_etl_handler._github_bot_filter([bot_event])
+    assert len(result) == 0
+
+
+def test__github_bot_filter_given_non_bot_events_returns_same_list():
+    # Arrange
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    human_event = get_pull_request_event()
+    human_event.data = {"user": {"type": "User", "login": "john_doe"}}
+    result = github_etl_handler._github_bot_filter([human_event])
+    assert len(result) == 1
+    assert result[0] == human_event
+
+
+def test__github_bot_filter_given_mixed_events_returns_non_bot_events():
+    github_etl_handler = GithubETLHandler(ORG_ID, None, None, None, None)
+    bot_event = get_pull_request_event()
+    bot_event.data = {"actor": {"type": "Bot", "login": "dependabot"}}
+    human_event = get_pull_request_event()
+    human_event.data = {"user": {"type": "User", "login": "john_doe"}}
+    result = github_etl_handler._github_bot_filter([bot_event, human_event])
+    assert len(result) == 1
+    assert result[0] == human_event
