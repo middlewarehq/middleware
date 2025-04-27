@@ -21,11 +21,25 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const showScrollDownButton = useBoolState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [currentMatch, setCurrentMatch] = useState(0);
   const [totalMatches, setTotalMatches] = useState(0);
   const [highlightedElements, setHighlightedElements] = useState<HTMLElement[]>([]);
   const currentHighlightRef = useRef<HTMLElement | null>(null);
   const isInitialLoad = useRef(true);
+  const isSearchingRef = useRef(false);
+  const currentMatchRef = useRef(0);
+  const totalMatchesRef = useRef(0);
+  const highlightedElementsRef = useRef<HTMLElement[]>([]);
+  const isNavigatingRef = useRef(false);
+
+  // Debounce search query updates
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const scrollToBottom = useCallback(() => {
     if (containerRef.current) {
@@ -53,63 +67,72 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
 
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
+    isSearchingRef.current = !!query;
   
-    // Reset states only when query is empty or below a threshold
     if (!query || query.length < 3) {
       setCurrentMatch(0);
+      currentMatchRef.current = 0;
       setTotalMatches(0);
+      totalMatchesRef.current = 0;
       setHighlightedElements([]);
+      highlightedElementsRef.current = [];
       updateHighlight(null);
       return;
     }
-  
-    // Let the effect handle DOM updates
   }, [updateHighlight]);
   
   useLayoutEffect(() => {
-    if (!searchQuery || searchQuery.length < 3) return;
+    if (!debouncedSearchQuery || debouncedSearchQuery.length < 3) return;
   
     const elements = Array.from(
       containerRef.current?.querySelectorAll('span[style*="background-color: yellow"]') ?? []
     ) as HTMLElement[];
   
     setHighlightedElements(elements);
-    setTotalMatches(elements.length);
-    setCurrentMatch(elements.length ? 1 : 0);
-  
-    if (elements.length) {
-      updateHighlight(elements[0]);
-      elements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    highlightedElementsRef.current = elements;
+    const newTotalMatches = elements.length;
+    setTotalMatches(newTotalMatches);
+    totalMatchesRef.current = newTotalMatches;
+    
+    if (currentMatchRef.current === 0) {
+      setCurrentMatch(newTotalMatches ? 1 : 0);
+      currentMatchRef.current = newTotalMatches ? 1 : 0;
     }
-  }, [searchQuery, logs, updateHighlight]);
-  
+  }, [debouncedSearchQuery]);
 
   const handleNavigate = useCallback((direction: 'prev' | 'next') => {
-    if (highlightedElements.length === 0) return;
+    if (highlightedElementsRef.current.length === 0 || isNavigatingRef.current) return;
 
-    let newIndex = currentMatch;
-    if (direction === 'next') {
-      newIndex = currentMatch < totalMatches ? currentMatch + 1 : 1;
-    } else {
-      newIndex = currentMatch > 1 ? currentMatch - 1 : totalMatches;
-    }
+    isNavigatingRef.current = true;
+    requestAnimationFrame(() => {
+      let newIndex = currentMatchRef.current;
+      if (direction === 'next') {
+        newIndex = currentMatchRef.current < totalMatchesRef.current ? currentMatchRef.current + 1 : 1;
+      } else {
+        newIndex = currentMatchRef.current > 1 ? currentMatchRef.current - 1 : totalMatchesRef.current;
+      }
 
-    setCurrentMatch(newIndex);
-    const element = highlightedElements[newIndex - 1];
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      updateHighlight(element);
-    }
-  }, [currentMatch, totalMatches, highlightedElements, updateHighlight]);
+      setCurrentMatch(newIndex);
+      currentMatchRef.current = newIndex;
+      const element = highlightedElementsRef.current[newIndex - 1];
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        updateHighlight(element);
+      }
+      isNavigatingRef.current = false;
+    });
+  }, [updateHighlight]);
 
   useEffect(() => {
     if (!loading && logs.length && containerRef.current && isInitialLoad.current) {
       isInitialLoad.current = false;
       requestAnimationFrame(() => {
-        containerRef.current?.scrollTo({
-          top: containerRef.current.scrollHeight,
-          behavior: 'auto'
-        });
+        if (containerRef.current) {
+          containerRef.current.scrollTo({
+            top: containerRef.current.scrollHeight,
+            behavior: 'auto'
+          });
+        }
       });
     }
   }, [loading, logs]);
@@ -117,16 +140,21 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   const renderLogs = useCallback(() => {
     return logs.map((log, index) => {
       const parsedLog = parseLogLine(log);
-      if (!parsedLog) {
-        return <PlainLog log={log} index={index} key={index} searchQuery={searchQuery} />;
-      }
-      return <FormattedLog log={parsedLog} index={index} key={index} searchQuery={searchQuery} />;
+      return (
+        <div key={index}>
+          {!parsedLog ? (
+            <PlainLog log={log} index={index} searchQuery={debouncedSearchQuery} />
+          ) : (
+            <FormattedLog log={parsedLog} index={index} searchQuery={debouncedSearchQuery} />
+          )}
+        </div>
+      );
     });
-  }, [logs, searchQuery]);
+  }, [logs, debouncedSearchQuery]);
 
   return (
     <ErrorBoundary
-      FallbackComponent={({ error }) => (
+      FallbackComponent={({ error }: { error: Error }) => (
         <SystemLogsErrorFallback error={error} serviceName={serviceName} />
       )}
     >
@@ -173,6 +201,5 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     </ErrorBoundary>
   );
 });
-
 
 export { SystemLogs };
