@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Dict, Optional, Tuple, Set
 
 import pytz
+from mhq.utils.github import get_custom_github_domain
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from github.PullRequestReview import PullRequestReview as GithubPullRequestReview
@@ -358,26 +359,6 @@ class GithubETLHandler(CodeProviderETLHandler):
 
 
 def get_github_etl_handler(org_id: str) -> GithubETLHandler:
-    def _get_custom_github_domain() -> Optional[str]:
-        DEFAULT_DOMAIN = "https://api.github.com"
-        core_repo_service = CoreRepoService()
-        integrations = core_repo_service.get_org_integrations_for_names(
-            org_id, [UserIdentityProvider.GITHUB.value]
-        )
-
-        github_domain = (
-            integrations[0].provider_meta.get("custom_domain")
-            if integrations[0].provider_meta
-            else None
-        )
-
-        if not github_domain:
-            LOG.warn(
-                f"Custom domain not found for intergration for org {org_id} and provider {UserIdentityProvider.GITLAB.value}"
-            )
-            return DEFAULT_DOMAIN
-
-        return github_domain
     def _get_access_token():
         core_repo_service = CoreRepoService()
         access_token = core_repo_service.get_access_token(
@@ -391,7 +372,7 @@ def get_github_etl_handler(org_id: str) -> GithubETLHandler:
 
     return GithubETLHandler(
         org_id,
-        GithubApiService(_get_access_token(), _get_custom_github_domain()),
+        GithubApiService(_get_access_token(), get_custom_github_domain(org_id)),
         CodeRepoService(),
         CodeETLAnalyticsService(),
         get_revert_prs_github_sync_handler(),
