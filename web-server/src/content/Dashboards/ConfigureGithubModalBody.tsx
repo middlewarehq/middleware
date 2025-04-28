@@ -39,6 +39,12 @@ export const ConfigureGithubModalBody: FC<{
     },
     [showError.set]
   );
+  const setDomainError = useCallback(
+    (error: string) => {
+      depFn(showDomainError.set, error);
+    },
+    [showDomainError.set]
+  );
 
   const handleChange = (e: string) => {
     token.set(e);
@@ -48,11 +54,20 @@ export const ConfigureGithubModalBody: FC<{
     customDomain.set(e);
     showDomainError.set('');
   };
+  const checkDomainWithRegex = (domain: string) => {
+    const regex =
+      /^(https?:\/\/)[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(\/.*)?$/;
+    return regex.test(domain);
+  };
 
   const handleSubmission = useCallback(async () => {
     if (!token.value) {
       setError('Please enter a valid token');
       return;
+    }
+    if (customDomain.value && !checkDomainWithRegex(customDomain.valueRef.current)) {
+      setDomainError('Please enter a valid domain');
+      throw Error('Invalid domain');
     }
     depFn(isLoading.true);
     checkGitHubValidity(token.value, customDomain.valueRef.current)
@@ -192,6 +207,12 @@ export const ConfigureGithubModalBody: FC<{
               }
               onFocus={isDomainInputFocus.true}
               onBlur={isDomainInputFocus.false}
+              helperText={
+                isDomainInputFocus.value || customDomain.value
+                  ? "Example: github.mycompany.com"
+                  : ""
+                }
+              placeholder="github.mycompany.com"
             />
           </FlexBox>
           <Line error tiny mt={1} minHeight={'18px'}>
