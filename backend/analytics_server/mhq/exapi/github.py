@@ -22,7 +22,7 @@ class GithubRateLimitExceeded(Exception):
 
 
 class GithubApiService:
-    def __init__(self, access_token: str, domain = "https://api.github.com"):
+    def __init__(self, access_token: str, domain: Optional[str]):
         self._token = access_token
         self.base_url = self._get_api_url(domain)
         self._g = Github(
@@ -32,8 +32,8 @@ class GithubApiService:
         )
         self.headers = {"Authorization": f"Bearer {self._token}"}
     def _get_api_url(self, domain: str) -> str:
-        if domain == "https://api.github.com":
-            return domain
+        if not domain:
+            return "https://api.github.com"
         else:
             return f"{domain}/api/v3"
 
