@@ -148,7 +148,14 @@ class SettingsService:
         setting = self.get_settings(setting_type, entity_type, entity_id)
 
         if not setting:
-            setting = self.save_settings(setting_type, entity_type, entity_id)
+            try:
+                setting = self.save_settings(setting_type, entity_type, entity_id)
+            except Exception as e:
+                if "UniqueViolation" in str(e) and "Settings_pkey" in str(e):
+                    # If another concurrent request already created the settings, fetch that settings
+                    setting = self.get_settings(setting_type, entity_type, entity_id)
+                else:
+                    raise e
 
         return setting
 
