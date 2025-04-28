@@ -36,9 +36,7 @@ export async function checkGitHubValidity(
   try {
     // if customDomain is provded, the host will be customDomain/api/v3
     // else it will be api.github.com(default)
-    const baseUrl = customDomain
-      ? `${customDomain}/api/v3`
-      : DEFAULT_GH_URL;
+    const baseUrl = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
 
     await axios.get(`${baseUrl}/user`, {
       headers: {
@@ -52,10 +50,11 @@ export async function checkGitHubValidity(
 }
 
 const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
-export const getMissingPATScopes = async (pat: string, customDomain?: string) => {
-  const baseUrl = customDomain
-    ? `${customDomain}/api/v3`
-    : DEFAULT_GH_URL;
+export const getMissingPATScopes = async (
+  pat: string,
+  customDomain?: string
+) => {
+  const baseUrl = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
   try {
     const response = await axios.get(baseUrl, {
       headers: {

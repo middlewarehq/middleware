@@ -25,12 +25,9 @@ class GithubApiService:
     def __init__(self, access_token: str, domain: Optional[str]):
         self._token = access_token
         self.base_url = self._get_api_url(domain)
-        self._g = Github(
-            self._token, 
-            base_url=self.base_url,
-            per_page=PAGE_SIZE
-        )
+        self._g = Github(self._token, base_url=self.base_url, per_page=PAGE_SIZE)
         self.headers = {"Authorization": f"Bearer {self._token}"}
+
     def _get_api_url(self, domain: str) -> str:
         if not domain:
             return "https://api.github.com"

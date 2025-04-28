@@ -65,7 +65,10 @@ export const ConfigureGithubModalBody: FC<{
       setError('Please enter a valid token');
       return;
     }
-    if (customDomain.value && !checkDomainWithRegex(customDomain.valueRef.current)) {
+    if (
+      customDomain.value &&
+      !checkDomainWithRegex(customDomain.valueRef.current)
+    ) {
       setDomainError('Please enter a valid domain');
       throw Error('Invalid domain');
     }
@@ -76,7 +79,10 @@ export const ConfigureGithubModalBody: FC<{
       })
       .then(async () => {
         try {
-          const res = await getMissingPATScopes(token.value, customDomain.valueRef.current);
+          const res = await getMissingPATScopes(
+            token.value,
+            customDomain.valueRef.current
+          );
           if (res.length) {
             throw new Error(`Token is missing scopes: ${res.join(', ')}`);
           }
@@ -182,42 +188,42 @@ export const ConfigureGithubModalBody: FC<{
           </FlexBox>
         </FlexBox>
         <FlexBox gap2 col>
-            <FlexBox alignBase gap1>
-              Custom domain
-            </FlexBox>
-            <TextField
-              id="github-custom-domain"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.stopImmediatePropagation();
-                  handleSubmission();
-                  return;
-                }
-              }}
-              error={!!showDomainError.value}
-              sx={{ width: '100%' }}
-              value={customDomain.value}
-              onChange={(e) => handleDomainChange(e.currentTarget.value)}
-              label={
-                isDomainInputFocus.value || customDomain.value
-                  ? 'Custom Domain'
-                  : '(Optional)'
-              }
-              onFocus={isDomainInputFocus.true}
-              onBlur={isDomainInputFocus.false}
-              helperText={
-                isDomainInputFocus.value || customDomain.value
-                  ? "Example: github.mycompany.com"
-                  : ""
-                }
-              placeholder="github.mycompany.com"
-            />
+          <FlexBox alignBase gap1>
+            Custom domain
           </FlexBox>
-          <Line error tiny mt={1} minHeight={'18px'}>
-            {showDomainError.value}
-          </Line>
+          <TextField
+            id="github-custom-domain"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+                handleSubmission();
+                return;
+              }
+            }}
+            error={!!showDomainError.value}
+            sx={{ width: '100%' }}
+            value={customDomain.value}
+            onChange={(e) => handleDomainChange(e.currentTarget.value)}
+            label={
+              isDomainInputFocus.value || customDomain.value
+                ? 'Custom Domain'
+                : '(Optional)'
+            }
+            onFocus={isDomainInputFocus.true}
+            onBlur={isDomainInputFocus.false}
+            helperText={
+              isDomainInputFocus.value || customDomain.value
+                ? 'Example: github.mycompany.com'
+                : ''
+            }
+            placeholder="github.mycompany.com"
+          />
+        </FlexBox>
+        <Line error tiny mt={1} minHeight={'18px'}>
+          {showDomainError.value}
+        </Line>
 
         <FlexBox justifyBetween alignCenter mt={'auto'}>
           <FlexBox col sx={{ opacity: 0.8 }}>

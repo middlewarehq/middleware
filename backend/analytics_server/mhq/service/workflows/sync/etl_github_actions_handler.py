@@ -182,5 +182,7 @@ def get_github_actions_etl_handler(org_id):
         return access_token
 
     return GithubActionsETLHandler(
-        org_id, GithubApiService(_get_access_token(), get_custom_github_domain(org_id)), WorkflowRepoService()
+        org_id,
+        GithubApiService(_get_access_token(), get_custom_github_domain(org_id)),
+        WorkflowRepoService(),
     )

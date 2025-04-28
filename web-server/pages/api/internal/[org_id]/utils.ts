@@ -6,7 +6,7 @@ import { Integration } from '@/constants/integrations';
 import { BaseRepo } from '@/types/resources';
 import { db } from '@/utils/db';
 
-const GITHUB_API_URL = 'https://api.github.com/graphql';
+const GITHUB_API_URL = 'https://api.github.com';
 
 type GithubRepo = {
   name: string;
@@ -308,12 +308,18 @@ const replaceURL = async (url: string): Promise<string> => {
 };
 
 const getGitHubCustomDomain = async (): Promise<string | null> => {
-  const provider_meta = await db('Integration')
-    .where('name', Integration.GITHUB)
-    .then((r: Row<'Integration'>[]) => r.map((item) => item.provider_meta));
+  try {
+    const provider_meta = await db('Integration')
+      .where('name', Integration.GITHUB)
+      .then((r: Row<'Integration'>[]) => r.map((item) => item.provider_meta));
 
-  return head(provider_meta || [])?.custom_domain || null;
+    return head(provider_meta || [])?.custom_domain || null;
+  } catch (error) {
+    console.error('Error occured while getting custom domain from database:', error);
+    return null;
+  }
 };
+
 
 const getGitHubRestApiUrl = async (path: string): Promise<string> => {
   const customDomain = await getGitHubCustomDomain();
@@ -325,4 +331,3 @@ const getGitHubGraphQLUrl = async (): Promise<string> => {
   const customDomain = await getGitHubCustomDomain();
   return customDomain ? `https://${customDomain}/api/graphql` : GITHUB_API_URL;
 };
-
