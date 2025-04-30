@@ -12,7 +12,7 @@ import {
   Box
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import debounce from 'lodash/debounce';
+import { debounce } from '@/utils/debounce';
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
 
 import { MotionBox } from '@/components/MotionComponents';
@@ -66,17 +66,14 @@ const LogSearch = memo(({
   const [searchQuery, setSearchQuery] = useState('');
 
   const debouncedSearch = useMemo(
-    () =>
-      debounce((query: string) => {
-        onSearch(query);
-      }, 300),
+    () => debounce((query: string) => {
+      onSearch(query);
+    }, 300),
     [onSearch]
   );
 
   useEffect(() => {
-    return () => {
-      debouncedSearch.cancel();
-    };
+    return undefined;
   }, [debouncedSearch]);
 
   const handleSearchChange = useCallback(
@@ -91,8 +88,7 @@ const LogSearch = memo(({
   const handleClear = useCallback(() => {
     setSearchQuery('');
     onSearch('');
-    debouncedSearch.cancel();
-  }, [onSearch, debouncedSearch]);
+  }, [onSearch]);
 
   const handleNavigate = useCallback(
     (direction: 'prev' | 'next') => {
@@ -123,7 +119,7 @@ const LogSearch = memo(({
           endAdornment: searchQuery && (
             <InputAdornment position="end">
               <ClearIcon
-                style={{ cursor: 'pointer' }}
+                sx={{ cursor: 'pointer'}}
                 onClick={handleClear}
                 color="action"
               />
@@ -146,7 +142,6 @@ const LogSearch = memo(({
             <Button
               size="small"
               onClick={() => handleNavigate('prev')}
-              disabled={currentMatch === 1}
               startIcon={<NavigateBefore />}
               sx={{
                 minWidth: '20px',
@@ -159,7 +154,6 @@ const LogSearch = memo(({
             <Button
               size="small"
               onClick={() => handleNavigate('next')}
-              disabled={currentMatch === totalMatches}
               startIcon={<NavigateNext />}
               sx={{
                 minWidth: '20px',
