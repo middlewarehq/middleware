@@ -10,7 +10,7 @@ interface FormattedLogProps {
   searchQuery?: string;
 }
 
-const HighlightedText = ({ text, searchQuery }: { text: string; searchQuery?: string }) => {
+export const HighlightedText = ({ text, searchQuery }: { text: string; searchQuery?: string }) => {
   if (!searchQuery) return <>{text}</>;
 
   const escapeRegExp = (string: string) =>
@@ -20,20 +20,13 @@ const HighlightedText = ({ text, searchQuery }: { text: string; searchQuery?: st
   const regex = new RegExp(`(${safeQuery})`, 'gi');
 
   const parts = text.split(regex);
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === searchQuery.toLowerCase() ? (
-          <span key={i} style={{ backgroundColor: 'yellow', color: 'black' }}>
-            {part}
-          </span>
-        ) : (
-          part
-        )
-      )}
-    </>
-  );
+  return <>{parts.map((part, i) =>
+    part.toLowerCase() === searchQuery.toLowerCase()
+      ? <span key={i} style={{ backgroundColor: 'yellow', color: 'black' }}>{part}</span>
+      : part
+  )}</>;
 };
+
 export const FormattedLog = ({ log, searchQuery }: FormattedLogProps) => {
   const theme = useTheme();
   const getLevelColor = useCallback(
