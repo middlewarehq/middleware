@@ -1,16 +1,36 @@
-import { useTheme } from '@mui/material';
+import { useTheme, styled } from '@mui/material';
 import { useCallback } from 'react';
 
 import { Line } from '@/components/Text';
 import { ParsedLog } from '@/types/resources';
 
+// Styled component for highlighted text
+const HighlightSpan = styled('span', {
+  shouldForwardProp: prop => prop !== 'isCurrentMatch'
+})<{ isCurrentMatch?: boolean }>(({ theme, isCurrentMatch }) => ({
+  backgroundColor: isCurrentMatch ? theme.palette.warning.main : 'yellow',
+  color: isCurrentMatch ? 'white' : 'black',
+  transition: theme.transitions.create(['background-color', 'color'], {
+    duration: theme.transitions.duration.shortest
+  })
+}));
+
 interface FormattedLogProps {
   log: ParsedLog;
   index: number;
   searchQuery?: string;
+  isCurrentMatch?: boolean;
 }
 
-export const HighlightedText = ({ text, searchQuery }: { text: string; searchQuery?: string }) => {
+export const HighlightedText = ({ 
+  text, 
+  searchQuery,
+  isCurrentMatch
+}: { 
+  text: string; 
+  searchQuery?: string;
+  isCurrentMatch?: boolean;
+}) => {
   if (!searchQuery) return <>{text}</>;
 
   const escapeRegExp = (string: string) =>
@@ -22,12 +42,20 @@ export const HighlightedText = ({ text, searchQuery }: { text: string; searchQue
   const parts = text.split(regex);
   return <>{parts.map((part, i) =>
     part.toLowerCase() === searchQuery.toLowerCase()
-      ? <span key={i} style={{ backgroundColor: 'yellow', color: 'black' }}>{part}</span>
+      ? (
+        <HighlightSpan 
+          key={i} 
+          isCurrentMatch={isCurrentMatch} 
+          data-highlighted="true"
+        >
+          {part}
+        </HighlightSpan>
+      )
       : part
   )}</>;
 };
 
-export const FormattedLog = ({ log, searchQuery }: FormattedLogProps) => {
+export const FormattedLog = ({ log, searchQuery, isCurrentMatch }: FormattedLogProps) => {
   const theme = useTheme();
   const getLevelColor = useCallback(
     (level: string) => {
@@ -59,17 +87,17 @@ export const FormattedLog = ({ log, searchQuery }: FormattedLogProps) => {
   return (
     <Line mono marginBottom={1}>
       <Line component="span" color="info">
-        <HighlightedText text={timestamp} searchQuery={searchQuery} />
+        <HighlightedText text={timestamp} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />
       </Line>{' '}
       {ip && (
         <Line component="span" color="primary">
-          <HighlightedText text={ip} searchQuery={searchQuery} />{' '}
+          <HighlightedText text={ip} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />{' '}
         </Line>
       )}
       <Line component="span" color={getLevelColor(logLevel)}>
-        [<HighlightedText text={logLevel} searchQuery={searchQuery} />]
+        [<HighlightedText text={logLevel} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />]
       </Line>{' '}
-      <HighlightedText text={message} searchQuery={searchQuery} />
+      <HighlightedText text={message} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />
     </Line>
   );
 };
