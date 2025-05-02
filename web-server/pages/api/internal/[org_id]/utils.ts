@@ -5,8 +5,7 @@ import { Row } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { BaseRepo } from '@/types/resources';
 import { db } from '@/utils/db';
-
-const GITHUB_API_URL = 'https://api.github.com';
+import { DEFAULT_GH_URL } from '@/constants/urls';
 
 type GithubRepo = {
   name: string;
@@ -307,7 +306,7 @@ const replaceURL = async (url: string): Promise<string> => {
   return url;
 };
 
-const getGitHubCustomDomain = async (): Promise<string | null> => {
+export const getGitHubCustomDomain = async (): Promise<string | null> => {
   try {
     const provider_meta = await db('Integration')
       .where('name', Integration.GITHUB)
@@ -320,14 +319,19 @@ const getGitHubCustomDomain = async (): Promise<string | null> => {
   }
 };
 
+const normalizeSlashes = (url: string) =>
+  url.replace(/(?<!:)\/{2,}/g, '/');
 
-const getGitHubRestApiUrl = async (path: string): Promise<string> => {
+export const getGitHubRestApiUrl = async (path: string) => {
   const customDomain = await getGitHubCustomDomain();
-  const baseUrl = customDomain ? `https://${customDomain}/api/v3` : GITHUB_API_URL;
-  return `${baseUrl}/${path}`.replace(/\/+/g, '/');
+  const base = customDomain
+    ? `https://${customDomain}/api/v3`
+    : DEFAULT_GH_URL;
+  return normalizeSlashes(`${base}/${path}`);
 };
 
-const getGitHubGraphQLUrl = async (): Promise<string> => {
+
+export const getGitHubGraphQLUrl = async (): Promise<string> => {
   const customDomain = await getGitHubCustomDomain();
-  return customDomain ? `https://${customDomain}/api/graphql` : GITHUB_API_URL;
+  return customDomain ? `https://${customDomain}/api/graphql` : `${DEFAULT_GH_URL}/graphql`;
 };

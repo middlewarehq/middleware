@@ -1,6 +1,7 @@
 module.exports = {
   preset: 'ts-jest/presets/js-with-babel', // Use the TypeScript preset with Babel
   testEnvironment: 'jsdom', // Use jsdom as the test environment (for browser-like behavior)
+  setupFiles: ['<rootDir>/jest.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: [
     '**/__tests__/**/*.test.(ts|tsx|js|jsx)',

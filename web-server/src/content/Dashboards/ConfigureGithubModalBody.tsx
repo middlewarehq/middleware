@@ -17,6 +17,7 @@ import {
   linkProvider,
   getMissingPATScopes
 } from '@/utils/auth';
+import { checkDomainWithRegex } from '@/utils/domainCheck';
 import { depFn } from '@/utils/fn';
 
 export const ConfigureGithubModalBody: FC<{
@@ -53,11 +54,6 @@ export const ConfigureGithubModalBody: FC<{
   const handleDomainChange = (e: string) => {
     customDomain.set(e);
     showDomainError.set('');
-  };
-  const checkDomainWithRegex = (domain: string) => {
-    const regex =
-      /^(https?:\/\/)[a-zA-Z0-9]+([-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}(:[0-9]{1,5})?(\/.*)?$/;
-    return regex.test(domain);
   };
 
   const handleSubmission = useCallback(async () => {

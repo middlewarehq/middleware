@@ -2,8 +2,7 @@ import axios from 'axios';
 import { isNil, reject } from 'ramda';
 
 import { Integration } from '@/constants/integrations';
-
-const DEFAULT_GH_URL = 'https://api.github.com';
+import { DEFAULT_GH_URL } from '@/constants/urls';
 
 export const unlinkProvider = async (orgId: string, provider: Integration) => {
   return await axios.delete(`/api/resources/orgs/${orgId}/integration`, {
