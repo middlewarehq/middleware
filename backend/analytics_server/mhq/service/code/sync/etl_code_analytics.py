@@ -184,4 +184,9 @@ class CodeETLAnalyticsService:
         self, pr_events: List[PullRequestEvent]
     ) -> List[PullRequestEvent]:
         """Filter out events created by bot users using regex patterns."""
-        return [event for event in pr_events if (not is_bot_name(event.actor_username))]
+        return [
+            event
+            for event in pr_events
+            if event.actor_username is not None
+            and (not is_bot_name(event.actor_username))
+        ]
