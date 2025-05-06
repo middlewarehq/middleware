@@ -1,17 +1,20 @@
-import { ArrowDownwardRounded } from '@mui/icons-material';
+import { ArrowDownwardRounded, CodeRounded, AccessTimeRounded } from '@mui/icons-material';
 import { Card, Divider, useTheme, Collapse, Box } from '@mui/material';
 import pluralize from 'pluralize';
 import { ascend, descend, groupBy, path, prop, sort } from 'ramda';
-import { FC, useCallback, useEffect, useMemo } from 'react';
-
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { DoraMetricsTrend } from '../DoraMetrics/DoraMetricsTrend';
+import { DoraMetricsDuration } from '../DoraMetrics/DoraMetricsDuration';
 import { FlexBox } from '@/components/FlexBox';
 import { MiniButton } from '@/components/MiniButton';
 import { MiniCircularLoader } from '@/components/MiniLoader';
 import { ProgressBar } from '@/components/ProgressBar';
 import { PullRequestsTableMini } from '@/components/PRTableMini/PullRequestsTableMini';
 import Scrollbar from '@/components/Scrollbar';
+import { Tabs, TabItem } from '@/components/Tabs';
 import { Line } from '@/components/Text';
 import { FetchState } from '@/constants/ui-states';
+import { DoraMetricsComparisonPill } from '@/content/DoraMetrics/DoraMetricsComparisonPill';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import {
@@ -29,6 +32,8 @@ import { useDispatch, useSelector } from '@/store';
 import { Deployment, PR, RepoWorkflowExtended } from '@/types/resources';
 import { percent } from '@/utils/datatype';
 import { depFn } from '@/utils/fn';
+import { format } from 'date-fns';
+import { getDurationString } from '@/utils/date';
 
 import { DeploymentItem } from './DeploymentItem';
 
@@ -40,12 +45,24 @@ enum DepStatusFilter {
 
 const hideTableColumns = new Set<keyof PR>(['reviewers', 'rework_cycles']);
 
+enum TabKeys {
+  ANALYTICS = 'analytics',
+  EVENTS = 'events'
+}
+
 export const DeploymentInsightsOverlay = () => {
   const { orgId } = useAuth();
   const { singleTeamId, team, dates } = useSingleTeamConfig();
   const dispatch = useDispatch();
   const depFilter = useEasyState(DepStatusFilter.All);
   const branchesForPrFilters = useBranchesForPrFilters();
+  const [activeTab, setActiveTab] = useState<string>(TabKeys.EVENTS);
+  const tabItems: TabItem[] = [
+    { key: TabKeys.ANALYTICS, label: 'Deployment Analytics' },
+    { key: TabKeys.EVENTS, label: 'Deployment Events' }
+  ];
+  const handleTabSelect = (item: TabItem) => setActiveTab(item.key as string);
+
   useEffect(() => {
     if (!singleTeamId) return;
 
@@ -205,11 +222,10 @@ export const DeploymentInsightsOverlay = () => {
               px={1}
               py={1 / 2}
               corner={theme.spacing(1)}
-              border={`1px solid ${
-                repo.id === selectedRepo.value
+              border={`1px solid ${repo.id === selectedRepo.value
                   ? theme.colors.info.main
                   : theme.colors.secondary.light
-              }`}
+                }`}
               pointer
               bgcolor={
                 repo.id === selectedRepo.value
@@ -221,7 +237,9 @@ export const DeploymentInsightsOverlay = () => {
                   ? theme.colors.info.main
                   : undefined
               }
-              fontWeight={repo.id === selectedRepo.value ? 'bold' : undefined}
+              fontWeight={
+                repo.id === selectedRepo.value ? 'bold' : undefined
+              }
               onClick={() => {
                 selectedRepo.set(repo.id as ID);
               }}
@@ -267,170 +285,194 @@ export const DeploymentInsightsOverlay = () => {
             }}
             minHeight={'calc(100vh - 275px)'}
           >
-            <FlexBox col flex1>
-              <Box p={1} key={selectedRepo.value}>
-                <FlexBox col gap={1 / 2}>
-                  <Line white medium>
-                    <Line bold white>
-                      No. of deployments {'->'}
-                    </Line>{' '}
-                    <Line
-                      bold
-                      color="info"
-                      onClick={() => {
-                        depFilter.set(DepStatusFilter.All);
-                      }}
-                    >
-                      {deployments.length}
-                    </Line>{' '}
-                    {Boolean(failedDeps.length) ? (
+            <Tabs
+              items={tabItems}
+              onSelect={handleTabSelect}
+              checkSelected={(item) => item.key === activeTab}
+            />
+            {activeTab === TabKeys.ANALYTICS ? (
+              <FlexBox col gap={1} p={1}>
+                <Box p={1} key={selectedRepo.value}>
+                  <FlexBox col gap={1 / 2}>
+                    <Line white medium>
+                      <Line bold white>
+                        No. of deployments {'->'}
+                      </Line>{' '}
                       <Line
                         bold
-                        color="warning"
+                        color="info"
                         onClick={() => {
-                          depFilter.set(DepStatusFilter.Fail);
+                          depFilter.set(DepStatusFilter.All);
                         }}
-                        pointer
                       >
-                        ({failedDeps.length} failed)
-                      </Line>
-                    ) : (
-                      <Line
-                        bold
-                        color="success"
-                        onClick={() => {
-                          depFilter.set(DepStatusFilter.Pass);
-                        }}
-                        pointer
-                      >
-                        (All passed)
-                      </Line>
-                    )}
-                  </Line>
-                  <ProgressBar
-                    mt={1}
-                    perc={percent(successfulDeps.length, deployments.length)}
-                    height="12px"
-                    maxWidth="300px"
-                    progressTitle="Successful deployments"
-                    remainingTitle="Failed deployments"
-                    progressOnClick={() => {
-                      depFilter.set(DepStatusFilter.Pass);
-                    }}
-                    remainingOnClick={() => {
-                      depFilter.set(DepStatusFilter.Fail);
-                    }}
-                  />
-                </FlexBox>
-              </Box>
-              <Divider sx={{ mt: 3 }} />
-              <FlexBox gap1 flex1 fullWidth>
-                <FlexBox col>
-                  <FlexBox p={1} pb={0} gap={1 / 2}>
-                    <MiniButton
-                      onClick={() => depFilter.set(DepStatusFilter.All)}
-                      variant={
-                        depFilter.value === DepStatusFilter.All
-                          ? 'contained'
-                          : 'outlined'
-                      }
-                    >
-                      All
-                    </MiniButton>
-                    <MiniButton
-                      onClick={() => depFilter.set(DepStatusFilter.Pass)}
-                      variant={
-                        depFilter.value === DepStatusFilter.Pass
-                          ? 'contained'
-                          : 'outlined'
-                      }
-                    >
-                      Successful
-                    </MiniButton>
-                    <MiniButton
-                      onClick={() => depFilter.set(DepStatusFilter.Fail)}
-                      variant={
-                        depFilter.value === DepStatusFilter.Fail
-                          ? 'contained'
-                          : 'outlined'
-                      }
-                    >
-                      Failed
-                    </MiniButton>
-                  </FlexBox>
-                  <Divider sx={{ mt: 1 }} />
-                  <FlexBox fill>
-                    <Scrollbar autoHeight autoHeightMin="100%">
-                      <FlexBox col gap1 p={1}>
-                        {filteredDeployments.length ? (
-                          groupedDeployments.map(([workflow, deployments]) => (
-                            <CollapsibleWorkflowList
-                              key={workflow.id}
-                              workflow={workflow}
-                              deployments={deployments}
-                              selectedDeploymentId={selectedDepID.value}
-                              onSelect={selectDeployment}
-                            />
-                          ))
-                        ) : (
-                          <FlexBox alignCenter col textAlign="center">
-                            <Line small white>
-                              No deployments matching the current filter.
-                            </Line>
-                            <Line
-                              small
-                              color="primary"
-                              bold
-                              underline
-                              dotted
-                              onClick={() => depFilter.set(DepStatusFilter.All)}
-                              pointer
-                            >
-                              See all deployments?
-                            </Line>
-                          </FlexBox>
-                        )}
-                      </FlexBox>
-                    </Scrollbar>
-                  </FlexBox>
-                </FlexBox>
-                <Divider orientation="vertical" />
-                {selectedDep ? (
-                  <FlexBox col p={1} gap1 width={'calc(100% - 320px)'}>
-                    <FlexBox col gap1>
-                      <Line small>Selected Deployment</Line>
-                      <DeploymentItem dep={selectedDep} selected={true} />
-                    </FlexBox>
-                    <Divider />
-                    <FlexBox col gap1 maxWidth={'100%'} overflow={'auto'}>
-                      {loadingPrs ? (
-                        <MiniCircularLoader label="Loading pull requests..." />
-                      ) : prs.length ? (
-                        <PullRequestsTableMini
-                          prs={prs}
-                          updateSortConf={updateSortConf}
-                          conf={conf}
-                          hideColumns={hideTableColumns}
-                        />
+                        {deployments.length}
+                      </Line>{' '}
+                      {Boolean(failedDeps.length) ? (
+                        <Line
+                          bold
+                          color="warning"
+                          onClick={() => {
+                            depFilter.set(DepStatusFilter.Fail);
+                          }}
+                          pointer
+                        >
+                          ({failedDeps.length} failed)
+                        </Line>
                       ) : (
-                        <Line small white>
-                          No new PRs linked to this deployment.
+                        <Line
+                          bold
+                          color="success"
+                          onClick={() => {
+                            depFilter.set(DepStatusFilter.Pass);
+                          }}
+                          pointer
+                        >
+                          (All passed)
                         </Line>
                       )}
-                    </FlexBox>
-                  </FlexBox>
-                ) : (
-                  <FlexBox col p={4} fullWidth>
-                    <Line big white medium textAlign="center">
-                      Select a deployment on the left
                     </Line>
-                    <Line white medium textAlign="center">
-                      to view PRs included in that deployment
-                    </Line>
+                    <ProgressBar
+                      mt={1}
+                      perc={percent(
+                        successfulDeps.length,
+                        deployments.length
+                      )}
+                      height="12px"
+                      maxWidth="300px"
+                      progressTitle="Successful deployments"
+                      remainingTitle="Failed deployments"
+                      progressOnClick={() => {
+                        depFilter.set(DepStatusFilter.Pass);
+                      }}
+                      remainingOnClick={() => {
+                        depFilter.set(DepStatusFilter.Fail);
+                      }}
+                    />
                   </FlexBox>
-                )}
+                </Box>
+                <FlexBox>
+                  <DoraMetricsDuration deployments={deployments} />
+                </FlexBox>
+                <FlexBox></FlexBox>
+                <DoraMetricsTrend />
               </FlexBox>
-            </FlexBox>
+            ) : (
+              <>
+                <FlexBox col flex1>
+                  <Divider sx={{ mt: 3 }} />
+                  <FlexBox gap1 flex1 fullWidth>
+                    <FlexBox col>
+                      <FlexBox p={1} pb={0} gap={1 / 2}>
+                        <MiniButton
+                          onClick={() => depFilter.set(DepStatusFilter.All)}
+                          variant={
+                            depFilter.value === DepStatusFilter.All
+                              ? 'contained'
+                              : 'outlined'
+                          }
+                        >
+                          All
+                        </MiniButton>
+                        <MiniButton
+                          onClick={() => depFilter.set(DepStatusFilter.Pass)}
+                          variant={
+                            depFilter.value === DepStatusFilter.Pass
+                              ? 'contained'
+                              : 'outlined'
+                          }
+                        >
+                          Successful
+                        </MiniButton>
+                        <MiniButton
+                          onClick={() => depFilter.set(DepStatusFilter.Fail)}
+                          variant={
+                            depFilter.value === DepStatusFilter.Fail
+                              ? 'contained'
+                              : 'outlined'
+                          }
+                        >
+                          Failed
+                        </MiniButton>
+                      </FlexBox>
+                      <Divider sx={{ mt: 1 }} />
+                      <FlexBox fill>
+                        <Scrollbar autoHeight autoHeightMin="100%">
+                          <FlexBox col gap1 p={1}>
+                            {filteredDeployments.length ? (
+                              groupedDeployments.map(
+                                ([workflow, deployments]) => (
+                                  <CollapsibleWorkflowList
+                                    key={workflow.id}
+                                    workflow={workflow}
+                                    deployments={deployments}
+                                    selectedDeploymentId={selectedDepID.value}
+                                    onSelect={selectDeployment}
+                                  />
+                                )
+                              )
+                            ) : (
+                              <FlexBox alignCenter col textAlign="center">
+                                <Line small white>
+                                  No deployments matching the current filter.
+                                </Line>
+                                <Line
+                                  small
+                                  color="primary"
+                                  bold
+                                  underline
+                                  dotted
+                                  onClick={() =>
+                                    depFilter.set(DepStatusFilter.All)
+                                  }
+                                  pointer
+                                >
+                                  See all deployments?
+                                </Line>
+                              </FlexBox>
+                            )}
+                          </FlexBox>
+                        </Scrollbar>
+                      </FlexBox>
+                    </FlexBox>
+                    <Divider orientation="vertical" />
+                    {selectedDep ? (
+                      <FlexBox col p={1} gap1 width={'calc(100% - 320px)'}>
+                        <FlexBox col gap1>
+                          <Line small>Selected Deployment</Line>
+                          <DeploymentItem dep={selectedDep} selected={true} />
+                        </FlexBox>
+                        <Divider />
+                        <FlexBox col gap1 maxWidth={'100%'} overflow={'auto'}>
+                          {loadingPrs ? (
+                            <MiniCircularLoader label="Loading pull requests..." />
+                          ) : prs.length ? (
+                            <PullRequestsTableMini
+                              prs={prs}
+                              updateSortConf={updateSortConf}
+                              conf={conf}
+                              hideColumns={hideTableColumns}
+                            />
+                          ) : (
+                            <Line small white>
+                              No new PRs linked to this deployment.
+                            </Line>
+                          )}
+                        </FlexBox>
+                      </FlexBox>
+                    ) : (
+                      <FlexBox col justifyContent="center" p={4} fullWidth>
+                        <Line big white medium textAlign="center">
+                          Select a deployment on the left
+                        </Line>
+                        <Line white medium textAlign="center">
+                          to view PRs included in that deployment
+                        </Line>
+                      </FlexBox>
+                    )}
+                  </FlexBox>
+                </FlexBox>
+              </>
+            )}
           </FlexBox>
         )
       ) : (
