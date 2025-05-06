@@ -55,7 +55,7 @@ def test_get_incident_types_when_types_setting_is_empty():
     assert incident_filter.incident_types == []
 
 
-def test_get_incident_types_when_only_prs_setting_present_returns_empty_list():
+def test_get_incident_types_when_only_prs_setting_present_returns_none():
     setting_types = [SettingType.INCIDENT_PRS_SETTING]
     incident_prs_setting = IncidentPrsSetting(
         include_revert_prs=True,
