@@ -83,19 +83,25 @@ const bffInterceptor = loggerInterceptor('bff');
 
 internal.interceptors.request.use(bffInterceptor);
 
-export const handleRequest = <T = any>(
+export const handleRequest = <T = any, B extends boolean = false>(
   url: string,
-  params: AxiosRequestConfig<any> = { method: 'get' }
-): Promise<T> =>
+  params: AxiosRequestConfig<any> = { method: 'get' },
+  includeHeaders: B = false as B
+): Promise<B extends true ? { data: T; headers: any } : T> =>
   internal({
     url,
     ...params,
     headers: { 'Content-Type': 'application/json' }
   })
-    .then(handleThen)
+    .then((r: any) => handleThen(r, includeHeaders))
     .catch(handleCatch);
 
-export const handleThen = (r: AxiosResponse) => r.data;
+export const handleThen = <T = any, B extends boolean = false>(
+  r: AxiosResponse<T>,
+  includeHeaders: B = false as B
+): B extends true ? { data: T; headers: any } : T => 
+  (includeHeaders ? { data: r.data, headers: r.headers } : r.data) as any;
+
 export const handleCatch = (r: { response: AxiosResponse }) => {
   throw r.response;
 };

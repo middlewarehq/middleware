@@ -89,3 +89,38 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
   );
   return missingScopes;
 };
+
+//BitBucket Functions
+export const checkBitBucketValidity = async (
+  username: string,
+  password: string,
+  customDomain?: string
+) => {
+  try {
+    const response = await axios.post(
+      "/api/integrations/bitbucket/scopes", 
+      {
+        username,
+        appPassword: password,
+        customDomain
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error('Invalid BitBucket credentials', { cause: error });
+  }
+};
+
+const BITBUCKET_SCOPES = ['issue', 'pullrequest', 'project', 'account'];
+
+export const getMissingBitBucketScopes = (scopes: string[]): string[] => {
+  const missingScopes = BITBUCKET_SCOPES.filter(
+    (scope) => !scopes.includes(scope)
+  );
+  return missingScopes;
+};

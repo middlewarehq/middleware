@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { unlinkProvider } from '@/utils/auth';
 
 import { ConfigureGithubModalBody } from './ConfigureGithubModalBody';
+import { ConfigureBitbucketModalBody } from './ConfigureBitbucketModalBody';
 
 export const useIntegrationHandlers = () => {
   const { orgId } = useAuth();
@@ -27,11 +28,18 @@ export const useIntegrationHandlers = () => {
             title: 'Configure Gitlab',
             body: <ConfigureGitlabModalBody onClose={closeAllModals} />,
             showCloseIcon: true
-          })
+          }),
+          bitbucket: () =>
+            addModal({
+              title: 'Configure Gitlab',
+              body: <ConfigureBitbucketModalBody onClose={closeAllModals}/> ,
+              showCloseIcon: true
+            })
       },
       unlink: {
         github: () => unlinkProvider(orgId, Integration.GITHUB),
-        gitlab: () => unlinkProvider(orgId, Integration.GITLAB)
+        gitlab: () => unlinkProvider(orgId, Integration.GITLAB), 
+        bitbucket: () => unlinkProvider(orgId,Integration.BITBUCKET)
       }
     };
 
