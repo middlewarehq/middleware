@@ -26,21 +26,21 @@ import { MotionBox } from '../../components/MotionComponents';
 type SearchState = {
   query: string;
   elements: HTMLElement[];
-  currentIndex: number;
+  selectedIndex: number | null;
   isSearching: boolean;
 };
 
 type SearchAction =
   | { type: 'SET_QUERY'; payload: string }
   | { type: 'SET_MATCHES'; payload: HTMLElement[] }
-  | { type: 'SET_CURRENT_INDEX'; payload: number }
+  | { type: 'SET_SELECTED_INDEX'; payload: number | null }
   | { type: 'SET_SEARCHING'; payload: boolean }
   | { type: 'RESET' };
 
 const initialSearchState: SearchState = {
   query: '',
   elements: [],
-  currentIndex: 0,
+  selectedIndex: null,
   isSearching: false
 };
 
@@ -57,12 +57,12 @@ function searchReducer(state: SearchState, action: SearchAction): SearchState {
       return {
         ...state,
         elements: newElements,
-        currentIndex: newElements.length > 0 ? 1 : 0,
+        selectedIndex: newElements.length > 0 ? 0 : null,
         isSearching: false
       };
     }
-    case 'SET_CURRENT_INDEX':
-      return { ...state, currentIndex: action.payload };
+    case 'SET_SELECTED_INDEX':
+      return { ...state, selectedIndex: action.payload };
     case 'SET_SEARCHING':
       return { ...state, isSearching: action.payload };
     case 'RESET':
@@ -95,7 +95,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
       requestAnimationFrame(() => {
         const elements = Array.from(
           containerRef.current?.querySelectorAll(
-            'span[data-highlighted="true"]'
+            '.mhq--highlighted-log'
           ) ?? []
         ) as HTMLElement[];
         
@@ -121,28 +121,30 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
 
   const handleNavigate = useCallback(
     (direction: 'prev' | 'next') => {
-    const { elements, currentIndex, isSearching } = searchState;
-    const total = elements.length;
-    
-    if (total === 0 || isSearching) return;
-    
-    const newIndex = direction === 'next'
-      ? (currentIndex < total ? currentIndex + 1 : 1)
-      : (currentIndex > 1 ? currentIndex - 1 : total);
+      const { elements, selectedIndex, isSearching } = searchState;
+      const total = elements.length;
       
-    dispatch({ type: 'SET_CURRENT_INDEX', payload: newIndex });
-  }, 
-  [searchState]
-);
+      if (total === 0 || isSearching || selectedIndex === null) return;
+      
+      if (direction === 'next') {
+        const newIndex = (selectedIndex + 1) % total;
+        dispatch({ type: 'SET_SELECTED_INDEX', payload: newIndex });
+      } else {
+        const newIndex = selectedIndex > 0 ? selectedIndex - 1 : total - 1;
+        dispatch({ type: 'SET_SELECTED_INDEX', payload: newIndex });
+      }
+    }, 
+    [searchState]
+  );
 
   useEffect(() => {
-    const { currentIndex, elements } = searchState;
-    if (currentIndex === 0 || !elements.length) {
+    const { selectedIndex, elements } = searchState;
+    if (selectedIndex === null || !elements.length) {
       setCurrentMatchLineIndex(null);
       return;
     }
     
-    const element = elements[currentIndex - 1];
+    const element = elements[selectedIndex];
     if (!element) return;
     
     let parentElement: HTMLElement | null = element;
@@ -164,7 +166,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
         });
       });
     }
-  }, [searchState.currentIndex, searchState.elements]);
+  }, [searchState.selectedIndex, searchState.elements]);
 
   useEffect(() => {
     if (
@@ -232,7 +234,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
       FallbackComponent={({ error }: { error: Error }) => (
         <SystemLogsErrorFallback
           error={error}
-          serviceName={serviceName as ServiceNames} 
+          serviceName={serviceName}
         />
       )}
     >
@@ -240,7 +242,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
         <LogSearch
           onSearch={handleSearch}
           onNavigate={handleNavigate}
-          currentMatch={searchState.currentIndex}
+          currentMatch={searchState.selectedIndex}
           totalMatches={searchState.elements.length}
         />
         {loading ? (

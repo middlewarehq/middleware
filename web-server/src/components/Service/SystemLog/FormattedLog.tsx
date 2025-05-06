@@ -22,17 +22,17 @@ interface FormattedLogProps {
   isCurrentMatch?: boolean;
 }
 
-type HighlightedTextProps = {
+type SearchHighlightTextProps = {
   text: string;
   searchQuery?: string;
   isCurrentMatch?: boolean;
 };
 
-export const HighlightedText = ({
+export const SearchHighlightText = ({
   text,
   searchQuery,
   isCurrentMatch,
-}: HighlightedTextProps) => {
+}: SearchHighlightTextProps) => {
   if (!searchQuery) return <>{text}</>;
 
   const escapeRegExp = (string: string) =>
@@ -97,7 +97,7 @@ export const FormattedLog = ({
   return (
     <Line mono marginBottom={1}>
       <Line component="span" color="info">
-        <HighlightedText
+        <SearchHighlightText
          text={timestamp} 
          searchQuery={searchQuery} 
          isCurrentMatch={isCurrentMatch} 
@@ -105,7 +105,7 @@ export const FormattedLog = ({
       </Line>{' '}
       {ip && (
         <Line component="span" color="primary">
-          <HighlightedText
+          <SearchHighlightText
            text={ip} 
            searchQuery={searchQuery} 
            isCurrentMatch={isCurrentMatch} 
@@ -114,14 +114,18 @@ export const FormattedLog = ({
       )}
       <Line component="span" color={getLevelColor(logLevel)}>
         [
-        <HighlightedText 
+        <SearchHighlightText 
           text={logLevel} 
           searchQuery={searchQuery} 
           isCurrentMatch={isCurrentMatch} 
         />
         ]
       </Line>{' '}
-      <HighlightedText text={message} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />
+      <SearchHighlightText
+        text={message}
+        searchQuery={searchQuery}
+        isCurrentMatch={isCurrentMatch} 
+      />
     </Line>
   );
 };

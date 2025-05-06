@@ -88,15 +88,16 @@ const LogSearch = memo(({
 
   const handleNavigate = useCallback(
     (direction: 'prev' | 'next') => {
-      onNavigate(direction);
+      if (direction === 'next') {
+        onNavigate('next');
+      } else {
+        onNavigate('prev');
+      }
     },
     [onNavigate]
   );
 
-  const showSearchControls = useMemo(
-    () => searchQuery && totalMatches > 0,
-    [searchQuery, totalMatches]
-  );
+  const showSearchControls = searchQuery && totalMatches > 0;
 
   return (
     <SearchContainer>
@@ -112,7 +113,7 @@ const LogSearch = memo(({
               <SearchIcon color="action" />
             </InputAdornment>
           ),
-          endAdornment: searchQuery && (
+          endAdornment: !!searchQuery.length && (
             <InputAdornment position="end">
               <ClearIcon
                 sx={{ cursor: 'pointer' }}
