@@ -2,6 +2,7 @@ import faker from '@faker-js/faker';
 import { GitHub } from '@mui/icons-material';
 
 import GitlabIcon from '@/mocks/icons/gitlab.svg';
+import BitbucketIcon from '@/mocks/icons/bitbucket.svg'
 
 export const githubIntegrationsDisplay = {
   id: faker.datatype.uuid(),
@@ -23,4 +24,14 @@ export const gitLabIntegrationDisplay = {
   icon: <GitlabIcon height={28} width={28} />
 } as IntegrationItem;
 
+export const bitBucketIntegrationDisplay = {
+  id: faker.datatype.uuid(),
+  type: 'bitbucket',
+  name: 'BitBucket',
+  description: 'Code insights & blockers',
+  color: '#fff',
+  bg: `linear-gradient(-45deg, rgba(69, 110, 232, 0.6) 0%, rgba(24, 176, 236, 0.6) 100%);`,
+  icon: <BitbucketIcon height={28} width={28} />
+
+}
 export type IntegrationItem = typeof githubIntegrationsDisplay;
