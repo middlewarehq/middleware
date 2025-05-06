@@ -500,3 +500,108 @@ def test_rework_cycles_returs_1_for_multiple_approvals():
         )
         == 1
     )
+
+
+def test_filter_non_bot_events_common_patterns():
+    pr_service = CodeETLAnalyticsService()
+
+    bot_events = [
+        get_pull_request_event(reviewer="github-actions[bot]"),
+        get_pull_request_event(reviewer="jenkins-bot"),
+        get_pull_request_event(reviewer="renovate[bot]"),
+        get_pull_request_event(reviewer="test_bot_service"),
+        get_pull_request_event(reviewer="my_bot"),
+        get_pull_request_event(reviewer="bot_user"),
+        get_pull_request_event(reviewer="SomeService-bot-123"),
+        get_pull_request_event(reviewer="CI-BOT"),
+        get_pull_request_event(reviewer="bot-123[bot]"),
+        get_pull_request_event(reviewer="helper_bot_v2"),
+    ]
+    human_events = [
+        get_pull_request_event(reviewer="john_doe"),
+        get_pull_request_event(reviewer="robotics_expert"),
+        get_pull_request_event(reviewer="sabotage"),
+        get_pull_request_event(reviewer="lobotomy"),
+        get_pull_request_event(reviewer="cubot"),
+        get_pull_request_event(reviewer="botany"),
+    ]
+
+    all_events = bot_events + human_events
+    filtered_events = pr_service.filter_non_bot_events(all_events)
+
+    assert len(filtered_events) == len(human_events)
+
+    filtered_usernames = [e.actor_username for e in filtered_events]
+    for event in bot_events:
+        assert event.actor_username not in filtered_usernames
+
+    for event in human_events:
+        assert event.actor_username in filtered_usernames
+
+
+def test_filter_non_bot_events_edge_cases():
+    pr_service = CodeETLAnalyticsService()
+
+    events = [
+        get_pull_request_event(reviewer="test-bot[123]"),
+        get_pull_request_event(reviewer="deploy bot"),
+        get_pull_request_event(reviewer="special@bot@chars"),
+        get_pull_request_event(reviewer="robo"),
+        get_pull_request_event(reviewer="botanic"),
+        get_pull_request_event(reviewer="robot"),
+        get_pull_request_event(reviewer="abot"),
+    ]
+
+    filtered_events = pr_service.filter_non_bot_events(events)
+
+    expected_remaining = ["robo", "botanic", "robot", "abot"]
+    filtered_usernames = [e.actor_username for e in filtered_events]
+
+    assert len(filtered_events) == 4
+    for username in expected_remaining:
+        assert username in filtered_usernames
+
+
+def test_create_pr_metrics_bot_detection_in_review_events():
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t1, updated_at=t1)
+
+    bot_reviewers = [
+        "github-actions[bot]",
+        "dependabot-preview[bot]",
+        "Jenkins_Bot",
+        "ci_bot_service",
+        "bot_reviewer",
+        "tool-bot-123",
+        "_bot_helper",
+        "helper_bot",
+    ]
+
+    bot_events = []
+    for i, reviewer in enumerate(bot_reviewers):
+        bot_events.append(
+            get_pull_request_event(
+                pull_request_id=pr.id,
+                reviewer=reviewer,
+                state=PullRequestEventState.COMMENTED.value,
+                created_at=t1 + timedelta(minutes=i + 1),
+            )
+        )
+
+    human_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        reviewer="human_reviewer",
+        state=PullRequestEventState.APPROVED.value,
+        created_at=t1 + timedelta(hours=1),
+    )
+
+    all_events = bot_events + [human_event]
+
+    pr_metrics = pr_service.create_pr_metrics(pr, all_events, [])
+
+    assert len(pr_metrics.reviewers) == 1
+    assert "human_reviewer" in pr_metrics.reviewers
+
+    for bot_reviewer in bot_reviewers:
+        assert bot_reviewer not in pr_metrics.reviewers

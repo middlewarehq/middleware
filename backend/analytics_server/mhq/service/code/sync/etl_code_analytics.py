@@ -10,6 +10,7 @@ from mhq.store.models.code import (
     PullRequestState,
 )
 from mhq.utils.time import Interval
+from mhq.utils.string import is_bot_name
 
 
 class CodeETLAnalyticsService:
@@ -22,7 +23,8 @@ class CodeETLAnalyticsService:
         if pr.state == PullRequestState.OPEN:
             return pr
 
-        pr_performance = self.get_pr_performance(pr, pr_events)
+        non_bot_pr_events = self.filter_non_bot_events(pr_events)
+        pr_performance = self.get_pr_performance(pr, non_bot_pr_events)
 
         pr.first_response_time = (
             pr_performance.first_review_time
@@ -39,11 +41,15 @@ class CodeETLAnalyticsService:
             pr_performance.cycle_time if pr_performance.cycle_time != -1 else None
         )
         pr.reviewers = list(
-            {e.actor_username for e in pr_events if e.actor_username != pr.author}
+            {
+                e.actor_username
+                for e in non_bot_pr_events
+                if e.actor_username != pr.author
+            }
         )
 
         if pr_commits:
-            pr.rework_cycles = self.get_rework_cycles(pr, pr_events, pr_commits)
+            pr.rework_cycles = self.get_rework_cycles(pr, non_bot_pr_events, pr_commits)
             pr_commits.sort(key=lambda x: x.created_at)
             first_commit_to_open = pr.created_at - pr_commits[0].created_at
             if isinstance(first_commit_to_open, timedelta):
@@ -173,3 +179,14 @@ class CodeETLAnalyticsService:
                 rework_cycles += 1
 
         return rework_cycles
+
+    def filter_non_bot_events(
+        self, pr_events: List[PullRequestEvent]
+    ) -> List[PullRequestEvent]:
+        """Filter out events created by bot users using regex patterns."""
+        return [
+            event
+            for event in pr_events
+            if event.actor_username is not None
+            and (not is_bot_name(event.actor_username))
+        ]
