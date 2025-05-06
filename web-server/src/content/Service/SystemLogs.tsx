@@ -1,6 +1,13 @@
 import { ExpandCircleDown } from '@mui/icons-material';
 import { Button, CircularProgress } from '@mui/material';
-import { useEffect, useRef, useCallback, useReducer, memo, useState } from 'react';
+import { 
+  useEffect, 
+  useRef, 
+  useCallback, 
+  useReducer, 
+  memo, 
+  useState 
+} from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -34,14 +41,14 @@ const initialSearchState: SearchState = {
   query: '',
   elements: [],
   currentIndex: 0,
-  isSearching: false,
+  isSearching: false
 };
 
 function searchReducer(state: SearchState, action: SearchAction): SearchState {
   switch (action.type) {
     case 'SET_QUERY':
-      return { 
-        ...state, 
+      return {
+        ...state,
         query: action.payload,
         isSearching: !!action.payload
       };
@@ -71,7 +78,9 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   const showScrollDownButton = useBoolState(false);
   const [searchState, dispatch] = useReducer(searchReducer, initialSearchState);
   const isInitialLoad = useRef(true);
-  const [currentMatchLineIndex, setCurrentMatchLineIndex] = useState<number | null>(null);
+  const [currentMatchLineIndex, setCurrentMatchLineIndex] = useState<
+  number | null
+  >(null);
 
   useEffect(() => {
     if (!searchState.query || searchState.query.length < 3) {
@@ -85,7 +94,9 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     const timer = setTimeout(() => {
       requestAnimationFrame(() => {
         const elements = Array.from(
-          containerRef.current?.querySelectorAll('span[data-highlighted="true"]') ?? []
+          containerRef.current?.querySelectorAll(
+            'span[data-highlighted="true"]'
+          ) ?? []
         ) as HTMLElement[];
         
         dispatch({ type: 'SET_MATCHES', payload: elements });
@@ -108,7 +119,8 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     dispatch({ type: 'SET_QUERY', payload: query });
   }, []);
 
-  const handleNavigate = useCallback((direction: 'prev' | 'next') => {
+  const handleNavigate = useCallback(
+    (direction: 'prev' | 'next') => {
     const { elements, currentIndex, isSearching } = searchState;
     const total = elements.length;
     
@@ -119,7 +131,9 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
       : (currentIndex > 1 ? currentIndex - 1 : total);
       
     dispatch({ type: 'SET_CURRENT_INDEX', payload: newIndex });
-  }, [searchState]);
+  }, 
+  [searchState]
+);
 
   useEffect(() => {
     const { currentIndex, elements } = searchState;
@@ -137,7 +151,10 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     }
     
     if (parentElement) {
-      const lineIndex = parseInt(parentElement.getAttribute('data-log-index') || '-1', 10);
+      const lineIndex = parseInt(
+        parentElement.getAttribute('data-log-index') || '-1', 
+        10
+      );
       setCurrentMatchLineIndex(lineIndex);
       
       requestAnimationFrame(() => {
@@ -150,7 +167,12 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   }, [searchState.currentIndex, searchState.elements]);
 
   useEffect(() => {
-    if (!loading && logs.length && containerRef.current && isInitialLoad.current) {
+    if (
+      !loading && 
+      logs.length && 
+      containerRef.current && 
+      isInitialLoad.current
+    ) {
       isInitialLoad.current = false;
       requestAnimationFrame(() => {
         if (containerRef.current) {
@@ -168,7 +190,9 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     if (!container) return;
     
     const handleScroll = () => {
-      const isScrolledUp = container.scrollTop < container.scrollHeight - container.clientHeight - 100;
+      const isScrolledUp = 
+        container.scrollTop < 
+        container.scrollHeight - container.clientHeight - 100;
       showScrollDownButton.set(isScrolledUp);
     };
     
@@ -206,7 +230,10 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   return (
     <ErrorBoundary
       FallbackComponent={({ error }: { error: Error }) => (
-        <SystemLogsErrorFallback error={error} serviceName={serviceName as ServiceNames} />
+        <SystemLogsErrorFallback
+          error={error}
+          serviceName={serviceName as ServiceNames} 
+        />
       )}
     >
       <FlexBox col>
@@ -223,8 +250,8 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
           </FlexBox>
         ) : (
           <FlexBox 
-            ref={containerRef} 
-            col 
+            ref={containerRef}
+            col
             sx={{ overflowY: 'auto', maxHeight: '100%' }}
           >
             {services && renderLogs()}
@@ -243,10 +270,11 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
             bottom={20}
             sx={{
               position: 'fixed',
-              marginLeft: `calc(${containerRef.current
+              marginLeft: `calc(${
+                containerRef.current
                   ? containerRef.current.clientWidth / 2 - 67
                   : 0
-                }px)`
+              }px)`
             }}
           >
             <ExpandCircleDown fontSize="large" color="secondary" />

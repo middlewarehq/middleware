@@ -12,10 +12,10 @@ import {
   Box
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { debounce } from '@/utils/debounce';
-import { memo, useState, useCallback, useMemo, useEffect } from 'react';
+import { memo, useState, useCallback, useMemo } from 'react';
 
 import { MotionBox } from '@/components/MotionComponents';
+import { debounce } from '@/utils/debounce';
 
 const SearchContainer = styled('div')(() => ({
   position: 'sticky',
@@ -72,10 +72,6 @@ const LogSearch = memo(({
     [onSearch]
   );
 
-  useEffect(() => {
-    return undefined;
-  }, [debouncedSearch]);
-
   const handleSearchChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const query = event.target.value;
@@ -119,7 +115,7 @@ const LogSearch = memo(({
           endAdornment: searchQuery && (
             <InputAdornment position="end">
               <ClearIcon
-                sx={{ cursor: 'pointer'}}
+                sx={{ cursor: 'pointer' }}
                 onClick={handleClear}
                 color="action"
               />

@@ -9,10 +9,18 @@ interface PlainLogProps {
   isCurrentMatch?: boolean;
 }
 
-export const PlainLog = ({ log, searchQuery, isCurrentMatch }: PlainLogProps) => {
+export const PlainLog = ({ 
+  log, 
+  searchQuery, 
+  isCurrentMatch 
+}: PlainLogProps) => {
   return (
     <Line mono marginBottom={1}>
-      <HighlightedText text={log} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />
+      <HighlightedText
+        text={log}
+        searchQuery={searchQuery}
+        isCurrentMatch={isCurrentMatch} 
+      />
     </Line>
   );
 };

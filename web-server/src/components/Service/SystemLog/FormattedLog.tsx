@@ -6,7 +6,7 @@ import { ParsedLog } from '@/types/resources';
 
 // Styled component for highlighted text
 const HighlightSpan = styled('span', {
-  shouldForwardProp: prop => prop !== 'isCurrentMatch'
+  shouldForwardProp: (prop) => prop !== 'isCurrentMatch'
 })<{ isCurrentMatch?: boolean }>(({ theme, isCurrentMatch }) => ({
   backgroundColor: isCurrentMatch ? theme.palette.warning.main : 'yellow',
   color: isCurrentMatch ? 'white' : 'black',
@@ -22,15 +22,17 @@ interface FormattedLogProps {
   isCurrentMatch?: boolean;
 }
 
-export const HighlightedText = ({ 
-  text, 
-  searchQuery,
-  isCurrentMatch
-}: { 
-  text: string; 
+type HighlightedTextProps = {
+  text: string;
   searchQuery?: string;
   isCurrentMatch?: boolean;
-}) => {
+};
+
+export const HighlightedText = ({
+  text,
+  searchQuery,
+  isCurrentMatch,
+}: HighlightedTextProps) => {
   if (!searchQuery) return <>{text}</>;
 
   const escapeRegExp = (string: string) =>
@@ -40,22 +42,30 @@ export const HighlightedText = ({
   const regex = new RegExp(`(${safeQuery})`, 'gi');
 
   const parts = text.split(regex);
-  return <>{parts.map((part, i) =>
-    part.toLowerCase() === searchQuery.toLowerCase()
-      ? (
-        <HighlightSpan 
-          key={i} 
-          isCurrentMatch={isCurrentMatch} 
-          data-highlighted="true"
-        >
-          {part}
-        </HighlightSpan>
-      )
-      : part
-  )}</>;
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === searchQuery.toLowerCase() ? (
+          <HighlightSpan
+            key={i}
+            isCurrentMatch={isCurrentMatch}
+            data-highlighted="true"
+          >
+            {part}
+          </HighlightSpan>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
 };
 
-export const FormattedLog = ({ log, searchQuery, isCurrentMatch }: FormattedLogProps) => {
+export const FormattedLog = ({ 
+  log, 
+  searchQuery, 
+  isCurrentMatch 
+}: FormattedLogProps) => {
   const theme = useTheme();
   const getLevelColor = useCallback(
     (level: string) => {
@@ -87,15 +97,29 @@ export const FormattedLog = ({ log, searchQuery, isCurrentMatch }: FormattedLogP
   return (
     <Line mono marginBottom={1}>
       <Line component="span" color="info">
-        <HighlightedText text={timestamp} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />
+        <HighlightedText
+         text={timestamp} 
+         searchQuery={searchQuery} 
+         isCurrentMatch={isCurrentMatch} 
+        />
       </Line>{' '}
       {ip && (
         <Line component="span" color="primary">
-          <HighlightedText text={ip} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />{' '}
+          <HighlightedText
+           text={ip} 
+           searchQuery={searchQuery} 
+           isCurrentMatch={isCurrentMatch} 
+          />{' '}
         </Line>
       )}
       <Line component="span" color={getLevelColor(logLevel)}>
-        [<HighlightedText text={logLevel} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />]
+        [
+        <HighlightedText 
+          text={logLevel} 
+          searchQuery={searchQuery} 
+          isCurrentMatch={isCurrentMatch} 
+        />
+        ]
       </Line>{' '}
       <HighlightedText text={message} searchQuery={searchQuery} isCurrentMatch={isCurrentMatch} />
     </Line>
