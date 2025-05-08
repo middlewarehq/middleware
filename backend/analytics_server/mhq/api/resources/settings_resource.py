@@ -61,8 +61,6 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
                 "include_revert_prs": config_settings.specific_settings.include_revert_prs,
                 "title_filters": config_settings.specific_settings.title_filters,
                 "head_branch_filters": config_settings.specific_settings.head_branch_filters,
-                "pr_mapping_field": config_settings.specific_settings.pr_mapping_field,
-                "pr_mapping_pattern": config_settings.specific_settings.pr_mapping_pattern,
             }
 
         # ADD NEW API ADAPTER HERE

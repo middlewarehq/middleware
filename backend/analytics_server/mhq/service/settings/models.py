@@ -51,8 +51,6 @@ class IncidentPrsSetting(BaseSetting):
     include_revert_prs: bool
     title_filters: List[str]
     head_branch_filters: List[str]
-    pr_mapping_field: str
-    pr_mapping_pattern: str
 
 
 # ADD NEW SETTING CLASS HERE

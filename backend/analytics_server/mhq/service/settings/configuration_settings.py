@@ -74,8 +74,6 @@ class SettingsService:
             include_revert_prs=data.get("include_revert_prs", True),
             title_filters=data.get("title_filters", []),
             head_branch_filters=data.get("head_branch_filters", []),
-            pr_mapping_field=data.get("pr_mapping_field", ""),
-            pr_mapping_pattern=data.get("pr_mapping_pattern", ""),
         )
 
     # ADD NEW DICT TO DATACLASS ADAPTERS HERE
@@ -211,8 +209,6 @@ class SettingsService:
             include_revert_prs=data.get("include_revert_prs", True),
             title_filters=data.get("title_filters", []),
             head_branch_filters=data.get("head_branch_filters", []),
-            pr_mapping_field=data.get("pr_mapping_field", ""),
-            pr_mapping_pattern=data.get("pr_mapping_pattern", ""),
         )
 
     # ADD NEW DICT TO API ADAPTERS HERE
@@ -285,8 +281,6 @@ class SettingsService:
             "include_revert_prs": specific_setting.include_revert_prs,
             "title_filters": specific_setting.title_filters,
             "head_branch_filters": specific_setting.head_branch_filters,
-            "pr_mapping_field": specific_setting.pr_mapping_field,
-            "pr_mapping_pattern": specific_setting.pr_mapping_pattern,
         }
 
     # ADD NEW DATACLASS TO JSON DATA ADAPTERS HERE

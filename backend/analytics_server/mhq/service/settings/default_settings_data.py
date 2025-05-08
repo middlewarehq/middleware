@@ -34,8 +34,6 @@ def get_default_setting_data(setting_type: SettingType):
             "include_revert_prs": True,
             "title_filters": [],
             "head_branch_filters": [],
-            "pr_mapping_field": "",
-            "pr_mapping_pattern": "",
         }
 
     # ADD NEW DEFAULT SETTING HERE

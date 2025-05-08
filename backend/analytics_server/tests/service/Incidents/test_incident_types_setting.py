@@ -58,11 +58,7 @@ def test_get_incident_types_when_types_setting_is_empty():
 def test_get_incident_types_when_only_prs_setting_present_returns_none():
     setting_types = [SettingType.INCIDENT_PRS_SETTING]
     incident_prs_setting = IncidentPrsSetting(
-        include_revert_prs=True,
-        title_filters=[],
-        head_branch_filters=[],
-        pr_mapping_field="",
-        pr_mapping_pattern="",
+        include_revert_prs=True, title_filters=[], head_branch_filters=[]
     )
     setting_type_to_settings_map = {
         SettingType.INCIDENT_PRS_SETTING: incident_prs_setting
@@ -85,11 +81,7 @@ def test_get_incident_types_when_both_types_and_prs_settings_present_and_include
         SettingType.INCIDENT_PRS_SETTING,
     ]
     incident_prs_setting = IncidentPrsSetting(
-        include_revert_prs=True,
-        title_filters=[],
-        head_branch_filters=[],
-        pr_mapping_field="",
-        pr_mapping_pattern="",
+        include_revert_prs=True, title_filters=[], head_branch_filters=[]
     )
     setting_type_to_settings_map = {
         SettingType.INCIDENT_TYPES_SETTING: IncidentTypesSetting(
@@ -117,11 +109,7 @@ def test_get_incident_types_when_both_settings_present_and_not_includes_revert_p
         SettingType.INCIDENT_PRS_SETTING,
     ]
     incident_prs_setting = IncidentPrsSetting(
-        include_revert_prs=False,
-        title_filters=[],
-        head_branch_filters=[],
-        pr_mapping_field="",
-        pr_mapping_pattern="",
+        include_revert_prs=False, title_filters=[], head_branch_filters=[]
     )
     setting_type_to_settings_map = {
         SettingType.INCIDENT_TYPES_SETTING: IncidentTypesSetting(
