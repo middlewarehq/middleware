@@ -66,58 +66,49 @@ export const ConfigureGithubModalBody: FC<{
       !checkDomainWithRegex(customDomain.valueRef.current)
     ) {
       setDomainError('Please enter a valid domain');
-      throw Error('Invalid domain');
+      return;
     }
-    depFn(isLoading.true);
-    checkGitHubValidity(token.value, customDomain.valueRef.current)
-      .then(async (isValid) => {
-        if (!isValid) throw new Error('Invalid token');
-      })
-      .then(async () => {
-        try {
-          const res = await getMissingPATScopes(
-            token.value,
-            customDomain.valueRef.current
-          );
-          if (res.length) {
-            throw new Error(`Token is missing scopes: ${res.join(', ')}`);
-          }
-        } catch (e) {
-          // @ts-ignore
-          throw new Error(e?.message, e);
-        }
-      })
-      .then(async () => {
-        try {
-          return await linkProvider(token.value, orgId, Integration.GITHUB, {
-            custom_domain: customDomain.valueRef.current
-          });
-        } catch (e: any) {
-          throw new Error(
-            `Failed to link Github${e?.message ? `: ${e?.message}` : ''}`,
-            e
-          );
-        }
-      })
-      .then(() => {
-        dispatch(fetchCurrentOrg());
-        dispatch(
-          fetchTeams({
-            org_id: orgId
-          })
-        );
-        enqueueSnackbar('Github linked successfully', {
-          variant: 'success',
-          autoHideDuration: 2000
-        });
-        onClose();
-      })
-      .catch((e) => {
-        setError(e.message);
-        console.error(`Error while linking token: ${e.message}`, e);
-      })
-      .finally(isLoading.false);
+
+    isLoading.true();
+    try {
+      const isValid = await checkGitHubValidity(
+        token.value,
+        customDomain.valueRef.current
+      );
+      if (!isValid) {
+        setError('Invalid token');
+        return;
+      }
+
+      const missingScopes = await getMissingPATScopes(
+        token.value,
+        customDomain.valueRef.current
+      );
+      if (missingScopes.length > 0) {
+        setError(`Token is missing scopes: ${missingScopes.join(', ')}`);
+        return;
+      }
+
+      await linkProvider(token.value, orgId, Integration.GITHUB, {
+        custom_domain: customDomain.valueRef.current
+      });
+
+      dispatch(fetchCurrentOrg());
+      dispatch(fetchTeams({ org_id: orgId }));
+      enqueueSnackbar('Github linked successfully', {
+        variant: 'success',
+        autoHideDuration: 2000
+      });
+      onClose();
+    } catch (e: any) {
+      setError(e.message || 'Unknown error');
+      console.error(e);
+    } finally {
+      isLoading.false();
+    }
   }, [
+    token.value,
+    customDomain.value,
     dispatch,
     enqueueSnackbar,
     isLoading.false,
@@ -125,8 +116,9 @@ export const ConfigureGithubModalBody: FC<{
     onClose,
     orgId,
     setError,
-    token.value
+    setDomainError
   ]);
+
   const isDomainInputFocus = useBoolState(false);
 
   const focusDomainInput = useCallback(() => {
@@ -211,10 +203,10 @@ export const ConfigureGithubModalBody: FC<{
             onBlur={isDomainInputFocus.false}
             helperText={
               isDomainInputFocus.value || customDomain.value
-                ? 'Example: github.mycompany.com'
+                ? 'Example: https://github.mycompany.com'
                 : ''
             }
-            placeholder="github.mycompany.com"
+            placeholder="https://github.mycompany.com"
           />
         </FlexBox>
         <Line error tiny mt={1} minHeight={'18px'}>

@@ -325,7 +325,7 @@ const normalizeSlashes = (url: string) =>
 export const getGitHubRestApiUrl = async (path: string) => {
   const customDomain = await getGitHubCustomDomain();
   const base = customDomain
-    ? `https://${customDomain}/api/v3`
+    ? `${customDomain}/api/v3`
     : DEFAULT_GH_URL;
   return normalizeSlashes(`${base}/${path}`);
 };
@@ -333,5 +333,5 @@ export const getGitHubRestApiUrl = async (path: string) => {
 
 export const getGitHubGraphQLUrl = async (): Promise<string> => {
   const customDomain = await getGitHubCustomDomain();
-  return customDomain ? `https://${customDomain}/api/graphql` : `${DEFAULT_GH_URL}/graphql`;
+  return customDomain ? `${customDomain}/api/graphql` : `${DEFAULT_GH_URL}/graphql`;
 };
