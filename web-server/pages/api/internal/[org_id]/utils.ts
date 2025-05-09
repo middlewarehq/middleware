@@ -5,8 +5,7 @@ import { Row } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { BaseRepo } from '@/types/resources';
 import { db } from '@/utils/db';
-
-const GITHUB_API_URL = 'https://api.github.com/graphql';
+import { DEFAULT_GH_URL } from '@/constants/urls';
 
 type GithubRepo = {
   name: string;
@@ -53,7 +52,7 @@ export const searchGithubRepos = async (
 };
 
 const searchRepoWithURL = async (searchString: string) => {
-  const apiUrl = `https://api.github.com/repos/${searchString}`;
+  const apiUrl = await getGitHubRestApiUrl(`repos/${searchString}`);
   const response = await axios.get<GithubRepo>(apiUrl);
   const repo = response.data;
   return [
@@ -104,7 +103,9 @@ export const searchGithubReposWithNames = async (
 
   const queryString = `${searchString} in:name fork:true`;
 
-  const response = await fetch(GITHUB_API_URL, {
+  const githubApiUrl = await getGitHubGraphQLUrl();
+
+  const response = await fetch(githubApiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -303,4 +304,34 @@ const replaceURL = async (url: string): Promise<string> => {
   }
 
   return url;
+};
+
+export const getGitHubCustomDomain = async (): Promise<string | null> => {
+  try {
+    const provider_meta = await db('Integration')
+      .where('name', Integration.GITHUB)
+      .then((r: Row<'Integration'>[]) => r.map((item) => item.provider_meta));
+
+    return head(provider_meta || [])?.custom_domain || null;
+  } catch (error) {
+    console.error('Error occured while getting custom domain from database:', error);
+    return null;
+  }
+};
+
+const normalizeSlashes = (url: string) =>
+  url.replace(/(?<!:)\/{2,}/g, '/');
+
+export const getGitHubRestApiUrl = async (path: string) => {
+  const customDomain = await getGitHubCustomDomain();
+  const base = customDomain
+    ? `${customDomain}/api/v3`
+    : DEFAULT_GH_URL;
+  return normalizeSlashes(`${base}/${path}`);
+};
+
+
+export const getGitHubGraphQLUrl = async (): Promise<string> => {
+  const customDomain = await getGitHubCustomDomain();
+  return customDomain ? `${customDomain}/api/graphql` : `${DEFAULT_GH_URL}/graphql`;
 };

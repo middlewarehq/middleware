@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import pytz
 
+from mhq.utils.github import get_custom_github_domain
 from mhq.exapi.github import GithubApiService
 from mhq.service.workflows.sync.etl_provider_handler import WorkflowProviderETLHandler
 from mhq.store.models import UserIdentityProvider
@@ -181,5 +182,7 @@ def get_github_actions_etl_handler(org_id):
         return access_token
 
     return GithubActionsETLHandler(
-        org_id, GithubApiService(_get_access_token()), WorkflowRepoService()
+        org_id,
+        GithubApiService(_get_access_token(), get_custom_github_domain(org_id)),
+        WorkflowRepoService(),
     )

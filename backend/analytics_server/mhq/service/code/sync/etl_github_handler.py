@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import List, Dict, Optional, Tuple, Set
 
 import pytz
+from mhq.utils.github import get_custom_github_domain
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from github.PullRequestReview import PullRequestReview as GithubPullRequestReview
@@ -382,7 +383,7 @@ def get_github_etl_handler(org_id: str) -> GithubETLHandler:
 
     return GithubETLHandler(
         org_id,
-        GithubApiService(_get_access_token()),
+        GithubApiService(_get_access_token(), get_custom_github_domain(org_id)),
         CodeRepoService(),
         CodeETLAnalyticsService(),
         get_revert_prs_github_sync_handler(),

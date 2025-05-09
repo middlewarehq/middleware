@@ -17,6 +17,7 @@ import {
   linkProvider,
   getMissingPATScopes
 } from '@/utils/auth';
+import { checkDomainWithRegex } from '@/utils/domainCheck';
 import { depFn } from '@/utils/fn';
 
 export const ConfigureGithubModalBody: FC<{
@@ -25,10 +26,12 @@ export const ConfigureGithubModalBody: FC<{
   const token = useEasyState('');
   const { orgId } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
+  const customDomain = useEasyState('');
   const dispatch = useDispatch();
   const isLoading = useBoolState();
 
   const showError = useEasyState<string>('');
+  const showDomainError = useEasyState<string>('');
 
   const setError = useCallback(
     (error: string) => {
@@ -37,10 +40,20 @@ export const ConfigureGithubModalBody: FC<{
     },
     [showError.set]
   );
+  const setDomainError = useCallback(
+    (error: string) => {
+      depFn(showDomainError.set, error);
+    },
+    [showDomainError.set]
+  );
 
   const handleChange = (e: string) => {
     token.set(e);
     showError.set('');
+  };
+  const handleDomainChange = (e: string) => {
+    customDomain.set(e);
+    showDomainError.set('');
   };
 
   const handleSubmission = useCallback(async () => {
@@ -48,51 +61,54 @@ export const ConfigureGithubModalBody: FC<{
       setError('Please enter a valid token');
       return;
     }
-    depFn(isLoading.true);
-    checkGitHubValidity(token.value)
-      .then(async (isValid) => {
-        if (!isValid) throw new Error('Invalid token');
-      })
-      .then(async () => {
-        try {
-          const res = await getMissingPATScopes(token.value);
-          if (res.length) {
-            throw new Error(`Token is missing scopes: ${res.join(', ')}`);
-          }
-        } catch (e) {
-          // @ts-ignore
-          throw new Error(e?.message, e);
-        }
-      })
-      .then(async () => {
-        try {
-          return await linkProvider(token.value, orgId, Integration.GITHUB);
-        } catch (e: any) {
-          throw new Error(
-            `Failed to link Github${e?.message ? `: ${e?.message}` : ''}`,
-            e
-          );
-        }
-      })
-      .then(() => {
-        dispatch(fetchCurrentOrg());
-        dispatch(
-          fetchTeams({
-            org_id: orgId
-          })
-        );
-        enqueueSnackbar('Github linked successfully', {
-          variant: 'success',
-          autoHideDuration: 2000
-        });
-        onClose();
-      })
-      .catch((e) => {
-        setError(e.message);
-        console.error(`Error while linking token: ${e.message}`, e);
-      })
-      .finally(isLoading.false);
+    if (
+      customDomain.value &&
+      !checkDomainWithRegex(customDomain.valueRef.current)
+    ) {
+      setDomainError('Please enter a valid domain');
+      return;
+    }
+
+    isLoading.true();
+    try {
+      const isValid = await checkGitHubValidity(
+        token.value,
+        customDomain.valueRef.current
+      );
+      if (!isValid) {
+        setError('Invalid token');
+        return;
+      }
+
+      const missingScopes = await getMissingPATScopes(
+        token.value,
+        customDomain.valueRef.current
+      );
+      if (missingScopes.length > 0) {
+        setError(`Token is missing scopes: ${missingScopes.join(', ')}`);
+        return;
+      }
+
+      await linkProvider(token.value, orgId, Integration.GITHUB, {
+        custom_domain: customDomain.valueRef.current
+      });
+
+      dispatch(fetchCurrentOrg());
+      dispatch(fetchTeams({ org_id: orgId }));
+      enqueueSnackbar('Github linked successfully', {
+        variant: 'success',
+        autoHideDuration: 2000
+      });
+      onClose();
+    } catch (e: any) {
+      setError(e.message || 'Unknown error');
+      console.error(e);
+    } finally {
+      isLoading.false();
+    }
   }, [
+    token.value,
+    customDomain.value,
     dispatch,
     enqueueSnackbar,
     isLoading.false,
@@ -100,8 +116,16 @@ export const ConfigureGithubModalBody: FC<{
     onClose,
     orgId,
     setError,
-    token.value
+    setDomainError
   ]);
+
+  const isDomainInputFocus = useBoolState(false);
+
+  const focusDomainInput = useCallback(() => {
+    if (!customDomain.value)
+      document.getElementById('gitlab-custom-domain')?.focus();
+    else handleSubmission();
+  }, [customDomain.value, handleSubmission]);
 
   return (
     <FlexBox gap2>
@@ -115,6 +139,7 @@ export const ConfigureGithubModalBody: FC<{
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
                 handleSubmission();
+                focusDomainInput();
                 return;
               }
             }}
@@ -150,6 +175,43 @@ export const ConfigureGithubModalBody: FC<{
             </Line>
           </FlexBox>
         </FlexBox>
+        <FlexBox gap2 col>
+          <FlexBox alignBase gap1>
+            Custom domain
+          </FlexBox>
+          <TextField
+            id="github-custom-domain"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+                handleSubmission();
+                return;
+              }
+            }}
+            error={!!showDomainError.value}
+            sx={{ width: '100%' }}
+            value={customDomain.value}
+            onChange={(e) => handleDomainChange(e.currentTarget.value)}
+            label={
+              isDomainInputFocus.value || customDomain.value
+                ? 'Custom Domain'
+                : '(Optional)'
+            }
+            onFocus={isDomainInputFocus.true}
+            onBlur={isDomainInputFocus.false}
+            helperText={
+              isDomainInputFocus.value || customDomain.value
+                ? 'Example: https://github.mycompany.com'
+                : ''
+            }
+            placeholder="https://github.mycompany.com"
+          />
+        </FlexBox>
+        <Line error tiny mt={1} minHeight={'18px'}>
+          {showDomainError.value}
+        </Line>
 
         <FlexBox justifyBetween alignCenter mt={'auto'}>
           <FlexBox col sx={{ opacity: 0.8 }}>

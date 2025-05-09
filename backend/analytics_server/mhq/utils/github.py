@@ -1,9 +1,12 @@
 from queue import Queue
 from threading import Thread
+from typing import Optional
 
 from github import Organization
 
 from mhq.utils.log import LOG
+from mhq.store.repos.core import CoreRepoService
+from mhq.store.models import UserIdentityProvider
 
 
 def github_org_data_multi_thread_worker(orgs: [Organization]) -> dict:
@@ -48,3 +51,25 @@ def github_org_data_multi_thread_worker(orgs: [Organization]) -> dict:
     for worker in workers:
         r.update(worker.results)
     return r
+
+
+def get_custom_github_domain(org_id: str) -> Optional[str]:
+    DEFAULT_DOMAIN = "https://api.github.com"
+    core_repo_service = CoreRepoService()
+    integrations = core_repo_service.get_org_integrations_for_names(
+        org_id, [UserIdentityProvider.GITHUB.value]
+    )
+
+    github_domain = (
+        integrations[0].provider_meta.get("custom_domain")
+        if integrations[0].provider_meta
+        else None
+    )
+
+    if not github_domain:
+        LOG.warn(
+            f"Custom domain not found for intergration for org {org_id} and provider {UserIdentityProvider.GITHUB.value}"
+        )
+        return DEFAULT_DOMAIN
+
+    return github_domain
