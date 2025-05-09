@@ -29,6 +29,13 @@ def get_default_setting_data(setting_type: SettingType):
     if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING:
         return {"default_sync_days": 31}
 
+    if setting_type == SettingType.INCIDENT_PRS_SETTING:
+        return {
+            "include_revert_prs": True,
+            "title_filters": [],
+            "head_branch_filters": [],
+        }
+
     # ADD NEW DEFAULT SETTING HERE
 
     raise Exception(f"Invalid Setting Type: {setting_type}")
