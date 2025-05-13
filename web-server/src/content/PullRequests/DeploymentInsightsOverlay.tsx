@@ -1,4 +1,4 @@
-import { ArrowDownwardRounded, CodeRounded, AccessTimeRounded } from '@mui/icons-material';
+import { ArrowDownwardRounded } from '@mui/icons-material';
 import { Card, Divider, useTheme, Collapse, Box } from '@mui/material';
 import pluralize from 'pluralize';
 import { ascend, descend, groupBy, path, prop, sort } from 'ramda';
@@ -14,7 +14,6 @@ import Scrollbar from '@/components/Scrollbar';
 import { Tabs, TabItem } from '@/components/Tabs';
 import { Line } from '@/components/Text';
 import { FetchState } from '@/constants/ui-states';
-import { DoraMetricsComparisonPill } from '@/content/DoraMetrics/DoraMetricsComparisonPill';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import {
@@ -32,8 +31,6 @@ import { useDispatch, useSelector } from '@/store';
 import { Deployment, PR, RepoWorkflowExtended } from '@/types/resources';
 import { percent } from '@/utils/datatype';
 import { depFn } from '@/utils/fn';
-import { format } from 'date-fns';
-import { getDurationString } from '@/utils/date';
 
 import { DeploymentItem } from './DeploymentItem';
 
@@ -292,7 +289,8 @@ export const DeploymentInsightsOverlay = () => {
             />
             {activeTab === TabKeys.ANALYTICS ? (
               <FlexBox col gap={1} p={1}>
-                <Box p={1} key={selectedRepo.value}>
+                <Divider sx={{ mb: '10px' }} />
+                <Box sx={{mb:'10px'}} key={selectedRepo.value}>
                   <FlexBox col gap={1 / 2}>
                     <Line white medium>
                       <Line bold white>

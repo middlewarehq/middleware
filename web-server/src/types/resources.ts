@@ -223,7 +223,6 @@ export type Deployment = {
   conducted_at: DateString;
   pr_count: number;
   run_duration: number;
-  duration: number;
   html_url: string;
   repo_workflow_id: ID;
 };

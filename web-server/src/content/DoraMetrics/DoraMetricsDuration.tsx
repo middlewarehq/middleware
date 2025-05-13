@@ -9,12 +9,9 @@ import { getDurationString, isoDateString } from '@/utils/date';
 
 type DeploymentCardType = 'Longest' | 'Shortest';
 
-interface DeploymentWithValidDuration extends Deployment {
-  duration: number;
-}
 
 interface DeploymentCardProps {
-  deployment: DeploymentWithValidDuration;
+  deployment: Deployment;
   type: DeploymentCardType;
 }
 
@@ -22,19 +19,6 @@ interface DoraMetricsDurationProps {
   deployments: Deployment[];
 }
 
-const calculateDurationFromConductedAt = (conductedAt: string): number | undefined => {
-  try {
-    const deploymentDate = new Date(conductedAt);
-    if (isNaN(deploymentDate.getTime())) {
-      return undefined;
-    }
-    const now = new Date();
-    return Math.floor((now.getTime() - deploymentDate.getTime()) / 1000);
-  } catch (error) {
-    console.error('Error calculating duration:', error);
-    return undefined;
-  }
-};
 
 const formatDeploymentDate = (dateString: string): string => {
   if (!dateString) return 'Unknown Date';
@@ -112,9 +96,17 @@ const DeploymentCard: FC<DeploymentCardProps> = ({ deployment }) => {
               {deployment.head_branch || 'Unknown Branch'}
             </Line>
             <AccessTimeRounded fontSize="small" />
-            <Line sx={{ color: theme.palette.primary.light }}>{getDurationString(deployment.duration)}</Line>
+            <Line sx={{ color: theme.palette.primary.light }}>
+              {getDurationString(deployment.run_duration)}
+            </Line>
           </FlexBox>
           <ArrowForwardIosRounded
+            sx={{
+              position: 'absolute',
+              right: 0,
+              top: '35%',
+              bottom: '35%',
+            }}
             fontSize="medium"
           />
         </FlexBox>
@@ -130,15 +122,8 @@ export const DoraMetricsDuration: FC<DoraMetricsDurationProps> = ({ deployments 
     }
 
     const validDeployments = deployments
-      .filter((d): d is Deployment => Boolean(d.conducted_at))
-      .map(deployment => ({
-        ...deployment,
-        duration: calculateDurationFromConductedAt(deployment.conducted_at)
-      }))
-      .filter((d): d is DeploymentWithValidDuration => 
-        typeof d.duration === 'number' && 
-        d.duration >= 0
-      );
+      .filter((d): d is Deployment => Boolean(d.conducted_at && typeof d.run_duration === 'number'))
+      .filter((d) => d.run_duration >= 0);
 
     if (!validDeployments.length) {
       return { longestDeployment: null, shortestDeployment: null };
@@ -146,11 +131,11 @@ export const DoraMetricsDuration: FC<DoraMetricsDurationProps> = ({ deployments 
 
     // Function to calculate Longest and shortest deployments
     const { longest, shortest } = validDeployments.reduce((acc, current) => ({
-      longest: !acc.longest || current.duration > acc.longest.duration ? current : acc.longest,
-      shortest: !acc.shortest || current.duration < acc.shortest.duration ? current : acc.shortest
+      longest: !acc.longest || current.run_duration > acc.longest.run_duration ? current : acc.longest,
+      shortest: !acc.shortest || current.run_duration < acc.shortest.run_duration ? current : acc.shortest
     }), {
-      longest: null as DeploymentWithValidDuration | null,
-      shortest: null as DeploymentWithValidDuration | null
+      longest: null as Deployment | null,
+      shortest: null as Deployment | null
     });
 
     return { longestDeployment: longest, shortestDeployment: shortest };
@@ -160,7 +145,7 @@ export const DoraMetricsDuration: FC<DoraMetricsDurationProps> = ({ deployments 
     <FlexBox col gap={1.5}>
       <FlexBox gap={3}>
         <FlexBox col gap={1}>
-          <Line white sx={{ fontSize: '1.1rem' }} bold>Longest Deployment</Line>
+          <Line white sx={{ fontSize: '1.0rem' }} semibold>Longest Deployment</Line>
           <DeploymentCard
             deployment={longestDeployment}
             type="Longest"
@@ -168,7 +153,7 @@ export const DoraMetricsDuration: FC<DoraMetricsDurationProps> = ({ deployments 
         </FlexBox>
 
         <FlexBox col gap={1}>
-          <Line white sx={{ fontSize: '1.1rem' }} bold>Shortest Deployment</Line>
+          <Line white sx={{ fontSize: '1.0rem' }} semibold>Shortest Deployment</Line>
           <DeploymentCard
             deployment={shortestDeployment}
             type="Shortest"
