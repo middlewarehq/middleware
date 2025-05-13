@@ -105,6 +105,7 @@ const CliUi = () => {
     if (appState === AppStates.PREREQ_CHECK) {
       exit();
     }
+    preCheck.resetContainerCache();
     await dispatch(appSlice.actions.setAppState(AppStates.TEARDOWN));
     setTimeout(() => {
       if (!processRef.current) return;
@@ -261,6 +262,7 @@ const CliUi = () => {
           watch_logs.includes(rdyMsg)
         )
       ) {
+        await preCheck.checkContainerStatus();
         await dispatch(
           appSlice.actions.addLog({
             type: 'default',
@@ -306,13 +308,26 @@ const CliUi = () => {
     return () => {
       globalThis.process.off('exit', handleExit);
     };
-  }, [dispatch, exit, handleExit, runCommandOpts, retryToggle, appState]);
+  }, [
+    dispatch,
+    exit,
+    handleExit,
+    runCommandOpts,
+    retryToggle,
+    appState,
+    preCheck
+  ]);
 
   useEffect(() => {
     preCheck.callDaemonCheck();
     preCheck.callPortsCheck();
     preCheck.callFilesCheck();
-  }, []);
+  }, [
+    preCheck.callDaemonCheck,
+    preCheck.callPortsCheck,
+    preCheck.callFilesCheck,
+    preCheck
+  ]);
 
   const logsStreamNodes = useMemo(
     () => logsStream.map((l) => transformLogToNode(l)),
@@ -355,6 +370,73 @@ const CliUi = () => {
       Object.values(preCheck).includes(PreCheckStates.FAILED),
     [preCheck]
   );
+
+  useEffect(() => {
+    if (
+      appState === AppStates.INIT &&
+      preCheck.daemon === PreCheckStates.SUCCESS &&
+      preCheck.ports === PreCheckStates.SUCCESS &&
+      preCheck.dockerFile === PreCheckStates.SUCCESS &&
+      preCheck.composeFile === PreCheckStates.SUCCESS
+    ) {
+      if (preCheck.containerStatus === PreCheckStates.SUCCESS) {
+        if (preCheck.appOnlyRestart) {
+          dispatch(appSlice.actions.setAppState(AppStates.APP_RESTART));
+        } else {
+          dispatch(appSlice.actions.setAppState(AppStates.DOCKER_READY));
+        }
+      } else {
+        const checkRebuild = async () => {
+          const needsRebuild = await preCheck.checkRebuildNeeded();
+          if (needsRebuild) {
+            console.log('Containers need rebuilding');
+          }
+        };
+        checkRebuild();
+      }
+    }
+  }, [appState, preCheck, dispatch]);
+
+  useEffect(() => {
+    return () => {
+      preCheck.resetContainerCache();
+    };
+  }, [preCheck]);
+
+  useEffect(() => {
+    if (appState === AppStates.APP_RESTART) {
+      const restartApp = async () => {
+        try {
+          await runCommand(
+            'docker',
+            ['exec', '-it', 'middleware-dev', '/app/scripts/restart-app.sh'],
+            runCommandOpts
+          ).promise;
+
+          dispatch(
+            appSlice.actions.addLog({
+              type: 'default',
+              line: '🚀 Application restarted 🚀',
+              time: new Date()
+            })
+          );
+
+          dispatch(appSlice.actions.setAppState(AppStates.DOCKER_READY));
+        } catch (err) {
+          dispatch(
+            appSlice.actions.addLog({
+              type: 'error',
+              line: `Application restart failed: ${err}`,
+              time: new Date()
+            })
+          );
+          dispatch(appSlice.actions.setAppState(AppStates.INIT));
+        }
+      };
+
+      restartApp();
+    }
+  }, [appState, dispatch]);
 
   return (
     <>
@@ -425,6 +507,13 @@ const CliUi = () => {
                       property={PreCheckProperties.DOCKER_FILE}
                       errHelp={
                         'Dockerfile.dev not found in the root directory. Please ensure that the file exists with the given name.'
+                      }
+                    />
+                    <PreCheckDisplayElement
+                      value={preCheck.containerStatus}
+                      property={PreCheckProperties.CONTAINER_STATUS}
+                      errHelp={
+                        'Container is not running. It will be started during initialization.'
                       }
                     />
                   </Box>
@@ -582,6 +671,20 @@ const CliUi = () => {
                   <Text color="green" inverse bold>
                     {terminatedText}
                   </Text>
+                );
+              case AppStates.APP_RESTART:
+                return (
+                  <Box flexDirection="column">
+                    <Text color="blue">
+                      Status: Restarting application only... [Press X to abort]{' '}
+                      <Text bold color="yellow"> 
+                        <Spinner type="material" />
+                      </Text>
+                    </Text>
+                    <Text dimColor>
+                      Optimized restart - avoiding full container rebuild.
+                    </Text>
+                  </Box>
                 );
               default:
                 return (
