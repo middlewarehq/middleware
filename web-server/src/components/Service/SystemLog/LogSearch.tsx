@@ -57,114 +57,111 @@ interface LogSearchProps {
   totalMatches: number;
 }
 
-const LogSearch = memo(({
-  onSearch,
-  onNavigate,
-  currentMatch,
-  totalMatches
-}: LogSearchProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
+const LogSearch = memo(
+  ({ onSearch, onNavigate, currentMatch, totalMatches }: LogSearchProps) => {
+    const [searchQuery, setSearchQuery] = useState('');
 
-  const debouncedSearch = useMemo(
-    () => debounce((query: string) => {
-      onSearch(query);
-    }, 300),
-    [onSearch]
-  );
+    const debouncedSearch = useMemo(
+      () =>
+        debounce((query: string) => {
+          onSearch(query);
+        }, 300),
+      [onSearch]
+    );
 
-  const handleSearchChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const query = event.target.value;
-      setSearchQuery(query);
-      debouncedSearch(query);
-    },
-    [debouncedSearch]
-  );
+    const handleSearchChange = useCallback(
+      (event: React.ChangeEvent<HTMLInputElement>) => {
+        const query = event.target.value;
+        setSearchQuery(query);
+        debouncedSearch(query);
+      },
+      [debouncedSearch]
+    );
 
-  const handleClear = useCallback(() => {
-    setSearchQuery('');
-    onSearch('');
-  }, [onSearch]);
+    const handleClear = useCallback(() => {
+      setSearchQuery('');
+      onSearch('');
+    }, [onSearch]);
 
-  const handleNavigate = useCallback(
-    (direction: 'prev' | 'next') => {
-      if (direction === 'next') {
-        onNavigate('next');
-      } else {
-        onNavigate('prev');
-      }
-    },
-    [onNavigate]
-  );
+    const handleNavigate = useCallback(
+      (direction: 'prev' | 'next') => {
+        if (direction === 'next') {
+          onNavigate('next');
+        } else {
+          onNavigate('prev');
+        }
+      },
+      [onNavigate]
+    );
 
-  const showSearchControls = searchQuery && totalMatches > 0;
+    const showSearchControls = searchQuery && totalMatches > 0;
 
-  return (
-    <SearchContainer>
-      <StyledTextField
-        fullWidth
-        variant="outlined"
-        placeholder="Search logs..."
-        value={searchQuery}
-        onChange={handleSearchChange}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" />
-            </InputAdornment>
-          ),
-          endAdornment: !!searchQuery.length && (
-            <InputAdornment position="end">
-              <ClearIcon
-                sx={{ cursor: 'pointer' }}
-                onClick={handleClear}
-                color="action"
-              />
-            </InputAdornment>
-          )
-        }}
-      />
-      {showSearchControls && (
-        <MotionBox
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 20, opacity: 0 }}
-          transition={{
-            type: 'tween',
-            ease: 'easeOut',
-            duration: 0.3
+    return (
+      <SearchContainer>
+        <StyledTextField
+          fullWidth
+          variant="outlined"
+          placeholder="Search logs..."
+          value={searchQuery}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+            endAdornment: !!searchQuery.length && (
+              <InputAdornment position="end">
+                <ClearIcon
+                  sx={{ cursor: 'pointer' }}
+                  onClick={handleClear}
+                  color="action"
+                />
+              </InputAdornment>
+            )
           }}
-        >
-          <SearchControls>
-            <Button
-              size="small"
-              onClick={() => handleNavigate('prev')}
-              startIcon={<NavigateBefore />}
-              sx={{
-                minWidth: '20px',
-                padding: '4px 8px'
-              }}
-            />
-            <Typography variant="body2" color="text.secondary">
-              {currentMatch} of {totalMatches}
-            </Typography>
-            <Button
-              size="small"
-              onClick={() => handleNavigate('next')}
-              startIcon={<NavigateNext />}
-              sx={{
-                minWidth: '20px',
-                padding: '4px 8px'
-              }}
-            />
-          </SearchControls>
-        </MotionBox>
-      )}
-    </SearchContainer>
-  );
-});
+        />
+        {showSearchControls && (
+          <MotionBox
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 20, opacity: 0 }}
+            transition={{
+              type: 'tween',
+              ease: 'easeOut',
+              duration: 0.3
+            }}
+          >
+            <SearchControls>
+              <Button
+                size="small"
+                onClick={() => handleNavigate('prev')}
+                startIcon={<NavigateBefore />}
+                sx={{
+                  minWidth: '20px',
+                  padding: '4px 8px'
+                }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {currentMatch} of {totalMatches}
+              </Typography>
+              <Button
+                size="small"
+                onClick={() => handleNavigate('next')}
+                startIcon={<NavigateNext />}
+                sx={{
+                  minWidth: '20px',
+                  padding: '4px 8px'
+                }}
+              />
+            </SearchControls>
+          </MotionBox>
+        )}
+      </SearchContainer>
+    );
+  }
+);
 
 LogSearch.displayName = 'LogSearch';
 
 export { LogSearch };
-

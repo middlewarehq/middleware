@@ -1,12 +1,12 @@
 import { ExpandCircleDown } from '@mui/icons-material';
 import { Button, CircularProgress } from '@mui/material';
-import { 
-  useEffect, 
-  useRef, 
-  useCallback, 
-  useReducer, 
-  memo, 
-  useState 
+import {
+  useEffect,
+  useRef,
+  useCallback,
+  useReducer,
+  memo,
+  useState
 } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -79,7 +79,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   const [searchState, dispatch] = useReducer(searchReducer, initialSearchState);
   const isInitialLoad = useRef(true);
   const [currentMatchLineIndex, setCurrentMatchLineIndex] = useState<
-  number | null
+    number | null
   >(null);
 
   useEffect(() => {
@@ -90,19 +90,17 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     }
 
     dispatch({ type: 'SET_SEARCHING', payload: true });
-    
+
     const timer = setTimeout(() => {
       requestAnimationFrame(() => {
         const elements = Array.from(
-          containerRef.current?.querySelectorAll(
-            '.mhq--highlighted-log'
-          ) ?? []
+          containerRef.current?.querySelectorAll('.mhq--highlighted-log') ?? []
         ) as HTMLElement[];
-        
+
         dispatch({ type: 'SET_MATCHES', payload: elements });
       });
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, [searchState.query]);
 
@@ -123,9 +121,9 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     (direction: 'prev' | 'next') => {
       const { elements, selectedIndex, isSearching } = searchState;
       const total = elements.length;
-      
+
       if (total === 0 || isSearching || selectedIndex === null) return;
-      
+
       if (direction === 'next') {
         const newIndex = (selectedIndex + 1) % total;
         dispatch({ type: 'SET_SELECTED_INDEX', payload: newIndex });
@@ -133,7 +131,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
         const newIndex = selectedIndex > 0 ? selectedIndex - 1 : total - 1;
         dispatch({ type: 'SET_SELECTED_INDEX', payload: newIndex });
       }
-    }, 
+    },
     [searchState]
   );
 
@@ -143,22 +141,22 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
       setCurrentMatchLineIndex(null);
       return;
     }
-    
+
     const element = elements[selectedIndex];
     if (!element) return;
-    
+
     let parentElement: HTMLElement | null = element;
     while (parentElement && !parentElement.hasAttribute('data-log-index')) {
       parentElement = parentElement.parentElement;
     }
-    
+
     if (parentElement) {
       const lineIndex = parseInt(
-        parentElement.getAttribute('data-log-index') || '-1', 
+        parentElement.getAttribute('data-log-index') || '-1',
         10
       );
       setCurrentMatchLineIndex(lineIndex);
-      
+
       requestAnimationFrame(() => {
         element.scrollIntoView({
           behavior: 'smooth',
@@ -166,13 +164,13 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
         });
       });
     }
-  }, [searchState.selectedIndex, searchState.elements]);
+  }, [searchState.selectedIndex, searchState.elements, searchState]);
 
   useEffect(() => {
     if (
-      !loading && 
-      logs.length && 
-      containerRef.current && 
+      !loading &&
+      logs.length &&
+      containerRef.current &&
       isInitialLoad.current
     ) {
       isInitialLoad.current = false;
@@ -190,14 +188,14 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    
+
     const handleScroll = () => {
-      const isScrolledUp = 
-        container.scrollTop < 
+      const isScrolledUp =
+        container.scrollTop <
         container.scrollHeight - container.clientHeight - 100;
       showScrollDownButton.set(isScrolledUp);
     };
-    
+
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
   }, [showScrollDownButton]);
@@ -206,20 +204,20 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     return logs.map((log, index) => {
       const parsedLog = parseLogLine(log);
       const isCurrentMatch = index === currentMatchLineIndex;
-      
+
       return (
         <div key={index} data-log-index={index}>
           {!parsedLog ? (
-            <PlainLog 
-              log={log} 
-              index={index} 
+            <PlainLog
+              log={log}
+              index={index}
               searchQuery={searchState.query}
               isCurrentMatch={isCurrentMatch}
             />
           ) : (
-            <FormattedLog 
-              log={parsedLog} 
-              index={index} 
+            <FormattedLog
+              log={parsedLog}
+              index={index}
               searchQuery={searchState.query}
               isCurrentMatch={isCurrentMatch}
             />
@@ -232,10 +230,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   return (
     <ErrorBoundary
       FallbackComponent={({ error }: { error: Error }) => (
-        <SystemLogsErrorFallback
-          error={error}
-          serviceName={serviceName}
-        />
+        <SystemLogsErrorFallback error={error} serviceName={serviceName} />
       )}
     >
       <FlexBox col>
@@ -251,7 +246,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
             <Line>Loading...</Line>
           </FlexBox>
         ) : (
-          <FlexBox 
+          <FlexBox
             ref={containerRef}
             col
             sx={{ overflowY: 'auto', maxHeight: '100%' }}

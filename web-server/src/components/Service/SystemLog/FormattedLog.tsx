@@ -31,7 +31,7 @@ type SearchHighlightTextProps = {
 export const SearchHighlightText = ({
   text,
   searchQuery,
-  isCurrentMatch,
+  isCurrentMatch
 }: SearchHighlightTextProps) => {
   if (!searchQuery) return <>{text}</>;
 
@@ -61,10 +61,10 @@ export const SearchHighlightText = ({
   );
 };
 
-export const FormattedLog = ({ 
-  log, 
-  searchQuery, 
-  isCurrentMatch 
+export const FormattedLog = ({
+  log,
+  searchQuery,
+  isCurrentMatch
 }: FormattedLogProps) => {
   const theme = useTheme();
   const getLevelColor = useCallback(
@@ -98,33 +98,33 @@ export const FormattedLog = ({
     <Line mono marginBottom={1}>
       <Line component="span" color="info">
         <SearchHighlightText
-         text={timestamp} 
-         searchQuery={searchQuery} 
-         isCurrentMatch={isCurrentMatch} 
+          text={timestamp}
+          searchQuery={searchQuery}
+          isCurrentMatch={isCurrentMatch}
         />
       </Line>{' '}
       {ip && (
         <Line component="span" color="primary">
           <SearchHighlightText
-           text={ip} 
-           searchQuery={searchQuery} 
-           isCurrentMatch={isCurrentMatch} 
+            text={ip}
+            searchQuery={searchQuery}
+            isCurrentMatch={isCurrentMatch}
           />{' '}
         </Line>
       )}
       <Line component="span" color={getLevelColor(logLevel)}>
         [
-        <SearchHighlightText 
-          text={logLevel} 
-          searchQuery={searchQuery} 
-          isCurrentMatch={isCurrentMatch} 
+        <SearchHighlightText
+          text={logLevel}
+          searchQuery={searchQuery}
+          isCurrentMatch={isCurrentMatch}
         />
         ]
       </Line>{' '}
       <SearchHighlightText
         text={message}
         searchQuery={searchQuery}
-        isCurrentMatch={isCurrentMatch} 
+        isCurrentMatch={isCurrentMatch}
       />
     </Line>
   );
