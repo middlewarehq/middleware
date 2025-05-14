@@ -135,6 +135,23 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     [searchState]
   );
 
+  const handleLogSelect = useCallback(
+    (lineIndex: number) => {
+      setCurrentMatchLineIndex(lineIndex);
+
+      requestAnimationFrame(() => {
+        const elements = searchState.elements;
+        if (elements[searchState.selectedIndex || 0]) {
+          elements[searchState.selectedIndex || 0].scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      });
+    },
+    [searchState.elements, searchState.selectedIndex]
+  );
+
   useEffect(() => {
     const { selectedIndex, elements } = searchState;
     if (selectedIndex === null || !elements.length) {
@@ -145,26 +162,15 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     const element = elements[selectedIndex];
     if (!element) return;
 
-    let parentElement: HTMLElement | null = element;
-    while (parentElement && !parentElement.hasAttribute('data-log-index')) {
-      parentElement = parentElement.parentElement;
+    const lineIndex = parseInt(
+      element.closest('[data-log-index]')?.getAttribute('data-log-index') ||
+        '-1',
+      10
+    );
+    if (lineIndex >= 0) {
+      handleLogSelect(lineIndex);
     }
-
-    if (parentElement) {
-      const lineIndex = parseInt(
-        parentElement.getAttribute('data-log-index') || '-1',
-        10
-      );
-      setCurrentMatchLineIndex(lineIndex);
-
-      requestAnimationFrame(() => {
-        element.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
-      });
-    }
-  }, [searchState.selectedIndex, searchState.elements, searchState]);
+  }, [searchState.selectedIndex, searchState.elements, handleLogSelect]);
 
   useEffect(() => {
     if (
@@ -206,7 +212,11 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
       const isCurrentMatch = index === currentMatchLineIndex;
 
       return (
-        <div key={index} data-log-index={index}>
+        <div
+          key={index}
+          data-log-index={index}
+          onClick={() => handleLogSelect(index)}
+        >
           {!parsedLog ? (
             <PlainLog
               log={log}
@@ -225,7 +235,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
         </div>
       );
     });
-  }, [logs, searchState.query, currentMatchLineIndex]);
+  }, [logs, searchState.query, currentMatchLineIndex, handleLogSelect]);
 
   return (
     <ErrorBoundary
