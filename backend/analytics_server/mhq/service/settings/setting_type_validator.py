@@ -19,6 +19,9 @@ def settings_type_validator(setting_type: str):
     if setting_type == SettingType.DEFAULT_SYNC_DAYS_SETTING.value:
         return SettingType.DEFAULT_SYNC_DAYS_SETTING
 
+    if setting_type == SettingType.INCIDENT_PRS_SETTING.value:
+        return SettingType.INCIDENT_PRS_SETTING
+
     # ADD NEW VALIDATOR HERE
 
     raise BadRequest(f"Invalid Setting Type: {setting_type}")
