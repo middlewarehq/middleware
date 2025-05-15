@@ -11,7 +11,7 @@ ARG MERGE_COMMIT_SHA
 
 
 # Build the backend
-FROM python:3.9-slim as backend-build
+FROM python:3.9-slim-bookworm as backend-build
 
 # Prevents Python from writing pyc files.
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && /opt/venv/bin/pip install -r requirements.txt
 
 # Final image
-FROM python:3.9-slim
+FROM python:3.9-slim-bookworm
 
 ARG BUILD_DATE
 ARG MERGE_COMMIT_SHA
