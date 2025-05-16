@@ -3,7 +3,7 @@ from mhq.store.models.incidents import IncidentFilter
 from mhq.store.models.settings.configuration_settings import SettingType
 from mhq.service.settings.configuration_settings import (
     IncidentTypesSetting,
-    IncidentPrsSetting,
+    IncidentPRsSetting,
 )
 from mhq.store.models.incidents.enums import IncidentType
 from mhq.store.models.settings import EntityType
@@ -57,12 +57,9 @@ def test_get_incident_types_when_types_setting_is_empty():
 
 def test_get_incident_types_when_only_prs_setting_present_returns_none():
     setting_types = [SettingType.INCIDENT_PRS_SETTING]
-    incident_prs_setting = IncidentPrsSetting(
+    incident_prs_setting = IncidentPRsSetting(
         include_revert_prs=True,
-        title_filters=[],
-        head_branch_filters=[],
-        pr_mapping_field="",
-        pr_mapping_pattern="",
+        filters=[],
     )
     setting_type_to_settings_map = {
         SettingType.INCIDENT_PRS_SETTING: incident_prs_setting
@@ -84,12 +81,9 @@ def test_get_incident_types_when_both_types_and_prs_settings_present_and_include
         SettingType.INCIDENT_TYPES_SETTING,
         SettingType.INCIDENT_PRS_SETTING,
     ]
-    incident_prs_setting = IncidentPrsSetting(
+    incident_prs_setting = IncidentPRsSetting(
         include_revert_prs=True,
-        title_filters=[],
-        head_branch_filters=[],
-        pr_mapping_field="",
-        pr_mapping_pattern="",
+        filters=[],
     )
     setting_type_to_settings_map = {
         SettingType.INCIDENT_TYPES_SETTING: IncidentTypesSetting(
@@ -116,12 +110,9 @@ def test_get_incident_types_when_both_settings_present_and_not_includes_revert_p
         SettingType.INCIDENT_TYPES_SETTING,
         SettingType.INCIDENT_PRS_SETTING,
     ]
-    incident_prs_setting = IncidentPrsSetting(
+    incident_prs_setting = IncidentPRsSetting(
         include_revert_prs=False,
-        title_filters=[],
-        head_branch_filters=[],
-        pr_mapping_field="",
-        pr_mapping_pattern="",
+        filters=[],
     )
     setting_type_to_settings_map = {
         SettingType.INCIDENT_TYPES_SETTING: IncidentTypesSetting(
