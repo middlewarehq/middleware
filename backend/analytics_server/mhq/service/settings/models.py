@@ -46,6 +46,18 @@ class DefaultSyncDaysSetting(BaseSetting):
     default_sync_days: int
 
 
+@dataclass
+class IncidentPRFilter:
+    field: str
+    value: str
+
+
+@dataclass
+class IncidentPRsSetting(BaseSetting):
+    include_revert_prs: bool
+    filters: List[IncidentPRFilter]
+
+
 # ADD NEW SETTING CLASS HERE
 
 # Sample Future Settings

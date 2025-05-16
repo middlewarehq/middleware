@@ -5,6 +5,7 @@ from mhq.service.settings.models import (
     ExcludedPRsSetting,
     IncidentTypesSetting,
     IncidentSourcesSetting,
+    IncidentPRsSetting,
 )
 from mhq.store.models import EntityType
 
@@ -53,6 +54,12 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
         if isinstance(config_settings.specific_settings, DefaultSyncDaysSetting):
             response["setting"] = {
                 "default_sync_days": config_settings.specific_settings.default_sync_days
+            }
+
+        if isinstance(config_settings.specific_settings, IncidentPRsSetting):
+            response["setting"] = {
+                "include_revert_prs": config_settings.specific_settings.include_revert_prs,
+                "filters": config_settings.specific_settings.filters,
             }
 
         # ADD NEW API ADAPTER HERE
