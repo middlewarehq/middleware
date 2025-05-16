@@ -357,7 +357,7 @@ export const DeploymentInsightsOverlay = () => {
             ) : (
               <>
                 <FlexBox col flex1>
-                  <Divider sx={{ mt: 3 }} />
+                <Divider sx={{ mt: '10px' }} />
                   <FlexBox gap1 flex1 fullWidth>
                     <FlexBox col>
                       <FlexBox p={1} pb={0} gap={1 / 2}>
