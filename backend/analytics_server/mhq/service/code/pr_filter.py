@@ -1,7 +1,7 @@
 from typing import List, Dict, Any
 
 from mhq.service.settings.configuration_settings import get_settings_service
-from mhq.service.settings.models import ExcludedPRsSetting
+from mhq.service.settings.models import ExcludedPRsSetting, IncidentPRsSetting
 from mhq.store.models.code import PRFilter
 from mhq.store.models.settings.configuration_settings import SettingType
 from mhq.store.models.settings.enums import EntityType
@@ -103,6 +103,8 @@ class ConfigurationsPRFilterProcessor:
             )
             if setting_type == SettingType.EXCLUDED_PRS_SETTING:
                 self._apply_excluded_pr_ids_setting(setting=setting)
+            if setting_type == SettingType.INCIDENT_PRS_SETTING:
+                self._apply_incident_prs_setting(setting=setting)
 
         return self.pr_filter
 
@@ -111,3 +113,8 @@ class ConfigurationsPRFilterProcessor:
         self.pr_filter.excluded_pr_ids = (
             self.pr_filter.excluded_pr_ids or []
         ) + setting.excluded_pr_ids
+
+    def _apply_incident_prs_setting(self, setting: IncidentPRsSetting):
+        self.pr_filter.incident_pr_filters = (
+            self.pr_filter.incident_pr_filters or []
+        ) + setting.filters
