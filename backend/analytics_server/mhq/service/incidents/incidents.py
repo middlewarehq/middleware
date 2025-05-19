@@ -62,8 +62,9 @@ class IncidentService:
         resolved_pr_incidents = self.get_team_pr_incidents(team_id, interval, pr_filter)
 
         total_incidents = resolved_incidents + resolved_pr_incidents
+        total_incidents = sorted(total_incidents, key=lambda x: x.creation_date)
 
-        return {incident.key: incident for incident in total_incidents}.values()
+        return list({incident.key: incident for incident in total_incidents}.values())
 
     def get_team_incidents(
         self, team_id: str, interval: Interval, pr_filter: PRFilter
@@ -85,78 +86,88 @@ class IncidentService:
         )
 
         total_incidents = incidents + pr_incidents
+        total_incidents = sorted(total_incidents, key=lambda x: x.creation_date)
 
-        return {incident.key: incident for incident in total_incidents}.values()
+        return list({incident.key: incident for incident in total_incidents}.values())
 
     def get_team_pr_incidents(
         self, team_id: str, interval: Interval, pr_filter: PRFilter
     ) -> List[Incident]:
 
-        incident_prs_setting: IncidentPRsSetting = self._settings_service.get_settings(
+        settings = self._settings_service.get_settings(
             setting_type=SettingType.INCIDENT_PRS_SETTING,
             entity_type=EntityType.TEAM,
             entity_id=team_id,
-        ).specific_settings
+        )
 
-        if not incident_prs_setting or not incident_prs_setting.filters:
+        if not settings:
+            return []
+
+        incident_prs_setting: IncidentPRsSetting = settings.specific_settings
+
+        if not incident_prs_setting.filters:
             return []
 
         team_repo_ids = list(
             tr.org_repo_id
             for tr in self._code_repo_service.get_active_team_repos_by_team_id(team_id)
         )
-
-        prs = self._code_repo_service.get_prs_merged_in_interval(
-            team_repo_ids, interval, pr_filter
-        )
-
         resolution_prs_interval = Interval(
             from_time=interval.from_time, to_time=time_now()
         )
-        pr_filter: PRFilter = apply_pr_filter(
+        resolution_prs_filter: PRFilter = apply_pr_filter(
             asdict(pr_filter),
             EntityType.TEAM,
             team_id,
             [SettingType.EXCLUDED_PRS_SETTING, SettingType.INCIDENT_PRS_SETTING],
         )
+
         resolution_prs = self._code_repo_service.get_prs_merged_in_interval(
-            team_repo_ids, resolution_prs_interval, pr_filter
+            team_repo_ids, resolution_prs_interval, resolution_prs_filter
         )
 
+        pr_numbers: List[str] = []
         pr_incidents: List[Incident] = []
         repo_id_to_pr_number_to_pr_map: Dict[str, Dict[str, PullRequest]] = {}
 
-        for pr in prs:
-            if str(pr.repo_id) not in repo_id_to_pr_number_to_pr_map:
-                repo_id_to_pr_number_to_pr_map[str(pr.repo_id)] = {}
-            repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][pr.number] = pr
-
         for pr in resolution_prs:
             for filter in incident_prs_setting.filters:
-                pr_number = self._extract_pr_number_from_regex(
+                incident_pr_number = self._extract_pr_number_from_regex(
                     getattr(pr, filter["field"]), filter["value"]
                 )
-                if (
-                    pr_number
-                    and str(pr.repo_id) in repo_id_to_pr_number_to_pr_map
-                    and pr_number in repo_id_to_pr_number_to_pr_map[str(pr.repo_id)]
-                ):
-                    original_pr = repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][
-                        pr_number
-                    ]
-                    adapted_incident_pr = IncidentPRAdapter.adapt(original_pr, pr)
-                    pr_incidents.append(adapted_incident_pr)
-                    repo_id_to_pr_number_to_pr_map[str(pr.repo_id)].pop(
-                        original_pr.number
-                    )
+
+                if incident_pr_number:
+                    pr_numbers.append(incident_pr_number)
+                    if str(pr.repo_id) not in repo_id_to_pr_number_to_pr_map:
+                        repo_id_to_pr_number_to_pr_map[str(pr.repo_id)] = {}
+                    repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][
+                        incident_pr_number
+                    ] = pr
                     break
+
+        prs = self._code_repo_service.get_prs_merged_in_interval_by_numbers(
+            list(repo_id_to_pr_number_to_pr_map.keys()), interval, pr_numbers, pr_filter
+        )
+
+        for pr in prs:
+            if (
+                str(pr.repo_id) not in repo_id_to_pr_number_to_pr_map
+                or pr.number not in repo_id_to_pr_number_to_pr_map[str(pr.repo_id)]
+            ):
+                continue
+
+            resolution_pr = repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][pr.number]
+            adapted_pr_incident = IncidentPRAdapter.adapt(pr, resolution_pr)
+            pr_incidents.append(adapted_pr_incident)
 
         return pr_incidents
 
     def _extract_pr_number_from_regex(
         self, text: str, regex_pattern: str
     ) -> Optional[str]:
-        if regex_pattern and check_regex(regex_pattern):
+        if not text or not regex_pattern:
+            return None
+        if check_regex(regex_pattern):
             match = re.search(regex_pattern, text)
             if match and len(match.groups()) >= 1:
                 return match.group(1)

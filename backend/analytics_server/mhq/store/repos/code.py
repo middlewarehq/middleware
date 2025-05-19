@@ -308,6 +308,25 @@ class CodeRepoService:
         return query.all()
 
     @rollback_on_exc
+    def get_prs_merged_in_interval_by_numbers(
+        self,
+        repo_ids: List[str],
+        interval: Interval,
+        numbers: List[str],
+        pr_filter: PRFilter = None,
+    ) -> List[PullRequest]:
+        query = self._db.session.query(PullRequest).options(defer(PullRequest.data))
+
+        query = self._filter_prs_by_repo_ids(query, repo_ids)
+        query = self._filter_prs_merged_in_interval(query, interval)
+        query = self._filter_prs(query, pr_filter)
+        query = query.filter(PullRequest.number.in_(numbers))
+
+        query = query.order_by(PullRequest.state_changed_at.asc())
+
+        return query.all()
+
+    @rollback_on_exc
     def get_pull_request_by_id(self, pr_id: str) -> PullRequest:
         return (
             self._db.session.query(PullRequest)
