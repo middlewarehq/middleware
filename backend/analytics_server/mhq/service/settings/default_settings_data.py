@@ -31,7 +31,7 @@ def get_default_setting_data(setting_type: SettingType):
 
     if setting_type == SettingType.INCIDENT_PRS_SETTING:
         return {
-            "include_revert_prs": False,
+            "include_revert_prs": True,
             "filters": [],
         }
 
