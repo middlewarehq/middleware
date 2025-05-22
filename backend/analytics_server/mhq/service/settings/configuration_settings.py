@@ -69,7 +69,7 @@ class SettingsService:
 
     def _adapt_incident_prs_setting_from_setting_data(self, data: Dict[str, any]):
         return IncidentPRsSetting(
-            include_revert_prs=data.get("include_revert_prs", False),
+            include_revert_prs=data.get("include_revert_prs", True),
             filters=data.get("filters", []),
         )
 
@@ -194,7 +194,7 @@ class SettingsService:
 
     def _adapt_incident_prs_setting_from_json(self, data: Dict[str, any]):
         return IncidentPRsSetting(
-            include_revert_prs=data.get("include_revert_prs", False),
+            include_revert_prs=data.get("include_revert_prs", True),
             filters=data.get("filters", []),
         )
 
