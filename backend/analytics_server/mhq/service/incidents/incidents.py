@@ -28,7 +28,7 @@ from mhq.service.settings.configuration_settings import (
     get_settings_service,
 )
 from mhq.store.repos.incidents import IncidentsRepoService
-from mhq.service.incidents.models.adapter import IncidentPRAdapter
+from mhq.service.incidents.models.adapter import adaptIncidentPR
 from mhq.service.code.pr_filter import apply_pr_filter
 from dataclasses import asdict
 
@@ -116,19 +116,26 @@ class IncidentService:
             from_time=interval.from_time, to_time=time_now()
         )
         resolution_prs_filter: PRFilter = apply_pr_filter(
-            asdict(pr_filter),
-            EntityType.TEAM,
-            team_id,
-            [SettingType.EXCLUDED_PRS_SETTING, SettingType.INCIDENT_PRS_SETTING],
+            pr_filter=asdict(pr_filter),
+            entity_type=EntityType.TEAM,
+            entity_id=team_id,
+            setting_types=[
+                SettingType.EXCLUDED_PRS_SETTING,
+                SettingType.INCIDENT_PRS_SETTING,
+            ],
         )
 
         resolution_prs = self._code_repo_service.get_prs_merged_in_interval(
-            team_repo_ids, resolution_prs_interval, resolution_prs_filter
+            repo_ids=team_repo_ids,
+            interval=resolution_prs_interval,
+            pr_filter=resolution_prs_filter,
         )
 
         pr_numbers: List[str] = []
         pr_incidents: List[Incident] = []
-        repo_id_to_pr_number_to_pr_map: Dict[str, Dict[str, PullRequest]] = {}
+        repo_id_to_pr_number_to_pr_map: Dict[str, Dict[str, PullRequest]] = defaultdict(
+            dict
+        )
 
         for pr in resolution_prs:
             for filter in incident_prs_setting.filters:
@@ -138,26 +145,24 @@ class IncidentService:
 
                 if incident_pr_number:
                     pr_numbers.append(incident_pr_number)
-                    if str(pr.repo_id) not in repo_id_to_pr_number_to_pr_map:
-                        repo_id_to_pr_number_to_pr_map[str(pr.repo_id)] = {}
                     repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][
                         incident_pr_number
                     ] = pr
                     break
 
         prs = self._code_repo_service.get_prs_merged_in_interval_by_numbers(
-            list(repo_id_to_pr_number_to_pr_map.keys()), interval, pr_numbers, pr_filter
+            repo_ids=list(repo_id_to_pr_number_to_pr_map.keys()),
+            interval=interval,
+            numbers=pr_numbers,
+            pr_filter=pr_filter,
         )
 
         for pr in prs:
-            if (
-                str(pr.repo_id) not in repo_id_to_pr_number_to_pr_map
-                or pr.number not in repo_id_to_pr_number_to_pr_map[str(pr.repo_id)]
-            ):
+            if pr.number not in repo_id_to_pr_number_to_pr_map[str(pr.repo_id)]:
                 continue
 
             resolution_pr = repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][pr.number]
-            adapted_pr_incident = IncidentPRAdapter.adapt(pr, resolution_pr)
+            adapted_pr_incident = adaptIncidentPR(pr, resolution_pr)
             pr_incidents.append(adapted_pr_incident)
 
         return pr_incidents
