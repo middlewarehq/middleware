@@ -16,7 +16,7 @@ fourth_week_2024 = datetime(2024, 1, 22, 0, 0, 0, tzinfo=pytz.UTC)
 
 def test_get_incidents_mean_time_to_recovery_for_no_incidents():
 
-    incident_service = IncidentService(None, None)
+    incident_service = IncidentService(None, None, None)
     mean_time_to_recovery = incident_service._get_incidents_mean_time_to_recovery([])
 
     assert get_mean_time_to_recovery_metrics(None, 0) == mean_time_to_recovery
@@ -24,7 +24,7 @@ def test_get_incidents_mean_time_to_recovery_for_no_incidents():
 
 def test_get_incidents_mean_time_to_recovery_for_incidents():
 
-    incident_service = IncidentService(None, None)
+    incident_service = IncidentService(None, None, None)
 
     incident_1_resolution_time = timedelta(seconds=100)
     incident_1 = get_incident(

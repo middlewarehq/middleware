@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List
+from typing import List, TypedDict, Literal
 
 from mhq.store.models import EntityType
 from mhq.store.models.incidents.enums import IncidentSource, IncidentType
@@ -44,6 +44,17 @@ class IncidentSourcesSetting(BaseSetting):
 @dataclass
 class DefaultSyncDaysSetting(BaseSetting):
     default_sync_days: int
+
+
+class IncidentPRFilter(TypedDict):
+    field: Literal["title", "head_branch"]
+    value: str
+
+
+@dataclass
+class IncidentPRsSetting(BaseSetting):
+    include_revert_prs: bool
+    filters: List[IncidentPRFilter]
 
 
 # ADD NEW SETTING CLASS HERE

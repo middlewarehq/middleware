@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional as typeOptional
 
 from datetime import datetime
 
@@ -23,9 +23,9 @@ from mhq.api.resources.incident_resources import (
     adapt_mean_time_to_recovery_metrics,
 )
 from mhq.store.models.incidents import Incident
-
 from mhq.api.request_utils import coerce_workflow_filter, queryschema
 from mhq.service.query_validator import get_query_validator
+
 
 app = Blueprint("incidents", __name__)
 
@@ -36,19 +36,29 @@ app = Blueprint("incidents", __name__)
         {
             Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
             Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
         }
     ),
 )
-def get_resolved_incidents(team_id: str, from_time: datetime, to_time: datetime):
+def get_resolved_incidents(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: typeOptional[Dict] = None,
+):
 
     query_validator = get_query_validator()
     interval = query_validator.interval_validator(from_time, to_time)
     query_validator.team_validator(team_id)
 
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
     incident_service = get_incident_service()
 
     resolved_incidents: List[Incident] = incident_service.get_resolved_team_incidents(
-        team_id, interval
+        team_id, interval, pr_filter
     )
 
     # ToDo: Generate a user map
@@ -71,7 +81,7 @@ def get_deployments_with_related_incidents(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
-    pr_filter: dict = None,
+    pr_filter: typeOptional[Dict] = None,
     workflow_filter: WorkflowFilter = None,
 ):
     query_validator = get_query_validator()
@@ -90,7 +100,9 @@ def get_deployments_with_related_incidents(
 
     incident_service = get_incident_service()
 
-    incidents: List[Incident] = incident_service.get_team_incidents(team_id, interval)
+    incidents: List[Incident] = incident_service.get_team_incidents(
+        team_id, interval, pr_filter
+    )
 
     deployment_incidents_map: Dict[Deployment, List[Incident]] = (
         incident_service.get_deployment_incidents_map(deployments, incidents)
@@ -112,18 +124,28 @@ def get_deployments_with_related_incidents(
         {
             Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
             Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
         }
     ),
 )
-def get_team_mttr(team_id: str, from_time: datetime, to_time: datetime):
+def get_team_mttr(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: typeOptional[Dict] = None,
+):
     query_validator = get_query_validator()
     interval = query_validator.interval_validator(from_time, to_time)
     query_validator.team_validator(team_id)
 
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
     incident_service = get_incident_service()
 
     team_mean_time_to_recovery_metrics = (
-        incident_service.get_team_mean_time_to_recovery(team_id, interval)
+        incident_service.get_team_mean_time_to_recovery(team_id, interval, pr_filter)
     )
 
     return adapt_mean_time_to_recovery_metrics(team_mean_time_to_recovery_metrics)
@@ -135,18 +157,30 @@ def get_team_mttr(team_id: str, from_time: datetime, to_time: datetime):
         {
             Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
             Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
         }
     ),
 )
-def get_team_mttr_trends(team_id: str, from_time: datetime, to_time: datetime):
+def get_team_mttr_trends(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: typeOptional[Dict] = None,
+):
     query_validator = get_query_validator()
     interval = query_validator.interval_validator(from_time, to_time)
     query_validator.team_validator(team_id)
 
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
     incident_service = get_incident_service()
 
     weekly_mean_time_to_recovery_metrics = (
-        incident_service.get_team_mean_time_to_recovery_trends(team_id, interval)
+        incident_service.get_team_mean_time_to_recovery_trends(
+            team_id, interval, pr_filter
+        )
     )
 
     return {
@@ -172,7 +206,7 @@ def get_team_cfr(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
-    pr_filter: dict = None,
+    pr_filter: typeOptional[Dict] = None,
     workflow_filter: WorkflowFilter = None,
 ):
 
@@ -192,7 +226,9 @@ def get_team_cfr(
 
     incident_service = get_incident_service()
 
-    incidents: List[Incident] = incident_service.get_team_incidents(team_id, interval)
+    incidents: List[Incident] = incident_service.get_team_incidents(
+        team_id, interval, pr_filter
+    )
 
     team_change_failure_rate: ChangeFailureRateMetrics = (
         incident_service.get_change_failure_rate_metrics(deployments, incidents)
@@ -216,7 +252,7 @@ def get_team_cfr_trends(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
-    pr_filter: dict = None,
+    pr_filter: typeOptional[Dict] = None,
     workflow_filter: WorkflowFilter = None,
 ):
 
@@ -236,7 +272,9 @@ def get_team_cfr_trends(
 
     incident_service = get_incident_service()
 
-    incidents: List[Incident] = incident_service.get_team_incidents(team_id, interval)
+    incidents: List[Incident] = incident_service.get_team_incidents(
+        team_id, interval, pr_filter
+    )
 
     team_weekly_change_failure_rate: Dict[datetime, ChangeFailureRateMetrics] = (
         incident_service.get_weekly_change_failure_rate(

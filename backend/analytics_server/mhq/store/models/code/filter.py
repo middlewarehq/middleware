@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from sqlalchemy import and_, or_
 
@@ -13,6 +13,7 @@ class PRFilter:
     repo_filters: Dict[str, Dict] = None
     excluded_pr_ids: List[str] = None
     max_cycle_time: int = None
+    incident_pr_filters: Optional[List[Dict]] = None
 
     class RepoFilter:
         def __init__(self, repo_id: str, repo_filters=None):
@@ -85,11 +86,20 @@ class PRFilter:
                 PullRequest.cycle_time < self.max_cycle_time,
             )
 
+        def _incident_pr_filters_query():
+            if not self.incident_pr_filters:
+                return None
+            return or_(
+                getattr(PullRequest, filter["field"]).op("~")(filter["value"])
+                for filter in self.incident_pr_filters
+            )
+
         conditions = {
             "base_branches": _base_branch_query(),
             "repo_filters": _repo_filters_query(),
             "excluded_pr_ids": _excluded_pr_ids_query(),
             "max_cycle_time": _include_prs_below_max_cycle_time(),
+            "incident_pr_filters": _incident_pr_filters_query(),
         }
         return [
             conditions[x]

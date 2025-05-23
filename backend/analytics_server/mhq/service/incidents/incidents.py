@@ -1,6 +1,11 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
+import re
+from mhq.service.settings.models import IncidentPRsSetting
+from mhq.store.models.code.filter import PRFilter
+from mhq.store.models.code.pull_requests import PullRequest
+from mhq.store.repos.code import CodeRepoService
 from mhq.service.incidents.models.mean_time_to_recovery import (
     ChangeFailureRateMetrics,
     MeanTimeToRecoveryMetrics,
@@ -14,14 +19,18 @@ from mhq.utils.time import (
     fill_missing_week_buckets,
     generate_expanded_buckets,
     get_given_weeks_monday,
+    time_now,
 )
-
+from mhq.utils.regex import check_regex
 from mhq.store.models.incidents import Incident
 from mhq.service.settings.configuration_settings import (
     SettingsService,
     get_settings_service,
 )
 from mhq.store.repos.incidents import IncidentsRepoService
+from mhq.service.incidents.models.adapter import adaptIncidentPR
+from mhq.service.code.pr_filter import apply_pr_filter
+from dataclasses import asdict
 
 
 class IncidentService:
@@ -29,12 +38,14 @@ class IncidentService:
         self,
         incidents_repo_service: IncidentsRepoService,
         settings_service: SettingsService,
+        code_repo_service: CodeRepoService,
     ):
         self._incidents_repo_service = incidents_repo_service
         self._settings_service = settings_service
+        self._code_repo_service = code_repo_service
 
     def get_resolved_team_incidents(
-        self, team_id: str, interval: Interval
+        self, team_id: str, interval: Interval, pr_filter: PRFilter
     ) -> List[Incident]:
         incident_filter: IncidentFilter = apply_incident_filter(
             entity_type=EntityType.TEAM,
@@ -42,24 +53,130 @@ class IncidentService:
             setting_types=[
                 SettingType.INCIDENT_SETTING,
                 SettingType.INCIDENT_TYPES_SETTING,
+                SettingType.INCIDENT_PRS_SETTING,
             ],
         )
-        return self._incidents_repo_service.get_resolved_team_incidents(
+        resolved_incidents = self._incidents_repo_service.get_resolved_team_incidents(
             team_id, interval, incident_filter
         )
+        resolved_pr_incidents = self.get_team_pr_incidents(team_id, interval, pr_filter)
 
-    def get_team_incidents(self, team_id: str, interval: Interval) -> List[Incident]:
+        total_incidents = resolved_incidents + resolved_pr_incidents
+        total_incidents = sorted(total_incidents, key=lambda x: x.creation_date)
+
+        return list({incident.key: incident for incident in total_incidents}.values())
+
+    def get_team_incidents(
+        self, team_id: str, interval: Interval, pr_filter: PRFilter
+    ) -> List[Incident]:
         incident_filter: IncidentFilter = apply_incident_filter(
             entity_type=EntityType.TEAM,
             entity_id=team_id,
             setting_types=[
                 SettingType.INCIDENT_SETTING,
                 SettingType.INCIDENT_TYPES_SETTING,
+                SettingType.INCIDENT_PRS_SETTING,
             ],
         )
-        return self._incidents_repo_service.get_team_incidents(
+        incidents = self._incidents_repo_service.get_team_incidents(
             team_id, interval, incident_filter
         )
+        pr_incidents: List[Incident] = self.get_team_pr_incidents(
+            team_id, interval, pr_filter
+        )
+
+        total_incidents = incidents + pr_incidents
+        total_incidents = sorted(total_incidents, key=lambda x: x.creation_date)
+
+        return list({incident.key: incident for incident in total_incidents}.values())
+
+    def get_team_pr_incidents(
+        self, team_id: str, interval: Interval, pr_filter: PRFilter
+    ) -> List[Incident]:
+
+        settings = self._settings_service.get_settings(
+            setting_type=SettingType.INCIDENT_PRS_SETTING,
+            entity_type=EntityType.TEAM,
+            entity_id=team_id,
+        )
+
+        if not settings:
+            return []
+
+        incident_prs_setting: IncidentPRsSetting = settings.specific_settings
+
+        if not incident_prs_setting.filters:
+            return []
+
+        team_repo_ids = list(
+            tr.org_repo_id
+            for tr in self._code_repo_service.get_active_team_repos_by_team_id(team_id)
+        )
+        resolution_prs_interval = Interval(
+            from_time=interval.from_time, to_time=time_now()
+        )
+        resolution_prs_filter: PRFilter = apply_pr_filter(
+            pr_filter=asdict(pr_filter),
+            entity_type=EntityType.TEAM,
+            entity_id=team_id,
+            setting_types=[
+                SettingType.EXCLUDED_PRS_SETTING,
+                SettingType.INCIDENT_PRS_SETTING,
+            ],
+        )
+
+        resolution_prs = self._code_repo_service.get_prs_merged_in_interval(
+            repo_ids=team_repo_ids,
+            interval=resolution_prs_interval,
+            pr_filter=resolution_prs_filter,
+        )
+
+        pr_numbers: List[str] = []
+        pr_incidents: List[Incident] = []
+        repo_id_to_pr_number_to_pr_map: Dict[str, Dict[str, PullRequest]] = defaultdict(
+            dict
+        )
+
+        for pr in resolution_prs:
+            for filter in incident_prs_setting.filters:
+                incident_pr_number = self._extract_pr_number_from_regex(
+                    getattr(pr, filter["field"]), filter["value"]
+                )
+
+                if incident_pr_number:
+                    pr_numbers.append(incident_pr_number)
+                    repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][
+                        incident_pr_number
+                    ] = pr
+                    break
+
+        prs = self._code_repo_service.get_prs_merged_in_interval_by_numbers(
+            repo_ids=list(repo_id_to_pr_number_to_pr_map.keys()),
+            interval=interval,
+            numbers=pr_numbers,
+            pr_filter=pr_filter,
+        )
+
+        for pr in prs:
+            if pr.number not in repo_id_to_pr_number_to_pr_map[str(pr.repo_id)]:
+                continue
+
+            resolution_pr = repo_id_to_pr_number_to_pr_map[str(pr.repo_id)][pr.number]
+            adapted_pr_incident = adaptIncidentPR(pr, resolution_pr)
+            pr_incidents.append(adapted_pr_incident)
+
+        return pr_incidents
+
+    def _extract_pr_number_from_regex(
+        self, text: str, regex_pattern: str
+    ) -> Optional[str]:
+        if not text or not regex_pattern:
+            return None
+        if check_regex(regex_pattern):
+            match = re.search(regex_pattern, text)
+            if match and len(match.groups()) >= 1:
+                return match.group(1)
+        return None
 
     def get_deployment_incidents_map(
         self, deployments: List[Deployment], incidents: List[Incident]
@@ -100,18 +217,22 @@ class IncidentService:
         return deployment_incidents_map
 
     def get_team_mean_time_to_recovery(
-        self, team_id: str, interval: Interval
+        self, team_id: str, interval: Interval, pr_filter: PRFilter
     ) -> MeanTimeToRecoveryMetrics:
 
-        resolved_team_incidents = self.get_resolved_team_incidents(team_id, interval)
+        resolved_team_incidents = self.get_resolved_team_incidents(
+            team_id, interval, pr_filter
+        )
 
         return self._get_incidents_mean_time_to_recovery(resolved_team_incidents)
 
     def get_team_mean_time_to_recovery_trends(
-        self, team_id: str, interval: Interval
+        self, team_id: str, interval: Interval, pr_filter: PRFilter
     ) -> MeanTimeToRecoveryMetrics:
 
-        resolved_team_incidents = self.get_resolved_team_incidents(team_id, interval)
+        resolved_team_incidents = self.get_resolved_team_incidents(
+            team_id, interval, pr_filter
+        )
 
         return self._get_incidents_mean_time_to_recovery_trends(
             resolved_team_incidents, interval
@@ -218,4 +339,6 @@ class IncidentService:
 
 
 def get_incident_service():
-    return IncidentService(IncidentsRepoService(), get_settings_service())
+    return IncidentService(
+        IncidentsRepoService(), get_settings_service(), CodeRepoService()
+    )
