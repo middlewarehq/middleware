@@ -5,12 +5,13 @@ import {
 } from '@mui/icons-material';
 import { darken, useTheme } from '@mui/material';
 import { FC, useMemo } from 'react';
+
+import { Chart2, ChartSeries } from '@/components/Chart2';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { useSelector } from '@/store';
 import { Deployment } from '@/types/resources';
 import { percentageToMultiplier } from '@/utils/datatype';
-import { Chart2, ChartSeries } from '@/components/Chart2';
 
 const MEANINGFUL_CHANGE_THRESHOLD = 0.5;
 
@@ -22,11 +23,14 @@ interface TrendData {
 }
 
 const getDeploymentDurationInSeconds = (deployment: Deployment): number => {
-  if (deployment.id?.startsWith('WORKFLOW') && typeof deployment.run_duration === 'number' && deployment.run_duration > 0) {
+  if (
+    deployment.id?.startsWith('WORKFLOW') &&
+    typeof deployment.run_duration === 'number' &&
+    deployment.run_duration > 0
+  ) {
     return deployment.run_duration;
   }
-  
-  
+
   try {
     const conductedAt = new Date(deployment.conducted_at);
     const createdAt = new Date(deployment.created_at);
@@ -36,14 +40,14 @@ const getDeploymentDurationInSeconds = (deployment: Deployment): number => {
     const durationMs = conductedAt.getTime() - createdAt.getTime();
     return Math.max(0, Math.floor(durationMs / 1000));
   } catch (e) {
-    console.error("Error calculating deployment duration", e);
+    console.error('Error calculating deployment duration', e);
     return 0;
   }
 };
 
-const getDeploymentDurationInHours = (deployment: Deployment): number => {
+const getDeploymentDurationInMinutes = (deployment: Deployment): number => {
   const seconds = getDeploymentDurationInSeconds(deployment);
-  return +(seconds / 3600).toFixed(2);
+  return +(seconds / 60).toFixed(2);
 };
 
 export const calculateDeploymentTrends = (
@@ -60,13 +64,15 @@ export const calculateDeploymentTrends = (
   }
 
   // Filter valid deployments early
-  const validDeployments = deployments.filter(dep => {
-    const hasValidDates = dep.conducted_at && new Date(dep.conducted_at).toString() !== 'Invalid Date';
+  const validDeployments = deployments.filter((dep) => {
+    const hasValidDates =
+      dep.conducted_at &&
+      new Date(dep.conducted_at).toString() !== 'Invalid Date';
 
     if (dep.id.startsWith('WORKFLOW')) {
       return hasValidDates && typeof dep.run_duration === 'number';
     }
-    
+
     return hasValidDates;
   });
 
@@ -86,45 +92,53 @@ export const calculateDeploymentTrends = (
   const firstHalf = sortedDeployments.slice(0, midpoint);
   const secondHalf = sortedDeployments.slice(midpoint);
 
-
   // Calculate average duration for each half
   const getAvgDuration = (deps: Deployment[]) => {
-    const totalDuration = deps.reduce((sum, dep) => sum + getDeploymentDurationInSeconds(dep), 0);
+    const totalDuration = deps.reduce(
+      (sum, dep) => sum + getDeploymentDurationInSeconds(dep),
+      0
+    );
     return deps.length > 0 ? totalDuration / deps.length : 0;
   };
 
   const firstHalfAvgDuration = getAvgDuration(firstHalf);
   const secondHalfAvgDuration = getAvgDuration(secondHalf);
-  
-  const durationChange = firstHalfAvgDuration 
-    ? ((secondHalfAvgDuration - firstHalfAvgDuration) / firstHalfAvgDuration) * 100 
+
+  const durationChange = firstHalfAvgDuration
+    ? ((secondHalfAvgDuration - firstHalfAvgDuration) / firstHalfAvgDuration) *
+      100
     : 0;
-  
+
   const avgDuration = getAvgDuration(sortedDeployments);
 
   const getAvgPrCount = (deps: Deployment[]): number => {
     if (!deps || deps.length === 0) return 0;
-    
+
     // Filter deployments that have valid PR count data
-    const depsWithPrCount = deps.filter(dep => dep.pr_count >= 0);
-    
+    const depsWithPrCount = deps.filter((dep) => dep.pr_count >= 0);
+
+    console.log('prCount', deployments[0]);
+
     if (depsWithPrCount.length === 0) return 0;
-    
-    const deploymentsByDate = depsWithPrCount.reduce((acc, dep) => {
-      const date = new Date(dep.conducted_at).toLocaleDateString('en-US');
-      if (!acc[date]) {
-        acc[date] = { totalPRs: 0, count: 0 };
-      }
-      acc[date].totalPRs += dep.pr_count || 0;
-      acc[date].count++;
-      return acc;
-    }, {} as Record<string, { totalPRs: number, count: number }>);
-    
+
+    const deploymentsByDate = depsWithPrCount.reduce(
+      (acc, dep) => {
+        const date = new Date(dep.conducted_at).toLocaleDateString('en-US');
+        if (!acc[date]) {
+          acc[date] = { totalPRs: 0, count: 0 };
+        }
+        acc[date].totalPRs += dep.pr_count || 0;
+        acc[date].count++;
+        return acc;
+      },
+      {} as Record<string, { totalPRs: number; count: number }>
+    );
+
     const dailyTotals = Object.values(deploymentsByDate);
-    
-    const avgPrPerDay = dailyTotals.map(day => day.totalPRs / day.count);
+
+    const avgPrPerDay = dailyTotals.map((day) => day.totalPRs / day.count);
     const totalAvgPr = avgPrPerDay.reduce((sum, avg) => sum + avg, 0);
-    
+
     return avgPrPerDay.length > 0 ? totalAvgPr / avgPrPerDay.length : 0;
   };
 
@@ -139,7 +153,7 @@ export const calculateDeploymentTrends = (
 
   return {
     durationTrend: {
-      value: avgDuration,
+      value: avgDuration / 60,
       change: durationChange,
       state: determineTrendState(durationChange, false)
     },
@@ -176,22 +190,24 @@ export const DeploymentTrendPill: FC<{
 }> = ({ label, change, state }) => {
   const theme = useTheme();
 
-  const text = (
-    state === 'positive' ? 'Increasing ' + label : state === 'negative' ? 'Decreasing ' + label : 'Stable ' + label
-  )
+  const text =
+    state === 'positive'
+      ? 'Increasing ' + label
+      : state === 'negative'
+        ? 'Decreasing ' + label
+        : 'Stable ' + label;
 
   const useMultiplierFormat = Math.abs(change) > 100;
   const formattedChange = useMultiplierFormat
     ? `${percentageToMultiplier(change)}`
     : `${Math.round(change)}%`;
 
-    const color = darken (
-      state === 'positive'
-        ? theme.colors.success.main
-        : theme.colors.warning.main,
-      state === 'neutral' ? 0.5 : 0,
-        
-    )
+  const color = darken(
+    state === 'positive'
+      ? theme.colors.success.main
+      : theme.colors.warning.main,
+    state === 'neutral' ? 0.5 : 0
+  );
 
   const icon =
     state === 'positive' ? (
@@ -215,10 +231,8 @@ export const DeploymentTrendPill: FC<{
     >
       <Line bold>{text}</Line>
       <FlexBox alignCenter>
-        <FlexBox     color={color} alignCenter>
-          <Line bold>
-            {formattedChange}
-          </Line>
+        <FlexBox color={color} alignCenter>
+          <Line bold>{formattedChange}</Line>
           {icon}
         </FlexBox>
       </FlexBox>
@@ -241,14 +255,24 @@ export const DoraMetricsTrend: FC = () => {
   }, [allDeployments]);
 
   const chartData = useMemo(() => {
-    const validDeployments = allDeployments.filter(dep => {
-      const hasValidDates = dep.conducted_at && new Date(dep.conducted_at).toString() !== 'Invalid Date';
-      
+    const validDeployments = allDeployments.filter((dep) => {
+      const hasValidDates =
+        dep.conducted_at &&
+        new Date(dep.conducted_at).toString() !== 'Invalid Date';
+
       if (dep.id?.startsWith('WORKFLOW')) {
-        return hasValidDates && typeof dep.run_duration === 'number' && dep.run_duration >= 0;
+        return (
+          hasValidDates &&
+          typeof dep.run_duration === 'number' &&
+          dep.run_duration >= 0
+        );
       }
-      
-      return hasValidDates && dep.created_at && new Date(dep.created_at).toString() !== 'Invalid Date';
+
+      return (
+        hasValidDates &&
+        dep.created_at &&
+        new Date(dep.created_at).toString() !== 'Invalid Date'
+      );
     });
 
     if (!validDeployments.length) {
@@ -256,45 +280,57 @@ export const DoraMetricsTrend: FC = () => {
     }
 
     const sortedDeployments = [...validDeployments].sort(
-      (a, b) => new Date(a.conducted_at).getTime() - new Date(b.conducted_at).getTime()
+      (a, b) =>
+        new Date(a.conducted_at).getTime() - new Date(b.conducted_at).getTime()
     );
 
-    const deploymentsByDate = sortedDeployments.reduce((acc, deployment) => {
-      const date = new Date(deployment.conducted_at).toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short'
-      });
-      
-      if (!acc[date]) {
-        acc[date] = {
-          deployments: [],
-          totalDuration: 0,
-          totalPRs: 0,
-          prDeploymentCount: 0
-        };
-      }
-      
-      const durationInHours = getDeploymentDurationInHours(deployment);
-      acc[date].deployments.push(deployment);
-      acc[date].totalDuration += durationInHours;
-      
-      if (deployment.pr_count >= 0) {
-        acc[date].totalPRs += deployment.pr_count || 0;
-        acc[date].prDeploymentCount++;
-      }
-      
-      return acc;
-    }, {} as Record<string, { 
-      deployments: Deployment[], 
-      totalDuration: number, 
-      totalPRs: number,
-      prDeploymentCount: number 
-    }>);
+    const deploymentsByDate = sortedDeployments.reduce(
+      (acc, deployment) => {
+        const date = new Date(deployment.conducted_at).toLocaleDateString(
+          'en-US',
+          {
+            day: 'numeric',
+            month: 'short'
+          }
+        );
+
+        if (!acc[date]) {
+          acc[date] = {
+            deployments: [],
+            totalDuration: 0,
+            totalPRs: 0,
+            prDeploymentCount: 0
+          };
+        }
+
+        const durationInMinutes = getDeploymentDurationInMinutes(deployment);
+        acc[date].deployments.push(deployment);
+        acc[date].totalDuration += durationInMinutes;
+
+        if (deployment.pr_count >= 0) {
+          acc[date].totalPRs += deployment.pr_count || 0;
+          acc[date].prDeploymentCount++;
+        }
+
+        return acc;
+      },
+      {} as Record<
+        string,
+        {
+          deployments: Deployment[];
+          totalDuration: number;
+          totalPRs: number;
+          prDeploymentCount: number;
+        }
+      >
+    );
 
     const dates = Object.keys(deploymentsByDate);
-    const durations = dates.map(date => deploymentsByDate[date].totalDuration);
-    
-    const prCounts = dates.map(date => {
+    const durations = dates.map(
+      (date) => deploymentsByDate[date].totalDuration
+    );
+
+    const prCounts = dates.map((date) => {
       const { totalPRs, prDeploymentCount } = deploymentsByDate[date];
       return prDeploymentCount > 0 ? totalPRs / prDeploymentCount : 0;
     });
@@ -305,11 +341,11 @@ export const DoraMetricsTrend: FC = () => {
     const series: ChartSeries = [
       {
         type: 'bar',
-        label: 'Deployment Duration (hours)',
+        label: 'Deployment Duration (minutes)',
         data: durations,
         yAxisID: 'y',
-        borderColor: theme.colors.success.main,
-        order: 0
+        order: 0,
+        color: 'white'
       },
       {
         type: 'bar',
@@ -319,7 +355,8 @@ export const DoraMetricsTrend: FC = () => {
         backgroundColor: theme.colors.info.main,
         borderWidth: 2,
         tension: 0.4,
-        order: 1
+        order: 1,
+        color: 'white'
       }
     ];
 
@@ -361,12 +398,12 @@ export const DoraMetricsTrend: FC = () => {
                     position: 'left',
                     title: {
                       display: true,
-                      text: 'Duration (hours)',
+                      text: 'Duration (minutes)',
                       color: theme.colors.success.main
                     },
                     ticks: {
                       color: theme.colors.success.main,
-                      callback: (value) => value + 'h'
+                      callback: (value) => value + 'm'
                     },
                     max: chartData.yAxisMax,
                     grid: {
@@ -402,7 +439,7 @@ export const DoraMetricsTrend: FC = () => {
                         const label = context.dataset.label || '';
                         const value = context.parsed.y;
                         if (label.includes('Duration')) {
-                          return `${label}: ${value.toFixed(2)}h`;
+                          return `${label}: ${value.toFixed(2)}m`;
                         }
                         return `${label}: ${value.toFixed(0)}`;
                       }
