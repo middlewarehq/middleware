@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from sqlalchemy import and_, or_
 
@@ -13,7 +13,7 @@ class PRFilter:
     repo_filters: Dict[str, Dict] = None
     excluded_pr_ids: List[str] = None
     max_cycle_time: int = None
-    incident_pr_filters: List[Dict] = None
+    incident_pr_filters: Optional[List[Dict]] = None
 
     class RepoFilter:
         def __init__(self, repo_id: str, repo_filters=None):

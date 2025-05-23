@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional as typeOptional
 
 from datetime import datetime
 
@@ -41,7 +41,10 @@ app = Blueprint("incidents", __name__)
     ),
 )
 def get_resolved_incidents(
-    team_id: str, from_time: datetime, to_time: datetime, pr_filter: dict = None
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: typeOptional[Dict] = None,
 ):
 
     query_validator = get_query_validator()
@@ -78,7 +81,7 @@ def get_deployments_with_related_incidents(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
-    pr_filter: dict = None,
+    pr_filter: typeOptional[Dict] = None,
     workflow_filter: WorkflowFilter = None,
 ):
     query_validator = get_query_validator()
@@ -126,7 +129,10 @@ def get_deployments_with_related_incidents(
     ),
 )
 def get_team_mttr(
-    team_id: str, from_time: datetime, to_time: datetime, pr_filter: dict = None
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: typeOptional[Dict] = None,
 ):
     query_validator = get_query_validator()
     interval = query_validator.interval_validator(from_time, to_time)
@@ -156,7 +162,10 @@ def get_team_mttr(
     ),
 )
 def get_team_mttr_trends(
-    team_id: str, from_time: datetime, to_time: datetime, pr_filter: dict = None
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: typeOptional[Dict] = None,
 ):
     query_validator = get_query_validator()
     interval = query_validator.interval_validator(from_time, to_time)
@@ -197,7 +206,7 @@ def get_team_cfr(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
-    pr_filter: dict = None,
+    pr_filter: typeOptional[Dict] = None,
     workflow_filter: WorkflowFilter = None,
 ):
 
@@ -243,7 +252,7 @@ def get_team_cfr_trends(
     team_id: str,
     from_time: datetime,
     to_time: datetime,
-    pr_filter: dict = None,
+    pr_filter: typeOptional[Dict] = None,
     workflow_filter: WorkflowFilter = None,
 ):
 

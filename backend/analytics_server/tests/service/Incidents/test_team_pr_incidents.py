@@ -56,8 +56,8 @@ class FakeSettingsService:
 
 
 class FakeCodeRepoService:
-    def __init__(self, prs_using_filters, prs_using_numbers):
-        self._prs_using_filters = prs_using_filters
+    def __init__(self, resolution_prs, prs_using_numbers):
+        self._resolution_prs = resolution_prs
         self._prs_using_numbers = prs_using_numbers
 
     def get_active_team_repos_by_team_id(self, *args, **kwargs):
@@ -73,7 +73,7 @@ class FakeCodeRepoService:
         ]
 
     def get_prs_merged_in_interval(self, *args, **kwargs):
-        return self._prs_using_filters
+        return self._resolution_prs
 
     def get_prs_merged_in_interval_by_numbers(self, *args, **kwargs):
         return self._prs_using_numbers
@@ -103,7 +103,7 @@ def test_get_team_pr_incidents_no_filters():
 
 def test_get_team_pr_incidents_with_filters():
 
-    prs_using_filters = [
+    resolution_prs = [
         PullRequest(
             id="pr_2_of_repo_1",
             repo_id="repo_1",
@@ -134,7 +134,7 @@ def test_get_team_pr_incidents_with_filters():
     incident_service = IncidentService(
         FakeIncidentsRepoService(),
         FakeSettingsService(),
-        FakeCodeRepoService(prs_using_filters, prs_using_numbers),
+        FakeCodeRepoService(resolution_prs, prs_using_numbers),
     )
 
     expected_result_keys = [
@@ -153,7 +153,7 @@ def test_get_team_pr_incidents_with_filters():
 
 def test_get_team_pr_incidents_with_multiple_repos_but_no_incidents():
 
-    prs_using_filters = [
+    resolution_prs = [
         PullRequest(
             id="pr_2_of_repo_1",
             repo_id="repo_1",
@@ -173,7 +173,7 @@ def test_get_team_pr_incidents_with_multiple_repos_but_no_incidents():
     incident_service = IncidentService(
         FakeIncidentsRepoService(),
         FakeSettingsService(),
-        FakeCodeRepoService(prs_using_filters, prs_using_numbers),
+        FakeCodeRepoService(resolution_prs, prs_using_numbers),
     )
 
     expected_result_keys = []
@@ -189,7 +189,7 @@ def test_get_team_pr_incidents_with_multiple_repos_but_no_incidents():
 
 def test_get_team_pr_incidents_with_multiple_repos_and_incidents():
 
-    prs_using_filters = [
+    resolution_prs = [
         PullRequest(
             id="pr_2_of_repo_1", repo_id="repo_1", number="2", head_branch="revert-1"
         ),
@@ -219,7 +219,7 @@ def test_get_team_pr_incidents_with_multiple_repos_and_incidents():
     incident_service = IncidentService(
         FakeIncidentsRepoService(),
         FakeSettingsService(),
-        FakeCodeRepoService(prs_using_filters, prs_using_numbers),
+        FakeCodeRepoService(resolution_prs, prs_using_numbers),
     )
 
     expected_result_keys = [
