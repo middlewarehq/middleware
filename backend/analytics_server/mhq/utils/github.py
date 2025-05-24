@@ -54,7 +54,6 @@ def github_org_data_multi_thread_worker(orgs: [Organization]) -> dict:
 
 
 def get_custom_github_domain(org_id: str) -> Optional[str]:
-    DEFAULT_DOMAIN = "https://api.github.com"
     core_repo_service = CoreRepoService()
     integrations = core_repo_service.get_org_integrations_for_names(
         org_id, [UserIdentityProvider.GITHUB.value]
@@ -70,6 +69,8 @@ def get_custom_github_domain(org_id: str) -> Optional[str]:
         LOG.warn(
             f"Custom domain not found for intergration for org {org_id} and provider {UserIdentityProvider.GITHUB.value}"
         )
-        return DEFAULT_DOMAIN
+        # return nothing when custom domain is not found
+        # this is to prevent the default domain from being used
+        return
 
     return github_domain
