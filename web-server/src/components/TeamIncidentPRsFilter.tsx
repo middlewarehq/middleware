@@ -31,7 +31,7 @@ import { useDispatch, useSelector } from '@/store';
 import { ActiveBranchMode } from '@/types/resources';
 
 import { FlexBox } from './FlexBox';
-import { DarkTooltip, IOSSwitch } from './Shared';
+import { LightTooltip, IOSSwitch } from './Shared';
 import { Line } from './Text';
 
 const incidentPRFilterFormSchema = yup
@@ -72,20 +72,20 @@ const fields = [
 
 const regexOptions = [
   {
+    value: '^revert-(\\d+)',
+    example: 'revert-123anything'
+  },
+  {
     value: '^revert-pr-(\\d+)$',
-    example: 'Ex: revert-pr-123'
+    example: 'revert-pr-123'
   },
   {
-    value: '^revert-(\\d+)$',
-    example: 'Ex: revert-123'
+    value: '(?i)revert #(\\d+)',
+    example: 'Revert #123: fix module versions'
   },
   {
-    value: '^Revert #(\\d+).*',
-    example: 'Ex: Revert #123: fix module versions'
-  },
-  {
-    value: '(?i)^Revert pr (\\d+).*',
-    example: 'Ex: revert pr 1011 - config'
+    value: '(?i)revert pr (\\d+)',
+    example: 'Fix Revert PR 1011 - update config'
   }
 ];
 
@@ -119,14 +119,24 @@ export const TeamIncidentPRsFilter: FC<{
 
   const settings = watch('setting');
 
-  const handleSave = async (e: any) => {
+  const handleSave = async () => {
     const updateConfArgs = {
       team_id: singleTeamId,
       setting: settings
     };
 
-    e.preventDefault();
     isSaving.set(true);
+
+    if (
+      settings.filters.length === 1 &&
+      !settings.filters[0].field &&
+      !settings.filters[0].value
+    ) {
+      setValue(`setting.filters`, [], {
+        shouldValidate: true,
+        shouldDirty: true
+      });
+    }
 
     await dispatch(updateTeamIncidentPRsFilter(updateConfArgs)).then(
       async (response) => {
@@ -161,7 +171,7 @@ export const TeamIncidentPRsFilter: FC<{
     if (settings.filters.length === 0) {
       setValue(`setting.filters`, [{ field: '', value: '' }]);
     }
-  }, [settings, setValue]);
+  }, [settings.filters, setValue]);
 
   return (
     <FlexBox gap={2} col maxWidth={'560px'}>
@@ -180,11 +190,10 @@ export const TeamIncidentPRsFilter: FC<{
             </Line>
             <IOSSwitch
               checked={settings.include_revert_prs}
-              value={String(settings.include_revert_prs)}
-              onChange={(e) => {
-                const isEnabled = e.target.value === 'true' ? true : false;
-                setValue(`setting.include_revert_prs`, !isEnabled, {
-                  shouldDirty: true
+              onChange={(_, isEnabled) => {
+                setValue(`setting.include_revert_prs`, isEnabled, {
+                  shouldDirty: true,
+                  shouldValidate: true
                 });
               }}
             ></IOSSwitch>
@@ -239,15 +248,11 @@ export const TeamIncidentPRsFilter: FC<{
                       freeSolo
                       options={regexOptions.map((option) => option.value)}
                       value={filter.value}
-                      onBlur={(e: any) => {
-                        setValue(
-                          `setting.filters.${idx}.value`,
-                          e.target.value,
-                          {
-                            shouldValidate: true,
-                            shouldDirty: true
-                          }
-                        );
+                      onInputChange={(_, value) => {
+                        setValue(`setting.filters.${idx}.value`, value, {
+                          shouldValidate: true,
+                          shouldDirty: true
+                        });
                       }}
                       sx={{ width: '100%' }}
                       renderInput={(params) => {
@@ -256,7 +261,7 @@ export const TeamIncidentPRsFilter: FC<{
                           errors.setting?.filters[idx]?.value?.message;
 
                         return (
-                          <DarkTooltip
+                          <LightTooltip
                             title={
                               errorMsg ? (
                                 <Line tiny medium>
@@ -266,7 +271,7 @@ export const TeamIncidentPRsFilter: FC<{
                                 ''
                               )
                             }
-                            placement="bottom"
+                            placement="top"
                             arrow={true}
                           >
                             <TextField
@@ -275,7 +280,7 @@ export const TeamIncidentPRsFilter: FC<{
                               size="small"
                               error={Boolean(errorMsg)}
                             />
-                          </DarkTooltip>
+                          </LightTooltip>
                         );
                       }}
                       renderOption={(props, option) => {
@@ -359,7 +364,15 @@ export const TeamIncidentPRsFilter: FC<{
             type="submit"
             variant="outlined"
             color="primary"
-            disabled={!isDirty || !isValid}
+            disabled={
+              !isDirty ||
+              !(
+                isValid ||
+                (settings.filters.length === 1 &&
+                  !settings.filters[0].field &&
+                  !settings.filters[0].value)
+              )
+            }
             loading={isSaving.value}
             sx={{
               '&.Mui-disabled': {
