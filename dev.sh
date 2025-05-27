@@ -98,7 +98,7 @@ update_or_add_env_var "BEHIND_COMMITS_COUNT" "$BEHIND_COMMITS_COUNT"
 set -o allexport; source .env; set +o allexport
 cd ./cli || exit
 
-{ yarn && yarn build; } > /dev/null 2>&1
-yarn start
+yarn install > /dev/null 2>&1
+yarn dev
 
 cd ..
