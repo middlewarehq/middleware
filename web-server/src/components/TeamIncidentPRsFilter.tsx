@@ -34,34 +34,31 @@ import { FlexBox } from './FlexBox';
 import { LightTooltip, IOSSwitch } from './Shared';
 import { Line } from './Text';
 
-const incidentPRFilterFormSchema = yup
-  .object({
-    setting: yup
-      .object({
-        include_revert_prs: yup.boolean(),
-        filters: yup.array(
-          yup.object({
-            field: yup.string().required(),
-            value: yup
-              .string()
-              .required()
-              .test(
-                'regex-group',
-                'Regex must contain exactly one (\\d+) match group',
-                (val) => {
-                  if (!val) return false;
-                  const match = val.match(/\(\\d\+\)/g);
-                  return match && match.length === 1;
-                }
-              )
-          })
-        )
-      })
-      .required()
-  })
-  .required();
+const individualFilterSchema = yup.object({
+  field: yup.string().required(),
+  value: yup
+    .string()
+    .test(
+      'regex-group',
+      'Regex must contain exactly one (\\d+) match group',
+      (val) => {
+        if (!val) return false;
+        const match = val.match(/\(\\d\+\)/g);
+        return match && match.length === 1;
+      }
+    )
+});
 
-type incidentPRFilterFormSchema = yup.InferType<
+const settingsSchema = yup.object({
+  include_revert_prs: yup.boolean().required(),
+  filters: yup.array(individualFilterSchema).required()
+});
+
+const incidentPRFilterFormSchema = yup.object({
+  setting: settingsSchema.required()
+});
+
+type IncidentPRFilterFormSchema = yup.InferType<
   typeof incidentPRFilterFormSchema
 >;
 
@@ -103,7 +100,7 @@ export const TeamIncidentPRsFilter: FC<{
     (s) => s.team.teamIncidentPRsFilters
   )?.setting;
 
-  const addUserMethods = useForm<incidentPRFilterFormSchema>({
+  const formMethods = useForm<IncidentPRFilterFormSchema>({
     resolver: yupResolver(incidentPRFilterFormSchema),
     mode: 'onChange',
     defaultValues: {
@@ -115,7 +112,7 @@ export const TeamIncidentPRsFilter: FC<{
     watch,
     formState: { isDirty, isValid, errors },
     setValue
-  } = addUserMethods;
+  } = formMethods;
 
   const settings = watch('setting');
 
@@ -173,6 +170,13 @@ export const TeamIncidentPRsFilter: FC<{
     }
   }, [settings.filters, setValue]);
 
+  const isSingleEmptyFilter =
+    settings.filters.length === 1 &&
+    !settings.filters[0].field &&
+    !settings.filters[0].value;
+
+  const isSaveEnabled = isDirty && (isValid || isSingleEmptyFilter);
+
   return (
     <FlexBox gap={2} col maxWidth={'560px'}>
       <Line white small mt={-1} textAlign={'start'}>
@@ -182,7 +186,7 @@ export const TeamIncidentPRsFilter: FC<{
 
       <Divider />
 
-      <FormProvider {...addUserMethods}>
+      <FormProvider {...formMethods}>
         <FlexBox col gap2>
           <FlexBox>
             <Line big flexGrow={1}>
@@ -364,15 +368,7 @@ export const TeamIncidentPRsFilter: FC<{
             type="submit"
             variant="outlined"
             color="primary"
-            disabled={
-              !isDirty ||
-              !(
-                isValid ||
-                (settings.filters.length === 1 &&
-                  !settings.filters[0].field &&
-                  !settings.filters[0].value)
-              )
-            }
+            disabled={!isSaveEnabled}
             loading={isSaving.value}
             sx={{
               '&.Mui-disabled': {

@@ -1,13 +1,12 @@
 import * as yup from 'yup';
 
 import { handleRequest } from '@/api-helpers/axios';
-import { Endpoint } from '@/api-helpers/global';
+import { Endpoint, nullSchema } from '@/api-helpers/global';
 import {
   TeamIncidentPRsSettingApiResponse,
   TeamIncidentPRsSettingsResponse
 } from '@/types/resources';
 
-const getSchema = yup.object();
 const pathSchema = yup.object().shape({
   team_id: yup.string().uuid().required()
 });
@@ -26,7 +25,7 @@ const putSchema = yup.object().shape({
 
 const endpoint = new Endpoint(pathSchema);
 
-endpoint.handle.GET(getSchema, async (req, res) => {
+endpoint.handle.GET(nullSchema, async (req, res) => {
   const { team_id } = req.payload;
   const { setting } = await handleRequest<TeamIncidentPRsSettingApiResponse>(
     `/teams/${team_id}/settings`,
