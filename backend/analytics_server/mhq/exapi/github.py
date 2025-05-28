@@ -1,9 +1,10 @@
 import contextlib
 from datetime import datetime
 from http import HTTPStatus
-from typing import Optional, Dict, Tuple, List
+from typing import Optional, Dict, Tuple, List, cast
 
 import requests
+
 from github import Github, UnknownObjectException
 from github.GithubException import GithubException
 from github.Organization import Organization as GithubOrganization
@@ -11,8 +12,12 @@ from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from github.Repository import Repository as GithubRepository
 
-from mhq.exapi.models.github import GitHubContributor
+from mhq.exapi.schemas.timeline import GitHubPrTimelineEvent, GitHubPrTimelineEventsDict
+from mhq.exapi.models.timeline import GithubPRTimelineEvent
+from mhq.store.models.code.enums import PullRequestEventType
+from mhq.exapi.models.github import GitHubBaseUser, GitHubContributor
 from mhq.utils.log import LOG
+from mhq.utils.time import dt_from_iso_time_string
 
 PAGE_SIZE = 100
 
@@ -271,3 +276,184 @@ class GithubApiService:
             page += 1
             data = _fetch_workflow_runs(page=page)
         return repo_workflows
+
+    def get_pr_timeline_events(self, repo_name: str, pr_number: int) -> List[GithubPRTimelineEvent]:
+
+        def _fetch_timeline_events(page: int = 1) -> List[Dict]:
+            github_url = f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
+            query_params = {"per_page": PAGE_SIZE, "page": page}
+            
+            try:
+                response = requests.get(github_url, headers=self.headers, params=query_params)
+            except requests.RequestException as e:
+                raise GithubException(HTTPStatus.SERVICE_UNAVAILABLE, f"Network error: {str(e)}")
+            
+            if response.status_code == HTTPStatus.NOT_FOUND:
+                raise GithubException(HTTPStatus.NOT_FOUND, f"PR {pr_number} not found for repo {repo_name}")
+            
+            if response.status_code == HTTPStatus.FORBIDDEN:
+                raise GithubRateLimitExceeded("GitHub API rate limit exceeded")
+                
+            if response.status_code != HTTPStatus.OK:
+                raise GithubException(response.status_code, f"Failed to fetch timeline events: {response.text}")
+                
+            try:
+                return response.json()
+            except ValueError as e:
+                raise GithubException(HTTPStatus.INTERNAL_SERVER_ERROR, f"Invalid JSON response: {str(e)}")
+        
+        def _create_timeline_event(event_data: Dict) -> GitHubPrTimelineEventsDict:
+            return GitHubPrTimelineEventsDict(
+                event=event_data.get("event", ""),
+                data=cast(GitHubPrTimelineEvent, event_data) 
+            )
+        
+        all_timeline_events: List[GitHubPrTimelineEventsDict] = []
+        page = 1
+        
+        try:
+            while True:
+                timeline_events = _fetch_timeline_events(page=page)
+                if not timeline_events:
+                    break
+                
+                all_timeline_events.extend([
+                    _create_timeline_event(event_data) 
+                    for event_data in timeline_events
+                ])
+                
+                if len(timeline_events) < PAGE_SIZE:
+                    break
+                page += 1
+                
+        except GithubException:
+            raise
+        except Exception as e:
+            raise GithubException(HTTPStatus.INTERNAL_SERVER_ERROR, f"Unexpected error: {str(e)}")
+        
+        return adapt_github_timeline_events(all_timeline_events)
+
+
+class Event:
+    EVENT_CONFIG = {
+        "reviewed": {
+            "actor_path": "user",
+            "timestamp_field": "submitted_at",
+        },
+        "ready_for_review": {
+            "actor_path": "actor",
+            "timestamp_field": "created_at",
+        },
+        "commented": {
+            "actor_path": "user",
+            "timestamp_field": "created_at",
+        },
+        "committed": {
+            "actor_path": "author",
+            "timestamp_field": "commit.author.date",
+        },
+        "default": {
+            "actor_path": "actor",
+            "timestamp_field": "created_at",
+        },
+    }
+    
+    def __init__(self, event_type: str, data: GitHubPrTimelineEvent):
+        self.event_type = event_type
+        self.data = data
+
+    def _get_nested_value(self, path: str) -> Optional[any]:
+        keys = path.split('.')
+        current = self.data
+        
+        for key in keys:
+            if isinstance(current, dict) and key in current:
+                current = current[key]
+            else:
+                return None
+        return current
+
+    @property
+    def user(self) -> Optional[Dict]:
+        config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
+        actor_path = config["actor_path"]
+        if actor_path:
+            return self._get_nested_value(actor_path)
+        return None
+
+    @property
+    def timestamp(self) -> Optional[datetime]:
+        config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
+        timestamp_field = config["timestamp_field"]
+        timestamp_value = self._get_nested_value(timestamp_field)
+        
+        if timestamp_value:
+            timestamp_str = str(timestamp_value)
+            return dt_from_iso_time_string(timestamp_str)
+        return None
+
+    @property
+    def raw_data(self) -> Dict:
+        return cast(Dict, self.data)
+
+    @property
+    def id(self) -> Optional[str]:
+        id_value = self.data.get("id")
+        return str(id_value) if id_value is not None else None
+
+    @property
+    def event(self) -> Optional[PullRequestEventType]:
+        event_type_mapping = {
+            "assigned": PullRequestEventType.ASSIGNED,
+            "closed": PullRequestEventType.CLOSED,
+            "commented": PullRequestEventType.COMMENTED,
+            "committed": PullRequestEventType.COMMITTED,
+            "convert_to_draft": PullRequestEventType.CONVERT_TO_DRAFT,
+            "head_ref_deleted": PullRequestEventType.HEAD_REF_DELETED,
+            "head_ref_force_pushed": PullRequestEventType.HEAD_REF_FORCE_PUSHED,
+            "labeled": PullRequestEventType.LABELED,
+            "locked": PullRequestEventType.LOCKED,
+            "merged": PullRequestEventType.MERGED,
+            "ready_for_review": PullRequestEventType.READY_FOR_REVIEW,
+            "referenced": PullRequestEventType.REFERENCED,
+            "reopened": PullRequestEventType.REOPENED,
+            "review_dismissed": PullRequestEventType.REVIEW_DISMISSED,
+            "review_requested": PullRequestEventType.REVIEW_REQUESTED,
+            "review_request_removed": PullRequestEventType.REVIEW_REQUEST_REMOVED,
+            "reviewed": PullRequestEventType.REVIEWED,
+            "unassigned": PullRequestEventType.UNASSIGNED,
+            "unlabeled": PullRequestEventType.UNLABELED,
+            "unlocked": PullRequestEventType.UNLOCKED,
+        }
+        return event_type_mapping.get(self.event_type, PullRequestEventType.UNKNOWN)
+
+
+def adapt_github_timeline_events(
+    timeline_events: List[GitHubPrTimelineEventsDict],
+) -> List[GithubPRTimelineEvent]:
+    normalized: List[GithubPRTimelineEvent] = []
+    
+    for timeline_event in timeline_events:
+        event_data = timeline_event.get("data")
+        if not event_data:
+            continue
+        
+        event_type = timeline_event.get("event")
+        if not event_type:
+            continue
+        
+        event = Event(event_type, event_data)
+        
+        if all([event.timestamp, event.event, event.id, event.user]):
+            adapted_event = GithubPRTimelineEvent(
+                id=event.id,
+                actor=cast(GitHubBaseUser, event.user),
+                event=event.event,
+                timestamp=event.timestamp,
+                raw_data=cast(GitHubPrTimelineEvent, event.raw_data)
+            )
+            normalized.append(adapted_event)
+        else:
+            LOG.warning(f"Skipping incomplete timeline event: {event_type} with id: {event.id}")
+    
+    return normalized

@@ -104,7 +104,6 @@ class GithubETLHandler(CodeProviderETLHandler):
         github_pull_requests: GithubPaginatedList = self._api.get_pull_requests(
             github_repo
         )
-
         prs_to_process = []
         for page in range(
             0, github_pull_requests.totalCount // PR_PROCESSING_CHUNK_SIZE + 1, 1
@@ -170,8 +169,15 @@ class GithubETLHandler(CodeProviderETLHandler):
         )
         pr_commits_model_list: List = []
 
+
         reviews: List[GithubPullRequestReview] = list(self._api.get_pr_reviews(pr))
-        pr_model: PullRequest = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
+        timeline_pr_events = self._api.get_pr_timeline_events(pr.base.repo.full_name, pr.number)
+        for timeline_event in timeline_pr_events:
+            LOG.info(
+                f"Processing timeline event: {timeline_event.event} for PR #{pr.number}"
+            )
+
+            pr_model: PullRequest = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
         pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
             reviews, pr_model, pr_event_model_list
         )

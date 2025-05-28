@@ -273,5 +273,26 @@ def fill_missing_week_buckets(
 def dt_from_iso_time_string(j_str_dt) -> Optional[datetime]:
     if not j_str_dt:
         return None
-    dt_without_timezone = datetime.strptime(j_str_dt, "%Y-%m-%dT%H:%M:%S.%f%z")
-    return dt_without_timezone.astimezone(pytz.UTC)
+    datetime_formats = [
+        "%Y-%m-%dT%H:%M:%S.%f%z",  
+        "%Y-%m-%dT%H:%M:%S%z",   
+        "%Y-%m-%dT%H:%M:%S.%fZ",  
+    ]
+    normalized_dt_str = j_str_dt.replace('Z', '+00:00') if j_str_dt.endswith('Z') else j_str_dt
+    for fmt in datetime_formats:
+        try:
+            if '%z' in fmt:
+                dt_without_timezone = datetime.strptime(normalized_dt_str, fmt)
+            else:
+                dt_without_timezone = datetime.strptime(j_str_dt, fmt).replace(tzinfo=pytz.UTC)
+
+            return dt_without_timezone.astimezone(pytz.UTC)
+        except ValueError:
+            continue
+    try:
+        dt = datetime.fromisoformat(normalized_dt_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=pytz.UTC)
+        return dt.astimezone(pytz.UTC)
+    except (ValueError, AttributeError):
+        return None
