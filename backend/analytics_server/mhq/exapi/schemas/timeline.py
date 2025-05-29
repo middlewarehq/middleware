@@ -138,7 +138,7 @@ class LabeledEvent(IssueEvent):
 class UnlabeledEvent(IssueEvent):
     label: dict
 
-GitHubPrTimelineEvent = Union[
+GitHubPullTimelineEvent = Union[
     CommitEvent,
     CommentEvent,
     IssueEvent,
@@ -157,4 +157,4 @@ GitHubPrTimelineEvent = Union[
 
 class GitHubPrTimelineEventsDict(TypedDict):
     event: str
-    data: GitHubPrTimelineEvent
+    data: GitHubPullTimelineEvent

@@ -14,7 +14,9 @@ from tests.factories.models.exapi.github import (
     get_github_commit_dict,
     get_github_pull_request_review,
     get_github_pull_request,
+    get_github_pr_timeline_event,
 )
+from mhq.store.models.code.enums import PullRequestEventType
 from tests.utilities import compare_objects_as_dicts
 
 ORG_ID = uuid4_str()
@@ -199,8 +201,16 @@ def test__to_pr_events_given_an_empty_list_of_events_returns_an_empty_list():
 
 def test__to_pr_events_given_a_list_of_only_new_events_returns_a_list_of_pr_events():
     pr_model = get_pull_request()
-    event1 = get_github_pull_request_review()
-    event2 = get_github_pull_request_review()
+    event1 = get_github_pr_timeline_event(
+        event_id="123456",
+        user_login="user1",
+        event_type=PullRequestEventType.REVIEW,
+    )
+    event2 = get_github_pr_timeline_event(
+        event_id="789012",
+        user_login="user2",
+        event_type=PullRequestEventType.REVIEW,
+    )
     events = [event1, event2]
 
     pr_events = GithubETLHandler._to_pr_events(events, pr_model, [])
@@ -210,7 +220,7 @@ def test__to_pr_events_given_a_list_of_only_new_events_returns_a_list_of_pr_even
             pull_request_id=str(pr_model.id),
             org_repo_id=pr_model.repo_id,
             data=event1.raw_data,
-            created_at=event1.submitted_at,
+            created_at=event1.timestamp,
             type="REVIEW",
             idempotency_key=event1.id,
             reviewer=event1.user_login,
@@ -219,7 +229,7 @@ def test__to_pr_events_given_a_list_of_only_new_events_returns_a_list_of_pr_even
             pull_request_id=str(pr_model.id),
             org_repo_id=pr_model.repo_id,
             data=event2.raw_data,
-            created_at=event2.submitted_at,
+            created_at=event2.timestamp,
             type="REVIEW",
             idempotency_key=event2.id,
             reviewer=event2.user_login,
@@ -232,18 +242,26 @@ def test__to_pr_events_given_a_list_of_only_new_events_returns_a_list_of_pr_even
 
 def test__to_pr_events_given_a_list_of_new_events_and_old_events_returns_a_list_of_pr_events():
     pr_model = get_pull_request()
-    event1 = get_github_pull_request_review()
-    event2 = get_github_pull_request_review()
+    event1 = get_github_pr_timeline_event(
+        event_id="123456",
+        user_login="user1",
+        event_type=PullRequestEventType.REVIEW,
+    )
+    event2 = get_github_pr_timeline_event(
+        event_id="789012",
+        user_login="user2",
+        event_type=PullRequestEventType.REVIEW,
+    )
     events = [event1, event2]
 
     old_event = get_pull_request_event(
         pull_request_id=str(pr_model.id),
         org_repo_id=pr_model.repo_id,
         data=event1.raw_data,
-        created_at=event1.submitted_at,
+        created_at=event1.timestamp,
         type="REVIEW",
         idempotency_key=event1.id,
-        reviewer=event1.user_login,
+       reviewer=event1.user_login,
     )
 
     pr_events = GithubETLHandler._to_pr_events(events, pr_model, [old_event])
@@ -254,7 +272,7 @@ def test__to_pr_events_given_a_list_of_new_events_and_old_events_returns_a_list_
             pull_request_id=str(pr_model.id),
             org_repo_id=pr_model.repo_id,
             data=event2.raw_data,
-            created_at=event2.submitted_at,
+            created_at=event2.timestamp,
             type="REVIEW",
             idempotency_key=event2.id,
             reviewer=event2.user_login,

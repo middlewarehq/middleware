@@ -4,13 +4,13 @@ from typing import Optional
 
 from mhq.store.models.code.enums import PullRequestEventType
 from mhq.exapi.models.github import GitHubBaseUser
-from mhq.exapi.schemas.timeline import GitHubPrTimelineEvent
+from mhq.exapi.schemas.timeline import GitHubPullTimelineEvent
 
 
 @dataclass
 class GithubPRTimelineEvent:
     id: str              
-    actor: GitHubBaseUser              
-    event: PullRequestEventType 
+    user_login:str           
+    type: PullRequestEventType 
     timestamp: datetime  
-    raw_data: GitHubPrTimelineEvent     
+    raw_data: GitHubPullTimelineEvent     

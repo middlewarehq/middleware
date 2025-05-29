@@ -22,13 +22,12 @@ class PullRequestState(Enum):
 
 
 class PullRequestEventState(Enum):
-    CHANGES_REQUESTED = "CHANGES_REQUESTED"
-    APPROVED = "APPROVED"
-    COMMENTED = "COMMENTED"
+    CHANGES_REQUESTED = "changes_requested"
+    APPROVED = "approved"
+    COMMENTED = "commented"
 
 
 class PullRequestEventType(Enum):
-    REVIEW = "REVIEW"
     ASSIGNED = "ASSIGNED"
     CLOSED = "CLOSED"
     COMMENTED = "COMMENTED"
@@ -45,7 +44,7 @@ class PullRequestEventType(Enum):
     REVIEW_DISMISSED = "REVIEW_DISMISSED"
     REVIEW_REQUESTED = "REVIEW_REQUESTED"
     REVIEW_REQUEST_REMOVED = "REVIEW_REQUEST_REMOVED"
-    REVIEWED = "REVIEWED"
+    REVIEW = "REVIEW"
     UNASSIGNED = "UNASSIGNED"
     UNLABELED = "UNLABELED"
     UNLOCKED = "UNLOCKED"

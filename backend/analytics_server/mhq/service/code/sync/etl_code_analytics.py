@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import List
 
+from mhq.store.models.code.enums import PullRequestEventType
 from mhq.service.code.sync.models import PRPerformance
 from mhq.store.models.code import (
     PullRequest,
@@ -59,25 +60,38 @@ class CodeETLAnalyticsService:
 
     @staticmethod
     def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
-        pr_events.sort(key=lambda x: x.created_at)
-        first_review = pr_events[0] if pr_events else None
+
+        review_events = [
+            event for event in pr_events 
+            if event.type == PullRequestEventType.REVIEW.value
+        ]
+        review_events.sort(key=lambda x: x.created_at)
+        first_review = review_events[0] if review_events else None
+        
+        ready_for_review_events = [
+            event for event in pr_events 
+            if event.type == PullRequestEventType.READY_FOR_REVIEW.value
+        ]
+        ready_for_review_events.sort(key=lambda x: x.created_at)
+        first_ready_for_review = ready_for_review_events[0] if ready_for_review_events else None
+
         approved_reviews = list(
             filter(
-                lambda x: x.data["state"] == PullRequestEventState.APPROVED.value,
-                pr_events,
+                lambda x: x.data.get("state") == PullRequestEventState.APPROVED.value,
+                review_events,
             )
         )
         blocking_reviews = list(
             filter(
-                lambda x: x.data["state"] != PullRequestEventState.APPROVED.value,
-                pr_events,
+                lambda x: x.data.get("state") != PullRequestEventState.APPROVED.value,
+                review_events,
             )
         )
 
         if not approved_reviews:
             rework_time = -1
         else:
-            if first_review.data["state"] == PullRequestEventState.APPROVED.value:
+            if first_review.data.get("state") == PullRequestEventState.APPROVED.value:
                 rework_time = 0
             else:
                 rework_time = (
@@ -93,13 +107,15 @@ class CodeETLAnalyticsService:
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
 
-        cycle_time = pr.state_changed_at - pr.created_at
+        start_time = first_ready_for_review.created_at if first_ready_for_review else pr.created_at
+
+        cycle_time = pr.state_changed_at - start_time
         if isinstance(cycle_time, timedelta):
             cycle_time = cycle_time.total_seconds()
 
         return PRPerformance(
             first_review_time=(
-                (first_review.created_at - pr.created_at).total_seconds()
+                (first_review.created_at - start_time).total_seconds()
                 if first_review
                 else -1
             ),
@@ -117,30 +133,34 @@ class CodeETLAnalyticsService:
         pr_events: [PullRequestEvent],
         pr_commits: [PullRequestCommit],
     ) -> int:
-
-        if not pr_events:
+        review_events = [
+            review_event 
+            for review_event in pr_events 
+            if review_event.type == PullRequestEventType.REVIEW.value
+        ]
+       
+        if not review_events:
             return 0
 
         if not pr_commits:
             return 0
-
-        pr_events.sort(key=lambda x: x.created_at)
+        review_events.sort(key=lambda x: x.created_at)
         pr_commits.sort(key=lambda x: x.created_at)
 
         first_blocking_review = None
         last_relevant_approval_review = None
         pr_reviewers = dict.fromkeys(pr.reviewers, True)
 
-        for pr_event in pr_events:
+        for review_event in review_events:
             if (
-                pr_event.state != PullRequestEventState.APPROVED.value
-                and pr_reviewers.get(pr_event.actor_username)
+                review_event.data.get("state") != PullRequestEventState.APPROVED.value
+                and pr_reviewers.get(review_event.actor_username)
                 and not first_blocking_review
             ):
-                first_blocking_review = pr_event
+                first_blocking_review = review_event
 
-            if pr_event.state == PullRequestEventState.APPROVED.value:
-                last_relevant_approval_review = pr_event
+            if review_event.data.get("state") == PullRequestEventState.APPROVED.value:
+                last_relevant_approval_review = review_event
                 break
 
         if not first_blocking_review:
@@ -153,7 +173,6 @@ class CodeETLAnalyticsService:
             first_blocking_review.created_at - timedelta(seconds=1),
             last_relevant_approval_review.created_at,
         )
-
         pr_commits = list(
             filter(
                 lambda x: x.created_at in interval,
@@ -163,11 +182,11 @@ class CodeETLAnalyticsService:
         pr_reviewers = dict.fromkeys(pr.reviewers, True)
         blocking_reviews = list(
             filter(
-                lambda x: x.state != PullRequestEventState.APPROVED.value
+                lambda x: x.data.get("state") != PullRequestEventState.APPROVED.value
                 and x.actor_username != pr.author
                 and pr_reviewers.get(x.actor_username)
                 and x.created_at in interval,
-                pr_events,
+                review_events,
             )
         )
         all_events = sorted(pr_commits + blocking_reviews, key=lambda x: x.created_at)

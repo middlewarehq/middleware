@@ -13,6 +13,7 @@ from mhq.store.models.code import (
     PullRequestEvent,
     PullRequestEventType,
     PullRequestState,
+    PullRequestEventState,
     PullRequest,
     RepoWorkflowRuns,
     RepoWorkflowRunsStatus,
@@ -94,7 +95,7 @@ def get_pull_request_event(
         data=(
             {
                 "user": {"login": reviewer or "User"},
-                "state": state or "APPROVED",
+                "state": state or PullRequestEventState.APPROVED.value,
                 "author_association": "NONE",
             }
             if not data

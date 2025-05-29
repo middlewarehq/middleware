@@ -12,7 +12,7 @@ from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from github.Repository import Repository as GithubRepository
 
-from mhq.exapi.schemas.timeline import GitHubPrTimelineEvent, GitHubPrTimelineEventsDict
+from mhq.exapi.schemas.timeline import GitHubPullTimelineEvent, GitHubPrTimelineEventsDict
 from mhq.exapi.models.timeline import GithubPRTimelineEvent
 from mhq.store.models.code.enums import PullRequestEventType
 from mhq.exapi.models.github import GitHubBaseUser, GitHubContributor
@@ -305,7 +305,7 @@ class GithubApiService:
         def _create_timeline_event(event_data: Dict) -> GitHubPrTimelineEventsDict:
             return GitHubPrTimelineEventsDict(
                 event=event_data.get("event", ""),
-                data=cast(GitHubPrTimelineEvent, event_data) 
+                data=cast(GitHubPullTimelineEvent, event_data) 
             )
         
         all_timeline_events: List[GitHubPrTimelineEventsDict] = []
@@ -339,26 +339,31 @@ class Event:
         "reviewed": {
             "actor_path": "user",
             "timestamp_field": "submitted_at",
+            "id_path": "id",
         },
         "ready_for_review": {
             "actor_path": "actor",
             "timestamp_field": "created_at",
+            "id_path": "id",
         },
         "commented": {
             "actor_path": "user",
             "timestamp_field": "created_at",
+            "id_path": "id",
         },
         "committed": {
-            "actor_path": "author",
-            "timestamp_field": "commit.author.date",
+            "actor_path": "author.name",
+            "timestamp_field": "author.date",
+            "id_path": "sha",
         },
         "default": {
             "actor_path": "actor",
             "timestamp_field": "created_at",
+            "id_path": "id",
         },
     }
     
-    def __init__(self, event_type: str, data: GitHubPrTimelineEvent):
+    def __init__(self, event_type: str, data: GitHubPullTimelineEvent):
         self.event_type = event_type
         self.data = data
 
@@ -374,11 +379,25 @@ class Event:
         return current
 
     @property
-    def user(self) -> Optional[Dict]:
+    def user(self) -> Optional[str]:
         config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
         actor_path = config["actor_path"]
-        if actor_path:
+        
+        if not actor_path:
+            return None
+            
+        if self.event_type == "committed":
             return self._get_nested_value(actor_path)
+            
+        user_data = self._get_nested_value(actor_path)
+        if not user_data:
+            return None
+        if isinstance(user_data, dict) and "login" in user_data:
+            return user_data["login"]
+        elif hasattr(user_data, "login"):
+            return user_data.login
+            
+        LOG.warning(f"User data does not contain login field for event type: {self.event_type}")
         return None
 
     @property
@@ -398,11 +417,13 @@ class Event:
 
     @property
     def id(self) -> Optional[str]:
-        id_value = self.data.get("id")
+        config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
+        id_path = config["id_path"]
+        id_value = self._get_nested_value(id_path)
         return str(id_value) if id_value is not None else None
 
     @property
-    def event(self) -> Optional[PullRequestEventType]:
+    def type(self) -> Optional[PullRequestEventType]:
         event_type_mapping = {
             "assigned": PullRequestEventType.ASSIGNED,
             "closed": PullRequestEventType.CLOSED,
@@ -420,7 +441,7 @@ class Event:
             "review_dismissed": PullRequestEventType.REVIEW_DISMISSED,
             "review_requested": PullRequestEventType.REVIEW_REQUESTED,
             "review_request_removed": PullRequestEventType.REVIEW_REQUEST_REMOVED,
-            "reviewed": PullRequestEventType.REVIEWED,
+            "reviewed": PullRequestEventType.REVIEW,
             "unassigned": PullRequestEventType.UNASSIGNED,
             "unlabeled": PullRequestEventType.UNLABELED,
             "unlocked": PullRequestEventType.UNLOCKED,
@@ -444,13 +465,13 @@ def adapt_github_timeline_events(
         
         event = Event(event_type, event_data)
         
-        if all([event.timestamp, event.event, event.id, event.user]):
+        if all([event.timestamp, event.type, event.id, event.user]):
             adapted_event = GithubPRTimelineEvent(
-                id=event.id,
-                actor=cast(GitHubBaseUser, event.user),
-                event=event.event,
-                timestamp=event.timestamp,
-                raw_data=cast(GitHubPrTimelineEvent, event.raw_data)
+                id=cast(str,event.id),
+                user_login=cast(str, event.user),
+                type=cast(PullRequestEventType,event.type),
+                timestamp=cast(datetime,event.timestamp),
+                raw_data=cast(GitHubPullTimelineEvent, event.raw_data)
             )
             normalized.append(adapted_event)
         else:
