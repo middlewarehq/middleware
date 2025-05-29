@@ -1,7 +1,7 @@
 import contextlib
 from datetime import datetime
 from http import HTTPStatus
-from typing import Optional, Dict, Tuple, List, cast
+from typing import Any, Optional, Dict, Tuple, List, cast
 
 import requests
 
@@ -297,7 +297,7 @@ class GithubApiService:
             except requests.RequestException as e:
                 raise GithubException(
                     HTTPStatus.SERVICE_UNAVAILABLE, f"Network error: {str(e)}"
-                )
+                ) from e
 
             if response.status_code == HTTPStatus.NOT_FOUND:
                 raise GithubException(
@@ -319,7 +319,7 @@ class GithubApiService:
             except ValueError as e:
                 raise GithubException(
                     HTTPStatus.INTERNAL_SERVER_ERROR, f"Invalid JSON response: {str(e)}"
-                )
+                ) from e
 
         def _create_timeline_event(event_data: Dict) -> GitHubPrTimelineEventsDict:
             return GitHubPrTimelineEventsDict(
@@ -352,7 +352,7 @@ class GithubApiService:
         except Exception as e:
             raise GithubException(
                 HTTPStatus.INTERNAL_SERVER_ERROR, f"Unexpected error: {str(e)}"
-            )
+            ) from e
 
         return adapt_github_timeline_events(all_timeline_events)
 
@@ -390,7 +390,7 @@ class Event:
         self.event_type = event_type
         self.data = data
 
-    def _get_nested_value(self, path: str) -> Optional[any]:
+    def _get_nested_value(self, path: str) -> Optional[Any]:
         keys = path.split(".")
         current = self.data
 

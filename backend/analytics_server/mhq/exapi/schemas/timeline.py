@@ -58,7 +58,7 @@ class CommitEvent(TypedDict):
     tree: TreeDict
     message: str
     parents: List[ParentDict]
-    verification: VerificationDict
+    verification: Optional[VerificationDict]
     event: str
 
 
