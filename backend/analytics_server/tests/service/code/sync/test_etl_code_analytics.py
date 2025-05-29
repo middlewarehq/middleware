@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from mhq.service.code.sync.etl_code_analytics import CodeETLAnalyticsService
 from mhq.store.models.code import PullRequestState, PullRequestEventState
+from mhq.store.models.code.enums import PullRequestEventType
 from mhq.utils.time import time_now
 from tests.factories.models.code import (
     get_pull_request,
@@ -605,3 +606,190 @@ def test_create_pr_metrics_bot_detection_in_review_events():
 
     for bot_reviewer in bot_reviewers:
         assert bot_reviewer not in pr_metrics.reviewers
+
+
+def test_cycle_time_uses_ready_for_review_when_available():
+    """Test that cycle time uses first ready_for_review event as start time when available."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=2)
+    t3 = t2 + timedelta(days=1)
+    
+    pr = get_pull_request(
+        state=PullRequestState.MERGED,
+        created_at=t1,
+        state_changed_at=t3,
+        updated_at=t3
+    )
+    
+    ready_for_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t2
+    )
+    
+    performance = pr_service.get_pr_performance(pr, [ready_for_review_event])
+    
+    assert performance.cycle_time == 86400
+
+
+def test_cycle_time_falls_back_to_created_at_when_no_ready_for_review():
+    """Test that cycle time uses PR creation time when no ready_for_review events exist."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(days=1)
+    
+    pr = get_pull_request(
+        state=PullRequestState.MERGED,
+        created_at=t1,
+        state_changed_at=t2,
+        updated_at=t2
+    )
+    
+    performance = pr_service.get_pr_performance(pr, [])
+
+    assert performance.cycle_time == 86400
+
+
+def test_cycle_time_uses_earliest_ready_for_review_when_multiple():
+    """Test that cycle time uses the earliest ready_for_review event when multiple exist."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1) 
+    t3 = t1 + timedelta(hours=3)
+    t4 = t1 + timedelta(days=1)
+    
+    pr = get_pull_request(
+        state=PullRequestState.MERGED,
+        created_at=t1,
+        state_changed_at=t4,
+        updated_at=t4
+    )
+    
+    ready_for_review_1 = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t2
+    )
+    
+    ready_for_review_2 = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t3
+    )
+    
+    performance = pr_service.get_pr_performance(pr, [ready_for_review_2, ready_for_review_1])
+    
+    assert performance.cycle_time == 82800
+
+
+def test_first_response_time_uses_ready_for_review_when_available():
+    """Test that first response time uses ready_for_review as start time when available."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=2)  
+    t3 = t2 + timedelta(hours=1) 
+    
+    pr = get_pull_request(created_at=t1, updated_at=t1)
+    
+    ready_for_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t2
+    )
+    
+    review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.REVIEW.value,
+        created_at=t3
+    )
+    
+    performance = pr_service.get_pr_performance(pr, [ready_for_review_event, review_event])
+    assert performance.first_review_time == 3600
+
+
+def test_first_response_time_falls_back_to_created_at_when_no_ready_for_review():
+    """Test that first response time uses PR creation time when no ready_for_review events exist."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=3)
+    pr = get_pull_request(created_at=t1, updated_at=t1)
+    
+    review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.REVIEW.value,
+        created_at=t2
+    )
+    
+    performance = pr_service.get_pr_performance(pr, [review_event])
+    assert performance.first_review_time == 10800
+
+
+def test_cycle_time_ready_for_review_with_draft_pr_workflow():
+    """Test cycle time calculation for draft PR workflow with ready_for_review event."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(days=2)    # ready for review 2 days after creation (draft period)
+    t3 = t2 + timedelta(hours=4)   # first review
+    t4 = t2 + timedelta(days=1)    # merged
+    
+    pr = get_pull_request(
+        state=PullRequestState.MERGED,
+        created_at=t1,
+        state_changed_at=t4,
+        updated_at=t4
+    )
+    
+    ready_for_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t2
+    )
+    
+    review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.REVIEW.value,
+        created_at=t3
+    )
+    
+    performance = pr_service.get_pr_performance(pr, [ready_for_review_event, review_event])
+    
+    assert performance.cycle_time == 86400
+    assert performance.first_review_time == 14400
+
+def test_cycle_time_ready_for_review_after_first_review():
+    """Test cycle time when ready_for_review event occurs after first review (edge case)."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()
+    t2 = t1 + timedelta(hours=1)   # first review
+    t3 = t1 + timedelta(hours=2)   # ready for review (after review)
+    t4 = t1 + timedelta(days=1)    # merged
+    
+    pr = get_pull_request(
+        state=PullRequestState.MERGED,
+        created_at=t1,
+        state_changed_at=t4,
+        updated_at=t4
+    )
+    
+    review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.REVIEW.value,
+        created_at=t2
+    )
+    
+    ready_for_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t3
+    )
+    
+    performance = pr_service.get_pr_performance(pr, [review_event, ready_for_review_event])
+    
+    # Should still use ready_for_review as start time for cycle time
+    # t4 - t3 = 22 hours = 79200 seconds
+    assert performance.cycle_time == 79200
+    # First response time should be from ready_for_review to first review
+    # Since review happened before ready_for_review, this should be from creation time
+    # t2 - t1 = 1 hour = 3600 seconds
+    assert performance.first_review_time == -3600
