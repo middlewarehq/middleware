@@ -62,18 +62,22 @@ class CodeETLAnalyticsService:
     def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
 
         review_events = [
-            event for event in pr_events 
+            event
+            for event in pr_events
             if event.type == PullRequestEventType.REVIEW.value
         ]
         review_events.sort(key=lambda x: x.created_at)
         first_review = review_events[0] if review_events else None
-        
+
         ready_for_review_events = [
-            event for event in pr_events 
+            event
+            for event in pr_events
             if event.type == PullRequestEventType.READY_FOR_REVIEW.value
         ]
         ready_for_review_events.sort(key=lambda x: x.created_at)
-        first_ready_for_review = ready_for_review_events[0] if ready_for_review_events else None
+        first_ready_for_review = (
+            ready_for_review_events[0] if ready_for_review_events else None
+        )
 
         approved_reviews = list(
             filter(
@@ -107,7 +111,11 @@ class CodeETLAnalyticsService:
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
 
-        start_time = first_ready_for_review.created_at if first_ready_for_review else pr.created_at
+        start_time = (
+            first_ready_for_review.created_at
+            if first_ready_for_review
+            else pr.created_at
+        )
 
         cycle_time = pr.state_changed_at - start_time
         if isinstance(cycle_time, timedelta):
@@ -134,11 +142,11 @@ class CodeETLAnalyticsService:
         pr_commits: [PullRequestCommit],
     ) -> int:
         review_events = [
-            review_event 
-            for review_event in pr_events 
+            review_event
+            for review_event in pr_events
             if review_event.type == PullRequestEventType.REVIEW.value
         ]
-       
+
         if not review_events:
             return 0
 

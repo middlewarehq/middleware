@@ -12,7 +12,6 @@ from tests.factories.models import (
 )
 from tests.factories.models.exapi.github import (
     get_github_commit_dict,
-    get_github_pull_request_review,
     get_github_pull_request,
     get_github_pr_timeline_event,
 )
@@ -261,7 +260,7 @@ def test__to_pr_events_given_a_list_of_new_events_and_old_events_returns_a_list_
         created_at=event1.timestamp,
         type="REVIEW",
         idempotency_key=event1.id,
-       reviewer=event1.user_login,
+        reviewer=event1.user_login,
     )
 
     pr_events = GithubETLHandler._to_pr_events(events, pr_model, [old_event])

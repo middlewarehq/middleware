@@ -170,7 +170,7 @@ def get_github_pr_timeline_event(
 ) -> GithubPRTimelineEvent:
     if timestamp is None:
         timestamp = time_now()
-    
+
     if raw_data is None:
         raw_data = {
             "id": event_id,
@@ -178,11 +178,11 @@ def get_github_pr_timeline_event(
             "submitted_at": timestamp.isoformat(),
             "state": "approved",
         }
-    
+
     return GithubPRTimelineEvent(
         id=event_id,
         user_login=user_login,
         type=event_type,
         timestamp=timestamp,
-        raw_data=raw_data
+        raw_data=raw_data,
     )

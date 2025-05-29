@@ -6,7 +6,6 @@ import pytz
 from mhq.utils.github import get_custom_github_domain
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
-from github.PullRequestReview import PullRequestReview as GithubPullRequestReview
 from github.Repository import Repository as GithubRepository
 
 from mhq.exapi.github import GithubApiService
@@ -170,9 +169,14 @@ class GithubETLHandler(CodeProviderETLHandler):
         )
         pr_commits_model_list: List = []
 
-
-        timeline_pr_events = self._api.get_pr_timeline_events(pr.base.repo.full_name, pr.number)
-        reviews = [review for review in timeline_pr_events if(review.type==PullRequestEventType.REVIEW)]
+        timeline_pr_events = self._api.get_pr_timeline_events(
+            pr.base.repo.full_name, pr.number
+        )
+        reviews = [
+            review
+            for review in timeline_pr_events
+            if (review.type == PullRequestEventType.REVIEW)
+        ]
 
         pr_model: PullRequest = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
         pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
@@ -286,7 +290,7 @@ class GithubETLHandler(CodeProviderETLHandler):
 
     @staticmethod
     def _to_pr_events(
-        timeline_events:List[GithubPRTimelineEvent],
+        timeline_events: List[GithubPRTimelineEvent],
         pr_model: PullRequest,
         pr_events_model: [PullRequestEvent],
     ) -> List[PullRequestEvent]:

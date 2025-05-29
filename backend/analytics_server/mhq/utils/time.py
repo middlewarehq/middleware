@@ -274,17 +274,21 @@ def dt_from_iso_time_string(j_str_dt) -> Optional[datetime]:
     if not j_str_dt:
         return None
     datetime_formats = [
-        "%Y-%m-%dT%H:%M:%S.%f%z",  
-        "%Y-%m-%dT%H:%M:%S%z",   
-        "%Y-%m-%dT%H:%M:%S.%fZ",  
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%fZ",
     ]
-    normalized_dt_str = j_str_dt.replace('Z', '+00:00') if j_str_dt.endswith('Z') else j_str_dt
+    normalized_dt_str = (
+        j_str_dt.replace("Z", "+00:00") if j_str_dt.endswith("Z") else j_str_dt
+    )
     for fmt in datetime_formats:
         try:
-            if '%z' in fmt:
+            if "%z" in fmt:
                 dt_without_timezone = datetime.strptime(normalized_dt_str, fmt)
             else:
-                dt_without_timezone = datetime.strptime(j_str_dt, fmt).replace(tzinfo=pytz.UTC)
+                dt_without_timezone = datetime.strptime(j_str_dt, fmt).replace(
+                    tzinfo=pytz.UTC
+                )
 
             return dt_without_timezone.astimezone(pytz.UTC)
         except ValueError:

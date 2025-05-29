@@ -12,10 +12,13 @@ from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from github.Repository import Repository as GithubRepository
 
-from mhq.exapi.schemas.timeline import GitHubPullTimelineEvent, GitHubPrTimelineEventsDict
+from mhq.exapi.schemas.timeline import (
+    GitHubPullTimelineEvent,
+    GitHubPrTimelineEventsDict,
+)
 from mhq.exapi.models.timeline import GithubPRTimelineEvent
 from mhq.store.models.code.enums import PullRequestEventType
-from mhq.exapi.models.github import GitHubBaseUser, GitHubContributor
+from mhq.exapi.models.github import GitHubContributor
 from mhq.utils.log import LOG
 from mhq.utils.time import dt_from_iso_time_string
 
@@ -277,60 +280,80 @@ class GithubApiService:
             data = _fetch_workflow_runs(page=page)
         return repo_workflows
 
-    def get_pr_timeline_events(self, repo_name: str, pr_number: int) -> List[GithubPRTimelineEvent]:
+    def get_pr_timeline_events(
+        self, repo_name: str, pr_number: int
+    ) -> List[GithubPRTimelineEvent]:
 
         def _fetch_timeline_events(page: int = 1) -> List[Dict]:
-            github_url = f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
+            github_url = (
+                f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
+            )
             query_params = {"per_page": PAGE_SIZE, "page": page}
-            
+
             try:
-                response = requests.get(github_url, headers=self.headers, params=query_params)
+                response = requests.get(
+                    github_url, headers=self.headers, params=query_params
+                )
             except requests.RequestException as e:
-                raise GithubException(HTTPStatus.SERVICE_UNAVAILABLE, f"Network error: {str(e)}")
-            
+                raise GithubException(
+                    HTTPStatus.SERVICE_UNAVAILABLE, f"Network error: {str(e)}"
+                )
+
             if response.status_code == HTTPStatus.NOT_FOUND:
-                raise GithubException(HTTPStatus.NOT_FOUND, f"PR {pr_number} not found for repo {repo_name}")
-            
+                raise GithubException(
+                    HTTPStatus.NOT_FOUND,
+                    f"PR {pr_number} not found for repo {repo_name}",
+                )
+
             if response.status_code == HTTPStatus.FORBIDDEN:
                 raise GithubRateLimitExceeded("GitHub API rate limit exceeded")
-                
+
             if response.status_code != HTTPStatus.OK:
-                raise GithubException(response.status_code, f"Failed to fetch timeline events: {response.text}")
-                
+                raise GithubException(
+                    response.status_code,
+                    f"Failed to fetch timeline events: {response.text}",
+                )
+
             try:
                 return response.json()
             except ValueError as e:
-                raise GithubException(HTTPStatus.INTERNAL_SERVER_ERROR, f"Invalid JSON response: {str(e)}")
-        
+                raise GithubException(
+                    HTTPStatus.INTERNAL_SERVER_ERROR, f"Invalid JSON response: {str(e)}"
+                )
+
         def _create_timeline_event(event_data: Dict) -> GitHubPrTimelineEventsDict:
             return GitHubPrTimelineEventsDict(
                 event=event_data.get("event", ""),
-                data=cast(GitHubPullTimelineEvent, event_data) 
+                data=cast(GitHubPullTimelineEvent, event_data),
             )
-        
+
         all_timeline_events: List[GitHubPrTimelineEventsDict] = []
         page = 1
-        
+
         try:
             while True:
                 timeline_events = _fetch_timeline_events(page=page)
                 if not timeline_events:
                     break
-                
-                all_timeline_events.extend([
-                    _create_timeline_event(event_data) 
-                    for event_data in timeline_events
-                ])
-                
+
+                all_timeline_events.extend(
+                    [
+                        _create_timeline_event(event_data)
+                        for event_data in timeline_events
+                    ]
+                )
+
                 if len(timeline_events) < PAGE_SIZE:
                     break
                 page += 1
-                
+
         except GithubException:
             raise
         except Exception as e:
-            raise GithubException(HTTPStatus.INTERNAL_SERVER_ERROR, f"Unexpected error: {str(e)}")
-        
+            raise GithubException(
+                HTTPStatus.INTERNAL_SERVER_ERROR, f"Unexpected error: {str(e)}"
+            )
+
         return adapt_github_timeline_events(all_timeline_events)
 
 
@@ -362,15 +385,15 @@ class Event:
             "id_path": "id",
         },
     }
-    
+
     def __init__(self, event_type: str, data: GitHubPullTimelineEvent):
         self.event_type = event_type
         self.data = data
 
     def _get_nested_value(self, path: str) -> Optional[any]:
-        keys = path.split('.')
+        keys = path.split(".")
         current = self.data
-        
+
         for key in keys:
             if isinstance(current, dict) and key in current:
                 current = current[key]
@@ -382,13 +405,13 @@ class Event:
     def user(self) -> Optional[str]:
         config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
         actor_path = config["actor_path"]
-        
+
         if not actor_path:
             return None
-            
+
         if self.event_type == "committed":
             return self._get_nested_value(actor_path)
-            
+
         user_data = self._get_nested_value(actor_path)
         if not user_data:
             return None
@@ -396,8 +419,10 @@ class Event:
             return user_data["login"]
         elif hasattr(user_data, "login"):
             return user_data.login
-            
-        LOG.warning(f"User data does not contain login field for event type: {self.event_type}")
+
+        LOG.warning(
+            f"User data does not contain login field for event type: {self.event_type}"
+        )
         return None
 
     @property
@@ -405,7 +430,7 @@ class Event:
         config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
         timestamp_field = config["timestamp_field"]
         timestamp_value = self._get_nested_value(timestamp_field)
-        
+
         if timestamp_value:
             timestamp_str = str(timestamp_value)
             return dt_from_iso_time_string(timestamp_str)
@@ -453,28 +478,30 @@ def adapt_github_timeline_events(
     timeline_events: List[GitHubPrTimelineEventsDict],
 ) -> List[GithubPRTimelineEvent]:
     normalized: List[GithubPRTimelineEvent] = []
-    
+
     for timeline_event in timeline_events:
         event_data = timeline_event.get("data")
         if not event_data:
             continue
-        
+
         event_type = timeline_event.get("event")
         if not event_type:
             continue
-        
+
         event = Event(event_type, event_data)
-        
+
         if all([event.timestamp, event.type, event.id, event.user]):
             adapted_event = GithubPRTimelineEvent(
-                id=cast(str,event.id),
+                id=cast(str, event.id),
                 user_login=cast(str, event.user),
-                type=cast(PullRequestEventType,event.type),
-                timestamp=cast(datetime,event.timestamp),
-                raw_data=cast(GitHubPullTimelineEvent, event.raw_data)
+                type=cast(PullRequestEventType, event.type),
+                timestamp=cast(datetime, event.timestamp),
+                raw_data=cast(GitHubPullTimelineEvent, event.raw_data),
             )
             normalized.append(adapted_event)
         else:
-            LOG.warning(f"Skipping incomplete timeline event: {event_type} with id: {event.id}")
-    
+            LOG.warning(
+                f"Skipping incomplete timeline event: {event_type} with id: {event.id}"
+            )
+
     return normalized

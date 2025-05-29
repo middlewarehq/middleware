@@ -51,7 +51,6 @@ class PullRequestEventType(Enum):
     UNKNOWN = "UNKNOWN"
 
 
-
 class PullRequestRevertPRMappingActorType(Enum):
     SYSTEM = "SYSTEM"
     USER = "USER"

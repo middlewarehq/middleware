@@ -1,5 +1,6 @@
 from typing import TypedDict, Optional, Union, List
 
+
 class UserDict(TypedDict):
     login: str
     id: int
@@ -21,19 +22,23 @@ class UserDict(TypedDict):
     user_view_type: str
     site_admin: bool
 
+
 class AuthorDict(TypedDict):
     name: str
     email: str
     date: str
 
+
 class TreeDict(TypedDict):
     sha: str
     url: str
+
 
 class ParentDict(TypedDict):
     sha: str
     url: str
     html_url: str
+
 
 class VerificationDict(TypedDict):
     verified: bool
@@ -41,7 +46,6 @@ class VerificationDict(TypedDict):
     signature: str
     payload: str
     verified_at: str
-
 
 
 class CommitEvent(TypedDict):
@@ -55,7 +59,8 @@ class CommitEvent(TypedDict):
     message: str
     parents: List[ParentDict]
     verification: VerificationDict
-    event: str  
+    event: str
+
 
 class CommentEvent(TypedDict):
     url: str
@@ -68,8 +73,9 @@ class CommentEvent(TypedDict):
     updated_at: str
     author_association: str
     body: str
-    event: str 
+    event: str
     actor: UserDict
+
 
 class IssueEvent(TypedDict):
     id: int
@@ -81,19 +87,24 @@ class IssueEvent(TypedDict):
     commit_url: Optional[str]
     created_at: str
 
+
 class ReviewRequestedEvent(IssueEvent):
     review_requester: UserDict
     requested_reviewer: UserDict
 
+
 class MergedEvent(IssueEvent):
-    pass  
+    pass
+
 
 class ClosedEvent(IssueEvent):
     state_reason: Optional[str]
 
+
 class LinksDict(TypedDict):
     html: dict
     pull_request: dict
+
 
 class ReviewEvent(TypedDict):
     id: int
@@ -107,14 +118,17 @@ class ReviewEvent(TypedDict):
     pull_request_url: str
     author_association: str
     _links: LinksDict
-    event: str  
+    event: str
+
 
 class ReadyForReviewEvent(IssueEvent):
-    pass 
+    pass
+
 
 class SourceDict(TypedDict):
     type: str
     issue: dict
+
 
 class CrossReferencedEvent(TypedDict):
     actor: UserDict
@@ -122,21 +136,28 @@ class CrossReferencedEvent(TypedDict):
     updated_at: str
     source: SourceDict
     event: str
+
+
 class ConvertToDraftEvent(IssueEvent):
     pass
 
+
 class HeadRefDeletedEvent(IssueEvent):
     pass
+
 
 class HeadRefForcePushedEvent(IssueEvent):
     before: str
     after: str
 
+
 class LabeledEvent(IssueEvent):
     label: dict
 
+
 class UnlabeledEvent(IssueEvent):
     label: dict
+
 
 GitHubPullTimelineEvent = Union[
     CommitEvent,
@@ -152,8 +173,9 @@ GitHubPullTimelineEvent = Union[
     HeadRefDeletedEvent,
     HeadRefForcePushedEvent,
     LabeledEvent,
-    UnlabeledEvent
+    UnlabeledEvent,
 ]
+
 
 class GitHubPrTimelineEventsDict(TypedDict):
     event: str
