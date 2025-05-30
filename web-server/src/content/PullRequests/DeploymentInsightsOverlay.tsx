@@ -1,10 +1,10 @@
 import { ArrowDownwardRounded } from '@mui/icons-material';
 import { Card, Divider, useTheme, Collapse, Box } from '@mui/material';
+import Link from 'next/link';
 import pluralize from 'pluralize';
 import { ascend, descend, groupBy, path, prop, sort } from 'ramda';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
-import { DoraMetricsTrend } from '../DoraMetrics/DoraMetricsTrend';
-import { DoraMetricsDuration } from '../DoraMetrics/DoraMetricsDuration';
+
 import { FlexBox } from '@/components/FlexBox';
 import { MiniButton } from '@/components/MiniButton';
 import { MiniCircularLoader } from '@/components/MiniLoader';
@@ -13,6 +13,7 @@ import { PullRequestsTableMini } from '@/components/PRTableMini/PullRequestsTabl
 import Scrollbar from '@/components/Scrollbar';
 import { Tabs, TabItem } from '@/components/Tabs';
 import { Line } from '@/components/Text';
+import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
@@ -29,13 +30,14 @@ import {
 } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { Deployment, PR, RepoWorkflowExtended } from '@/types/resources';
+import { DeploymentSources } from '@/types/resources';
 import { percent } from '@/utils/datatype';
 import { depFn } from '@/utils/fn';
-import Link from 'next/link';
-import { ROUTES } from '@/constants/routes';
-import { DeploymentSources } from '@/types/resources';
 
 import { DeploymentItem } from './DeploymentItem';
+
+import { DoraMetricsDuration } from '../DoraMetrics/DoraMetricsDuration';
+import { DoraMetricsTrend } from '../DoraMetrics/DoraMetricsTrend';
 
 enum DepStatusFilter {
   All,
@@ -199,8 +201,11 @@ export const DeploymentInsightsOverlay = () => {
   const dateRangeLabel = useCurrentDateRangeReactNode();
 
   // Determine if the selected repository uses PR_MERGE as its deployment source
-  const currentBaseRepo = selectedRepo.value ? teamDeployments.repos_map[selectedRepo.value] : null;
-  const isPRMergeSource = currentBaseRepo?.deployment_type === DeploymentSources.PR_MERGE;
+  const currentBaseRepo = selectedRepo.value
+    ? teamDeployments.repos_map[selectedRepo.value]
+    : null;
+  const isPRMergeSource =
+    currentBaseRepo?.deployment_type === DeploymentSources.PR_MERGE;
 
   if (!team) return <Line>Please select a team first...</Line>;
 
@@ -226,10 +231,11 @@ export const DeploymentInsightsOverlay = () => {
               px={1}
               py={1 / 2}
               corner={theme.spacing(1)}
-              border={`1px solid ${repo.id === selectedRepo.value
+              border={`1px solid ${
+                repo.id === selectedRepo.value
                   ? theme.colors.info.main
                   : theme.colors.secondary.light
-                }`}
+              }`}
               pointer
               bgcolor={
                 repo.id === selectedRepo.value
@@ -241,9 +247,7 @@ export const DeploymentInsightsOverlay = () => {
                   ? theme.colors.info.main
                   : undefined
               }
-              fontWeight={
-                repo.id === selectedRepo.value ? 'bold' : undefined
-              }
+              fontWeight={repo.id === selectedRepo.value ? 'bold' : undefined}
               onClick={() => {
                 selectedRepo.set(repo.id as ID);
               }}
@@ -297,7 +301,7 @@ export const DeploymentInsightsOverlay = () => {
             {activeTab === TabKeys.ANALYTICS ? (
               <FlexBox col gap={1} p={1}>
                 <Divider sx={{ mb: '10px' }} />
-                <Box sx={{mb:'10px'}} key={selectedRepo.value}>
+                <Box sx={{ mb: '10px' }} key={selectedRepo.value}>
                   <FlexBox col gap={1 / 2}>
                     <Line white medium>
                       <Line bold white>
@@ -338,10 +342,7 @@ export const DeploymentInsightsOverlay = () => {
                     </Line>
                     <ProgressBar
                       mt={1}
-                      perc={percent(
-                        successfulDeps.length,
-                        deployments.length
-                      )}
+                      perc={percent(successfulDeps.length, deployments.length)}
                       height="12px"
                       maxWidth="300px"
                       progressTitle="Successful deployments"
@@ -366,9 +367,17 @@ export const DeploymentInsightsOverlay = () => {
                 ) : (
                   <Box sx={{ mb: '10px' }}>
                     <Line small white>
-                      Deployment trends are only available for repos with workflows as source.{' '}
+                      Deployment trends are only available for repos with
+                      workflows as source.{' '}
                       <Link href={ROUTES.TEAMS.ROUTE.PATH} passHref>
-                        <Line component="a" small color="primary" bold underline pointer>
+                        <Line
+                          component="a"
+                          small
+                          color="primary"
+                          bold
+                          underline
+                          pointer
+                        >
                           Go to settings →
                         </Line>
                       </Link>
@@ -379,7 +388,7 @@ export const DeploymentInsightsOverlay = () => {
             ) : (
               <>
                 <FlexBox col flex1>
-                <Divider sx={{ mt: '10px' }} />
+                  <Divider sx={{ mt: '10px' }} />
                   <FlexBox gap1 flex1 fullWidth>
                     <FlexBox col>
                       <FlexBox p={1} pb={0} gap={1 / 2}>
