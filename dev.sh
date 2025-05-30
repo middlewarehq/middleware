@@ -1,8 +1,16 @@
 #!/bin/bash
+CLI_DEV=false
+
+if [[ "$1" == "--cli-dev" ]]; then
+  echo "Running in CLI development mode..."
+  CLI_DEV=true
+fi
 
 MINIMUM_NODE_VERSION=22.0.0
 MINIMUM_YARN_VERSION=1.22.22
 MINIMUM_DOCKER_VERSION=24.0.0
+
+export SERVICES_STARTED=false
 
 # Function to compare versions correctly
 version_at_least() {
@@ -98,7 +106,12 @@ update_or_add_env_var "BEHIND_COMMITS_COUNT" "$BEHIND_COMMITS_COUNT"
 set -o allexport; source .env; set +o allexport
 cd ./cli || exit
 
-{ yarn && yarn build; } > /dev/null 2>&1
-yarn start
+yarn install > /dev/null 2>&1
+
+if [ "$CLI_DEV" = true ]; then
+  yarn dev
+else
+  yarn build && yarn start
+fi
 
 cd ..

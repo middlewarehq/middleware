@@ -55,6 +55,7 @@ const CliUi = () => {
   const db_pass = process.env['DB_PASS'];
   const redis_port = process.env['REDIS_PORT'];
   const redis_host = process.env['REDIS_HOST'];
+  const services_started = process.env['SERVICES_STARTED'];
 
   const preCheck = usePreCheck({
     db: Number(db_port),
@@ -106,21 +107,22 @@ const CliUi = () => {
       exit();
     }
     await dispatch(appSlice.actions.setAppState(AppStates.TEARDOWN));
-    setTimeout(() => {
-      if (!processRef.current) return;
-
+    if (processRef.current) {
       processRef.current.kill();
       processRef.current.stdout.destroy();
       processRef.current.stderr.destroy();
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    // dont depend on processRef.current here, as it might be null
+    // so always do a docker compose down irrespective of processRef.current
+    try {
+      await runCommand('docker', ['compose', 'down'], runCommandOpts).promise;
+    } catch {
+      await runCommand('docker-compose', ['down'], runCommandOpts).promise;
+    }
 
-      runCommand('docker', ['compose', 'down'], runCommandOpts)
-        .promise.catch(async (err: any) => {
-          await runCommand('docker-compose', ['down']).promise;
-        })
-        .finally(async () => {
-          await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
-        });
-    }, 200);
+    await dispatch(appSlice.actions.setAppState(AppStates.TERMINATED));
+    exit();
   }, [appState, dispatch, runCommandOpts]);
 
   const handleVersionUpdates = useCallback(async () => {
@@ -169,11 +171,32 @@ const CliUi = () => {
   useEffect(() => {
     if (Object.values(preCheck).includes(PreCheckStates.RUNNING)) {
       return;
-    } else {
-      if (Object.values(preCheck).includes(PreCheckStates.FAILED)) {
-        handleExit();
-        return;
-      }
+    }
+    /*
+    just a reminder that we make the ports check for optimizing hot reloading
+    so a FAILED port check shall imply that some ports are already in use
+    if the ports are already in use, we will not start the services
+    FAILING the ports check will not stop the app from starting, because the assumption is that
+    the user has already started the services and they are running
+    */
+
+    if (
+      preCheck.ports === PreCheckStates.FAILED &&
+      services_started === 'true'
+    ) {
+      dispatch(appSlice.actions.setAppState(AppStates.DOCKER_READY));
+      dispatch(appSlice.actions.updateReadyServices(LogSource.WebServer));
+      dispatch(appSlice.actions.updateReadyServices(LogSource.ApiServer));
+      dispatch(appSlice.actions.updateReadyServices(LogSource.SyncServer));
+      dispatch(appSlice.actions.updateReadyServices(LogSource.Postgres));
+      dispatch(appSlice.actions.updateReadyServices(LogSource.InitDb));
+      dispatch(appSlice.actions.updateReadyServices(LogSource.Redis));
+      return;
+    }
+
+    if (Object.values(preCheck).includes(PreCheckStates.FAILED)) {
+      handleExit();
+      return;
     }
 
     dispatch(appSlice.actions.setAppState(AppStates.INIT));
@@ -197,6 +220,8 @@ const CliUi = () => {
             })
           );
         });
+        // set the env variable APP_STARTED to true
+        globalThis.process.env['SERVICES_STARTED'] = 'true';
       })
       .catch(async (err: any) => {
         await runCommand('docker-compose', ['down']).promise;
@@ -404,13 +429,6 @@ const CliUi = () => {
                       property={PreCheckProperties.DAEMON}
                       errHelp={
                         'Docker daemon is not running, please ensure it is running. To check if your docker daemon is running, use the command: \ndocker info'
-                      }
-                    />
-                    <PreCheckDisplayElement
-                      value={preCheck.ports}
-                      property={PreCheckProperties.PORTS}
-                      errHelp={
-                        'One of the ports is not free. Please ensure that all the specified ports in dockerfile.dev are free.'
                       }
                     />
                     <PreCheckDisplayElement
