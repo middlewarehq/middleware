@@ -8,13 +8,11 @@ import {
   memo,
   useState
 } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
 
 import { FlexBox } from '@/components/FlexBox';
 import { FormattedLog } from '@/components/Service/SystemLog/FormattedLog';
 import { LogSearch } from '@/components/Service/SystemLog/LogSearch';
 import { PlainLog } from '@/components/Service/SystemLog/PlainLog';
-import { SystemLogsErrorFallback } from '@/components/Service/SystemLog/SystemLogsErrorFllback';
 import { Line } from '@/components/Text';
 import { ServiceNames } from '@/constants/service';
 import { useBoolState } from '@/hooks/useEasyState';
@@ -75,7 +73,9 @@ function searchReducer(state: SearchState, action: SearchAction): SearchState {
 const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   const { services, loading, logs } = useSystemLogs({ serviceName });
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<number>(0);
   const showScrollDownButton = useBoolState(false);
+  const showScrollUpButton = useBoolState(false);
   const [searchState, dispatch] = useReducer(searchReducer, initialSearchState);
   const isInitialLoad = useRef(true);
   const [currentMatchLineIndex, setCurrentMatchLineIndex] = useState<
@@ -92,6 +92,8 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     dispatch({ type: 'SET_SEARCHING', payload: true });
 
     const timer = setTimeout(() => {
+      if (!containerRef.current) return;
+
       requestAnimationFrame(() => {
         const elements = Array.from(
           containerRef.current?.querySelectorAll('.mhq--highlighted-log') ?? []
@@ -106,9 +108,26 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
 
   const scrollToBottom = useCallback(() => {
     if (containerRef.current) {
-      containerRef.current.scrollTo({
-        top: containerRef.current.scrollHeight,
-        behavior: 'smooth'
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTo({
+            top: containerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      });
+    }
+  }, []);
+
+  const scrollToTop = useCallback(() => {
+    if (containerRef.current) {
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
       });
     }
   }, []);
@@ -196,15 +215,33 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
     if (!container) return;
 
     const handleScroll = () => {
-      const isScrolledUp =
-        container.scrollTop <
-        container.scrollHeight - container.clientHeight - 100;
-      showScrollDownButton.set(isScrolledUp);
+      if (scrollTimeoutRef.current) {
+        cancelAnimationFrame(scrollTimeoutRef.current);
+      }
+      
+      scrollTimeoutRef.current = requestAnimationFrame(() => {
+        if (!containerRef.current) return;
+        
+        const { scrollTop, clientHeight, scrollHeight } = containerRef.current;
+        
+        // Show up button if scrolled down
+        const isScrolledDown = scrollTop > 200;
+        showScrollUpButton.set(isScrolledDown);
+        
+        // Show down button if not at bottom
+        const isNotAtBottom = scrollTop < (scrollHeight - clientHeight - 200);
+        showScrollDownButton.set(isNotAtBottom);
+      });
     };
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [showScrollDownButton]);
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      if (scrollTimeoutRef.current) {
+        cancelAnimationFrame(scrollTimeoutRef.current);
+      }
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [showScrollDownButton, showScrollUpButton]);
 
   const renderLogs = useCallback(() => {
     return logs.map((log, index) => {
@@ -238,57 +275,77 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
   }, [logs, searchState.query, currentMatchLineIndex, handleLogSelect]);
 
   return (
-    <ErrorBoundary
-      FallbackComponent={({ error }: { error: Error }) => (
-        <SystemLogsErrorFallback error={error} serviceName={serviceName} />
+    <FlexBox col>
+      <LogSearch
+        onSearch={handleSearch}
+        onNavigate={handleNavigate}
+        currentMatch={searchState.selectedIndex}
+        totalMatches={searchState.elements.length}
+      />
+      {loading ? (
+        <FlexBox alignCenter gap2>
+          <CircularProgress size="20px" />
+          <Line>Loading...</Line>
+        </FlexBox>
+      ) : (
+        <FlexBox
+          ref={containerRef}
+          col
+          sx={{ overflowY: 'auto', maxHeight: '100%', position: 'relative' }}
+        >
+          {services && renderLogs()}
+        </FlexBox>
       )}
-    >
-      <FlexBox col>
-        <LogSearch
-          onSearch={handleSearch}
-          onNavigate={handleNavigate}
-          currentMatch={searchState.selectedIndex}
-          totalMatches={searchState.elements.length}
-        />
-        {loading ? (
-          <FlexBox alignCenter gap2>
-            <CircularProgress size="20px" />
-            <Line>Loading...</Line>
-          </FlexBox>
-        ) : (
-          <FlexBox
-            ref={containerRef}
-            col
-            sx={{ overflowY: 'auto', maxHeight: '100%' }}
-          >
-            {services && renderLogs()}
-          </FlexBox>
-        )}
 
-        {showScrollDownButton.value && (
-          <Button
-            onClick={scrollToBottom}
-            component={MotionBox}
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-              ease: 'easeOut'
-            }}
-            bottom={20}
-            sx={{
-              position: 'fixed',
-              marginLeft: `calc(${
-                containerRef.current
-                  ? containerRef.current.clientWidth / 2 - 67
-                  : 0
-              }px)`
-            }}
-          >
-            <ExpandCircleDown fontSize="large" color="secondary" />
-          </Button>
-        )}
-      </FlexBox>
-    </ErrorBoundary>
+      {showScrollDownButton.value && (
+        <Button
+          onClick={scrollToBottom}
+          component={MotionBox}
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            ease: 'easeOut'
+          }}
+          bottom={20}
+          sx={{
+            position: 'fixed',
+            marginLeft: `calc(${
+              containerRef.current
+                ? containerRef.current.clientWidth / 2 - 67
+                : 0
+            }px)`,
+            transform: 'rotate(180deg)'
+          }}
+          aria-label="Scroll to bottom"
+        >
+          <ExpandCircleDown fontSize="large" color="secondary" />
+        </Button>
+      )}
+      
+      {showScrollUpButton.value && (
+        <Button
+          onClick={scrollToTop}
+          component={MotionBox}
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            ease: 'easeOut'
+          }}
+          top={60}
+          sx={{
+            position: 'fixed',
+            marginLeft: `calc(${
+              containerRef.current
+                ? containerRef.current.clientWidth / 2 - 67
+                : 0
+            }px)`
+          }}
+          aria-label="Scroll to top"
+        >
+          <ExpandCircleDown fontSize="large" color="secondary" />
+        </Button>
+      )}
+    </FlexBox>
   );
 });
 
