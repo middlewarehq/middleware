@@ -3,13 +3,17 @@ import { Button, Menu, MenuItem } from '@mui/material';
 import { useCallback, useRef, useEffect } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
+import { TeamIncidentPRsFilter } from '@/components/TeamIncidentPRsFilter';
 import { TeamProductionBranchSelector } from '@/components/TeamProductionBranchSelector';
 import { isRoleLessThanEM } from '@/constants/useRoute';
 import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';
 import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
-import { fetchTeamReposProductionBranches } from '@/slices/team';
+import {
+  fetchTeamIncidentPRsFilter,
+  fetchTeamReposProductionBranches
+} from '@/slices/team';
 import { useDispatch } from '@/store';
 
 export const DoraMetricsConfigurationSettings = () => {
@@ -20,6 +24,7 @@ export const DoraMetricsConfigurationSettings = () => {
   const isEng = isRoleLessThanEM(role);
   useEffect(() => {
     dispatch(fetchTeamReposProductionBranches({ team_id: singleTeamId }));
+    dispatch(fetchTeamIncidentPRsFilter({ team_id: singleTeamId }));
   }, [dispatch, singleTeamId]);
 
   const openProductionBranchSelectorModal = useCallback(async () => {
@@ -28,6 +33,14 @@ export const DoraMetricsConfigurationSettings = () => {
       body: (
         <TeamProductionBranchSelector onClose={() => closeModal(modal.key)} />
       ),
+      showCloseIcon: true
+    });
+  }, [addModal, closeModal]);
+
+  const openIncidentPRFilterModal = useCallback(async () => {
+    const modal = addModal({
+      title: `Configure Filters for Incident PRs`,
+      body: <TeamIncidentPRsFilter onClose={() => closeModal(modal.key)} />,
       showCloseIcon: true
     });
   }, [addModal, closeModal]);
@@ -73,6 +86,14 @@ export const DoraMetricsConfigurationSettings = () => {
           }}
         >
           Configure Production Branches
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            open.false();
+            openIncidentPRFilterModal();
+          }}
+        >
+          Configure Filters for Incident PRs
         </MenuItem>
       </Menu>
     </>
