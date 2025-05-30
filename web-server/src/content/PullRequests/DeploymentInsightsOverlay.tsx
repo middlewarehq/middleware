@@ -31,6 +31,9 @@ import { useDispatch, useSelector } from '@/store';
 import { Deployment, PR, RepoWorkflowExtended } from '@/types/resources';
 import { percent } from '@/utils/datatype';
 import { depFn } from '@/utils/fn';
+import Link from 'next/link';
+import { ROUTES } from '@/constants/routes';
+import { DeploymentSources } from '@/types/resources';
 
 import { DeploymentItem } from './DeploymentItem';
 
@@ -195,6 +198,10 @@ export const DeploymentInsightsOverlay = () => {
 
   const dateRangeLabel = useCurrentDateRangeReactNode();
 
+  // Determine if the selected repository uses PR_MERGE as its deployment source
+  const currentBaseRepo = selectedRepo.value ? teamDeployments.repos_map[selectedRepo.value] : null;
+  const isPRMergeSource = currentBaseRepo?.deployment_type === DeploymentSources.PR_MERGE;
+
   if (!team) return <Line>Please select a team first...</Line>;
 
   return (
@@ -348,11 +355,26 @@ export const DeploymentInsightsOverlay = () => {
                     />
                   </FlexBox>
                 </Box>
-                <FlexBox>
-                  <DoraMetricsDuration deployments={deployments} />
-                </FlexBox>
-                <FlexBox></FlexBox>
-                <DoraMetricsTrend />
+                {!isPRMergeSource ? (
+                  <>
+                    <FlexBox>
+                      <DoraMetricsDuration deployments={deployments} />
+                    </FlexBox>
+                    <FlexBox></FlexBox>
+                    <DoraMetricsTrend />
+                  </>
+                ) : (
+                  <Box sx={{ mb: '10px' }}>
+                    <Line small white>
+                      Deployment trends are only available for repos with workflows as source.{' '}
+                      <Link href={ROUTES.TEAMS.ROUTE.PATH} passHref>
+                        <Line component="a" small color="primary" bold underline pointer>
+                          Go to settings →
+                        </Line>
+                      </Link>
+                    </Line>
+                  </Box>
+                )}
               </FlexBox>
             ) : (
               <>
