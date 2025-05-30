@@ -387,6 +387,21 @@ class CodeRepoService:
         return self.get_repos_by_ids(team_repo_ids)
 
     @rollback_on_exc
+    def get_prs_merged_without_review(
+        self, repo_ids: List[str], interval: Interval, pr_filter: PRFilter = None
+    ) -> List[PullRequest]:
+        query = (
+            self._db.session.query(PullRequest)
+            .filter(PullRequest.repo_id.in_(repo_ids))
+            .filter(PullRequest.state == PullRequestState.MERGED)
+            .filter(PullRequest.merge_time.is_(None))
+        )
+        query = self._filter_prs_merged_in_interval(query, interval)
+        query = self._filter_prs(query, pr_filter)
+
+        return query.all()
+
+    @rollback_on_exc
     def get_team_repos_by_team_id(self, team_id: str) -> List[TeamRepos]:
         return (
             self._db.session.query(TeamRepos)
