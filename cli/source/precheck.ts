@@ -22,14 +22,16 @@ async function run(): Promise<void> {
 
   try {
     const results = await Promise.allSettled(ports.map(isFreePort));
-    const conflict = results.some(
-      (r) => r.status === 'rejected' || r.value === false
-    );
-
-    if (conflict) {
-      console.error('❌  One or more ports are already in use');
-      process.exit(1);
-    }
+    results.forEach((result, i) => {
+      const port = ports[i];
+      if (result.status === 'rejected') {
+        console.error(`❌  Failed to check port ${port}:`, result.reason);
+        process.exit(1);
+      } else if (!result.value) {
+        console.error(`❌  Port ${port} is already in use.`);
+        process.exit(1);
+      }
+    });
 
     console.log('✅  All ports are free; starting app...');
   } catch (err) {
