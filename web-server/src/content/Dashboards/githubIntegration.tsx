@@ -30,8 +30,8 @@ export const bitBucketIntegrationDisplay = {
   name: 'BitBucket',
   description: 'Code insights & blockers',
   color: '#fff',
-  bg: `linear-gradient(-45deg, rgba(69, 110, 232, 0.6) 0%, rgba(24, 176, 236, 0.6) 100%);`,
+  bg: `linear-gradient(-45deg, rgba(69, 110, 232, 0.6) 0%, rgba(24, 176, 236, 0.6) 100%)`,
   icon: <BitbucketIcon height={28} width={28} />
+} as IntegrationItem;
 
-}
 export type IntegrationItem = typeof githubIntegrationsDisplay;

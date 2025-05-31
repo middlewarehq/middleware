@@ -90,37 +90,76 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
   return missingScopes;
 };
 
-//BitBucket Functions
+// BitBucket Functions
+interface BitBucketValidationResponse {
+  headers: Record<string, string>;
+  data?: any;
+}
+
+interface BitBucketCredentials {
+  username: string;
+  appPassword: string;
+}
+
 export const checkBitBucketValidity = async (
   username: string,
-  password: string,
-  customDomain?: string
-) => {
+  password: string
+): Promise<BitBucketValidationResponse> => {
+  if (!username?.trim() || !password?.trim()) {
+    throw new Error('Username and App Password are required');
+  }
+
   try {
-    const response = await axios.post(
+    const response = await axios.post<BitBucketValidationResponse>(
       "/api/integrations/bitbucket/scopes", 
       {
-        username,
-        appPassword: password,
-        customDomain
-      },
+        username: username.trim(),
+        appPassword: password
+      } as BitBucketCredentials,
       {
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 10000
       }
     );
     return response.data;
-  } catch (error) {
-    throw new Error('Invalid BitBucket credentials', { cause: error });
+  } catch (error: any) {
+    if (error.code === 'ECONNABORTED') {
+      throw new Error('Request timeout. Please check your internet connection and try again.');
+    }
+    
+    if (error.response?.status === 401) {
+      throw new Error('Invalid username or App Password. Please verify your credentials.');
+    }
+    
+    if (error.response?.status === 403) {
+      throw new Error('Access forbidden. Please ensure your App Password has the required permissions.');
+    }
+    
+    if (error.response?.status >= 500) {
+      throw new Error('BitBucket service is currently unavailable. Please try again later.');
+    }
+    
+    const message = error.response?.data?.message || 
+                   error.message || 
+                   'Unable to validate BitBucket credentials. Please try again.';
+    throw new Error(message);
   }
 };
 
-const BITBUCKET_SCOPES = ['issue', 'pullrequest', 'project', 'account'];
+const BITBUCKET_SCOPES = ['issue', 'pullrequest', 'project', 'account'] as const;
 
-export const getMissingBitBucketScopes = (scopes: string[]): string[] => {
-  const missingScopes = BITBUCKET_SCOPES.filter(
-    (scope) => !scopes.includes(scope)
+export const getMissingBitBucketScopes = (userScopes: string[]): string[] => {
+  if (!Array.isArray(userScopes)) {
+    return [...BITBUCKET_SCOPES];
+  }
+  
+  const normalizedUserScopes = userScopes
+    .map(scope => scope.trim().toLowerCase())
+    .filter(Boolean);
+    
+  return BITBUCKET_SCOPES.filter(
+    requiredScope => !normalizedUserScopes.includes(requiredScope.toLowerCase())
   );
-  return missingScopes;
 };

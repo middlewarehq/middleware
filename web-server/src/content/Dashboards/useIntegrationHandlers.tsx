@@ -29,17 +29,17 @@ export const useIntegrationHandlers = () => {
             body: <ConfigureGitlabModalBody onClose={closeAllModals} />,
             showCloseIcon: true
           }),
-          bitbucket: () =>
-            addModal({
-              title: 'Configure Gitlab',
-              body: <ConfigureBitbucketModalBody onClose={closeAllModals}/> ,
-              showCloseIcon: true
-            })
+        bitbucket: () =>
+          addModal({
+            title: 'Configure Bitbucket',
+            body: <ConfigureBitbucketModalBody onClose={closeAllModals} />,
+            showCloseIcon: true
+          })
       },
       unlink: {
         github: () => unlinkProvider(orgId, Integration.GITHUB),
-        gitlab: () => unlinkProvider(orgId, Integration.GITLAB), 
-        bitbucket: () => unlinkProvider(orgId,Integration.BITBUCKET)
+        gitlab: () => unlinkProvider(orgId, Integration.GITLAB),
+        bitbucket: () => unlinkProvider(orgId, Integration.BITBUCKET)
       }
     };
 
