@@ -91,7 +91,10 @@ export const handleRequest = <T = any, B extends boolean = false>(
   internal({
     url,
     ...params,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 
+      'Content-Type': 'application/json',
+      ...params.headers 
+    }
   })
     .then((r: any) => handleThen(r, includeHeaders))
     .catch(handleCatch);

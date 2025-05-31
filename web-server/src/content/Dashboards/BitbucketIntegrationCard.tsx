@@ -147,7 +147,7 @@ import {
   };
   
   const IntegrationActionsButton: FC<{
-    onClick: AnyFunction;
+    onClick: () => void | Promise<void>;
     label: ReactNode;
     bgOpacity?: number;
     startIcon?: ReactNode;
@@ -245,4 +245,3 @@ import {
       </svg>
     );
   };
-  
