@@ -34,6 +34,7 @@ import { DeploymentWorkflowSelector } from '@/components/WorkflowSelector';
 import { Integration } from '@/constants/integrations';
 import { useModal } from '@/contexts/ModalContext';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
+import BitbucketIcon from '@/mocks/icons/bitbucket.svg';
 import GitlabIcon from '@/mocks/icons/gitlab.svg';
 import { BaseRepo, DeploymentSources } from '@/types/resources';
 import { trimWithEllipsis } from '@/utils/stringFormatting';
@@ -311,6 +312,8 @@ const TeamRepos: FC = () => {
                   <FlexBox gap={1 / 2} alignCenter>
                     {option.provider === Integration.GITHUB ? (
                       <GitHub sx={{ fontSize: '14px' }} />
+                    ) : option.provider === Integration.BITBUCKET ? (
+                      <BitbucketIcon height={12} width={12} />
                     ) : (
                       <GitlabIcon height={12} width={12} />
                     )}
@@ -447,6 +450,8 @@ const DisplayRepos: FC = () => {
                     >
                       {repo.provider === Integration.GITHUB ? (
                         <GitHub />
+                      ) : repo.provider === Integration.BITBUCKET ? (
+                        <BitbucketIcon height={14} width={14} />
                       ) : (
                         <GitlabIcon height={14} width={14} />
                       )}

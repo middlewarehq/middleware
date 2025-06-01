@@ -7,6 +7,7 @@ from flask import request
 from stringcase import snakecase
 from voluptuous import Invalid
 from werkzeug.exceptions import BadRequest
+from mhq.utils.log import LOG
 from mhq.store.models.code.repository import TeamRepos
 from mhq.service.code.models.org_repo import RawTeamOrgRepo
 from mhq.store.models.code import WorkflowFilter, CodeProvider
@@ -82,20 +83,24 @@ def coerce_workflow_filter(filter_data: str) -> WorkflowFilter:
 
 
 def coerce_org_repo(repo: Dict[str, str]) -> RawTeamOrgRepo:
-    return RawTeamOrgRepo(
-        team_id=repo.get("team_id"),
-        provider=CodeProvider(repo.get("provider")),
-        name=repo.get("name"),
-        org_name=repo.get("org"),
-        slug=repo.get("slug"),
-        idempotency_key=repo.get("idempotency_key"),
-        default_branch=repo.get("default_branch"),
-        deployment_type=(
-            TeamReposDeploymentType(repo.get("deployment_type"))
-            if repo.get("deployment_type")
-            else TeamReposDeploymentType.PR_MERGE
-        ),
-    )
+    try:
+        return RawTeamOrgRepo(
+            team_id=repo.get("team_id"),
+            provider=CodeProvider(repo.get("provider")),
+            name=repo.get("name"),
+            org_name=repo.get("org"),
+            slug=repo.get("slug"),
+            idempotency_key=repo.get("idempotency_key"),
+            default_branch=repo.get("default_branch"),
+            deployment_type=(
+                TeamReposDeploymentType(repo.get("deployment_type"))
+                if repo.get("deployment_type")
+                else TeamReposDeploymentType.PR_MERGE
+            ),
+        )
+    except Exception as e:
+        LOG.error(f"Error creating RawTeamOrgRepo with data: {repo}. Error: {str(e)}")
+        raise
 
 
 def coerce_org_repos(repos: List[Dict[str, str]]) -> List[RawTeamOrgRepo]:
