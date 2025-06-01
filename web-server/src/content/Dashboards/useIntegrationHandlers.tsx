@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { unlinkProvider } from '@/utils/auth';
 
 import { ConfigureGithubModalBody } from './ConfigureGithubModalBody';
+import { ConfigureWebhookModalBody } from './ConfigureWebhookModalBody';
 
 export const useIntegrationHandlers = () => {
   const { orgId } = useAuth();
@@ -26,6 +27,12 @@ export const useIntegrationHandlers = () => {
           addModal({
             title: 'Configure Gitlab',
             body: <ConfigureGitlabModalBody onClose={closeAllModals} />,
+            showCloseIcon: true
+          }),
+        webhook: () =>
+          addModal({
+            title: 'Configure Webhook',
+            body: <ConfigureWebhookModalBody />,
             showCloseIcon: true
           })
       },

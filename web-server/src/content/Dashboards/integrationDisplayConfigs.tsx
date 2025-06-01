@@ -1,5 +1,5 @@
 import faker from '@faker-js/faker';
-import { GitHub } from '@mui/icons-material';
+import { GitHub, Webhook } from '@mui/icons-material';
 
 import GitlabIcon from '@/mocks/icons/gitlab.svg';
 
@@ -21,6 +21,14 @@ export const gitLabIntegrationDisplay = {
   color: '#554488',
   bg: 'linear-gradient(-45deg, hsla(17, 95%, 50%, 0.6) 0%, hsla(42, 94%, 67%, 0.6) 100%)',
   icon: <GitlabIcon height={28} width={28} />
-} as IntegrationItem;
+};
 
-export type IntegrationItem = typeof githubIntegrationsDisplay;
+export const webhookIntegrationDisplay = {
+  id: faker.datatype.uuid(),
+  type: 'webhook',
+  name: 'Webhook',
+  description: 'Webhooks for Workflows and Incidents',
+  color: '#6F42C1',
+  bg: `linear-gradient(135deg, hsla(270, 60%, 65%, 0.6) 0%, hsla(270, 30%, 45%, 0.6) 100%)`,
+  icon: <Webhook fontSize="large" />
+};
