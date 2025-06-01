@@ -1,6 +1,6 @@
 import * as yup from 'yup';
 
-import { gitlabSearch, searchGithubRepos } from '@/api/internal/[org_id]/utils';
+import { gitlabSearch, searchGithubRepos, bitbucketSearch } from '@/api/internal/[org_id]/utils';
 import { Endpoint } from '@/api-helpers/global';
 import { Integration } from '@/constants/integrations';
 import { dec } from '@/utils/auth-supplementary';
@@ -68,6 +68,18 @@ const getGitlabToken = async (org_id: ID) => {
     .then((r) => dec(r.access_token_enc_chunks));
 };
 
+const getBitbucketToken = async (org_id: ID) => {
+  return await db('Integration')
+    .select()
+    .where({
+      org_id,
+      name: Integration.BITBUCKET
+    })
+    .returning('*')
+    .then(getFirstRow)
+    .then((r) => dec(r.access_token_enc_chunks));
+};
+
 const fetchMap = [
   {
     provider: Integration.GITHUB,
@@ -78,5 +90,10 @@ const fetchMap = [
     provider: Integration.GITLAB,
     search: gitlabSearch,
     getToken: getGitlabToken
+  },
+  {
+    provider: Integration.BITBUCKET,
+    search: bitbucketSearch,
+    getToken: getBitbucketToken
   }
 ];

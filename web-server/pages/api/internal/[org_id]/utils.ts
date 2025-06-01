@@ -269,6 +269,134 @@ export const gitlabSearch = async (pat: string, searchString: string) => {
   return searchGitlabRepos(pat, search);
 };
 
+// Bitbucket functions
+
+type BitbucketRepo = {
+  uuid: string;
+  name: string;
+  full_name: string;
+  description?: string;
+  language?: string;
+  mainbranch?: {
+    name: string;
+  };
+  links: {
+    html: {
+      href: string;
+    };
+  };
+  owner: {
+    username: string;
+  };
+};
+
+type BitbucketResponse = {
+  values: BitbucketRepo[];
+  next?: string;
+};
+
+const BITBUCKET_API_URL = 'https://api.bitbucket.org/2.0';
+
+export const searchBitbucketRepos = async (
+  credentials: string,
+  searchString: string
+): Promise<BaseRepo[]> => {
+  let urlString = convertUrlToQuery(searchString);
+  if (urlString !== searchString && urlString.includes('/')) {
+    try {
+      return await searchBitbucketRepoWithURL(credentials, urlString);
+    } catch (e) {
+      return await searchBitbucketReposWithNames(credentials, urlString);
+    }
+  }
+  return await searchBitbucketReposWithNames(credentials, urlString);
+};
+
+const searchBitbucketRepoWithURL = async (
+  credentials: string,
+  searchString: string
+): Promise<BaseRepo[]> => {
+  const apiUrl = `${BITBUCKET_API_URL}/repositories/${searchString}`;
+  
+  const response = await fetch(apiUrl, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Bitbucket API error: ${response.statusText}`);
+  }
+
+  const repo = (await response.json()) as BitbucketRepo;
+  
+  return [
+    {
+      id: repo.uuid.replace(/[{}]/g, ''),
+      name: repo.name,
+      desc: repo.description,
+      slug: repo.name,
+      parent: repo.owner.username,
+      web_url: repo.links.html.href,
+      branch: repo.mainbranch?.name,
+      language: repo.language,
+      provider: Integration.BITBUCKET
+    }
+  ] as BaseRepo[];
+};
+
+const searchBitbucketReposWithNames = async (
+  credentials: string,
+  searchString: string
+): Promise<BaseRepo[]> => {
+  const apiUrl = `${BITBUCKET_API_URL}/repositories`;
+  const params = new URLSearchParams({
+    q: `name~"${searchString}"`,
+    role: 'member',
+    pagelen: '50'
+  });
+
+  const response = await fetch(`${apiUrl}?${params}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Bitbucket API error: ${response.statusText}`);
+  }
+
+  const responseBody = (await response.json()) as BitbucketResponse;
+  const repositories = responseBody.values || [];
+
+  return repositories.map(
+    (repo) =>
+      ({
+        id: repo.uuid.replace(/[{}]/g, ''),
+        name: repo.name,
+        desc: repo.description,
+        slug: repo.name,
+        parent: repo.owner.username,
+        web_url: repo.links.html.href,
+        branch: repo.mainbranch?.name,
+        language: repo.language || null,
+        provider: Integration.BITBUCKET
+      }) as BaseRepo
+  );
+};
+
+export const bitbucketSearch = async (
+  credentials: string,
+  searchString: string
+): Promise<BaseRepo[]> => {
+  let search = convertUrlToQuery(searchString);
+  return searchBitbucketRepos(credentials, search);
+};
+
 const convertUrlToQuery = (url: string) => {
   let query = url;
   try {
@@ -280,6 +408,7 @@ const convertUrlToQuery = (url: string) => {
     query = query.replace('http://', '');
     query = query.replace('github.com/', '');
     query = query.replace('gitlab.com/', '');
+    query = query.replace('bitbucket.org/', '');
     query = query.startsWith('www.') ? query.slice(4) : query;
     query = query.endsWith('/') ? query.slice(0, -1) : query;
   }

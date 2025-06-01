@@ -31,6 +31,7 @@ import { DeploymentWorkflowSelector } from '@/components/WorkflowSelector';
 import { Integration } from '@/constants/integrations';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import GitlabIcon from '@/mocks/icons/gitlab.svg';
+import BitbucketIcon from '@/mocks/icons/bitbucket.svg'
 import { BaseRepo, DeploymentSources } from '@/types/resources';
 import { trimWithEllipsis } from '@/utils/stringFormatting';
 
@@ -257,7 +258,7 @@ const TeamRepos: FC = () => {
           )}
           renderOption={(props, option, { selected }) => (
             <li {...props}>
-              <FlexBox
+                <FlexBox
                 gap={2}
                 justifyBetween
                 fullWidth
@@ -266,34 +267,36 @@ const TeamRepos: FC = () => {
                   textOverflow: 'ellipsis',
                   overflow: 'hidden'
                 }}
-              >
+                >
                 <FlexBox
                   col
                   sx={{ maxWidth: '200px', overflow: 'hidden' }}
                   tooltipPlacement="right"
                   title={
-                    checkOverflow(option) ? (
-                      <OverFlowTooltip
-                        parent={option.parent}
-                        name={option.name}
-                      />
-                    ) : undefined
+                  checkOverflow(option) ? (
+                    <OverFlowTooltip
+                    parent={option.parent}
+                    name={option.name}
+                    />
+                  ) : undefined
                   }
                 >
                   <FlexBox gap={1 / 2} alignCenter>
-                    {option.provider === Integration.GITHUB ? (
-                      <GitHub sx={{ fontSize: '14px' }} />
-                    ) : (
-                      <GitlabIcon height={12} width={12} />
-                    )}
-                    <Line tiny>
-                      {addEllipsis(option.parent, MAX_LENGTH_PARENT_NAME)}
-                    </Line>
+                  {option.provider === Integration.GITHUB ? (
+                    <GitHub sx={{ fontSize: '14px' }} />
+                  ) : option.provider === Integration.BITBUCKET ? (
+                    <BitbucketIcon height={12} width={12} />
+                  ) : (
+                    <GitlabIcon height={12} width={12} />
+                  )}
+                  <Line tiny>
+                    {addEllipsis(option.parent, MAX_LENGTH_PARENT_NAME)}
+                  </Line>
                   </FlexBox>
                   <Line>{addEllipsis(option.name, MAX_LENGTH_REPO_NAME)}</Line>
                 </FlexBox>
                 {selected ? <Close fontSize="small" /> : null}
-              </FlexBox>
+                </FlexBox>
             </li>
           )}
           renderTags={() => null}
@@ -398,6 +401,8 @@ const DisplayRepos: FC = () => {
                   >
                     {repo.provider === Integration.GITHUB ? (
                       <GitHub sx={{ fontSize: '16px' }} />
+                    ) : repo.provider === Integration.BITBUCKET ? (
+                      <BitbucketIcon height={14} width={14} />
                     ) : (
                       <GitlabIcon height={14} width={14} />
                     )}
