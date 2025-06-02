@@ -1,5 +1,12 @@
 import { LoadingButton } from '@mui/lab';
-import { Divider, Link, TextField, alpha, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import {
+  Divider,
+  Link,
+  TextField,
+  alpha,
+  ToggleButton,
+  ToggleButtonGroup
+} from '@mui/material';
 import Image from 'next/image';
 import { useSnackbar } from 'notistack';
 import { FC, useCallback, useMemo } from 'react';
@@ -54,12 +61,14 @@ export const ConfigureGithubModalBody: FC<{
   const handleChange = (e: string) => {
     token.set(e);
     const detectedType = getTokenType(e);
-    
+
     if (detectedType === 'unknown') {
       setError('Invalid token format');
       isTokenValid.false();
     } else if (detectedType !== tokenType.value) {
-      setError(`Token format doesn't match selected type. Expected ${tokenType.value} token.`);
+      setError(
+        `Token format doesn't match selected type. Expected ${tokenType.value} token.`
+      );
       isTokenValid.false();
     } else {
       showError.set('');
@@ -103,9 +112,16 @@ export const ConfigureGithubModalBody: FC<{
         return;
       }
 
-      const missingScopes = tokenType.value === 'classic' 
-        ? await getMissingPATScopes(token.value, customDomain.valueRef.current)
-        : await getMissingFineGrainedScopes(token.value, customDomain.valueRef.current);
+      const missingScopes =
+        tokenType.value === 'classic'
+          ? await getMissingPATScopes(
+              token.value,
+              customDomain.valueRef.current
+            )
+          : await getMissingFineGrainedScopes(
+              token.value,
+              customDomain.valueRef.current
+            );
 
       if (missingScopes.length > 0) {
         setError(`Token is missing scopes: ${missingScopes.join(', ')}`);
@@ -183,7 +199,11 @@ export const ConfigureGithubModalBody: FC<{
             onChange={(e) => {
               handleChange(e.currentTarget.value);
             }}
-            label={`Github ${tokenType.value === 'classic' ? 'Personal Access Token' : 'Fine Grained Token'}`}
+            label={`Github ${
+              tokenType.value === 'classic'
+                ? 'Personal Access Token'
+                : 'Fine Grained Token'
+            }`}
             type="password"
           />
           <Line error tiny mt={1}>
@@ -192,9 +212,11 @@ export const ConfigureGithubModalBody: FC<{
           <FlexBox>
             <Line tiny mt={1} primary sx={{ cursor: 'pointer' }}>
               <Link
-                href={tokenType.value === 'classic' 
-                  ? "https://github.com/settings/tokens"
-                  : "https://github.com/settings/tokens?type=beta"}
+                href={
+                  tokenType.value === 'classic'
+                    ? 'https://github.com/settings/tokens'
+                    : 'https://github.com/settings/tokens?type=beta'
+                }
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -204,7 +226,9 @@ export const ConfigureGithubModalBody: FC<{
                     textUnderlineOffset: '2px'
                   }}
                 >
-                  Generate new {tokenType.value === 'classic' ? 'classic' : 'fine-grained'} token
+                  Generate new{' '}
+                  {tokenType.value === 'classic' ? 'classic' : 'fine-grained'}{' '}
+                  token
                 </Line>
               </Link>
               <Line ml={'5px'}>{' ->'}</Line>
@@ -253,12 +277,16 @@ export const ConfigureGithubModalBody: FC<{
           <FlexBox col sx={{ opacity: 0.8 }}>
             <Line>Learn more about Github</Line>
             <Line>
-              {tokenType.value === 'classic' ? 'Personal Access Token (PAT)' : 'Fine Grained Token (FGT)'}
+              {tokenType.value === 'classic'
+                ? 'Personal Access Token (PAT)'
+                : 'Fine Grained Token (FGT)'}
               <Link
                 ml={1 / 2}
-                href={tokenType.value === 'classic'
-                  ? "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
-                  : "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens"}
+                href={
+                  tokenType.value === 'classic'
+                    ? 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens'
+                    : 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens'
+                }
                 target="_blank"
                 rel="noopener noreferrer"
               >
