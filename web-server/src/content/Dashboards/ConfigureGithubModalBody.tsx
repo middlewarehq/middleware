@@ -1,5 +1,5 @@
 import { LoadingButton } from '@mui/lab';
-import { Divider, Link, TextField, alpha } from '@mui/material';
+import { Divider, Link, TextField, alpha, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import Image from 'next/image';
 import { useSnackbar } from 'notistack';
 import { FC, useCallback, useMemo } from 'react';
@@ -15,7 +15,9 @@ import { useDispatch } from '@/store';
 import {
   checkGitHubValidity,
   linkProvider,
-  getMissingPATScopes
+  getMissingPATScopes,
+  getMissingFineGrainedScopes,
+  getTokenType
 } from '@/utils/auth';
 import { checkDomainWithRegex } from '@/utils/domainCheck';
 import { depFn } from '@/utils/fn';
@@ -29,6 +31,8 @@ export const ConfigureGithubModalBody: FC<{
   const customDomain = useEasyState('');
   const dispatch = useDispatch();
   const isLoading = useBoolState();
+  const tokenType = useEasyState<'classic' | 'fine-grained'>('classic');
+  const isTokenValid = useBoolState(false);
 
   const showError = useEasyState<string>('');
   const showDomainError = useEasyState<string>('');
@@ -49,11 +53,30 @@ export const ConfigureGithubModalBody: FC<{
 
   const handleChange = (e: string) => {
     token.set(e);
-    showError.set('');
+    const detectedType = getTokenType(e);
+    
+    if (detectedType === 'unknown') {
+      setError('Invalid token format');
+      isTokenValid.false();
+    } else if (detectedType !== tokenType.value) {
+      setError(`Token format doesn't match selected type. Expected ${tokenType.value} token.`);
+      isTokenValid.false();
+    } else {
+      showError.set('');
+      isTokenValid.true();
+    }
   };
+
   const handleDomainChange = (e: string) => {
     customDomain.set(e);
     showDomainError.set('');
+  };
+
+  const handleTokenTypeChange = (value: 'classic' | 'fine-grained') => {
+    tokenType.set(value);
+    token.set(''); // Reset token when switching token types
+    showError.set('');
+    isTokenValid.false();
   };
 
   const handleSubmission = useCallback(async () => {
@@ -80,17 +103,18 @@ export const ConfigureGithubModalBody: FC<{
         return;
       }
 
-      const missingScopes = await getMissingPATScopes(
-        token.value,
-        customDomain.valueRef.current
-      );
+      const missingScopes = tokenType.value === 'classic' 
+        ? await getMissingPATScopes(token.value, customDomain.valueRef.current)
+        : await getMissingFineGrainedScopes(token.value, customDomain.valueRef.current);
+
       if (missingScopes.length > 0) {
         setError(`Token is missing scopes: ${missingScopes.join(', ')}`);
         return;
       }
 
       await linkProvider(token.value, orgId, Integration.GITHUB, {
-        custom_domain: customDomain.valueRef.current
+        custom_domain: customDomain.valueRef.current,
+        token_type: tokenType.value
       });
 
       dispatch(fetchCurrentOrg());
@@ -109,6 +133,7 @@ export const ConfigureGithubModalBody: FC<{
   }, [
     token.value,
     customDomain.value,
+    tokenType.value,
     dispatch,
     enqueueSnackbar,
     isLoading.false,
@@ -123,15 +148,24 @@ export const ConfigureGithubModalBody: FC<{
 
   const focusDomainInput = useCallback(() => {
     if (!customDomain.value)
-      document.getElementById('gitlab-custom-domain')?.focus();
+      document.getElementById('github-custom-domain')?.focus();
     else handleSubmission();
   }, [customDomain.value, handleSubmission]);
 
   return (
     <FlexBox gap2>
       <FlexBox gap={2} minWidth={'400px'} col>
-        <FlexBox>Enter you Github token below.</FlexBox>
+        <FlexBox>Enter your Github token below.</FlexBox>
         <FlexBox fullWidth minHeight={'80px'} col>
+          <ToggleButtonGroup
+            value={tokenType.value}
+            exclusive
+            onChange={(_, value) => value && handleTokenTypeChange(value)}
+            sx={{ mb: 2 }}
+          >
+            <ToggleButton value="classic">Classic Token</ToggleButton>
+            <ToggleButton value="fine-grained">Fine Grained Token</ToggleButton>
+          </ToggleButtonGroup>
           <TextField
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -149,7 +183,7 @@ export const ConfigureGithubModalBody: FC<{
             onChange={(e) => {
               handleChange(e.currentTarget.value);
             }}
-            label="Github Personal Access Token"
+            label={`Github ${tokenType.value === 'classic' ? 'Personal Access Token' : 'Fine Grained Token'}`}
             type="password"
           />
           <Line error tiny mt={1}>
@@ -158,7 +192,9 @@ export const ConfigureGithubModalBody: FC<{
           <FlexBox>
             <Line tiny mt={1} primary sx={{ cursor: 'pointer' }}>
               <Link
-                href="https://github.com/settings/tokens"
+                href={tokenType.value === 'classic' 
+                  ? "https://github.com/settings/tokens"
+                  : "https://github.com/settings/tokens?type=beta"}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -168,7 +204,7 @@ export const ConfigureGithubModalBody: FC<{
                     textUnderlineOffset: '2px'
                   }}
                 >
-                  Generate new classic token
+                  Generate new {tokenType.value === 'classic' ? 'classic' : 'fine-grained'} token
                 </Line>
               </Link>
               <Line ml={'5px'}>{' ->'}</Line>
@@ -217,10 +253,12 @@ export const ConfigureGithubModalBody: FC<{
           <FlexBox col sx={{ opacity: 0.8 }}>
             <Line>Learn more about Github</Line>
             <Line>
-              Personal Access Token (PAT)
+              {tokenType.value === 'classic' ? 'Personal Access Token (PAT)' : 'Fine Grained Token (FGT)'}
               <Link
                 ml={1 / 2}
-                href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
+                href={tokenType.value === 'classic'
+                  ? "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens"
+                  : "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens"}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -231,6 +269,7 @@ export const ConfigureGithubModalBody: FC<{
           <FlexBox gap={2} justifyEnd>
             <LoadingButton
               loading={isLoading.value}
+              disabled={!isTokenValid.value}
               variant="contained"
               onClick={handleSubmission}
             >
@@ -240,12 +279,12 @@ export const ConfigureGithubModalBody: FC<{
         </FlexBox>
       </FlexBox>
       <Divider orientation="vertical" flexItem />
-      <TokenPermissions />
+      <TokenPermissions tokenType={tokenType.value} />
     </FlexBox>
   );
 };
 
-const TokenPermissions = () => {
+const TokenPermissions: FC<{ tokenType: 'classic' | 'fine-grained' }> = ({ tokenType }) => {
   const imageLoaded = useBoolState(false);
 
   const expandedStyles = useMemo(() => {

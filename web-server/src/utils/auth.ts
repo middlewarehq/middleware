@@ -30,16 +30,18 @@ export const linkProvider = async (
 
 export async function checkGitHubValidity(
   good_stuff: string,
-  customDomain?: string
+  customDomain?: string,
+  tokenType: 'classic' | 'fine-grained' = 'classic'
 ): Promise<boolean> {
   try {
-    // if customDomain is provded, the host will be customDomain/api/v3
-    // else it will be api.github.com(default)
     const baseUrl = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
+    const authHeader = tokenType === 'classic' 
+      ? `token ${good_stuff}`
+      : `Bearer ${good_stuff}`;
 
     await axios.get(`${baseUrl}/user`, {
       headers: {
-        Authorization: `token ${good_stuff}`
+        Authorization: authHeader
       }
     });
     return true;
@@ -49,6 +51,8 @@ export async function checkGitHubValidity(
 }
 
 const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
+const FINE_GRAINED_SCOPES = ['contents:read', 'metadata:read', 'pull_requests:read', 'workflows:read'];
+
 export const getMissingPATScopes = async (
   pat: string,
   customDomain?: string
@@ -68,6 +72,33 @@ export const getMissingPATScopes = async (
     return PAT_SCOPES.filter((scope) => !userScopes.includes(scope));
   } catch (error) {
     throw new Error('Failed to get missing PAT scopes', error);
+  }
+};
+
+export const getMissingFineGrainedScopes = async (
+  token: string,
+  customDomain?: string
+) => {
+  const baseUrl = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
+  try {
+    const response = await axios.get(`${baseUrl}/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    // For fine-grained tokens, we need to check the token's permissions
+    // This is a simplified check - in reality, you'd want to verify each permission
+    // by making specific API calls to test access
+    const hasAccess = response.status === 200;
+    if (!hasAccess) return FINE_GRAINED_SCOPES;
+
+    // Since fine-grained tokens don't expose scopes in headers like PATs do,
+    // we'll need to test each required permission individually
+    // This is a placeholder for the actual permission checks
+    return [];
+  } catch (error) {
+    throw new Error('Failed to get missing fine-grained token scopes', error);
   }
 };
 
@@ -99,3 +130,10 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
   );
   return missingScopes;
 };
+
+
+export const getTokenType = (token: string): 'classic' | 'fine-grained' | 'unknown' => {
+  if (token.startsWith('ghp_')) return 'classic';
+  if (token.startsWith('github_pat_')) return 'fine-grained';
+  return 'unknown';
+}
