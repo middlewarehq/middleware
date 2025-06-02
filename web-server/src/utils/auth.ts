@@ -36,7 +36,7 @@ export async function checkGitHubValidity(
   try {
     const baseUrl = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
     const authHeader =
-     tokenType === 'classic' ? `token ${good_stuff}` : `Bearer ${good_stuff}`;
+      tokenType === 'classic' ? `token ${good_stuff}` : `Bearer ${good_stuff}`;
 
     await axios.get(`${baseUrl}/user`, {
       headers: {
@@ -82,27 +82,53 @@ export const getMissingPATScopes = async (
 export const getMissingFineGrainedScopes = async (
   token: string,
   customDomain?: string
-) => {
+): Promise<string[]> => {
   const baseUrl = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
+  const headers = { Authorization: `Bearer ${token}` };
+
   try {
-    const response = await axios.get(`${baseUrl}/user`, {
-      headers: {
-        Authorization: `Bearer ${token}`
+    const [userResponse, reposResponse] = await Promise.all([
+      axios.get(`${baseUrl}/user`, { headers }),
+      axios.get(`${baseUrl}/user/repos?per_page=1`, { headers })
+    ]);
+
+    const owner = userResponse.data.login;
+    const repo = reposResponse.data[0]?.name;
+    if (!repo) {
+      throw new Error('No repositories found');
+    }
+
+    const permissionTests = [
+      {
+        scope: 'pull_requests:read',
+        endpoint: `/repos/${owner}/${repo}/pulls?per_page=1`
+      },
+      {
+        scope: 'workflows:read',
+        endpoint: `/repos/${owner}/${repo}/actions/runs?per_page=1`
       }
-    });
+    ];
 
-    // For fine-grained tokens, we need to check the token's permissions
-    // This is a simplified check - in reality, you'd want to verify each permission
-    // by making specific API calls to test access
-    const hasAccess = response.status === 200;
-    if (!hasAccess) return FINE_GRAINED_SCOPES;
+    const missingScopes = await Promise.all(
+      permissionTests.map(async ({ scope, endpoint }) => {
+        try {
+          await axios.get(`${baseUrl}${endpoint}`, { headers });
+          return null;
+        } catch (error: unknown) {
+          const err = error as { response?: { status?: number } };
+          return err.response?.status === 403 ? scope : null;
+        }
+      })
+    );
 
-    // Since fine-grained tokens don't expose scopes in headers like PATs do,
-    // we'll need to test each required permission individually
-    // This is a placeholder for the actual permission checks
-    return [];
-  } catch (error) {
-    throw new Error('Failed to get missing fine-grained token scopes', error);
+    return missingScopes.filter(Boolean) as string[];
+  } catch (error: unknown) {
+    const err = error as { response?: { status?: number } };
+    if (err.response?.status === 403) {
+      return ['metadata:read', 'contents:read'];
+    }
+    console.warn('Error verifying token scopes', error);
+    return FINE_GRAINED_SCOPES;
   }
 };
 
