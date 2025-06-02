@@ -312,7 +312,9 @@ export const ConfigureGithubModalBody: FC<{
   );
 };
 
-const TokenPermissions: FC<{ tokenType: 'classic' | 'fine-grained' }> = ({ tokenType }) => {
+const TokenPermissions: FC<{ tokenType: 'classic' | 'fine-grained' }> = ({
+  tokenType
+}) => {
   const imageLoaded = useBoolState(false);
 
   const expandedStyles = useMemo(() => {

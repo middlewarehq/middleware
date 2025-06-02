@@ -35,9 +35,8 @@ export async function checkGitHubValidity(
 ): Promise<boolean> {
   try {
     const baseUrl = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
-    const authHeader = tokenType === 'classic' 
-      ? `token ${good_stuff}`
-      : `Bearer ${good_stuff}`;
+    const authHeader =
+     tokenType === 'classic' ? `token ${good_stuff}` : `Bearer ${good_stuff}`;
 
     await axios.get(`${baseUrl}/user`, {
       headers: {
@@ -51,7 +50,12 @@ export async function checkGitHubValidity(
 }
 
 const PAT_SCOPES = ['read:org', 'read:user', 'repo', 'workflow'];
-const FINE_GRAINED_SCOPES = ['contents:read', 'metadata:read', 'pull_requests:read', 'workflows:read'];
+const FINE_GRAINED_SCOPES = [
+  'contents:read',
+  'metadata:read',
+  'pull_requests:read',
+  'workflows:read'
+];
 
 export const getMissingPATScopes = async (
   pat: string,
@@ -131,9 +135,10 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
   return missingScopes;
 };
 
-
-export const getTokenType = (token: string): 'classic' | 'fine-grained' | 'unknown' => {
+export const getTokenType = (
+  token: string
+): 'classic' | 'fine-grained' | 'unknown' => {
   if (token.startsWith('ghp_')) return 'classic';
   if (token.startsWith('github_pat_')) return 'fine-grained';
   return 'unknown';
-}
+};
