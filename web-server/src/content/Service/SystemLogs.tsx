@@ -218,18 +218,18 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
       if (scrollTimeoutRef.current) {
         cancelAnimationFrame(scrollTimeoutRef.current);
       }
-      
+
       scrollTimeoutRef.current = requestAnimationFrame(() => {
         if (!containerRef.current) return;
-        
+
         const { scrollTop, clientHeight, scrollHeight } = containerRef.current;
-        
+
         // Show up button if scrolled down
         const isScrolledDown = scrollTop > 200;
         showScrollUpButton.set(isScrolledDown);
-        
+
         // Show down button if not at bottom
-        const isNotAtBottom = scrollTop < (scrollHeight - clientHeight - 200);
+        const isNotAtBottom = scrollTop < scrollHeight - clientHeight - 200;
         showScrollDownButton.set(isNotAtBottom);
       });
     };
@@ -321,7 +321,7 @@ const SystemLogs = memo(({ serviceName }: { serviceName?: ServiceNames }) => {
           <ExpandCircleDown fontSize="large" color="secondary" />
         </Button>
       )}
-      
+
       {showScrollUpButton.value && (
         <Button
           onClick={scrollToTop}
