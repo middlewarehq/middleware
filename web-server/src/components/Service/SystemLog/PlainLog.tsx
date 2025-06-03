@@ -1,9 +1,26 @@
 import { Line } from '@/components/Text';
 
-export const PlainLog = ({ log }: { log: string; index: number }) => {
+import { SearchHighlightText } from './FormattedLog';
+
+interface PlainLogProps {
+  log: string;
+  index: number;
+  searchQuery?: string;
+  isCurrentMatch?: boolean;
+}
+
+export const PlainLog = ({
+  log,
+  searchQuery,
+  isCurrentMatch
+}: PlainLogProps) => {
   return (
     <Line mono marginBottom={1}>
-      {log}
+      <SearchHighlightText
+        text={log}
+        searchQuery={searchQuery}
+        isCurrentMatch={isCurrentMatch}
+      />
     </Line>
   );
 };
