@@ -38,6 +38,8 @@ export const useLogs = (
         return ['postgres/postgres', 'pgs', '#ff70a6'];
       case LogSource.Cron:
         return ['cron/cron', 'cro', '#ffd166'];
+      case LogSource.Queue:
+        return ['queue/queue', 'que', '#3a86ff'];
       default:
         return def;
     }
