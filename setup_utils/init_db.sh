@@ -38,6 +38,20 @@ DB_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@$POSTGRES_HOST:$POSTGRES_
 
 /usr/local/bin/dbmate -u "$DB_URL" up
 
+# Function to check whether to run procrastinate schema command
+check_and_apply_procrastinate_schema() {
+    TABLE_EXISTS=$(su - postgres -c "psql -U postgres -d $POSTGRES_DB -tAc \
+        \"SELECT to_regclass('public.procrastinate_jobs') IS NOT NULL;\"")
+
+    if [ "$TABLE_EXISTS" = "t" ]; then
+        echo "Procrastinate schema already applied."
+    else
+        PYTHONPATH=/app/backend/analytics_server PROCRASTINATE_APP=procrastinate_worker.app procrastinate schema --apply
+        echo "Procrastinate schema applied successfully."
+    fi
+}
+
+check_and_apply_procrastinate_schema
 
 MESSAGE="mhq-oss DB initialized"
 TOPIC="db_init"

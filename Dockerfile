@@ -5,6 +5,7 @@ ARG REDIS_ENABLED=true
 ARG BACKEND_ENABLED=true
 ARG FRONTEND_ENABLED=true
 ARG CRON_ENABLED=true
+ARG QUEUE_ENABLED=true
 ARG DEFAULT_SYNC_DAYS=31
 ARG BUILD_DATE
 ARG MERGE_COMMIT_SHA
@@ -100,6 +101,8 @@ RUN apt-get update && \
     && touch /var/log/sync_server/sync_server.log \
     && mkdir -p /var/log/web-server \
     && touch /var/log/web-server/web-server.log \
+    && mkdir -p /var/log/queue \
+    && touch /var/log/queue/queue.log \
     && mkdir -p /var/log/cron \
     && touch /var/log/cron/cron.log \
     && chmod 0644 /etc/cron.d/cronjob \
@@ -122,6 +125,7 @@ ENV REDIS_ENABLED=true
 ENV BACKEND_ENABLED=true
 ENV FRONTEND_ENABLED=true
 ENV CRON_ENABLED=true
+ENV QUEUE_ENABLED=true
 ENV BUILD_DATE=$BUILD_DATE
 ENV MERGE_COMMIT_SHA=$MERGE_COMMIT_SHA
 
