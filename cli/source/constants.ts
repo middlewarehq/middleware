@@ -41,6 +41,7 @@ export enum LogSource {
   Redis,
   InitDb,
   Postgres,
+  Queue,
   Cron,
   DockerWatch,
   DockerWatchProcessIdLock
@@ -81,6 +82,7 @@ export const READY_MESSAGES = {
   [LogSource.Postgres]: `database system is ready to accept connections`,
   [LogSource.Redis]: `Ready to accept connections`,
   [LogSource.InitDb]: [`exit 0`, `Writing: ./db/schema.sql`],
+  [LogSource.Queue]: `Starting worker`,
   [LogSource.DockerWatch]: [
     `Watch configuration for service`,
     `Watch enabled`,

@@ -12,9 +12,10 @@ import {
 export const parseLogLine = (rawLogLine: string): ParsedLog | null => {
   const generalLogMatch = rawLogLine.match(generalLogRegex);
   if (generalLogMatch) {
-    const [_fullLog, timestamp, _pid, logLevel, message] = generalLogMatch;
+    const [_fullLog, timestamp, pid, logLevel, message] = generalLogMatch;
     return {
       timestamp,
+      pid,
       logLevel,
       message
     };

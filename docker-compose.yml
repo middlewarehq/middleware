@@ -18,6 +18,7 @@ services:
         BACKEND_ENABLED: ${BACKEND_ENABLED:-true}
         FRONTEND_ENABLED: ${FRONTEND_ENABLED:-true}
         CRON_ENABLED: ${CRON_ENABLED:-true}
+        QUEUE_ENABLED: ${QUEUE_ENABLED:-true}
         DB_PORT: ${DB_PORT:-5434}
 
     env_file:

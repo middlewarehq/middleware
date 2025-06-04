@@ -45,6 +45,7 @@ export const useLogsFromAllSources = () => {
   const initDbLogs = useLogs(LogSource.InitDb, addLogs(LogSource.InitDb));
   const pgLogs = useLogs(LogSource.Postgres, addLogs(LogSource.Postgres));
   const cronLogs = useLogs(LogSource.Cron, addLogs(LogSource.Cron));
+  const queueLogs = useLogs(LogSource.Queue, addLogs(LogSource.Queue));
 
   const webLogsRef = useRef(webLogs);
   const apiLogsRef = useRef(apiLogs);
@@ -53,6 +54,7 @@ export const useLogsFromAllSources = () => {
   const initDbLogsRef = useRef(initDbLogs);
   const pgLogsRef = useRef(pgLogs);
   const cronLogsRef = useRef(cronLogs);
+  const queueLogsRef = useRef(queueLogs);
   const allLogsRef = useRef(allLogs);
 
   webLogsRef.current = webLogs;
@@ -62,6 +64,7 @@ export const useLogsFromAllSources = () => {
   initDbLogsRef.current = initDbLogs;
   pgLogsRef.current = pgLogs;
   cronLogsRef.current = cronLogs;
+  queueLogsRef.current = queueLogs;
   allLogsRef.current = allLogs;
 
   useEffect(() => {
@@ -89,6 +92,9 @@ export const useLogsFromAllSources = () => {
         break;
       case LogSource.Cron:
         newLogs.push(...cronLogsRef.current.slice(-HIST_LIMIT));
+        break;
+      case LogSource.Queue:
+        newLogs.push(...queueLogsRef.current.slice(-HIST_LIMIT));
         break;
       case LogSource.All:
       default:

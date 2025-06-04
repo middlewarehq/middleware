@@ -32,7 +32,7 @@ export const FormattedLog = ({ log }: { log: ParsedLog; index: number }) => {
     [theme]
   );
 
-  const { timestamp, ip, logLevel, message } = log;
+  const { timestamp, ip, pid, logLevel, message } = log;
   return (
     <Line mono marginBottom={1}>
       <Line component="span" color="info">
@@ -40,9 +40,15 @@ export const FormattedLog = ({ log }: { log: ParsedLog; index: number }) => {
       </Line>{' '}
       {ip && (
         <Line component="span" color="primary">
-          {ip}{' '}
+          {ip}
         </Line>
       )}
+      {!ip && pid && (
+        <Line component="span" color="primary">
+          [{pid}]
+        </Line>
+      )}
+      {' '}
       <Line component="span" color={getLevelColor(logLevel)}>
         [{logLevel}]
       </Line>{' '}

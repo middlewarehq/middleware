@@ -23,7 +23,8 @@ const initialState: State = {
     [ServiceNames.API_SERVER]: { isUp: false, logs: [] },
     [ServiceNames.REDIS]: { isUp: false, logs: [] },
     [ServiceNames.POSTGRES]: { isUp: false, logs: [] },
-    [ServiceNames.SYNC_SERVER]: { isUp: false, logs: [] }
+    [ServiceNames.SYNC_SERVER]: { isUp: false, logs: [] },
+    [ServiceNames.QUEUE]: { isUp: false, logs: [] },
   },
   loading: true
 };

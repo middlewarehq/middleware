@@ -12,3 +12,4 @@ psycopg2==2.9.3
 python-dotenv==1.0.1
 gunicorn==22.0.0
 Flask-SQLAlchemy==3.1.1
+procrastinate==3.1.0

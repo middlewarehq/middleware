@@ -67,12 +67,24 @@ async function isPostgresUp(): Promise<boolean> {
   }
 }
 
+async function isQueueUp(): Promise<boolean> {
+  try {
+    const response = await executeCommand(
+      `PYTHONPATH=../backend/analytics_server PROCRASTINATE_APP=procrastinate_worker.app procrastinate healthchecks`
+    );
+    return response.includes('Found procrastinate_jobs table: OK');
+  } catch {
+    return false;
+  }
+}
+
 async function checkServiceStatus(serviceName: ServiceNames): Promise<boolean> {
   const statusCheckers = {
     [ServiceNames.API_SERVER]: isApiServerUp,
     [ServiceNames.SYNC_SERVER]: isSyncServerUp,
     [ServiceNames.REDIS]: isRedisUp,
-    [ServiceNames.POSTGRES]: isPostgresUp
+    [ServiceNames.POSTGRES]: isPostgresUp,
+    [ServiceNames.QUEUE]: isQueueUp
   };
 
   const checker = statusCheckers[serviceName];
