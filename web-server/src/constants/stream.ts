@@ -36,6 +36,10 @@ const LOG_FILES: LogFile[] = [
   {
     path: '/var/log/postgres/postgres.log',
     serviceName: ServiceNames.POSTGRES
+  },
+  {
+    path: '/var/log/queue/queue.log',
+    serviceName: ServiceNames.QUEUE
   }
 ];
 
