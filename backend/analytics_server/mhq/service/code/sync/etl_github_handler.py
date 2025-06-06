@@ -6,7 +6,6 @@ import pytz
 from mhq.utils.github import get_custom_github_domain
 from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
-from github.PullRequestReview import PullRequestReview as GithubPullRequestReview
 from github.Repository import Repository as GithubRepository
 
 from mhq.exapi.github import GithubApiService
@@ -16,6 +15,7 @@ from mhq.service.code.sync.revert_prs_github_sync import (
     RevertPRsGitHubSyncHandler,
     get_revert_prs_github_sync_handler,
 )
+from mhq.exapi.models.github_timeline import GithubPullRequestTimelineEvents
 from mhq.store.models import UserIdentityProvider
 from mhq.store.models.code import (
     OrgRepo,
@@ -104,7 +104,6 @@ class GithubETLHandler(CodeProviderETLHandler):
         github_pull_requests: GithubPaginatedList = self._api.get_pull_requests(
             github_repo
         )
-
         prs_to_process = []
         for page in range(
             0, github_pull_requests.totalCount // PR_PROCESSING_CHUNK_SIZE + 1, 1
@@ -170,10 +169,17 @@ class GithubETLHandler(CodeProviderETLHandler):
         )
         pr_commits_model_list: List = []
 
-        reviews: List[GithubPullRequestReview] = list(self._api.get_pr_reviews(pr))
+        timeline_pr_events = self._api.get_pr_timeline_events(
+            pr.base.repo.full_name, pr.number
+        )
+        reviews = [
+            review
+            for review in timeline_pr_events
+            if (review.type == PullRequestEventType.REVIEW)
+        ]
         pr_model: PullRequest = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
         pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
-            reviews, pr_model, pr_event_model_list
+            timeline_pr_events, pr_model, pr_event_model_list
         )
         if pr.merged_at:
             commits: List[Dict] = list(
@@ -283,28 +289,23 @@ class GithubETLHandler(CodeProviderETLHandler):
 
     @staticmethod
     def _to_pr_events(
-        reviews: [GithubPullRequestReview],
+        timeline_events: List[GithubPullRequestTimelineEvents],
         pr_model: PullRequest,
-        pr_events_model: [PullRequestEvent],
+        pr_events_model: List[PullRequestEvent],
     ) -> List[PullRequestEvent]:
         pr_events: List[PullRequestEvent] = []
         pr_event_id_map = {event.idempotency_key: event.id for event in pr_events_model}
 
-        for review in reviews:
-            if not review.submitted_at:
-                continue  # Discard incomplete reviews
-
-            actor = review.raw_data.get("user", {})
-            username = actor.get("login", "") if actor else ""
-
+        for event in timeline_events:
+            username = event.user
             pr_events.append(
                 PullRequestEvent(
-                    id=pr_event_id_map.get(str(review.id), uuid.uuid4()),
+                    id=pr_event_id_map.get(str(event.id), uuid.uuid4()),
                     pull_request_id=str(pr_model.id),
-                    type=PullRequestEventType.REVIEW.value,
-                    data=review.raw_data,
-                    created_at=review.submitted_at.replace(tzinfo=pytz.UTC),
-                    idempotency_key=str(review.id),
+                    type=event.type.value,
+                    data=event.raw_data,
+                    created_at=event.timestamp,
+                    idempotency_key=str(event.id),
                     org_repo_id=pr_model.repo_id,
                     actor_username=username,
                 )
