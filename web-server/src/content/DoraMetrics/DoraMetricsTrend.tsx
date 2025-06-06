@@ -194,8 +194,8 @@ export const DeploymentTrendPill: FC<{
     state === 'positive'
       ? 'Increasing ' + label
       : state === 'negative'
-        ? 'Decreasing ' + label
-        : 'Stable ' + label;
+      ? 'Decreasing ' + label
+      : 'Stable ' + label;
 
   const useMultiplierFormat = Math.abs(change) > 100;
   const formattedChange = useMultiplierFormat
