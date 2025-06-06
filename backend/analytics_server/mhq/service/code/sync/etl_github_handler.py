@@ -15,7 +15,7 @@ from mhq.service.code.sync.revert_prs_github_sync import (
     RevertPRsGitHubSyncHandler,
     get_revert_prs_github_sync_handler,
 )
-from mhq.exapi.models.timeline import GithubPRTimelineEvent
+from mhq.exapi.models.github_timeline import GithubPullRequestTimelineEvents
 from mhq.store.models import UserIdentityProvider
 from mhq.store.models.code import (
     OrgRepo,
@@ -177,7 +177,6 @@ class GithubETLHandler(CodeProviderETLHandler):
             for review in timeline_pr_events
             if (review.type == PullRequestEventType.REVIEW)
         ]
-
         pr_model: PullRequest = self._to_pr_model(pr, pr_model, repo_id, len(reviews))
         pr_events_model_list: List[PullRequestEvent] = self._to_pr_events(
             timeline_pr_events, pr_model, pr_event_model_list
@@ -290,15 +289,15 @@ class GithubETLHandler(CodeProviderETLHandler):
 
     @staticmethod
     def _to_pr_events(
-        timeline_events: List[GithubPRTimelineEvent],
+        timeline_events: List[GithubPullRequestTimelineEvents],
         pr_model: PullRequest,
-        pr_events_model: [PullRequestEvent],
+        pr_events_model: List[PullRequestEvent],
     ) -> List[PullRequestEvent]:
         pr_events: List[PullRequestEvent] = []
         pr_event_id_map = {event.idempotency_key: event.id for event in pr_events_model}
 
         for event in timeline_events:
-            username = event.user_login
+            username = event.user
             pr_events.append(
                 PullRequestEvent(
                     id=pr_event_id_map.get(str(event.id), uuid.uuid4()),

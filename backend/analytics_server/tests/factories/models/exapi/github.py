@@ -3,8 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
 
-from mhq.exapi.models.timeline import GithubPRTimelineEvent
-from mhq.store.models.code.enums import PullRequestEventType
+from mhq.exapi.models.github_timeline import GithubPullRequestTimelineEvents
 from mhq.utils.time import time_now
 
 
@@ -164,10 +163,10 @@ def get_github_workflow_run_dict(
 def get_github_pr_timeline_event(
     event_id: str = "123456",
     user_login: str = "abc",
-    event_type: PullRequestEventType = PullRequestEventType.REVIEW,
+    event_type: str = "reviewed",
     timestamp: datetime = None,
     raw_data: Dict = None,
-) -> GithubPRTimelineEvent:
+) -> GithubPullRequestTimelineEvents:
     if timestamp is None:
         timestamp = time_now()
 
@@ -179,10 +178,7 @@ def get_github_pr_timeline_event(
             "state": "approved",
         }
 
-    return GithubPRTimelineEvent(
-        id=event_id,
-        user_login=user_login,
-        type=event_type,
-        timestamp=timestamp,
-        raw_data=raw_data,
+    return GithubPullRequestTimelineEvents(
+        event_type=event_type,
+        data=raw_data,
     )

@@ -1,7 +1,7 @@
 from typing import TypedDict, Optional, Union, List
 
 
-class UserDict(TypedDict):
+class GithubUserDict(TypedDict):
     login: str
     id: int
     node_id: str
@@ -68,20 +68,20 @@ class CommentEvent(TypedDict):
     issue_url: str
     id: int
     node_id: str
-    user: UserDict
+    user: GithubUserDict
     created_at: str
     updated_at: str
     author_association: str
     body: str
     event: str
-    actor: UserDict
+    actor: GithubUserDict
 
 
 class IssueEvent(TypedDict):
     id: int
     node_id: str
     url: str
-    actor: UserDict
+    actor: GithubUserDict
     event: str
     commit_id: Optional[str]
     commit_url: Optional[str]
@@ -89,8 +89,8 @@ class IssueEvent(TypedDict):
 
 
 class ReviewRequestedEvent(IssueEvent):
-    review_requester: UserDict
-    requested_reviewer: UserDict
+    review_requester: GithubUserDict
+    requested_reviewer: GithubUserDict
 
 
 class MergedEvent(IssueEvent):
@@ -109,7 +109,7 @@ class LinksDict(TypedDict):
 class ReviewEvent(TypedDict):
     id: int
     node_id: str
-    user: UserDict
+    user: GithubUserDict
     body: str
     commit_id: str
     submitted_at: str
@@ -131,7 +131,7 @@ class SourceDict(TypedDict):
 
 
 class CrossReferencedEvent(TypedDict):
-    actor: UserDict
+    actor: GithubUserDict
     created_at: str
     updated_at: str
     source: SourceDict

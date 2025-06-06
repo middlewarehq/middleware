@@ -1,7 +1,7 @@
 import contextlib
 from datetime import datetime
 from http import HTTPStatus
-from typing import Any, Optional, Dict, Tuple, List, cast
+from typing import Optional, Dict, Tuple, List, cast
 
 import requests
 
@@ -16,11 +16,9 @@ from mhq.exapi.schemas.timeline import (
     GitHubPullTimelineEvent,
     GitHubPrTimelineEventsDict,
 )
-from mhq.exapi.models.timeline import GithubPRTimelineEvent
-from mhq.store.models.code.enums import PullRequestEventType
 from mhq.exapi.models.github import GitHubContributor
+from mhq.exapi.models.github_timeline import GithubPullRequestTimelineEvents
 from mhq.utils.log import LOG
-from mhq.utils.time import dt_from_iso_time_string
 
 PAGE_SIZE = 100
 
@@ -282,7 +280,7 @@ class GithubApiService:
 
     def get_pr_timeline_events(
         self, repo_name: str, pr_number: int
-    ) -> List[GithubPRTimelineEvent]:
+    ) -> List[GithubPullRequestTimelineEvents]:
 
         def _fetch_timeline_events(page: int = 1) -> List[Dict]:
             github_url = (
@@ -354,154 +352,30 @@ class GithubApiService:
                 HTTPStatus.INTERNAL_SERVER_ERROR, f"Unexpected error: {str(e)}"
             ) from e
 
-        return adapt_github_timeline_events(all_timeline_events)
+        return self._adapt_github_timeline_events(all_timeline_events)
 
+    @staticmethod
+    def _adapt_github_timeline_events(
+        timeline_events: List[GitHubPrTimelineEventsDict],
+    ) -> List[GithubPullRequestTimelineEvents]:
+        adapted_timeline_events: List[GithubPullRequestTimelineEvents] = []
 
-class Event:
-    EVENT_CONFIG = {
-        "reviewed": {
-            "actor_path": "user",
-            "timestamp_field": "submitted_at",
-            "id_path": "id",
-        },
-        "ready_for_review": {
-            "actor_path": "actor",
-            "timestamp_field": "created_at",
-            "id_path": "id",
-        },
-        "commented": {
-            "actor_path": "user",
-            "timestamp_field": "created_at",
-            "id_path": "id",
-        },
-        "committed": {
-            "actor_path": "author.name",
-            "timestamp_field": "author.date",
-            "id_path": "sha",
-        },
-        "default": {
-            "actor_path": "actor",
-            "timestamp_field": "created_at",
-            "id_path": "id",
-        },
-    }
+        for timeline_event in timeline_events:
+            event_data = timeline_event.get("data")
+            if not event_data:
+                continue
 
-    def __init__(self, event_type: str, data: GitHubPullTimelineEvent):
-        self.event_type = event_type
-        self.data = data
+            event_type = timeline_event.get("event")
+            if not event_type:
+                continue
 
-    def _get_nested_value(self, path: str) -> Optional[Any]:
-        keys = path.split(".")
-        current = self.data
+            event = GithubPullRequestTimelineEvents(event_type, event_data)
 
-        for key in keys:
-            if isinstance(current, dict) and key in current:
-                current = current[key]
+            if all([event.timestamp, event.type, event.id, event.user]):
+                adapted_timeline_events.append(event)
             else:
-                return None
-        return current
+                LOG.warning(
+                    f"Skipping incomplete timeline event: {event_type} with id: {event.id}"
+                )
 
-    @property
-    def user(self) -> Optional[str]:
-        config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
-        actor_path = config["actor_path"]
-
-        if not actor_path:
-            return None
-
-        if self.event_type == "committed":
-            return self._get_nested_value(actor_path)
-
-        user_data = self._get_nested_value(actor_path)
-        if not user_data:
-            return None
-        if isinstance(user_data, dict) and "login" in user_data:
-            return user_data["login"]
-        elif hasattr(user_data, "login"):
-            return user_data.login
-
-        LOG.warning(
-            f"User data does not contain login field for event type: {self.event_type}"
-        )
-        return None
-
-    @property
-    def timestamp(self) -> Optional[datetime]:
-        config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
-        timestamp_field = config["timestamp_field"]
-        timestamp_value = self._get_nested_value(timestamp_field)
-
-        if timestamp_value:
-            timestamp_str = str(timestamp_value)
-            return dt_from_iso_time_string(timestamp_str)
-        return None
-
-    @property
-    def raw_data(self) -> Dict:
-        return cast(Dict, self.data)
-
-    @property
-    def id(self) -> Optional[str]:
-        config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
-        id_path = config["id_path"]
-        id_value = self._get_nested_value(id_path)
-        return str(id_value) if id_value is not None else None
-
-    @property
-    def type(self) -> Optional[PullRequestEventType]:
-        event_type_mapping = {
-            "assigned": PullRequestEventType.ASSIGNED,
-            "closed": PullRequestEventType.CLOSED,
-            "commented": PullRequestEventType.COMMENTED,
-            "committed": PullRequestEventType.COMMITTED,
-            "convert_to_draft": PullRequestEventType.CONVERT_TO_DRAFT,
-            "head_ref_deleted": PullRequestEventType.HEAD_REF_DELETED,
-            "head_ref_force_pushed": PullRequestEventType.HEAD_REF_FORCE_PUSHED,
-            "labeled": PullRequestEventType.LABELED,
-            "locked": PullRequestEventType.LOCKED,
-            "merged": PullRequestEventType.MERGED,
-            "ready_for_review": PullRequestEventType.READY_FOR_REVIEW,
-            "referenced": PullRequestEventType.REFERENCED,
-            "reopened": PullRequestEventType.REOPENED,
-            "review_dismissed": PullRequestEventType.REVIEW_DISMISSED,
-            "review_requested": PullRequestEventType.REVIEW_REQUESTED,
-            "review_request_removed": PullRequestEventType.REVIEW_REQUEST_REMOVED,
-            "reviewed": PullRequestEventType.REVIEW,
-            "unassigned": PullRequestEventType.UNASSIGNED,
-            "unlabeled": PullRequestEventType.UNLABELED,
-            "unlocked": PullRequestEventType.UNLOCKED,
-        }
-        return event_type_mapping.get(self.event_type, PullRequestEventType.UNKNOWN)
-
-
-def adapt_github_timeline_events(
-    timeline_events: List[GitHubPrTimelineEventsDict],
-) -> List[GithubPRTimelineEvent]:
-    normalized: List[GithubPRTimelineEvent] = []
-
-    for timeline_event in timeline_events:
-        event_data = timeline_event.get("data")
-        if not event_data:
-            continue
-
-        event_type = timeline_event.get("event")
-        if not event_type:
-            continue
-
-        event = Event(event_type, event_data)
-
-        if all([event.timestamp, event.type, event.id, event.user]):
-            adapted_event = GithubPRTimelineEvent(
-                id=cast(str, event.id),
-                user_login=cast(str, event.user),
-                type=cast(PullRequestEventType, event.type),
-                timestamp=cast(datetime, event.timestamp),
-                raw_data=cast(GitHubPullTimelineEvent, event.raw_data),
-            )
-            normalized.append(adapted_event)
-        else:
-            LOG.warning(
-                f"Skipping incomplete timeline event: {event_type} with id: {event.id}"
-            )
-
-    return normalized
+        return adapted_timeline_events
