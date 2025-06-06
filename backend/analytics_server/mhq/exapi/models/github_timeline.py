@@ -40,6 +40,28 @@ class GithubPullRequestTimelineEvents:
             "id_path": "id",
         },
     }
+    EVENT_TYPE_MAPPING = {
+        "assigned": PullRequestEventType.ASSIGNED,
+        "closed": PullRequestEventType.CLOSED,
+        "commented": PullRequestEventType.COMMENTED,
+        "committed": PullRequestEventType.COMMITTED,
+        "convert_to_draft": PullRequestEventType.CONVERT_TO_DRAFT,
+        "head_ref_deleted": PullRequestEventType.HEAD_REF_DELETED,
+        "head_ref_force_pushed": PullRequestEventType.HEAD_REF_FORCE_PUSHED,
+        "labeled": PullRequestEventType.LABELED,
+        "locked": PullRequestEventType.LOCKED,
+        "merged": PullRequestEventType.MERGED,
+        "ready_for_review": PullRequestEventType.READY_FOR_REVIEW,
+        "referenced": PullRequestEventType.REFERENCED,
+        "reopened": PullRequestEventType.REOPENED,
+        "review_dismissed": PullRequestEventType.REVIEW_DISMISSED,
+        "review_requested": PullRequestEventType.REVIEW_REQUESTED,
+        "review_request_removed": PullRequestEventType.REVIEW_REQUEST_REMOVED,
+        "reviewed": PullRequestEventType.REVIEW,
+        "unassigned": PullRequestEventType.UNASSIGNED,
+        "unlabeled": PullRequestEventType.UNLABELED,
+        "unlocked": PullRequestEventType.UNLOCKED,
+    }
 
     def __init__(self, event_type: str, data: GitHubPullTimelineEvent):
         self.event_type = event_type
@@ -72,7 +94,7 @@ class GithubPullRequestTimelineEvents:
             return None
         if isinstance(user_data, dict) and "login" in user_data:
             return user_data["login"]
-        elif hasattr(user_data, "login"):
+        if hasattr(user_data, "login"):
             return user_data.login
 
         LOG.warning(
@@ -93,7 +115,7 @@ class GithubPullRequestTimelineEvents:
 
     @property
     def raw_data(self) -> Dict:
-        return cast(Dict, self.data)
+        return cast(Dict[str, Any], self.data)
 
     @property
     def id(self) -> Optional[str]:
@@ -104,26 +126,7 @@ class GithubPullRequestTimelineEvents:
 
     @property
     def type(self) -> Optional[PullRequestEventType]:
-        event_type_mapping = {
-            "assigned": PullRequestEventType.ASSIGNED,
-            "closed": PullRequestEventType.CLOSED,
-            "commented": PullRequestEventType.COMMENTED,
-            "committed": PullRequestEventType.COMMITTED,
-            "convert_to_draft": PullRequestEventType.CONVERT_TO_DRAFT,
-            "head_ref_deleted": PullRequestEventType.HEAD_REF_DELETED,
-            "head_ref_force_pushed": PullRequestEventType.HEAD_REF_FORCE_PUSHED,
-            "labeled": PullRequestEventType.LABELED,
-            "locked": PullRequestEventType.LOCKED,
-            "merged": PullRequestEventType.MERGED,
-            "ready_for_review": PullRequestEventType.READY_FOR_REVIEW,
-            "referenced": PullRequestEventType.REFERENCED,
-            "reopened": PullRequestEventType.REOPENED,
-            "review_dismissed": PullRequestEventType.REVIEW_DISMISSED,
-            "review_requested": PullRequestEventType.REVIEW_REQUESTED,
-            "review_request_removed": PullRequestEventType.REVIEW_REQUEST_REMOVED,
-            "reviewed": PullRequestEventType.REVIEW,
-            "unassigned": PullRequestEventType.UNASSIGNED,
-            "unlabeled": PullRequestEventType.UNLABELED,
-            "unlocked": PullRequestEventType.UNLOCKED,
-        }
-        return event_type_mapping.get(self.event_type, PullRequestEventType.UNKNOWN)
+
+        return self.EVENT_TYPE_MAPPING.get(
+            self.event_type, PullRequestEventType.UNKNOWN
+        )
