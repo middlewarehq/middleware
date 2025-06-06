@@ -55,10 +55,10 @@ class ExternalIntegrationsService:
             )
             workflows_list = []
             for page in range(0, workflows.totalCount // PAGE_SIZE + 1, 1):
-                workflows = workflows.get_page(page)
-                if not workflows:
+                paginated_workflows = workflows.get_page(page)
+                if not paginated_workflows:
                     break
-                workflows_list += workflows
+                workflows_list += paginated_workflows
             return workflows_list
         except GithubException as e:
             raise e
