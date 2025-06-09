@@ -14,11 +14,13 @@ import { FC, useCallback, useMemo } from 'react';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { Integration } from '@/constants/integrations';
+import { ClassicStyles, FineGrainedStyles } from '@/constants/style';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { fetchCurrentOrg } from '@/slices/auth';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch } from '@/store';
+import { GithubTokenType } from '@/types/resources';
 import {
   checkGitHubValidity,
   linkProvider,
@@ -38,7 +40,7 @@ export const ConfigureGithubModalBody: FC<{
   const customDomain = useEasyState('');
   const dispatch = useDispatch();
   const isLoading = useBoolState();
-  const tokenType = useEasyState<'classic' | 'fine-grained'>('classic');
+  const tokenType = useEasyState<GithubTokenType>(GithubTokenType.CLASSIC);
   const isTokenValid = useBoolState(false);
 
   const showError = useEasyState<string>('');
@@ -81,7 +83,7 @@ export const ConfigureGithubModalBody: FC<{
     showDomainError.set('');
   };
 
-  const handleTokenTypeChange = (value: 'classic' | 'fine-grained') => {
+  const handleTokenTypeChange = (value: GithubTokenType) => {
     tokenType.set(value);
     token.set(''); // Reset token when switching token types
     showError.set('');
@@ -113,7 +115,7 @@ export const ConfigureGithubModalBody: FC<{
       }
 
       const missingScopes =
-        tokenType.value === 'classic'
+        tokenType.value === GithubTokenType.CLASSIC
           ? await getMissingPATScopes(
               token.value,
               customDomain.valueRef.current
@@ -179,8 +181,12 @@ export const ConfigureGithubModalBody: FC<{
             onChange={(_, value) => value && handleTokenTypeChange(value)}
             sx={{ mb: 2 }}
           >
-            <ToggleButton value="classic">Classic Token</ToggleButton>
-            <ToggleButton value="fine-grained">Fine Grained Token</ToggleButton>
+            <ToggleButton value={GithubTokenType.CLASSIC}>
+              Classic Token
+            </ToggleButton>
+            <ToggleButton value={GithubTokenType.FINE_GRAINED}>
+              Fine Grained Token
+            </ToggleButton>
           </ToggleButtonGroup>
           <TextField
             onKeyDown={(e) => {
@@ -200,7 +206,7 @@ export const ConfigureGithubModalBody: FC<{
               handleChange(e.currentTarget.value);
             }}
             label={`Github ${
-              tokenType.value === 'classic'
+              tokenType.value === GithubTokenType.CLASSIC
                 ? 'Personal Access Token'
                 : 'Fine Grained Token'
             }`}
@@ -213,7 +219,7 @@ export const ConfigureGithubModalBody: FC<{
             <Line tiny mt={1} primary sx={{ cursor: 'pointer' }}>
               <Link
                 href={
-                  tokenType.value === 'classic'
+                  tokenType.value === GithubTokenType.CLASSIC
                     ? 'https://github.com/settings/tokens'
                     : 'https://github.com/settings/tokens?type=beta'
                 }
@@ -227,7 +233,9 @@ export const ConfigureGithubModalBody: FC<{
                   }}
                 >
                   Generate new{' '}
-                  {tokenType.value === 'classic' ? 'classic' : 'fine-grained'}{' '}
+                  {tokenType.value === GithubTokenType.CLASSIC
+                    ? 'classic'
+                    : 'fine-grained'}{' '}
                   token
                 </Line>
               </Link>
@@ -277,13 +285,13 @@ export const ConfigureGithubModalBody: FC<{
           <FlexBox col sx={{ opacity: 0.8 }}>
             <Line>Learn more about Github</Line>
             <Line>
-              {tokenType.value === 'classic'
+              {tokenType.value === GithubTokenType.CLASSIC
                 ? 'Personal Access Token (PAT)'
                 : 'Fine Grained Token (FGT)'}
               <Link
                 ml={1 / 2}
                 href={
-                  tokenType.value === 'classic'
+                  tokenType.value === GithubTokenType.CLASSIC
                     ? 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens'
                     : 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#fine-grained-personal-access-tokens'
                 }
@@ -312,7 +320,7 @@ export const ConfigureGithubModalBody: FC<{
   );
 };
 
-const TokenPermissions: FC<{ tokenType: 'classic' | 'fine-grained' }> = ({
+const TokenPermissions: FC<{ tokenType: GithubTokenType }> = ({
   tokenType
 }) => {
   const imageLoaded = useBoolState(false);
@@ -323,33 +331,16 @@ const TokenPermissions: FC<{ tokenType: 'classic' | 'fine-grained' }> = ({
       transition: 'all 0.8s ease',
       borderRadius: '12px',
       opacity: 1,
-      width: '240px',
+      width: '250px',
       position: 'absolute',
       maxWidth: 'calc(100% - 48px)',
       left: '24px'
     };
 
-    return [
-      {
-        height: '170px',
-        top: '58px'
-      },
-      {
-        height: '42px',
-        top: '230px'
-      },
-      {
-        height: '120px',
-
-        top: '378px'
-      },
-      {
-        height: '120px',
-
-        top: '806px'
-      }
-    ].map((item) => ({ ...item, ...baseStyles }));
-  }, []);
+    const styles =
+      tokenType === GithubTokenType.CLASSIC ? ClassicStyles : FineGrainedStyles;
+    return styles.map((style) => ({ ...style, ...baseStyles }));
+  }, [tokenType]);
 
   return (
     <FlexBox col gap1 maxWidth={'100%'} overflow={'auto'}>
@@ -373,10 +364,18 @@ const TokenPermissions: FC<{ tokenType: 'classic' | 'fine-grained' }> = ({
             transition: 'all 0.8s ease',
             opacity: !imageLoaded.value ? 0 : 1
           }}
-          src="/assets/PAT_permissions.png"
+          src={
+            tokenType === GithubTokenType.CLASSIC
+              ? '/assets/PAT_permissions.png'
+              : '/assets/FST_permissions.png'
+          }
           width={816}
           height={1257}
-          alt="PAT_permissions"
+          alt={
+            tokenType === GithubTokenType.CLASSIC
+              ? 'PAT_permissions'
+              : 'FST_permissions'
+          }
         />
 
         {imageLoaded.value &&
@@ -398,7 +397,9 @@ const TokenPermissions: FC<{ tokenType: 'classic' | 'fine-grained' }> = ({
         )}
       </div>
       <Line tiny secondary sx={{ opacity: imageLoaded.value ? 1 : 0 }}>
-        Scroll to see all required permissions
+        {tokenType === GithubTokenType.CLASSIC
+          ? 'Scroll to see all required permissions'
+          : 'All minimal permissions are enabled. Please fill all required fields.'}
       </Line>
     </FlexBox>
   );
