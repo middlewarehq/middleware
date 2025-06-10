@@ -10,35 +10,50 @@ from mhq.store.models.code.enums import PullRequestEventType
 from mhq.utils.log import LOG
 from mhq.utils.time import dt_from_iso_time_string
 
+@dataclass
+class GithubPullRequestTimelineEventConfig:
+    actor_path: str
+    timestamp_field: str
+    id_path: str
 
 @dataclass
 class GithubPullRequestTimelineEvents:
+    REVIEWED_CONFIG = GithubPullRequestTimelineEventConfig(
+        actor_path="user",
+        timestamp_field="submitted_at",
+        id_path="id"
+    )
+    
+    READY_FOR_REVIEW_CONFIG = GithubPullRequestTimelineEventConfig(
+        actor_path="actor",
+        timestamp_field="created_at",
+        id_path="id"
+    )
+    
+    COMMENTED_CONFIG = GithubPullRequestTimelineEventConfig(
+        actor_path="user",
+        timestamp_field="created_at",
+        id_path="id"
+    )
+    
+    COMMITTED_CONFIG = GithubPullRequestTimelineEventConfig(
+        actor_path="author.name",
+        timestamp_field="author.date",
+        id_path="sha"
+    )
+    
+    DEFAULT_CONFIG = GithubPullRequestTimelineEventConfig(
+        actor_path="actor",
+        timestamp_field="created_at",
+        id_path="id"
+    )
+
     EVENT_CONFIG = {
-        "reviewed": {
-            "actor_path": "user",
-            "timestamp_field": "submitted_at",
-            "id_path": "id",
-        },
-        "ready_for_review": {
-            "actor_path": "actor",
-            "timestamp_field": "created_at",
-            "id_path": "id",
-        },
-        "commented": {
-            "actor_path": "user",
-            "timestamp_field": "created_at",
-            "id_path": "id",
-        },
-        "committed": {
-            "actor_path": "author.name",
-            "timestamp_field": "author.date",
-            "id_path": "sha",
-        },
-        "default": {
-            "actor_path": "actor",
-            "timestamp_field": "created_at",
-            "id_path": "id",
-        },
+        "reviewed": REVIEWED_CONFIG,
+        "ready_for_review": READY_FOR_REVIEW_CONFIG,
+        "commented": COMMENTED_CONFIG,
+        "committed": COMMITTED_CONFIG,
+        "default": DEFAULT_CONFIG,
     }
     EVENT_TYPE_MAPPING = {
         "assigned": PullRequestEventType.ASSIGNED,
@@ -81,7 +96,7 @@ class GithubPullRequestTimelineEvents:
     @property
     def user(self) -> Optional[str]:
         config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
-        actor_path = config["actor_path"]
+        actor_path = config.actor_path
 
         if not actor_path:
             return None
@@ -105,7 +120,7 @@ class GithubPullRequestTimelineEvents:
     @property
     def timestamp(self) -> Optional[datetime]:
         config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
-        timestamp_field = config["timestamp_field"]
+        timestamp_field = config.timestamp_field
         timestamp_value = self._get_nested_value(timestamp_field)
 
         if timestamp_value:
@@ -120,7 +135,7 @@ class GithubPullRequestTimelineEvents:
     @property
     def id(self) -> Optional[str]:
         config = self.EVENT_CONFIG.get(self.event_type, self.EVENT_CONFIG["default"])
-        id_path = config["id_path"]
+        id_path = config.id_path
         id_value = self._get_nested_value(id_path)
         return str(id_value) if id_value is not None else None
 

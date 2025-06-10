@@ -23,24 +23,24 @@ class GithubUserDict(TypedDict):
     site_admin: bool
 
 
-class AuthorDict(TypedDict):
+class GitHubAuthorDict(TypedDict):
     name: str
     email: str
     date: str
 
 
-class TreeDict(TypedDict):
+class GitHubTreeDict(TypedDict):
     sha: str
     url: str
 
 
-class ParentDict(TypedDict):
+class GitHubParentDict(TypedDict):
     sha: str
     url: str
     html_url: str
 
 
-class VerificationDict(TypedDict):
+class GitHubVerificationDict(TypedDict):
     verified: bool
     reason: str
     signature: str
@@ -48,21 +48,21 @@ class VerificationDict(TypedDict):
     verified_at: str
 
 
-class CommitEvent(TypedDict):
+class GitHubCommitEvent(TypedDict):
     sha: str
     node_id: str
     url: str
     html_url: str
-    author: AuthorDict
-    committer: AuthorDict
-    tree: TreeDict
+    author: GitHubAuthorDict
+    committer: GitHubAuthorDict
+    tree: GitHubTreeDict
     message: str
-    parents: List[ParentDict]
-    verification: Optional[VerificationDict]
+    parents: List[GitHubParentDict]
+    verification: Optional[GitHubVerificationDict]
     event: str
 
 
-class CommentEvent(TypedDict):
+class GitHubCommentEvent(TypedDict):
     url: str
     html_url: str
     issue_url: str
@@ -77,7 +77,7 @@ class CommentEvent(TypedDict):
     actor: GithubUserDict
 
 
-class IssueEvent(TypedDict):
+class GitHubIssueEvent(TypedDict):
     id: int
     node_id: str
     url: str
@@ -88,25 +88,25 @@ class IssueEvent(TypedDict):
     created_at: str
 
 
-class ReviewRequestedEvent(IssueEvent):
+class GitHubReviewRequestedEvent(GitHubIssueEvent):
     review_requester: GithubUserDict
     requested_reviewer: GithubUserDict
 
 
-class MergedEvent(IssueEvent):
+class GitHubMergedEvent(GitHubIssueEvent):
     pass
 
 
-class ClosedEvent(IssueEvent):
+class GitHubClosedEvent(GitHubIssueEvent):
     state_reason: Optional[str]
 
 
-class LinksDict(TypedDict):
+class GitHubLinksDict(TypedDict):
     html: dict
     pull_request: dict
 
 
-class ReviewEvent(TypedDict):
+class GitHubReviewEvent(TypedDict):
     id: int
     node_id: str
     user: GithubUserDict
@@ -117,63 +117,63 @@ class ReviewEvent(TypedDict):
     html_url: str
     pull_request_url: str
     author_association: str
-    _links: LinksDict
+    _links: GitHubLinksDict
     event: str
 
 
-class ReadyForReviewEvent(IssueEvent):
+class GitHubReadyForReviewEvent(GitHubIssueEvent):
     pass
 
 
-class SourceDict(TypedDict):
+class GitHubSourceDict(TypedDict):
     type: str
     issue: dict
 
 
-class CrossReferencedEvent(TypedDict):
+class GitHubCrossReferencedEvent(TypedDict):
     actor: GithubUserDict
     created_at: str
     updated_at: str
-    source: SourceDict
+    source: GitHubSourceDict
     event: str
 
 
-class ConvertToDraftEvent(IssueEvent):
+class GitHubConvertToDraftEvent(GitHubIssueEvent):
     pass
 
 
-class HeadRefDeletedEvent(IssueEvent):
+class GitHubHeadRefDeletedEvent(GitHubIssueEvent):
     pass
 
 
-class HeadRefForcePushedEvent(IssueEvent):
+class GitHubHeadRefForcePushedEvent(GitHubIssueEvent):
     before: str
     after: str
 
 
-class LabeledEvent(IssueEvent):
+class GitHubLabeledEvent(GitHubIssueEvent):
     label: dict
 
 
-class UnlabeledEvent(IssueEvent):
+class GitHubUnlabeledEvent(GitHubIssueEvent):
     label: dict
 
 
 GitHubPullTimelineEvent = Union[
-    CommitEvent,
-    CommentEvent,
-    IssueEvent,
-    ReviewRequestedEvent,
-    ReadyForReviewEvent,
-    MergedEvent,
-    ClosedEvent,
-    ReviewEvent,
-    CrossReferencedEvent,
-    ConvertToDraftEvent,
-    HeadRefDeletedEvent,
-    HeadRefForcePushedEvent,
-    LabeledEvent,
-    UnlabeledEvent,
+    GitHubCommitEvent,
+    GitHubCommentEvent,
+    GitHubIssueEvent,
+    GitHubReviewRequestedEvent,
+    GitHubReadyForReviewEvent,
+    GitHubMergedEvent,
+    GitHubClosedEvent,
+    GitHubReviewEvent,
+    GitHubCrossReferencedEvent,
+    GitHubConvertToDraftEvent,
+    GitHubHeadRefDeletedEvent,
+    GitHubHeadRefForcePushedEvent,
+    GitHubLabeledEvent,
+    GitHubUnlabeledEvent,
 ]
 
 

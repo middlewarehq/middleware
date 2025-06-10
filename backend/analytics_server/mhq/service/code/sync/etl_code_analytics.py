@@ -111,19 +111,19 @@ class CodeETLAnalyticsService:
             # Prevent garbage state when PR is approved post merging
             merge_time = -1 if merge_time < 0 else merge_time
 
-        start_time = (
+        pull_request_ready_for_review_time = (
             first_ready_for_review.created_at
             if first_ready_for_review
             else pr.created_at
         )
 
-        cycle_time = pr.state_changed_at - start_time
+        cycle_time = pr.state_changed_at - pull_request_ready_for_review_time
         if isinstance(cycle_time, timedelta):
             cycle_time = cycle_time.total_seconds()
 
         return PRPerformance(
             first_review_time=(
-                (first_review.created_at - start_time).total_seconds()
+                (first_review.created_at - pull_request_ready_for_review_time).total_seconds()
                 if first_review
                 else -1
             ),
