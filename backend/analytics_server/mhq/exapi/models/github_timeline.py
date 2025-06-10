@@ -10,42 +10,34 @@ from mhq.store.models.code.enums import PullRequestEventType
 from mhq.utils.log import LOG
 from mhq.utils.time import dt_from_iso_time_string
 
+
 @dataclass
 class GithubPullRequestTimelineEventConfig:
     actor_path: str
     timestamp_field: str
     id_path: str
 
+
 @dataclass
 class GithubPullRequestTimelineEvents:
     REVIEWED_CONFIG = GithubPullRequestTimelineEventConfig(
-        actor_path="user",
-        timestamp_field="submitted_at",
-        id_path="id"
+        actor_path="user", timestamp_field="submitted_at", id_path="id"
     )
-    
+
     READY_FOR_REVIEW_CONFIG = GithubPullRequestTimelineEventConfig(
-        actor_path="actor",
-        timestamp_field="created_at",
-        id_path="id"
+        actor_path="actor", timestamp_field="created_at", id_path="id"
     )
-    
+
     COMMENTED_CONFIG = GithubPullRequestTimelineEventConfig(
-        actor_path="user",
-        timestamp_field="created_at",
-        id_path="id"
+        actor_path="user", timestamp_field="created_at", id_path="id"
     )
-    
+
     COMMITTED_CONFIG = GithubPullRequestTimelineEventConfig(
-        actor_path="author.name",
-        timestamp_field="author.date",
-        id_path="sha"
+        actor_path="author.name", timestamp_field="author.date", id_path="sha"
     )
-    
+
     DEFAULT_CONFIG = GithubPullRequestTimelineEventConfig(
-        actor_path="actor",
-        timestamp_field="created_at",
-        id_path="id"
+        actor_path="actor", timestamp_field="created_at", id_path="id"
     )
 
     EVENT_CONFIG = {

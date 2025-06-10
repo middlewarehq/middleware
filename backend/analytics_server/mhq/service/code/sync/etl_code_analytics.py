@@ -123,7 +123,9 @@ class CodeETLAnalyticsService:
 
         return PRPerformance(
             first_review_time=(
-                (first_review.created_at - pull_request_ready_for_review_time).total_seconds()
+                (
+                    first_review.created_at - pull_request_ready_for_review_time
+                ).total_seconds()
                 if first_review
                 else -1
             ),
