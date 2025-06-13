@@ -191,16 +191,16 @@ export const DeploymentTrendPill: FC<{
   const theme = useTheme();
 
   const text =
-    state === 'positive'
-      ? 'Increasing ' + label
-      : state === 'negative'
-      ? 'Decreasing ' + label
-      : 'Stable ' + label;
+    state === 'neutral'
+      ? label
+      : state === 'positive'
+        ? 'Increasing ' + label
+        : 'Decreasing ' + label;
 
   const useMultiplierFormat = Math.abs(change) > 100;
   const formattedChange = useMultiplierFormat
-    ? `${percentageToMultiplier(change)}`
-    : `${Math.round(change)}%`;
+    ? `${percentageToMultiplier(Math.abs(change))}`
+    : `${Math.abs(Math.round(change))}%`;
 
   const color = darken(
     state === 'positive'
@@ -220,8 +220,7 @@ export const DeploymentTrendPill: FC<{
 
   return (
     <FlexBox
-      direction="row"
-      gap={1}
+      gap1
       sx={{
         border: `1px solid ${theme.palette.primary.light}`,
         borderRadius: 1,
@@ -368,7 +367,7 @@ export const DoraMetricsTrend: FC = () => {
       <Line white sx={{ fontSize: '1.0rem' }} semibold>
         Deployment Trend
       </Line>
-      <FlexBox direction="row" gap={2}>
+      <FlexBox gap2>
         <DeploymentTrendPill
           label="Deployment Duration"
           change={durationTrend.change}
