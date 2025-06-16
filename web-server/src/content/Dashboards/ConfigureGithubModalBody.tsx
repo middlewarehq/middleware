@@ -331,7 +331,7 @@ const TokenPermissions: FC<{ tokenType: GithubTokenType }> = ({
       transition: 'all 0.8s ease',
       borderRadius: '12px',
       opacity: 1,
-      width: '250px',
+      width: tokenType === GithubTokenType.CLASSIC ? '250px' : '790px',
       position: 'absolute',
       maxWidth: 'calc(100% - 48px)',
       left: '24px'
@@ -370,7 +370,7 @@ const TokenPermissions: FC<{ tokenType: GithubTokenType }> = ({
               : '/assets/FST_permissions.png'
           }
           width={816}
-          height={1257}
+          height={tokenType === GithubTokenType.CLASSIC ? 1257 : 3583}
           alt={
             tokenType === GithubTokenType.CLASSIC
               ? 'PAT_permissions'
@@ -397,9 +397,7 @@ const TokenPermissions: FC<{ tokenType: GithubTokenType }> = ({
         )}
       </div>
       <Line tiny secondary sx={{ opacity: imageLoaded.value ? 1 : 0 }}>
-        {tokenType === GithubTokenType.CLASSIC
-          ? 'Scroll to see all required permissions'
-          : 'All minimal permissions are enabled. Please fill all required fields.'}
+        Scroll to see all required permissions
       </Line>
     </FlexBox>
   );

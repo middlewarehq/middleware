@@ -5,7 +5,11 @@ export const ClassicStyles = [
 ];
 
 export const FineGrainedStyles = [
-  { height: '40px', top: '146px' },
-  { height: '40px', top: '560px' },
-  { height: '195px', top: '700px' }
+  { height: '123px', top: '185px' },
+  { height: '125px', top: '750px' },
+  { height: '52px', top: '1106px' },
+  { height: '125px', top: '1675px' },
+  { height: '52px', top: '2030px' },
+  { height: '52px', top: '2516px' },
+  { height: '125px', top: '3225px' }
 ];
