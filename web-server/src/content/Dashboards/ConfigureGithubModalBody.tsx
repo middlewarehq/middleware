@@ -167,8 +167,7 @@ export const ConfigureGithubModalBody: FC<{
   const focusDomainInput = useCallback(() => {
     if (!customDomain.value)
       document.getElementById('github-custom-domain')?.focus();
-    else handleSubmission();
-  }, [customDomain.value, handleSubmission]);
+  }, [customDomain.value]);
 
   return (
     <FlexBox gap2>
