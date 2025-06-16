@@ -922,6 +922,11 @@ export enum DeploymentSources {
   WORKFLOW = 'WORKFLOW'
 }
 
+export enum GithubTokenType {
+  CLASSIC = 'classic',
+  FINE_GRAINED = 'fine-grained'
+}
+
 export type DeploymentSourceResponse = {
   team_id: ID;
   is_active: boolean;
