@@ -115,7 +115,7 @@ jest.mock('@/api/internal/[org_id]/utils', () => ({
       expect(result.totalCount).toBeNull()
       expect(result.pageInfo).toEqual({ hasNextPage: false, endCursor: null })
       expect(result.repos).toHaveLength(1)
-      expect(result.repos[0]).toMatchObject({ id: 'p1', name: 'proj1', url: 'w1', defaultBranchRef: { name: 'dev' }, primaryLanguage: { name: 'JS' }, owner: { login: 'gspace' } })
+      expect(result.repos[0]).toMatchObject({ id: 'p1', name: 'proj1', slug: 'p1', web_url: 'w1', branch: 'dev', parent: 'gspace' })
     })
   })
 
