@@ -13,6 +13,7 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/GithubIntegrationCard';
 import { GitlabIntegrationCard } from '@/content/Dashboards/GitlabIntegrationCard';
+import { WebhookIntegrationCard } from '@/content/Dashboards/WebhookIntegrationCard';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
@@ -163,6 +164,7 @@ const Content = () => {
       <FlexBox gap={2}>
         <GithubIntegrationCard />
         <GitlabIntegrationCard />
+        <WebhookIntegrationCard />
       </FlexBox>
       {showCreationCTA && (
         <FlexBox mt={'56px'} col fit alignStart>

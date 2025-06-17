@@ -16,13 +16,15 @@ type State = StateFetchConfig<{
   members: Record<ID, User>;
   syncAlertsAsIncidents: boolean;
   defaultSyncDays: number;
+  webhookAPIKey: string;
 }>;
 
 const initialState: State = {
   admins: [],
   members: {},
   syncAlertsAsIncidents: false,
-  defaultSyncDays: null
+  defaultSyncDays: null,
+  webhookAPIKey: ''
 };
 
 export const orgSlice = createSlice({
@@ -93,6 +95,14 @@ export const orgSlice = createSlice({
       'defaultSyncDays',
       (state, action) => {
         state.defaultSyncDays = action.payload;
+      }
+    );
+    addFetchCasesToReducer(
+      builder,
+      getWebhookAPIKey,
+      'webhookAPIKey',
+      (state, action) => {
+        state.webhookAPIKey = action.payload;
       }
     );
   }
@@ -211,5 +221,16 @@ export const updateDefaultSyncDaysSettings = createAsyncThunk(
         }
       )
     ).default_sync_days;
+  }
+);
+
+export const getWebhookAPIKey = createAsyncThunk(
+  'org/getWebhookAPIKey',
+  async (params: { orgId: ID }) => {
+    return (
+      await handleApi<{ webhook_api_key: string }>(
+        `/resources/orgs/${params.orgId}/webhook_api_key`
+      )
+    ).webhook_api_key;
   }
 );

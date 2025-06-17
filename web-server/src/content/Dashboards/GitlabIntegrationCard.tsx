@@ -12,7 +12,7 @@ import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import { FetchState } from '@/constants/ui-states';
-import { gitLabIntegrationDisplay } from '@/content/Dashboards/githubIntegration';
+import { gitLabIntegrationDisplay } from '@/content/Dashboards/integrationDisplayConfigs';
 import { useIntegrationHandlers } from '@/content/Dashboards/useIntegrationHandlers';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';

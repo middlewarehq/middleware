@@ -9,7 +9,8 @@ export enum Integration {
   PAGERDUTY = 'pagerduty',
   OPSGENIE = 'opsgenie',
   MICROSOFT = 'azure-ad',
-  CIRCLECI = 'circle_ci'
+  CIRCLECI = 'circle_ci',
+  WEBHOOK = 'webhook'
 }
 
 export enum CIProvider {
