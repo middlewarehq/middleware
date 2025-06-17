@@ -14,14 +14,16 @@ const serviceTitle: Record<ServiceNames, string> = {
   [ServiceNames.API_SERVER]: 'Backend Server',
   [ServiceNames.REDIS]: 'Redis Database',
   [ServiceNames.POSTGRES]: 'Postgres Database',
-  [ServiceNames.SYNC_SERVER]: 'Sync Server'
+  [ServiceNames.SYNC_SERVER]: 'Sync Server',
+  [ServiceNames.QUEUE]: 'Queue Service'
 };
 
 const serviceColor: Record<ServiceNames, string> = {
   [ServiceNames.API_SERVER]: '#06d6a0',
   [ServiceNames.REDIS]: '#ef476f',
   [ServiceNames.POSTGRES]: '#ff70a6',
-  [ServiceNames.SYNC_SERVER]: '#ab34eb'
+  [ServiceNames.SYNC_SERVER]: '#ab34eb',
+  [ServiceNames.QUEUE]: '#3a86ff'
 };
 
 export const SystemStatus: FC = () => {

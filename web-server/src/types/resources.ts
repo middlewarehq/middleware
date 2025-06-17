@@ -1060,4 +1060,5 @@ export interface ParsedLog {
   message: string;
   role?: string;
   ip?: string;
+  pid?: string;
 }
