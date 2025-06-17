@@ -56,13 +56,13 @@ describe('GitHub URL utilities', () => {
     });
 
     it('uses custom domain when provided', async () => {
-      jest.spyOn(githubUtils, 'getGitHubCustomDomain').mockResolvedValue('git.sujai.com');
+      jest.spyOn(githubUtils, 'getGitHubCustomDomain').mockResolvedValue('https://git.sujai.com');
       const url = await githubUtils.getGitHubRestApiUrl('repos/owner/repo');
       expect(url).toBe('https://git.sujai.com/api/v3/repos/owner/repo');
     });
 
     it('normalizes multiple slashes in URL', async () => {
-      jest.spyOn(githubUtils, 'getGitHubCustomDomain').mockResolvedValue('git.sujai.com/');
+      jest.spyOn(githubUtils, 'getGitHubCustomDomain').mockResolvedValue('https://git.sujai.com/');
       const url = await githubUtils.getGitHubRestApiUrl('/repos//owner//repo');
       expect(url).toBe('https://git.sujai.com/api/v3/repos/owner/repo');
     });
@@ -76,7 +76,7 @@ describe('GitHub URL utilities', () => {
     });
 
     it('uses custom domain for GraphQL endpoint', async () => {
-      jest.spyOn(githubUtils, 'getGitHubCustomDomain').mockResolvedValue('api.github.local');
+      jest.spyOn(githubUtils, 'getGitHubCustomDomain').mockResolvedValue('https://api.github.local');
       const url = await githubUtils.getGitHubGraphQLUrl();
       expect(url).toBe('https://api.github.local/api/graphql');
     });

@@ -4,8 +4,9 @@ import { head } from 'ramda';
 import { Row } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { BaseRepo } from '@/types/resources';
-import { db } from '@/utils/db';
+import { db, getFirstRow } from '@/utils/db';
 import { DEFAULT_GH_URL } from '@/constants/urls';
+import { dec } from '@/utils/auth-supplementary';
 
 type GithubRepo = {
   name: string;
@@ -287,7 +288,7 @@ const convertUrlToQuery = (url: string) => {
   return query; // of type parent/repo or group/subgroup/repo
 };
 
-const replaceURL = async (url: string): Promise<string> => {
+export const replaceURL = async (url: string): Promise<string> => {
   const provider_meta = await db('Integration')
     .where('name', Integration.GITLAB)
     .then((r: Row<'Integration'>[]) => r.map((item) => item.provider_meta));
@@ -334,4 +335,28 @@ export const getGitHubRestApiUrl = async (path: string) => {
 export const getGitHubGraphQLUrl = async (): Promise<string> => {
   const customDomain = await getGitHubCustomDomain();
   return customDomain ? `${customDomain}/api/graphql` : `${DEFAULT_GH_URL}/graphql`;
+};
+
+export const getGithubToken = async (org_id: ID) => {
+  return await db('Integration')
+    .select()
+    .where({
+      org_id,
+      name: Integration.GITHUB
+    })
+    .returning('*')
+    .then(getFirstRow)
+    .then((r) => dec(r.access_token_enc_chunks));
+};
+
+export const getGitlabToken = async (org_id: ID) => {
+  return await db('Integration')
+    .select()
+    .where({
+      org_id,
+      name: Integration.GITLAB
+    })
+    .returning('*')
+    .then(getFirstRow)
+    .then((r) => dec(r.access_token_enc_chunks));
 };
