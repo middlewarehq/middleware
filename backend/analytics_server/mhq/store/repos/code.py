@@ -1,9 +1,9 @@
 from datetime import datetime
 from operator import and_
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from mhq.store.models.code.enums import CodeProvider
-from sqlalchemy import or_
+from sqlalchemy import or_, tuple_
 from sqlalchemy.orm import defer
 from mhq.store.models.core import Team
 
@@ -108,6 +108,19 @@ class CodeRepoService:
                 OrgRepo.is_active.is_(True),
                 TeamRepos.is_active.is_(True),
                 Team.is_deleted.is_(False),
+            )
+            .all()
+        )
+
+    def get_org_repos_by_org_repo_tuples(
+        self, org_id: str, tuples: List[Tuple[str, str, str]]
+    ) -> List[OrgRepo]:
+        return (
+            self._db.session.query(OrgRepo)
+            .filter(
+                OrgRepo.org_id == org_id,
+                OrgRepo.is_active.is_(True),
+                tuple_(OrgRepo.provider, OrgRepo.org_name, OrgRepo.name).in_(tuples),
             )
             .all()
         )

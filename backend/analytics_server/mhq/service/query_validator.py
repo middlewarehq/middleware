@@ -2,9 +2,11 @@ from datetime import timedelta
 from typing import List
 
 from werkzeug.exceptions import NotFound, BadRequest
+from mhq.exceptions.webhook import InvalidApiKeyError
 
 from mhq.store.models.core import Organization, Team, Users
 from mhq.store.repos.core import CoreRepoService
+from mhq.store.models import UserIdentityProvider
 from mhq.utils.time import Interval
 
 DEFAULT_ORG_NAME = "default"
@@ -71,6 +73,16 @@ class QueryValidator:
             raise NotFound(f"User(s) not found: {missing_user_ids}")
 
         return users
+
+    def api_key_validator(self, secret_key: str | None, org_id: str) -> str:
+        api_key = self.repo_service.get_access_token(
+            org_id, UserIdentityProvider.WEBHOOK
+        )
+
+        if not api_key or api_key != secret_key:
+            raise InvalidApiKeyError()
+
+        return api_key
 
 
 def get_query_validator():
