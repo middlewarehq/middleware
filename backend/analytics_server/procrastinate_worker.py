@@ -21,6 +21,7 @@ app = App(
             "dbname": getenv("DB_NAME"),
         }
     ),
+    import_paths=["mhq.service.queue.tasks"],
 )
 
 app.open()

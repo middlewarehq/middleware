@@ -1,9 +1,8 @@
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import defer
 from sqlalchemy import and_
-
 from mhq.store import db, rollback_on_exc
 from mhq.store.models.code.workflows.enums import (
     RepoWorkflowRunsStatus,
@@ -40,6 +39,20 @@ class WorkflowRepoService:
             .all()
         )
 
+    def get_repo_workflow_by_provider_workflow_id(
+        self, repo_id: str, provider: RepoWorkflowProviders, provider_workflow_id: str
+    ) -> Optional[RepoWorkflow]:
+        return (
+            self._db.session.query(RepoWorkflow)
+            .options(defer(RepoWorkflow.meta))
+            .filter(
+                RepoWorkflow.org_repo_id == repo_id,
+                RepoWorkflow.provider == provider,
+                RepoWorkflow.provider_workflow_id == provider_workflow_id,
+            )
+            .one_or_none()
+        )
+
     @rollback_on_exc
     def get_repo_workflow_run_by_provider_workflow_run_id(
         self, repo_workflow_id: str, provider_workflow_run_id: str
@@ -53,12 +66,33 @@ class WorkflowRepoService:
             .one_or_none()
         )
 
+    def get_repo_workflow_runs(self, repo_workflow_id: str) -> List[RepoWorkflowRuns]:
+        return (
+            self._db.session.query(RepoWorkflowRuns)
+            .filter(RepoWorkflowRuns.repo_workflow_id == repo_workflow_id)
+            .all()
+        )
+
     @rollback_on_exc
     def save_repo_workflow_runs(self, repo_workflow_runs: List[RepoWorkflowRuns]):
         [
             self._db.session.merge(repo_workflow_run)
             for repo_workflow_run in repo_workflow_runs
         ]
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def save_repo_workflow_and_workflow_runs(
+        self,
+        repo_workflows: List[RepoWorkflow],
+        repo_workflow_runs: List[RepoWorkflowRuns],
+    ):
+        for workflow in repo_workflows:
+            self._db.session.merge(workflow)
+
+        for run in repo_workflow_runs:
+            self._db.session.merge(run)
+
         self._db.session.commit()
 
     @rollback_on_exc
