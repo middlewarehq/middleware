@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict
 
+from mhq.exapi.models.github_timeline import GithubPullRequestTimelineEvents
 from mhq.utils.time import time_now
 
 
@@ -157,3 +158,27 @@ def get_github_workflow_run_dict(
         "updated_at": updated_at,
         "html_url": html_url,
     }
+
+
+def get_github_pr_timeline_event(
+    event_id: str = "123456",
+    user_login: str = "abc",
+    event_type: str = "reviewed",
+    timestamp: datetime = None,
+    raw_data: Dict = None,
+) -> GithubPullRequestTimelineEvents:
+    if timestamp is None:
+        timestamp = time_now()
+
+    if raw_data is None:
+        raw_data = {
+            "id": event_id,
+            "user": {"login": user_login},
+            "submitted_at": timestamp.isoformat(),
+            "state": "approved",
+        }
+
+    return GithubPullRequestTimelineEvents(
+        event_type=event_type,
+        data=raw_data,
+    )
