@@ -1,7 +1,7 @@
 import { LoadingButton } from '@mui/lab';
 import { Box, Divider, Typography, Paper, Tab, Tabs } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
@@ -28,13 +28,8 @@ export const ConfigureWebhookModalBody = () => {
   const { addModal } = useModal();
   const { enqueueSnackbar } = useSnackbar();
   const { orgId } = useAuth();
-  const isLoading = useBoolState();
+  const isLoading = useBoolState(false);
   const webhookAPIKey = useSelector((state) => state.org.webhookAPIKey);
-
-  useEffect(() => {
-    depFn(isLoading.true);
-    dispatch(getWebhookAPIKey({ orgId })).finally(isLoading.false);
-  }, [dispatch, orgId]);
 
   const handleCreateKey = useCallback(async () => {
     depFn(isLoading.true);
@@ -55,7 +50,7 @@ export const ConfigureWebhookModalBody = () => {
         });
       })
       .finally(isLoading.false);
-  }, [dispatch, isLoading, orgId, enqueueSnackbar]);
+  }, [dispatch, enqueueSnackbar, isLoading.false, isLoading.true, orgId]);
 
   const handleDeleteKey = useCallback(async () => {
     depFn(isLoading.true);
@@ -75,7 +70,7 @@ export const ConfigureWebhookModalBody = () => {
         });
       })
       .finally(isLoading.false);
-  }, [dispatch, isLoading, orgId, enqueueSnackbar]);
+  }, [dispatch, enqueueSnackbar, isLoading.false, isLoading.true, orgId]);
 
   const openConfirmDeleteAPIKeyModal = useCallback(async () => {
     addModal({
@@ -229,6 +224,10 @@ const DeploymentsWebhookDocs = () => {
       secondaryText: 'Branch on which the workflow was run'
     },
     {
+      primaryText: 'workflow_run_unique_id',
+      secondaryText: 'Unique identifier for the workflow run'
+    },
+    {
       primaryText: 'status',
       secondaryText:
         'Status of the workflow run ( PENDING, SUCCESS, FAILURE, CANCELLED )'
@@ -248,7 +247,8 @@ const DeploymentsWebhookDocs = () => {
           <Line color="lightgreen">workflow_run_conducted_at</Line>. Example:
           Call the webhook with status <b>"PENDING"</b> at the start, and later
           with <b>"SUCCESS"</b>, <b>"FAILURE"</b>, or <b>"CANCELLED"</b> to mark
-          the end.
+          the end. <Line color="lightgreen">workflow_run_conducted_at</Line> can
+          be kept as the current time for both the invocations.
         </Line>
       )
     },

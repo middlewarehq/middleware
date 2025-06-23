@@ -5,15 +5,18 @@ import {
 } from '@mui/icons-material';
 import { Button, useTheme } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
-import { FC, ReactNode } from 'react';
+import { FC, ReactNode, useEffect } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { FetchState } from '@/constants/ui-states';
 import { webhookIntegrationDisplay } from '@/content/Dashboards/integrationDisplayConfigs';
 import { useIntegrationHandlers } from '@/content/Dashboards/useIntegrationHandlers';
+import { useAuth } from '@/hooks/useAuth';
 import { useBoolState } from '@/hooks/useEasyState';
-import { useSelector } from '@/store';
+import { getWebhookAPIKey } from '@/slices/org';
+import { useDispatch, useSelector } from '@/store';
+import { depFn } from '@/utils/fn';
 
 const cardRadius = 10.5;
 const cardBorder = 1.5;
@@ -22,13 +25,20 @@ const getRadiusWithPadding = (radius: number, padding: number) =>
 
 export const WebhookIntegrationCard = () => {
   const theme = useTheme();
+  const dispatch = useDispatch();
 
   const sliceLoading = useSelector(
     (s) => s.auth.requests.org === FetchState.REQUEST
   );
   const { link } = useIntegrationHandlers();
+  const { orgId } = useAuth();
 
   const localLoading = useBoolState(false);
+
+  useEffect(() => {
+    depFn(localLoading.true);
+    dispatch(getWebhookAPIKey({ orgId })).finally(localLoading.false);
+  }, [dispatch, localLoading.false, localLoading.true, orgId]);
 
   const isLoading = sliceLoading || localLoading.value;
 
