@@ -474,6 +474,22 @@ COMMENT ON COLUMN public."Users".onboarding_state IS 'State JSON for storing the
 
 
 --
+-- Name: WebhookEvent; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."WebhookEvent" (
+    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
+    org_id uuid NOT NULL,
+    request_type character varying NOT NULL,
+    request_data jsonb NOT NULL,
+    meta jsonb DEFAULT '{}'::jsonb,
+    error jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -688,6 +704,14 @@ ALTER TABLE ONLY public."Users"
 
 ALTER TABLE ONLY public."Users"
     ADD CONSTRAINT "Users_primary_email_key" UNIQUE (primary_email);
+
+
+--
+-- Name: WebhookEvent WebhookEvent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."WebhookEvent"
+    ADD CONSTRAINT "WebhookEvent_pkey" PRIMARY KEY (id);
 
 
 --
@@ -1360,4 +1384,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20240404142732'),
     ('20240430142502'),
     ('20240503060203'),
-    ('20240503073715');
+    ('20240503073715'),
+    ('20250617082510');
