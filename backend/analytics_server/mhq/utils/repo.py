@@ -23,12 +23,12 @@ def get_tuple_to_repo_url_map(
 
     for repo_url in repo_urls:
         parsed_url = urlparse(repo_url)
-        web_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        provider = domain_url_to_provider_map[web_url]
+        domain_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
-        if not provider:
-            raise Exception(f"Integration {provider} is not linked.")
+        if domain_url not in domain_url_to_provider_map:
+            raise Exception(f"Integration is not linked for repo '{repo_url}'.")
 
+        provider = domain_url_to_provider_map[domain_url]
         path_elements = parsed_url.path.strip("/").split("/")
 
         if len(path_elements) != 2:

@@ -31,7 +31,12 @@ class WebhookWorkflowRun:
             self.workflow_run_conducted_at = datetime.fromisoformat(
                 self.workflow_run_conducted_at
             )
-        except Exception as e:
+        except Exception:
             raise InvalidPayloadError(
-                "Invalid datetime format for workflow_run_conducted_at"
+                f"Invalid datetime format for workflow_run_conducted_at: `{self.workflow_run_conducted_at}`"
             )
+
+        try:
+            self.status = RepoWorkflowRunsStatus(self.status)
+        except Exception:
+            raise InvalidPayloadError(f"Invalid workflow run status: `{self.status}`")

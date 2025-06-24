@@ -3,6 +3,7 @@ from mhq.service.webhooks.webhook_event_service import (
     get_webhook_service,
     WebhookEventService,
 )
+import traceback
 
 
 class WebhookQueueHandler:
@@ -24,8 +25,14 @@ class WebhookQueueHandler:
         except Exception as e:
             if not webhook_event:
                 raise e
-            webhook_event.error = {"error": str(e)}
+            webhook_event.error = {
+                "type": e.__class__.__name__,
+                "message": str(e),
+                "args": e.args,
+                "traceback": traceback.format_exc(),
+            }
             self.webhooks_service.update_webhook_event(webhook_event)
+            raise e
 
 
 def get_webhook_queue_handler():

@@ -6,7 +6,7 @@ from mhq.store.models.code.workflows.enums import RepoWorkflowRunsStatus
 from mhq.service.webhooks.factory_abstract import WebhookEventHandler
 from mhq.store.models.webhooks.webhooks import WebhookEvent, WebhookEventRequestType
 from mhq.service.webhooks.models.webhook import WebhookWorkflowRun
-from typing import Any, List, Dict, Set, Tuple
+from typing import Any, List, Dict, Optional, Set, Tuple
 from mhq.store.models.code.workflows.workflows import (
     RepoWorkflow,
     RepoWorkflowRuns,
@@ -157,7 +157,6 @@ class WebhookWorkflowHandler(WebhookEventHandler):
                     updated_workflow_run = self._check_and_update_duration(
                         existing_workflow_run=existing_repo_workflow_run,
                         current_workflow_run=workflow,
-                        repo_workflow_id=str(repo_workflow.id),
                     )
                     if updated_workflow_run:
                         # Remove existing workflow run (if any) from repo_workflow_runs
@@ -188,13 +187,13 @@ class WebhookWorkflowHandler(WebhookEventHandler):
         for wf in payload["workflow_runs"]:
             workflow_runs.append(
                 WebhookWorkflowRun(
-                    workflow_name=wf["workflow_name"],
-                    repo_urls=wf["repo_urls"],
-                    event_actor=wf["event_actor"],
-                    head_branch=wf["head_branch"],
-                    workflow_run_unique_id=wf["workflow_run_unique_id"],
-                    status=RepoWorkflowRunsStatus(wf["status"]),
-                    workflow_run_conducted_at=wf["workflow_run_conducted_at"],
+                    workflow_name=wf.get("workflow_name"),
+                    repo_urls=wf.get("repo_urls"),
+                    event_actor=wf.get("event_actor"),
+                    head_branch=wf.get("head_branch"),
+                    workflow_run_unique_id=wf.get("workflow_run_unique_id"),
+                    status=wf.get("status"),
+                    workflow_run_conducted_at=wf.get("workflow_run_conducted_at"),
                     duration=int(wf.get("duration")) if wf.get("duration") else None,
                     html_url=wf.get("html_url", None),
                 )
@@ -220,23 +219,26 @@ class WebhookWorkflowHandler(WebhookEventHandler):
         self,
         existing_workflow_run: RepoWorkflowRuns,
         current_workflow_run: WebhookWorkflowRun,
-        repo_workflow_id: str,
-    ) -> RepoWorkflowRuns | None:
+    ) -> Optional[RepoWorkflowRuns]:
         if (
             existing_workflow_run.status == RepoWorkflowRunsStatus.PENDING
             and current_workflow_run.status != RepoWorkflowRunsStatus.PENDING
-            and not current_workflow_run.duration
         ):
-            interval = Interval(
-                from_time=existing_workflow_run.conducted_at,
-                to_time=current_workflow_run.workflow_run_conducted_at,
+            if current_workflow_run.duration:
+                existing_workflow_run.duration = current_workflow_run.duration
+            else:
+                interval = Interval(
+                    from_time=existing_workflow_run.conducted_at,
+                    to_time=current_workflow_run.workflow_run_conducted_at,
+                )
+                existing_workflow_run.duration = int(
+                    interval.duration.total_seconds() * 1000
+                )
+            existing_workflow_run.status = current_workflow_run.status
+            existing_workflow_run.conducted_at = (
+                current_workflow_run.workflow_run_conducted_at
             )
-            current_workflow_run.duration = int(
-                interval.duration.total_seconds() * 1000
-            )
-            return self._adapt_webhook_workflow_run(
-                current_workflow_run, repo_workflow_id
-            )
+            return existing_workflow_run
         elif (
             current_workflow_run.status == RepoWorkflowRunsStatus.PENDING
             and existing_workflow_run.status != RepoWorkflowRunsStatus.PENDING
