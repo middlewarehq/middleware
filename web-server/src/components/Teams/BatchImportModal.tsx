@@ -91,18 +91,15 @@ export const BatchImportModal: FC<BatchImportModalProps> = ({
 
     setLoadingPage(true);
     try {
-      const resp = await axios.get(
-        `/api/internal/${orgId}/git_org_repos`,
-        {
-          params,
-          signal: controller.signal,
-        }
-      );
+      const resp = await axios.get(`/api/internal/${orgId}/git_org_repos`, {
+        params,
+        signal: controller.signal
+      });
       const { repos, pageInfo } = resp.data;
       const pageData: PageData = {
         repos,
         endCursor: pageInfo.endCursor,
-        hasNextPage: pageInfo.hasNextPage,
+        hasNextPage: pageInfo.hasNextPage
       };
       setPages((p) => ({ ...p, [pageNum]: pageData }));
       setFiltered(repos);
