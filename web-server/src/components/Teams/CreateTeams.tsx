@@ -496,6 +496,9 @@ const DisplayRepos: FC = () => {
             count={pageCount}
             onChange={(_, p) => setPage(p)}
             size="small"
+            aria-label="Repository list pagination"
+            showFirstButton
+            showLastButton
           />
         </Box>
       )}
