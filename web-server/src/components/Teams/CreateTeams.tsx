@@ -18,10 +18,13 @@ import {
   useTheme,
   InputLabel,
   FormControl,
-  OutlinedInput
+  OutlinedInput,
+  IconButton,
+  Box,
+  Pagination
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { FC, useCallback } from 'react';
+import { FC, useCallback, useMemo, useState } from 'react';
 
 import {
   useTeamCRUD,
@@ -29,10 +32,13 @@ import {
 } from '@/components/Teams/useTeamsConfig';
 import { DeploymentWorkflowSelector } from '@/components/WorkflowSelector';
 import { Integration } from '@/constants/integrations';
+import { useModal } from '@/contexts/ModalContext';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import GitlabIcon from '@/mocks/icons/gitlab.svg';
 import { BaseRepo, DeploymentSources } from '@/types/resources';
 import { trimWithEllipsis } from '@/utils/stringFormatting';
+
+import { BatchImportModal } from './BatchImportModal';
 
 import AnimatedInputWrapper from '../AnimatedInputWrapper/AnimatedInputWrapper';
 import { FlexBox } from '../FlexBox';
@@ -164,6 +170,7 @@ const TeamRepos: FC = () => {
     loadingRepos,
     handleReposSearch
   } = useTeamCRUD();
+  const { addModal, closeModal } = useModal();
 
   const searchQuery = useEasyState('');
   const searchFocus = useBoolState(false);
@@ -192,6 +199,27 @@ const TeamRepos: FC = () => {
     );
   };
 
+  const openBatchImportModal = useCallback(() => {
+    const modal = addModal({
+      title: 'Batch Import Repositories',
+      body: (
+        <BatchImportModal
+          existing={selectedRepos}
+          onAdd={(batch) => {
+            const merged = [...selectedRepos, ...batch];
+            const uniqueById = Array.from(
+              new Map(merged.map((repo) => [repo.id, repo])).values()
+            );
+            handleRepoSelectionChange({} as any, uniqueById);
+            closeModal(modal.key);
+          }}
+          onClose={() => closeModal(modal.key)}
+        />
+      ),
+      showCloseIcon: true
+    });
+  }, [addModal, closeModal, selectedRepos, handleRepoSelectionChange]);
+
   return (
     <FlexBox col gap={2}>
       <FlexBox col>
@@ -200,7 +228,7 @@ const TeamRepos: FC = () => {
         </Line>
         <Line>Select repositories for this team using name or link</Line>
       </FlexBox>
-      <FlexBox>
+      <Box display="flex" alignItems="center" gap={2}>
         <Autocomplete
           noOptionsText={
             !searchQuery.value
@@ -298,7 +326,17 @@ const TeamRepos: FC = () => {
           )}
           renderTags={() => null}
         />
-      </FlexBox>
+        <Line small italic color="textSecondary">
+          or
+        </Line>
+        <Button
+          variant="outlined"
+          onClick={openBatchImportModal}
+          sx={{ whiteSpace: 'nowrap' }}
+        >
+          Import Bulk Repositories
+        </Button>
+      </Box>
       <DisplayRepos />
     </FlexBox>
   );
@@ -367,88 +405,106 @@ const ActionTray: FC<CRUDProps> = ({
 const DisplayRepos: FC = () => {
   const { selectedRepos, showWorkflowChangeWarning, unselectRepo } =
     useTeamCRUD();
-
   const theme = useTheme();
-  if (!selectedRepos.length) return;
+
+  const ROWS_PER_PAGE = 8;
+  const [page, setPage] = useState(1);
+  const total = selectedRepos.length;
+  const pageCount = Math.ceil(total / ROWS_PER_PAGE);
+  const paged = useMemo(
+    () => selectedRepos.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE),
+    [selectedRepos, page]
+  );
+
+  if (!total) return null;
+
   return (
-    <TableContainer
-      sx={{
-        border: `2px solid ${theme.colors.secondary.light}`,
-        borderRadius: 1
-      }}
-    >
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ px: 2, minWidth: 200 }}>Repo</TableCell>
-            <TableCell sx={{ p: 1 }}>Deployed Via</TableCell>
-            <TableCell align="right">Action</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {selectedRepos.map((repo) => {
-            const shortenedName = trimWithEllipsis(repo.name, 40);
-            return (
-              <TableRow key={repo.id}>
-                <TableCell sx={{ px: 2 }}>
-                  <FlexBox
-                    title={shortenedName === repo.name ? null : repo.name}
-                    gap1
-                    alignCenter
-                  >
-                    {repo.provider === Integration.GITHUB ? (
-                      <GitHub sx={{ fontSize: '16px' }} />
-                    ) : (
-                      <GitlabIcon height={14} width={14} />
-                    )}
-                    {shortenedName}
-                  </FlexBox>
-                </TableCell>
-                <TableCell sx={{ px: 1, minWidth: 200 }}>
-                  <FlexBox gap2 alignCenter>
-                    <DeploymentSourceSelector repo={repo} />{' '}
-                    {repo.deployment_type === DeploymentSources.WORKFLOW && (
-                      <DeploymentWorkflowSelector repo={repo} />
-                    )}
-                  </FlexBox>
-                </TableCell>
-                <TableCell>
-                  <FlexBox
-                    fit
-                    ml={'auto'}
-                    title="Delete repo"
-                    pointer
-                    justifyEnd
-                    alignCenter
-                    onClick={() => {
-                      unselectRepo(repo.id);
-                    }}
-                  >
-                    <DeleteIcon fontSize="small" color="warning" />
+    <FlexBox col gap={2}>
+      <TableContainer
+        sx={{
+          border: `2px solid ${theme.colors.secondary.light}`,
+          borderRadius: 1
+        }}
+      >
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ px: 2 }}>Repo</TableCell>
+              <TableCell sx={{ px: 1 }}>Deployed Via</TableCell>
+              <TableCell align="right">Action</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paged.map((repo) => {
+              const name = trimWithEllipsis(repo.name, 40);
+              return (
+                <TableRow key={repo.id}>
+                  <TableCell sx={{ px: 2 }}>
+                    <FlexBox
+                      gap1
+                      alignCenter
+                      title={repo.name !== name ? repo.name : undefined}
+                    >
+                      {repo.provider === Integration.GITHUB ? (
+                        <GitHub />
+                      ) : (
+                        <GitlabIcon height={14} width={14} />
+                      )}
+                      {name}
+                    </FlexBox>
+                  </TableCell>
+                  <TableCell sx={{ px: 1, minWidth: 200 }}>
+                    <FlexBox gap2 alignCenter>
+                      <DeploymentSourceSelector repo={repo} />{' '}
+                      {repo.deployment_type === DeploymentSources.WORKFLOW && (
+                        <DeploymentWorkflowSelector repo={repo} />
+                      )}
+                    </FlexBox>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      onClick={() => unselectRepo(repo.id)}
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            {showWorkflowChangeWarning && (
+              <TableRow>
+                <TableCell colSpan={3}>
+                  <FlexBox alignCenter gap={1 / 2}>
+                    <InfoIcon fontSize="small" />
+                    <Line italic>
+                      Workflow changes will apply to all teams using these
+                      repos.
+                    </Line>
                   </FlexBox>
                 </TableCell>
               </TableRow>
-            );
-          })}
-        </TableBody>
-        {showWorkflowChangeWarning && (
-          <TableRow>
-            <TableCell colSpan={3}>
-              <FlexBox alignCenter gap={1 / 2}>
-                <InfoIcon color="primary" fontSize="small" />
-                <Line color="primary" italic>
-                  Workflow selection for any repositories will apply to all
-                  teams where they are assigned.
-                </Line>
-              </FlexBox>
-            </TableCell>
-          </TableRow>
-        )}
-      </Table>
-    </TableContainer>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {pageCount > 1 && (
+        <Box display="flex" justifyContent="center">
+          <Pagination
+            page={page}
+            count={pageCount}
+            onChange={(_, p) => setPage(p)}
+            size="small"
+            aria-label="Repository list pagination"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+    </FlexBox>
   );
 };
-
 const options = [
   {
     label: 'PR Merge',
