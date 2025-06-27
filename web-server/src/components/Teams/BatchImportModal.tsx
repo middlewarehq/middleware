@@ -74,6 +74,9 @@ export const BatchImportModal: FC<BatchImportModalProps> = ({
   }, [existing]);
 
   const fetchPage = async (pageNum: number) => {
+    // allow cancelling the request to avoid race conditions / setState on unmounted
+    const controller = new AbortController();
+
     if (pages[pageNum]) {
       setFiltered(pages[pageNum].repos);
       setCurrentPage(pageNum);
@@ -88,24 +91,34 @@ export const BatchImportModal: FC<BatchImportModalProps> = ({
 
     setLoadingPage(true);
     try {
-      const resp = await axios.get(`/api/internal/${orgId}/git_org_repos`, {
-        params
-      });
+      const resp = await axios.get(
+        `/api/internal/${orgId}/git_org_repos`,
+        {
+          params,
+          signal: controller.signal,
+        }
+      );
       const { repos, pageInfo } = resp.data;
       const pageData: PageData = {
         repos,
         endCursor: pageInfo.endCursor,
-        hasNextPage: pageInfo.hasNextPage
+        hasNextPage: pageInfo.hasNextPage,
       };
       setPages((p) => ({ ...p, [pageNum]: pageData }));
       setFiltered(repos);
       setCurrentPage(pageNum);
-    } catch (e) {
-      console.error(e);
-      enqueueSnackbar('Failed to load page', { variant: 'error' });
+    } catch (e: any) {
+      // ignore aborts, but report other errors
+      if (e.name !== 'AbortError') {
+        console.error(e);
+        enqueueSnackbar('Failed to load page', { variant: 'error' });
+      }
     } finally {
       setLoadingPage(false);
     }
+
+    // expose a cleanup to abort this request if needed
+    return () => controller.abort();
   };
 
   const fetchAll = async (): Promise<BaseRepo[]> => {
