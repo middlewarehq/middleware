@@ -1,5 +1,10 @@
-from typing import List, Tuple
-from mhq.store.models.code.workflows import RepoWorkflowType, RepoWorkflow
+from typing import Dict, List, Optional, Tuple
+from mhq.store.models.code.workflows import (
+    RepoWorkflowType,
+    RepoWorkflow,
+    RepoWorkflowRuns,
+    RepoWorkflowProviders,
+)
 
 from .factory import get_deployments_factory
 from .deployments_factory_service import DeploymentsFactoryService
@@ -7,7 +12,6 @@ from mhq.store.models.code.filter import PRFilter
 from mhq.store.models.code.repository import TeamRepos
 from mhq.store.models.code.workflows.filter import WorkflowFilter
 from mhq.service.deployments.models.models import Deployment, DeploymentType
-
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.workflows import WorkflowRepoService
 from mhq.utils.time import Interval
@@ -160,6 +164,35 @@ class DeploymentsService:
         self, deployments: List[Deployment]
     ) -> List[Deployment]:
         return sorted(deployments, key=lambda deployment: deployment.conducted_at)
+
+    def get_repo_workflow_by_provider_workflow_id(
+        self, repo_id: str, provider: RepoWorkflowProviders, provider_workflow_id: str
+    ) -> Optional[RepoWorkflow]:
+        return self.workflow_repo_service.get_repo_workflow_by_provider_workflow_id(
+            repo_id=repo_id,
+            provider=provider,
+            provider_workflow_id=provider_workflow_id,
+        )
+
+    def get_workflow_run_id_to_workflow_map(
+        self, repo_workflow_id: str
+    ) -> Dict[str, RepoWorkflowRuns]:
+        repo_workflow_runs = self.workflow_repo_service.get_repo_workflow_runs(
+            repo_workflow_id
+        )
+        return {
+            workflow_run.provider_workflow_run_id: workflow_run
+            for workflow_run in repo_workflow_runs
+        }
+
+    def save_repo_workflow_and_workflow_runs(
+        self,
+        repo_workflows: List[RepoWorkflow],
+        repo_workflow_runs: List[RepoWorkflowRuns],
+    ):
+        return self.workflow_repo_service.save_repo_workflow_and_workflow_runs(
+            repo_workflows, repo_workflow_runs
+        )
 
 
 def get_deployments_service() -> DeploymentsService:

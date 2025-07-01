@@ -4,6 +4,7 @@ from enum import Enum
 class RepoWorkflowProviders(Enum):
     GITHUB_ACTIONS = "github"
     CIRCLE_CI = "circle_ci"
+    WEBHOOK = "webhook"
 
     @classmethod
     def get_workflow_providers(cls):
