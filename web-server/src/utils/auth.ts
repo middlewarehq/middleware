@@ -1,6 +1,8 @@
 import axios from 'axios';
 import { isNil, reject } from 'ramda';
 
+import crypto from 'crypto';
+
 import { Integration } from '@/constants/integrations';
 import { DEFAULT_GH_URL } from '@/constants/urls';
 
@@ -98,4 +100,11 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
     (scope) => !scopes.includes(scope)
   );
   return missingScopes;
+};
+
+// Webhook functions
+
+export const generateRandomToken = () => {
+  const rawToken = crypto.randomBytes(12).toString('hex');
+  return `mos_${rawToken}`;
 };
