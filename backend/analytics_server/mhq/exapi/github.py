@@ -278,10 +278,10 @@ class GithubApiService:
             data = _fetch_workflow_runs(page=page)
         return repo_workflows
 
-    def _fetch_timeline_events(self, repo_name: str, pr_number: int, page: int = 1) -> List[Dict]:
-        github_url = (
-            f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
-        )
+    def _fetch_timeline_events(
+        self, repo_name: str, pr_number: int, page: int = 1
+    ) -> List[Dict]:
+        github_url = f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
         query_params = {"per_page": PAGE_SIZE, "page": page}
 
         try:
@@ -330,7 +330,9 @@ class GithubApiService:
 
         try:
             while True:
-                timeline_events = self._fetch_timeline_events(repo_name, pr_number, page)
+                timeline_events = self._fetch_timeline_events(
+                    repo_name, pr_number, page
+                )
                 if not timeline_events:
                     break
 
