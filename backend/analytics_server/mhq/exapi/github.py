@@ -278,65 +278,65 @@ class GithubApiService:
             data = _fetch_workflow_runs(page=page)
         return repo_workflows
 
+    def _fetch_timeline_events(self, repo_name: str, pr_number: int, page: int = 1) -> List[Dict]:
+        github_url = (
+            f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
+        )
+        query_params = {"per_page": PAGE_SIZE, "page": page}
+
+        try:
+            response = requests.get(
+                github_url, headers=self.headers, params=query_params
+            )
+        except requests.RequestException as e:
+            raise GithubException(
+                HTTPStatus.SERVICE_UNAVAILABLE, f"Network error: {str(e)}"
+            ) from e
+
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            raise GithubException(
+                HTTPStatus.NOT_FOUND,
+                f"PR {pr_number} not found for repo {repo_name}",
+            )
+
+        if response.status_code == HTTPStatus.FORBIDDEN:
+            raise GithubRateLimitExceeded("GitHub API rate limit exceeded")
+
+        if response.status_code != HTTPStatus.OK:
+            raise GithubException(
+                response.status_code,
+                f"Failed to fetch timeline events: {response.text}",
+            )
+
+        try:
+            return response.json()
+        except ValueError as e:
+            raise GithubException(
+                HTTPStatus.INTERNAL_SERVER_ERROR, f"Invalid JSON response: {str(e)}"
+            ) from e
+
+    def _create_timeline_event(self, event_data: Dict) -> GitHubPrTimelineEventsDict:
+        return GitHubPrTimelineEventsDict(
+            event=event_data.get("event", ""),
+            data=cast(GitHubPullTimelineEvent, event_data),
+        )
+
     def get_pr_timeline_events(
         self, repo_name: str, pr_number: int
     ) -> List[GithubPullRequestTimelineEvents]:
-
-        def _fetch_timeline_events(page: int = 1) -> List[Dict]:
-            github_url = (
-                f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
-            )
-            query_params = {"per_page": PAGE_SIZE, "page": page}
-
-            try:
-                response = requests.get(
-                    github_url, headers=self.headers, params=query_params
-                )
-            except requests.RequestException as e:
-                raise GithubException(
-                    HTTPStatus.SERVICE_UNAVAILABLE, f"Network error: {str(e)}"
-                ) from e
-
-            if response.status_code == HTTPStatus.NOT_FOUND:
-                raise GithubException(
-                    HTTPStatus.NOT_FOUND,
-                    f"PR {pr_number} not found for repo {repo_name}",
-                )
-
-            if response.status_code == HTTPStatus.FORBIDDEN:
-                raise GithubRateLimitExceeded("GitHub API rate limit exceeded")
-
-            if response.status_code != HTTPStatus.OK:
-                raise GithubException(
-                    response.status_code,
-                    f"Failed to fetch timeline events: {response.text}",
-                )
-
-            try:
-                return response.json()
-            except ValueError as e:
-                raise GithubException(
-                    HTTPStatus.INTERNAL_SERVER_ERROR, f"Invalid JSON response: {str(e)}"
-                ) from e
-
-        def _create_timeline_event(event_data: Dict) -> GitHubPrTimelineEventsDict:
-            return GitHubPrTimelineEventsDict(
-                event=event_data.get("event", ""),
-                data=cast(GitHubPullTimelineEvent, event_data),
-            )
 
         all_timeline_events: List[GitHubPrTimelineEventsDict] = []
         page = 1
 
         try:
             while True:
-                timeline_events = _fetch_timeline_events(page=page)
+                timeline_events = self._fetch_timeline_events(repo_name, pr_number, page)
                 if not timeline_events:
                     break
 
                 all_timeline_events.extend(
                     [
-                        _create_timeline_event(event_data)
+                        self._create_timeline_event(event_data)
                         for event_data in timeline_events
                     ]
                 )
