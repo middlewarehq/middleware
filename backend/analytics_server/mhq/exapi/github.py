@@ -1,9 +1,10 @@
 import contextlib
 from datetime import datetime
 from http import HTTPStatus
-from typing import Optional, Dict, Tuple, List
+from typing import Optional, Dict, Tuple, List, cast
 
 import requests
+
 from github import Github, UnknownObjectException
 from github.GithubException import GithubException
 from github.Organization import Organization as GithubOrganization
@@ -11,7 +12,12 @@ from github.PaginatedList import PaginatedList as GithubPaginatedList
 from github.PullRequest import PullRequest as GithubPullRequest
 from github.Repository import Repository as GithubRepository
 
+from mhq.exapi.schemas.timeline import (
+    GitHubPullTimelineEvent,
+    GitHubPrTimelineEventsDict,
+)
 from mhq.exapi.models.github import GitHubContributor
+from mhq.exapi.models.github_timeline import GithubPullRequestTimelineEvents
 from mhq.utils.log import LOG
 
 PAGE_SIZE = 100
@@ -271,3 +277,107 @@ class GithubApiService:
             page += 1
             data = _fetch_workflow_runs(page=page)
         return repo_workflows
+
+    def _fetch_timeline_events(
+        self, repo_name: str, pr_number: int, page: int = 1
+    ) -> List[Dict]:
+        github_url = f"{self.base_url}/repos/{repo_name}/issues/{pr_number}/timeline"
+        query_params = {"per_page": PAGE_SIZE, "page": page}
+
+        try:
+            response = requests.get(
+                github_url, headers=self.headers, params=query_params
+            )
+        except requests.RequestException as e:
+            raise GithubException(
+                HTTPStatus.SERVICE_UNAVAILABLE, f"Network error: {str(e)}"
+            ) from e
+
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            raise GithubException(
+                HTTPStatus.NOT_FOUND,
+                f"PR {pr_number} not found for repo {repo_name}",
+            )
+
+        if response.status_code == HTTPStatus.FORBIDDEN:
+            raise GithubRateLimitExceeded("GitHub API rate limit exceeded")
+
+        if response.status_code != HTTPStatus.OK:
+            raise GithubException(
+                response.status_code,
+                f"Failed to fetch timeline events: {response.text}",
+            )
+
+        try:
+            return response.json()
+        except ValueError as e:
+            raise GithubException(
+                HTTPStatus.INTERNAL_SERVER_ERROR, f"Invalid JSON response: {str(e)}"
+            ) from e
+
+    def _create_timeline_event(self, event_data: Dict) -> GitHubPrTimelineEventsDict:
+        return GitHubPrTimelineEventsDict(
+            event=event_data.get("event", ""),
+            data=cast(GitHubPullTimelineEvent, event_data),
+        )
+
+    def get_pr_timeline_events(
+        self, repo_name: str, pr_number: int
+    ) -> List[GithubPullRequestTimelineEvents]:
+
+        all_timeline_events: List[GitHubPrTimelineEventsDict] = []
+        page = 1
+
+        try:
+            while True:
+                timeline_events = self._fetch_timeline_events(
+                    repo_name, pr_number, page
+                )
+                if not timeline_events:
+                    break
+
+                all_timeline_events.extend(
+                    [
+                        self._create_timeline_event(event_data)
+                        for event_data in timeline_events
+                    ]
+                )
+
+                if len(timeline_events) < PAGE_SIZE:
+                    break
+                page += 1
+
+        except GithubException:
+            raise
+        except Exception as e:
+            raise GithubException(
+                HTTPStatus.INTERNAL_SERVER_ERROR, f"Unexpected error: {str(e)}"
+            ) from e
+
+        return self._adapt_github_timeline_events(all_timeline_events)
+
+    @staticmethod
+    def _adapt_github_timeline_events(
+        timeline_events: List[GitHubPrTimelineEventsDict],
+    ) -> List[GithubPullRequestTimelineEvents]:
+        adapted_timeline_events: List[GithubPullRequestTimelineEvents] = []
+
+        for timeline_event in timeline_events:
+            event_data = timeline_event.get("data")
+            if not event_data:
+                continue
+
+            event_type = timeline_event.get("event")
+            if not event_type:
+                continue
+
+            event = GithubPullRequestTimelineEvents(event_type, event_data)
+
+            if all([event.timestamp, event.type, event.id, event.user]):
+                adapted_timeline_events.append(event)
+            else:
+                LOG.warning(
+                    f"Skipping incomplete timeline event: {event_type} with id: {event.id}"
+                )
+
+        return adapted_timeline_events
