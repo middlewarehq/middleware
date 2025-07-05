@@ -14,7 +14,11 @@ import { Line } from '../Text';
 
 const helpdeskPrefill = (error: string, details: string) => {
   if (typeof window === 'undefined') return;
-  showNewMessage(`${error}\n\n${details}`);
+  try {
+    showNewMessage(`${error}\n\n${details}`);
+  } catch (err) {
+    console.warn('Failed to show Intercom message:', err);
+  }
 };
 
 export const useHelpdeskPrefill = (error: string, details: string) => {

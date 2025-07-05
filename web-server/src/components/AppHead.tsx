@@ -13,7 +13,7 @@ export const AppHead = () => {
   useEffect(() => {
     const isDev = process.env.NEXT_PUBLIC_APP_ENVIRONMENT === 'development';
     Intercom({
-      app_id: 'kckm1m2e'
+      app_id: process.env.NEXT_PUBLIC_INTERCOM_APP_ID || 'kckm1m2e'
     });
     if (!isDev) {
       const onFocus = () => track('WINDOW_FOCUS');
