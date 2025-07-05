@@ -9,12 +9,13 @@ import { colors } from '@/theme/schemes/theme';
 
 export const AppHead = () => {
   const router = useRouter();
-
   useEffect(() => {
-    const isDev = process.env.NEXT_PUBLIC_APP_ENVIRONMENT === 'development';
     Intercom({
       app_id: process.env.NEXT_PUBLIC_INTERCOM_APP_ID || 'kckm1m2e'
     });
+  }, []);
+  useEffect(() => {
+    const isDev = process.env.NEXT_PUBLIC_APP_ENVIRONMENT === 'development';
     if (!isDev) {
       const onFocus = () => track('WINDOW_FOCUS');
       const onBlur = () => track('WINDOW_BLUR');
