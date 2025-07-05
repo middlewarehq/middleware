@@ -1,3 +1,4 @@
+import { showNewMessage } from '@intercom/messenger-js-sdk';
 import { Button, Card, Link } from '@mui/material';
 import { useRouter } from 'next/router';
 import { FC, useEffect, useMemo } from 'react';
@@ -13,7 +14,7 @@ import { Line } from '../Text';
 
 const helpdeskPrefill = (error: string, details: string) => {
   if (typeof window === 'undefined') return;
-  window.Intercom?.('showNewMessage', `${error}\n\n${details}`);
+  showNewMessage(`${error}\n\n${details}`);
 };
 
 export const useHelpdeskPrefill = (error: string, details: string) => {
