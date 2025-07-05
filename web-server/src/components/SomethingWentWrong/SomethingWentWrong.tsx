@@ -13,11 +13,7 @@ import { Line } from '../Text';
 
 const helpdeskPrefill = (error: string, details: string) => {
   if (typeof window === 'undefined') return;
-  // @ts-ignore
-  window.FreshworksWidget?.('prefill', 'ticketForm', {
-    subject: error,
-    description: details
-  });
+  window.Intercom?.('showNewMessage', `${error}\n\n${details}`);
 };
 
 export const useHelpdeskPrefill = (error: string, details: string) => {

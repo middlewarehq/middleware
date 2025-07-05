@@ -1,3 +1,4 @@
+import Intercom from '@intercom/messenger-js-sdk';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
@@ -11,7 +12,9 @@ export const AppHead = () => {
 
   useEffect(() => {
     const isDev = process.env.NEXT_PUBLIC_APP_ENVIRONMENT === 'development';
-
+    Intercom({
+      app_id: 'kckm1m2e'
+    });
     if (!isDev) {
       const onFocus = () => track('WINDOW_FOCUS');
       const onBlur = () => track('WINDOW_BLUR');
@@ -42,14 +45,6 @@ export const AppHead = () => {
 
         gtag('config', '${process.env.NEXT_PUBLIC_GA}');`}
       </Script>
-      <Script
-        src={`https://ind-widget.freshworks.com/widgets/88000000019.js`}
-        strategy="afterInteractive"
-      />
-      <Script id="support-channel" strategy="afterInteractive">
-        {`window.fwSettings={'widget_id':88000000019};
-        !function(){if("function"!=typeof window.FreshworksWidget){var n=function(){n.q.push(arguments)};n.q=[],window.FreshworksWidget=n}}()`}
-      </Script>
       <Script>
         {`document.addEventListener("wheel", function(event){
             if(document.activeElement.type === "number"){
@@ -71,12 +66,6 @@ export const AppHead = () => {
         <style type="text/css">{`
       .vis-tooltip {
         position: absolute;
-      }
-      #freshworks-container #launcher-frame {
-        color-scheme: normal;
-      }
-      #freshworks-container {
-        z-index: 2147483646 !important
       }
       [class^=chartsjs-reset-zoom-btn-] {
         display: none1;
