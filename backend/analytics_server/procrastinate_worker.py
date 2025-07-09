@@ -1,18 +1,10 @@
 from procrastinate import App, PsycopgConnector
 from os import getenv
 from flask import Flask
-import logging
 from mhq.store import configure_db_with_app
 from env import load_app_env
 
 load_app_env()
-
-# Configure logging
-logging.basicConfig(
-    format='[%(asctime)s] [%(process)d] [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.INFO
-)
 
 # Create Flask app
 flask_app = Flask(__name__)
@@ -29,7 +21,7 @@ app = App(
             "dbname": getenv("DB_NAME"),
         }
     ),
-    # import_paths=["mhq.service.queue.procrastinate_webhook_queue"]
+    import_paths=["mhq.service.queue.tasks"],
 )
 
 app.open()

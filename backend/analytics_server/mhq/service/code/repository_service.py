@@ -5,6 +5,7 @@ from mhq.store.repos.incidents import IncidentsRepoService
 from mhq.store.models.incidents import OrgIncidentService, IncidentSource
 from mhq.utils.time import time_now
 from mhq.utils.string import uuid4_str
+from mhq.utils.repo import get_tuple_to_repo_url_map
 from mhq.service.code.models.org_repo import RawTeamOrgRepo
 from mhq.store.models.code import OrgRepo
 from mhq.store.models.core import Team
@@ -37,6 +38,22 @@ class RepositoryService:
         )
 
         return {str(repo.org_repo_id): repo for repo in team_repos}
+
+    def get_repo_url_to_repo_id_map(
+        self, org_id: str, repo_urls: List[str]
+    ) -> Dict[str, str]:
+        repo_url_to_repo_id_map: Dict[str, str] = {}
+        tuple_to_repo_url_map = get_tuple_to_repo_url_map(org_id, repo_urls)
+        org_repos = self._code_repo_service.get_org_repos_by_org_repo_tuples(
+            org_id=org_id, tuples=list(tuple_to_repo_url_map.keys())
+        )
+
+        for repo in org_repos:
+            tuple = (repo.provider, repo.org_name, repo.name)
+            repo_url = tuple_to_repo_url_map[tuple]
+            repo_url_to_repo_id_map[repo_url] = str(repo.id)
+
+        return repo_url_to_repo_id_map
 
     def update_team_repos(
         self, team: Team, raw_org_repos: List[RawTeamOrgRepo]
