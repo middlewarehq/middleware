@@ -3,9 +3,9 @@ from uuid import uuid4
 from mhq.utils.time import Interval
 from mhq.exceptions.webhook import PayloadLimitExceededError, InvalidPayloadError
 from mhq.store.models.code.workflows.enums import RepoWorkflowRunsStatus
-from mhq.service.webhooks.factory_abstract import WebhookEventHandler
-from mhq.store.models.webhooks.webhooks import WebhookEvent, WebhookEventRequestType
-from mhq.service.webhooks.models.webhook import WebhookWorkflowRun
+from mhq.service.events.factory_abstract import WebhookEventHandler
+from mhq.store.models.events.events import Event, EventType, EventSource
+from mhq.service.events.models.webhook import WebhookWorkflowRun
 from typing import Any, List, Dict, Optional, Set, Tuple
 from mhq.store.models.code.workflows.workflows import (
     RepoWorkflow,
@@ -13,9 +13,9 @@ from mhq.store.models.code.workflows.workflows import (
     RepoWorkflowType,
     RepoWorkflowProviders,
 )
-from mhq.service.webhooks.webhook_event_service import (
-    get_webhook_service,
-    WebhookEventService,
+from mhq.service.events.event_service import (
+    get_event_service,
+    EventService,
 )
 from mhq.service.deployments.deployment_service import (
     get_deployments_service,
@@ -31,11 +31,11 @@ from sqlalchemy.exc import IntegrityError
 class WebhookWorkflowHandler(WebhookEventHandler):
     def __init__(
         self,
-        webhook_event_service: WebhookEventService,
+        event_service: EventService,
         repository_service: RepositoryService,
         deployments_service: DeploymentsService,
     ):
-        self._webhook_event_service: WebhookEventService = webhook_event_service
+        self._event_service: EventService = event_service
         self._repository_service: RepositoryService = repository_service
         self._deployments_service: DeploymentsService = deployments_service
 
@@ -50,16 +50,16 @@ class WebhookWorkflowHandler(WebhookEventHandler):
         self._adapt_payload(payload)
 
     def save_webhook_event(self, org_id: str, payload: Dict[str, List[Any]]) -> str:
-        webhook_event = WebhookEvent(
+        webhook_event = Event(
             org_id=org_id,
-            request_type=WebhookEventRequestType.WORKFLOW,
-            request_data=payload,
+            type=EventType.WORKFLOW,
+            source=EventSource.WEBHOOK,
+            data=payload,
         )
-        return self._webhook_event_service.create_webhook_event(webhook_event)
+        return self._event_service.create_event(webhook_event)
 
-    def process_webhook_event(self, webhook_event: WebhookEvent):
-        workflow_runs = self._adapt_payload(webhook_event.request_data)
-
+    def process_webhook_event(self, webhook_event: Event):
+        workflow_runs = self._adapt_payload(webhook_event.data)
         repo_urls_set: Set[str] = set()
 
         for workflow in workflow_runs:
@@ -258,7 +258,7 @@ class WebhookWorkflowHandler(WebhookEventHandler):
 
 def get_webhook_workflow_handler() -> WebhookWorkflowHandler:
     return WebhookWorkflowHandler(
-        get_webhook_service(),
+        get_event_service(),
         get_repository_service(),
         get_deployments_service(),
     )

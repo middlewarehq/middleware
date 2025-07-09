@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import List
+from typing import List, Optional
 
 from werkzeug.exceptions import NotFound, BadRequest
 from mhq.exceptions.webhook import InvalidApiKeyError
@@ -74,15 +74,15 @@ class QueryValidator:
 
         return users
 
-    def api_key_validator(self, secret_key: str | None, org_id: str) -> str:
-        api_key = self.repo_service.get_access_token(
+    def api_key_validator(self, api_key: Optional[str], org_id: str) -> str:
+        saved_api_key = self.repo_service.get_access_token(
             org_id, UserIdentityProvider.WEBHOOK
         )
 
-        if not api_key or api_key != secret_key:
+        if not saved_api_key or saved_api_key != api_key:
             raise InvalidApiKeyError()
 
-        return api_key
+        return saved_api_key
 
 
 def get_query_validator():

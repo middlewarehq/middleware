@@ -72,6 +72,23 @@ CREATE TABLE public."BookmarkPullRequestRevertPRMapping" (
 
 
 --
+-- Name: Event; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."Event" (
+    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
+    org_id uuid NOT NULL,
+    type character varying NOT NULL,
+    source character varying NOT NULL,
+    data jsonb NOT NULL,
+    meta jsonb DEFAULT '{}'::jsonb,
+    error jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+
+--
 -- Name: Incident; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -474,28 +491,20 @@ COMMENT ON COLUMN public."Users".onboarding_state IS 'State JSON for storing the
 
 
 --
--- Name: WebhookEvent; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public."WebhookEvent" (
-    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
-    org_id uuid NOT NULL,
-    request_type character varying NOT NULL,
-    request_data jsonb NOT NULL,
-    meta jsonb DEFAULT '{}'::jsonb,
-    error jsonb DEFAULT '{}'::jsonb,
-    created_at timestamp with time zone DEFAULT now(),
-    updated_at timestamp with time zone DEFAULT now()
-);
-
-
---
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.schema_migrations (
-    version character varying(255) NOT NULL
+    version character varying(128) NOT NULL
 );
+
+
+--
+-- Name: Event Event_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."Event"
+    ADD CONSTRAINT "Event_pkey" PRIMARY KEY (id);
 
 
 --
@@ -704,14 +713,6 @@ ALTER TABLE ONLY public."Users"
 
 ALTER TABLE ONLY public."Users"
     ADD CONSTRAINT "Users_primary_email_key" UNIQUE (primary_email);
-
-
---
--- Name: WebhookEvent WebhookEvent_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public."WebhookEvent"
-    ADD CONSTRAINT "WebhookEvent_pkey" PRIMARY KEY (id);
 
 
 --
