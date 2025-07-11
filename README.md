@@ -285,6 +285,7 @@ To set up middleware locally, follow these steps:
       REDIS_PORT=6385
       ANALYTICS_SERVER_PORT=9696
       SYNC_SERVER_PORT=9697
+      PORT=3333
       DEFAULT_SYNC_DAYS=31
       ```
 
