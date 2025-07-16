@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
-from mhq.store.models.webhooks.webhooks import WebhookEvent
+from mhq.store.models.events.events import Event
 
 
 class WebhookEventHandler(ABC):
@@ -17,13 +17,13 @@ class WebhookEventHandler(ABC):
         """
 
     @abstractmethod
-    def process_webhook_event(self, webhook_event: WebhookEvent):
+    def process_webhook_event(self, webhook_event: Event):
         """
         Executes the main business logic for processing the webhook event.
         """
 
     @abstractmethod
-    def prune_synced_data(self, webhook_event: WebhookEvent):
+    def prune_synced_data(self, webhook_event: Event):
         """
         Prunes the synced data based on Interval.
         """

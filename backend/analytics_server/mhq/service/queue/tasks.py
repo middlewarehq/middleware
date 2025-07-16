@@ -7,7 +7,7 @@ from mhq.service.queue.task_handlers.webhook_queue_handler import (
 class WebhookQueue:
     @staticmethod
     @app.task(queue="webhookQueue", name="WebhookQueue.enqueue_webhook")
-    def enqueue_webhook(webhook_event_id: str):
+    def enqueue_webhook(event_id: str):
         with flask_app.app_context():
             webhook_queue_handler = get_webhook_queue_handler()
-            webhook_queue_handler.webhook_receiver_handler(webhook_event_id)
+            webhook_queue_handler.handle(event_id)

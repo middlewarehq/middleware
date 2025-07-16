@@ -24,7 +24,7 @@ class WebhookWorkflowRun:
 
         for field in required_fields:
             if getattr(self, field) is None:
-                error_message = f"Workflow run missing required field: '{field}'"
+                error_message = f"Workflow run is missing required field: '{field}'"
                 raise InvalidPayloadError(error_message)
 
         try:
