@@ -18,6 +18,7 @@ from mhq.exapi.schemas.timeline import (
 )
 from mhq.exapi.models.github import GitHubContributor
 from mhq.exapi.models.github_timeline import GithubPullRequestTimelineEvents
+from mhq.store.models.code.enums import PullRequestEventType
 from mhq.utils.log import LOG
 
 PAGE_SIZE = 100
@@ -373,11 +374,10 @@ class GithubApiService:
 
             event = GithubPullRequestTimelineEvents(event_type, event_data)
 
-            if all([event.timestamp, event.type, event.id, event.user]):
+            if (
+                all([event.timestamp, event.type, event.id, event.user])
+                and event.type != PullRequestEventType.COMMITTED
+            ):
                 adapted_timeline_events.append(event)
-            else:
-                LOG.warning(
-                    f"Skipping incomplete timeline event: {event_type} with id: {event.id}"
-                )
 
         return adapted_timeline_events
