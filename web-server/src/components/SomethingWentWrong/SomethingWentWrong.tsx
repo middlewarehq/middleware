@@ -1,3 +1,4 @@
+import { showNewMessage } from '@intercom/messenger-js-sdk';
 import { Button, Card, Link } from '@mui/material';
 import { useRouter } from 'next/router';
 import { FC, useEffect, useMemo } from 'react';
@@ -13,11 +14,11 @@ import { Line } from '../Text';
 
 const helpdeskPrefill = (error: string, details: string) => {
   if (typeof window === 'undefined') return;
-  // @ts-ignore
-  window.FreshworksWidget?.('prefill', 'ticketForm', {
-    subject: error,
-    description: details
-  });
+  try {
+    showNewMessage(`${error}\n\n${details}`);
+  } catch (err) {
+    console.warn('Failed to show Intercom message:', err);
+  }
 };
 
 export const useHelpdeskPrefill = (error: string, details: string) => {
