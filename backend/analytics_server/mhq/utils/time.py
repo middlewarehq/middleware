@@ -273,5 +273,34 @@ def fill_missing_week_buckets(
 def dt_from_iso_time_string(j_str_dt) -> Optional[datetime]:
     if not j_str_dt:
         return None
-    dt_without_timezone = datetime.strptime(j_str_dt, "%Y-%m-%dT%H:%M:%S.%f%z")
-    return dt_without_timezone.astimezone(pytz.UTC)
+    
+    # List of common datetime formats used by different APIs
+    formats = [
+        "%Y-%m-%dT%H:%M:%S.%f%z",  # With microseconds and timezone
+        "%Y-%m-%dT%H:%M:%S%z",     # Without microseconds but with timezone
+        "%Y-%m-%dT%H:%M:%S.%fZ",   # With microseconds, Z timezone
+        "%Y-%m-%dT%H:%M:%SZ",      # Without microseconds, Z timezone
+        "%Y-%m-%dT%H:%M:%S",       # Without timezone
+    ]
+    
+    for fmt in formats:
+        try:
+            if fmt.endswith('%z'):
+                dt_without_timezone = datetime.strptime(j_str_dt, fmt)
+                return dt_without_timezone.astimezone(pytz.UTC)
+            elif fmt.endswith('Z'):
+                # Replace Z with +00:00 for proper parsing
+                j_str_dt_fixed = j_str_dt.replace('Z', '+00:00')
+                dt_without_timezone = datetime.strptime(j_str_dt_fixed, fmt.replace('Z', '%z'))
+                return dt_without_timezone.astimezone(pytz.UTC)
+            else:
+                # Assume UTC if no timezone info
+                dt_without_timezone = datetime.strptime(j_str_dt, fmt)
+                return dt_without_timezone.replace(tzinfo=pytz.UTC)
+        except ValueError:
+            continue
+    
+    # If none of the formats work, log an error and return None
+    from mhq.utils.log import LOG
+    LOG.warning(f"Could not parse datetime string: {j_str_dt}")
+    return None

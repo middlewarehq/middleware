@@ -3,7 +3,9 @@ from github import GithubException
 from github.Organization import Organization as GithubOrganization
 
 from mhq.exapi.models.gitlab import GitlabRepo, GitlabUser
+from mhq.exapi.models.bitbucket import BitbucketRepo
 from mhq.exapi.gitlab import GitlabApiService
+from mhq.exapi.bitbucket import BitbucketApiService
 from mhq.utils.log import LOG
 from mhq.exapi.github import GithubApiService
 from mhq.store.models import UserIdentityProvider
@@ -97,6 +99,38 @@ class ExternalIntegrationsService:
             raise e
 
         return projects
+
+    def get_bitbucket_workspace_repo(
+        self, workspace: str, repo_slug: str
+    ) -> BitbucketRepo:
+        bitbucket_api_service = BitbucketApiService(self.access_token)
+        try:
+            repo: BitbucketRepo = bitbucket_api_service.get_workspace_repos(
+                workspace, repo_slug
+            )
+        except Exception as e:
+            raise e
+        return repo
+
+    def get_bitbucket_workspaces(self) -> List[Dict]:
+        bitbucket_api_service = BitbucketApiService(self.access_token)
+        try:
+            workspaces: List[Dict] = bitbucket_api_service.get_user_workspaces()
+        except Exception as e:
+            raise e
+        return workspaces
+
+    def get_bitbucket_workspace_repositories(
+        self, workspace: str, page_size: int = 50
+    ) -> List[BitbucketRepo]:
+        bitbucket_api_service = BitbucketApiService(self.access_token)
+        try:
+            repositories: List[BitbucketRepo] = bitbucket_api_service.get_workspace_repositories(
+                workspace, page_size
+            )
+        except Exception as e:
+            raise e
+        return repositories
 
 
 def get_external_integrations_service(

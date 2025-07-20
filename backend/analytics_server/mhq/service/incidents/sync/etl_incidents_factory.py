@@ -16,4 +16,7 @@ class IncidentsETLFactory:
         if provider == IncidentProvider.GITLAB.value:
             return get_incidents_sync_etl_handler(self.org_id)
 
+        if provider == IncidentProvider.BITBUCKET.value:
+            return get_incidents_sync_etl_handler(self.org_id)
+
         raise NotImplementedError(f"Unknown provider - {provider}")

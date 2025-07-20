@@ -97,69 +97,97 @@ interface BitBucketValidationResponse {
 }
 
 interface BitBucketCredentials {
-  username: string;
-  appPassword: string;
+  email: string;
+  apiToken: string;
 }
 
 export const checkBitBucketValidity = async (
-  username: string,
-  password: string
+  email: string,
+  apiToken: string
 ): Promise<BitBucketValidationResponse> => {
-  if (!username?.trim() || !password?.trim()) {
-    throw new Error('Username and App Password are required');
+  if (!email?.trim() || !apiToken?.trim()) {
+    throw new Error('Email and API Token are required');
+  }
+
+  // Basic email validation
+  const trimmedEmail = email.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(trimmedEmail)) {
+    throw new Error('Please enter a valid email address.');
   }
 
   try {
     const response = await axios.post<BitBucketValidationResponse>(
-      "/api/integrations/bitbucket/scopes", 
+      '/api/integrations/bitbucket/scopes',
       {
-        username: username.trim(),
-        appPassword: password
+        email: trimmedEmail,
+        apiToken: apiToken
       } as BitBucketCredentials,
       {
         headers: {
           'Content-Type': 'application/json'
         },
-        timeout: 10000
+        timeout: 15000 // Increased timeout for better reliability
       }
     );
+
+    // Validate response structure
+    if (!response.data || !response.data.headers) {
+      throw new Error('Invalid response from BitBucket API');
+    }
+
     return response.data;
   } catch (error: any) {
     if (error.code === 'ECONNABORTED') {
-      throw new Error('Request timeout. Please check your internet connection and try again.');
+      throw new Error(
+        'Request timeout. Please check your internet connection and try again.'
+      );
     }
-    
+
     if (error.response?.status === 401) {
-      throw new Error('Invalid username or App Password. Please verify your credentials.');
+      throw new Error(
+        'Invalid email or API Token. Please verify your credentials.'
+      );
     }
-    
+
     if (error.response?.status === 403) {
-      throw new Error('Access forbidden. Please ensure your App Password has the required permissions.');
+      throw new Error(
+        'Access forbidden. Please ensure your API Token has the required permissions.'
+      );
     }
-    
+
     if (error.response?.status >= 500) {
-      throw new Error('BitBucket service is currently unavailable. Please try again later.');
+      throw new Error(
+        'Bitbucket service is currently unavailable. Please try again later.'
+      );
     }
-    
-    const message = error.response?.data?.message || 
-                   error.message || 
-                   'Unable to validate BitBucket credentials. Please try again.';
+
+    const message =
+      error.response?.data?.message ||
+      error.message ||
+      'Unable to validate Bitbucket credentials. Please try again.';
     throw new Error(message);
   }
 };
 
-const BITBUCKET_SCOPES = ['issue', 'pullrequest', 'project', 'account'] as const;
+const BITBUCKET_SCOPES = [
+  'issue',
+  'pullrequest',
+  'project',
+  'account'
+] as const;
 
 export const getMissingBitBucketScopes = (userScopes: string[]): string[] => {
   if (!Array.isArray(userScopes)) {
     return [...BITBUCKET_SCOPES];
   }
-  
+
   const normalizedUserScopes = userScopes
-    .map(scope => scope.trim().toLowerCase())
+    .map((scope) => scope.trim().toLowerCase())
     .filter(Boolean);
-    
+
   return BITBUCKET_SCOPES.filter(
-    requiredScope => !normalizedUserScopes.includes(requiredScope.toLowerCase())
+    (requiredScope) =>
+      !normalizedUserScopes.includes(requiredScope.toLowerCase())
   );
 };
