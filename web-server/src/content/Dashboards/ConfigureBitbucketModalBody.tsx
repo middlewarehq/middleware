@@ -12,11 +12,7 @@ import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { fetchCurrentOrg } from '@/slices/auth';
 import { fetchTeams } from '@/slices/team';
 import { useDispatch } from '@/store';
-import {
-  linkProvider,
-  checkBitBucketValidity,
-  getMissingBitBucketScopes
-} from '@/utils/auth';
+import { linkProvider, checkBitBucketValidity } from '@/utils/auth';
 import { depFn } from '@/utils/fn';
 
 interface ConfigureBitbucketModalBodyProps {
@@ -24,94 +20,113 @@ interface ConfigureBitbucketModalBodyProps {
 }
 
 interface FormErrors {
-  username: string;
-  password: string;
+  email: string;
+  token: string;
 }
 
-export const ConfigureBitbucketModalBody: FC<ConfigureBitbucketModalBodyProps> = ({ onClose }) => {
-  const username = useEasyState('');
-  const password = useEasyState('');
+export const ConfigureBitbucketModalBody: FC<
+  ConfigureBitbucketModalBodyProps
+> = ({ onClose }) => {
+  const email = useEasyState('');
+  const token = useEasyState('');
   const { orgId } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const isLoading = useBoolState();
 
-  const showUsernameError = useEasyState('');
-  const showPasswordError = useEasyState('');
+  const showEmailError = useEasyState('');
+  const showTokenError = useEasyState('');
 
-  const setUsernameError = useCallback(
-    (err: string) => depFn(showUsernameError.set, err),
-    [showUsernameError.set]
+  const setEmailError = useCallback(
+    (err: string) => depFn(showEmailError.set, err),
+    [showEmailError.set]
   );
-  const setPasswordError = useCallback(
-    (err: string) => depFn(showPasswordError.set, err),
-    [showPasswordError.set]
+  const setTokenError = useCallback(
+    (err: string) => depFn(showTokenError.set, err),
+    [showTokenError.set]
   );
 
   const clearErrors = useCallback(() => {
-    showUsernameError.set('');
-    showPasswordError.set('');
-  }, [showUsernameError.set, showPasswordError.set]);
+    showEmailError.set('');
+    showTokenError.set('');
+  }, [showEmailError, showTokenError]);
 
   const validateForm = useCallback((): FormErrors => {
-    const errors: FormErrors = { username: '', password: '' };
-    
-    if (!username.value.trim()) {
-      errors.username = 'Please enter your Bitbucket username';
+    const errors: FormErrors = { email: '', token: '' };
+
+    if (!email.value.trim()) {
+      errors.email = 'Please enter your Bitbucket email';
     }
-    
-    if (!password.value.trim()) {
-      errors.password = 'Please enter your App Password';
+
+    if (!token.value.trim()) {
+      errors.token = 'Please enter your API Token';
     }
-    
+
     return errors;
-  }, [username.value, password.value]);
+  }, [email.value, token.value]);
 
-  const handleUsernameChange = useCallback((val: string) => {
-    username.set(val);
-    if (showUsernameError.value) {
-      showUsernameError.set('');
-    }
-  }, [username.set, showUsernameError.value, showUsernameError.set]);
+  const handleEmailChange = useCallback(
+    (val: string) => {
+      email.set(val);
+      if (showEmailError.value) {
+        showEmailError.set('');
+      }
+    },
+    [email, showEmailError]
+  );
 
-  const handlePasswordChange = useCallback((val: string) => {
-    password.set(val);
-    if (showPasswordError.value) {
-      showPasswordError.set('');
-    }
-  }, [password.set, showPasswordError.value, showPasswordError.set]);
+  const handleTokenChange = useCallback(
+    (val: string) => {
+      token.set(val);
+      if (showTokenError.value) {
+        showTokenError.set('');
+      }
+    },
+    [token, showTokenError]
+  );
 
   const handleSubmission = useCallback(async () => {
     clearErrors();
-    
+
     const errors = validateForm();
-    if (errors.username || errors.password) {
-      if (errors.username) setUsernameError(errors.username);
-      if (errors.password) setPasswordError(errors.password);
+    if (errors.email || errors.token) {
+      if (errors.email) setEmailError(errors.email);
+      if (errors.token) setTokenError(errors.token);
       return;
     }
 
     depFn(isLoading.true);
-    
+
     try {
-      const res = await checkBitBucketValidity(username.value.trim(), password.value);
-      
-      const scopeHeader = res.headers?.["X-Oauth-Scopes"] || res.headers?.["x-oauth-scopes"];
-      
-      if (!scopeHeader) {
-        throw new Error('Unable to verify App Password permissions. Please ensure your App Password has the required scopes.');
-      }
-      
-      const scopes = scopeHeader.split(',').map((s: string) => s.trim()).filter(Boolean);
-      const missing = getMissingBitBucketScopes(scopes);
+      const res = await checkBitBucketValidity(email.value.trim(), token.value);
 
-      if (missing.length > 0) {
-        throw new Error(`App Password is missing required scopes: ${missing.join(', ')}. Please regenerate with all required permissions.`);
-      }
+      // const scopeHeader =
+      //   res.data.headers?.['X-Oauth-Scopes'] ||
+      //   res.data.headers?.['x-oauth-scopes'];
+      // console.log(scopeHeader);
+      // if (!scopeHeader) {
+      //   throw new Error(
+      //     'Unable to verify API Token permissions. Please ensure your API Token has the required scopes.'
+      //   );
+      // }
 
-      const encodedCredentials = btoa(`${username.value.trim()}:${password.value}`);
+      // const scopes = scopeHeader
+      //   .split(',')
+      //   .map((s: string) => s.trim())
+      //   .filter(Boolean);
+      // const missing = getMissingBitBucketScopes(scopes);
+
+      // if (missing.length > 0) {
+      //   throw new Error(
+      //     `API Token is missing required scopes: ${missing.join(
+      //       ', '
+      //     )}. Please regenerate with all required permissions.`
+      //   );
+      // }
+
+      const encodedCredentials = btoa(`${email.value.trim()}:${token.value}`);
       await linkProvider(encodedCredentials, orgId, Integration.BITBUCKET, {
-        username: username.value.trim()
+        email: email.value.trim()
       });
 
       await Promise.all([
@@ -123,25 +138,30 @@ export const ConfigureBitbucketModalBody: FC<ConfigureBitbucketModalBodyProps> =
         variant: 'success',
         autoHideDuration: 3000
       });
-      
+
       onClose();
     } catch (err: any) {
       console.error('Error linking Bitbucket:', err);
-      
-      const errorMessage = err.message || 'Failed to link Bitbucket. Please try again.';
-      
+
+      const errorMessage =
+        err.message || 'Failed to link Bitbucket. Please try again.';
+
       // Categorize errors for better UX
-      if (errorMessage.toLowerCase().includes('username') || 
-          errorMessage.toLowerCase().includes('user not found')) {
-        setUsernameError(errorMessage);
-      } else if (errorMessage.toLowerCase().includes('password') || 
-                 errorMessage.toLowerCase().includes('unauthorized') ||
-                 errorMessage.toLowerCase().includes('authentication')) {
-        setPasswordError('Invalid App Password. Please check your credentials.');
+      if (
+        errorMessage.toLowerCase().includes('email') ||
+        errorMessage.toLowerCase().includes('user not found')
+      ) {
+        setEmailError(errorMessage);
+      } else if (
+        errorMessage.toLowerCase().includes('token') ||
+        errorMessage.toLowerCase().includes('unauthorized') ||
+        errorMessage.toLowerCase().includes('authentication')
+      ) {
+        setTokenError('Invalid API Token. Please check your credentials.');
       } else if (errorMessage.toLowerCase().includes('scope')) {
-        setPasswordError(errorMessage);
+        setTokenError(errorMessage);
       } else {
-        setPasswordError(errorMessage);
+        setTokenError(errorMessage);
       }
     } finally {
       depFn(isLoading.false);
@@ -149,52 +169,56 @@ export const ConfigureBitbucketModalBody: FC<ConfigureBitbucketModalBodyProps> =
   }, [
     clearErrors,
     validateForm,
-    username.value,
-    password.value,
+    email.value,
+    token.value,
     isLoading,
-    setUsernameError,
-    setPasswordError,
+    setEmailError,
+    setTokenError,
     orgId,
     dispatch,
     enqueueSnackbar,
     onClose
   ]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, action: 'focus-password' | 'submit') => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (action === 'focus-password') {
-        document.getElementById('bitbucket-password')?.focus();
-      } else {
-        handleSubmission();
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, action: 'focus-token' | 'submit') => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (action === 'focus-token') {
+          document.getElementById('bitbucket-token')?.focus();
+        } else {
+          handleSubmission();
+        }
       }
-    }
-  }, [handleSubmission]);
+    },
+    [handleSubmission]
+  );
 
   return (
     <FlexBox gap2>
       <FlexBox gap={2} minWidth="400px" col>
         <FlexBox fullWidth gap2 col>
           <TextField
-            id="bitbucket-username"
-            label="Username"
-            error={!!showUsernameError.value}
-            helperText={showUsernameError.value}
-            value={username.value}
-            onChange={(e) => handleUsernameChange(e.currentTarget.value)}
-            onKeyDown={(e) => handleKeyDown(e, 'focus-password')}
+            id="bitbucket-email"
+            label="Email"
+            type="email"
+            error={!!showEmailError.value}
+            helperText={showEmailError.value}
+            value={email.value}
+            onChange={(e) => handleEmailChange(e.currentTarget.value)}
+            onKeyDown={(e) => handleKeyDown(e, 'focus-token')}
             disabled={isLoading.value}
             fullWidth
-            autoComplete="username"
+            autoComplete="email"
           />
           <TextField
-            id="bitbucket-password"
+            id="bitbucket-token"
             type="password"
-            label="App Password"
-            error={!!showPasswordError.value}
-            helperText={showPasswordError.value}
-            value={password.value}
-            onChange={(e) => handlePasswordChange(e.currentTarget.value)}
+            label="API Token"
+            error={!!showTokenError.value}
+            helperText={showTokenError.value}
+            value={token.value}
+            onChange={(e) => handleTokenChange(e.currentTarget.value)}
             onKeyDown={(e) => handleKeyDown(e, 'submit')}
             disabled={isLoading.value}
             fullWidth
@@ -204,12 +228,12 @@ export const ConfigureBitbucketModalBody: FC<ConfigureBitbucketModalBodyProps> =
         <FlexBox justifyBetween alignCenter mt="auto">
           <FlexBox col sx={{ opacity: 0.8 }}>
             <Line>
-              Generate an App Password{' '}
+              Generate an API Token{' '}
               <Link
                 href="https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Learn how to generate a Bitbucket App Password"
+                aria-label="Learn how to generate a Bitbucket API Token"
               >
                 here
               </Link>
@@ -219,7 +243,7 @@ export const ConfigureBitbucketModalBody: FC<ConfigureBitbucketModalBodyProps> =
             loading={isLoading.value}
             variant="contained"
             onClick={handleSubmission}
-            disabled={!username.value.trim() || !password.value.trim()}
+            disabled={!email.value.trim() || !token.value.trim()}
           >
             Link Bitbucket
           </LoadingButton>
@@ -233,7 +257,7 @@ export const ConfigureBitbucketModalBody: FC<ConfigureBitbucketModalBodyProps> =
 
 const TokenPermissions: FC = () => {
   const imageLoaded = useBoolState(false);
-  
+
   const expandedStyles = useMemo(() => {
     const base = {
       border: `2px solid ${alpha('#2684FF', 0.6)}`,
@@ -245,14 +269,14 @@ const TokenPermissions: FC = () => {
       maxWidth: 'calc(100% - 48px)',
       left: '12px'
     };
-    
+
     const positions = [
       { top: '300px', height: '32px' },
       { top: '360px', height: '32px' },
       { top: '420px', height: '32px' }
     ];
-    
-    return positions.map(cfg => ({ ...cfg, ...base }));
+
+    return positions.map((cfg) => ({ ...cfg, ...base }));
   }, []);
 
   return (
@@ -274,17 +298,18 @@ const TokenPermissions: FC = () => {
           height={976}
           alt="Bitbucket App Password required permissions setup"
           onLoadingComplete={imageLoaded.true}
-          style={{ 
-            opacity: imageLoaded.value ? 1 : 0, 
-            transition: 'opacity 0.8s ease', 
-            filter: 'invert(1)' 
+          style={{
+            opacity: imageLoaded.value ? 1 : 0,
+            transition: 'opacity 0.8s ease',
+            filter: 'invert(1)'
           }}
           priority
         />
 
-        {imageLoaded.value && expandedStyles.map((style, index) => (
-          <FlexBox key={index} sx={style} />
-        ))}
+        {imageLoaded.value &&
+          expandedStyles.map((style, index) => (
+            <FlexBox key={index} sx={style} />
+          ))}
 
         {!imageLoaded.value && (
           <FlexBox

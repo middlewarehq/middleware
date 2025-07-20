@@ -6,7 +6,7 @@ from mhq.store.models import Integration, SettingType, EntityType
 from mhq.store.models.incidents import IncidentProvider, IncidentSource
 from mhq.store.repos.core import CoreRepoService
 
-GIT_INCIDENT_INTEGRATION_BUCKET = [IncidentProvider.GITHUB.value]
+GIT_INCIDENT_INTEGRATION_BUCKET = [IncidentProvider.GITHUB.value, IncidentProvider.BITBUCKET.value]
 
 
 class IncidentsIntegrationService:
