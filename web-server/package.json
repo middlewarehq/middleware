@@ -29,7 +29,7 @@
     "@reduxjs/toolkit": "1.8.0",
     "@svgr/webpack": "^6.2.1",
     "@types/jest": "^29.5.4",
-    "axios": "1.7.7",
+    "axios": "1.8.2",
     "axios-hooks": "^5.0.2",
     "axios-retry": "^4.5.0",
     "chart.js": "^3.9.1",
