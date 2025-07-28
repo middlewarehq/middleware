@@ -9,6 +9,8 @@ from mhq.service.external_integrations_service import get_external_integrations_
 from mhq.service.query_validator import get_query_validator
 from mhq.store.models import UserIdentityProvider
 from mhq.utils.github import github_org_data_multi_thread_worker
+from mhq.service.deployments.deployment_service import get_deployments_service
+from mhq.store.models.code.workflows import RepoWorkflowProviders
 
 app = Blueprint("integrations", __name__)
 
@@ -134,9 +136,30 @@ def get_workflows_for_repo(org_id: str, gh_org_name: str, gh_org_repo_name: str)
         {
             "id": github_workflow.id,
             "name": github_workflow.name,
-            "html_url": github_workflow.html_url,
+            "provider_workflow_id": github_workflow.id,
         }
         for github_workflow in workflows_list
+    ]
+
+
+@app.route("/orgs/<org_id>/integrations/webhook/<repo_id>/workflows", methods={"GET"})
+def get_webhook_workflows(org_id: str, repo_id: str):
+
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    deployments_service = get_deployments_service()
+    repo_workflows = deployments_service.get_all_repo_workflows_by_repo_id_and_provider(
+        repo_id, RepoWorkflowProviders.WEBHOOK
+    )
+
+    return [
+        {
+            "id": str(workflow.id),
+            "name": workflow.name,
+            "provider_workflow_id": workflow.provider_workflow_id,
+        }
+        for workflow in repo_workflows
     ]
 
 

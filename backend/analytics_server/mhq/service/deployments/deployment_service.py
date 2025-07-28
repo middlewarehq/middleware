@@ -194,6 +194,15 @@ class DeploymentsService:
             repo_workflows, repo_workflow_runs
         )
 
+    def get_all_repo_workflows_by_repo_id_and_provider(
+        self, repo_id: str, provider: RepoWorkflowProviders
+    ) -> List[RepoWorkflow]:
+        return (
+            self.workflow_repo_service.get_all_repo_workflows_by_repo_id_and_provider(
+                repo_id, provider
+            )
+        )
+
 
 def get_deployments_service() -> DeploymentsService:
     return DeploymentsService(

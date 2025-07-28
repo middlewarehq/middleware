@@ -39,6 +39,20 @@ class WorkflowRepoService:
             .all()
         )
 
+    def get_all_repo_workflows_by_repo_id_and_provider(
+        self, repo_id: str, provider: RepoWorkflowProviders
+    ) -> List[RepoWorkflow]:
+
+        return (
+            self._db.session.query(RepoWorkflow)
+            .options(defer(RepoWorkflow.meta))
+            .filter(
+                RepoWorkflow.org_repo_id == repo_id,
+                RepoWorkflow.provider == provider,
+            )
+            .all()
+        )
+
     def get_repo_workflow_by_provider_workflow_id(
         self, repo_id: str, provider: RepoWorkflowProviders, provider_workflow_id: str
     ) -> Optional[RepoWorkflow]:

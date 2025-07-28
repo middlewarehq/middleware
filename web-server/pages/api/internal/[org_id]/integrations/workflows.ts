@@ -4,6 +4,7 @@ import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
 import { CIProvider, Integration } from '@/constants/integrations';
 import { RepoWorkflowResponse, RepoWorkflow } from '@/types/resources';
+import { db } from '@/utils/db';
 
 const pathSchema = yup.object().shape({
   org_id: yup.string().uuid().required()
@@ -31,6 +32,25 @@ endpoint.handle.GET(getSchema, async (req, res) => {
         )
       : Promise.resolve([]);
 
+  const org_repo = await db('OrgRepo')
+    .select('*')
+    .where('provider', provider)
+    .where('org_name', org_name)
+    .where('name', repo_name)
+    .first();
+
+  let webhookWorkflows: RepoWorkflow[] = [];
+
+  if (org_repo) {
+    const webhookWorkflowsResponse = await handleRequest<RepoWorkflow[]>(
+      `/orgs/${org_id}/integrations/webhook/${org_repo.id}/workflows`
+    );
+    webhookWorkflows = adaptWorkflows(
+      webhookWorkflowsResponse,
+      CIProvider.WEBHOOK
+    );
+  }
+
   let params: { repo_slug: string; page_token?: string } = {
     repo_slug: repo_slug
   };
@@ -51,7 +71,11 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       .catch(() => ({ workflows: [], next_page_token: null }))
   ]);
   return res.send({
-    workflows: [...githubActionWorkflows, ...circleciWorkflows.workflows],
+    workflows: [
+      ...githubActionWorkflows,
+      ...circleciWorkflows.workflows,
+      ...webhookWorkflows
+    ],
     next_page_token: circleciWorkflows.next_page_token
   });
 });
@@ -62,7 +86,7 @@ const adaptWorkflows = (
 ) => {
   return repoWorkflows.map((workflows) => ({
     ...workflows,
-    ci_provider: ciProvider
+    provider: ciProvider
   }));
 };
 

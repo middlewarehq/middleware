@@ -283,12 +283,12 @@ const updateReposWorkflows = async (
         curr.repo_workflows?.map((w) => ({
           value: String(w.value),
           name: w.name,
-          provider: curr.provider
+          provider: w.provider
         })) || []
     }),
     {} as Record<
       string,
-      { name: string; value: string; provider: Integration }[]
+      { name: string; value: string; provider: CIProvider }[]
     >
   );
 
@@ -320,12 +320,7 @@ const updateReposWorkflows = async (
         workflows.map((workflow) => ({
           is_active: true,
           name: workflow.name,
-          provider:
-            workflow.provider === Integration.GITHUB
-              ? CIProvider.GITHUB_ACTIONS
-              : workflow.provider === Integration.BITBUCKET
-              ? CIProvider.CIRCLE_CI
-              : null,
+          provider: workflow.provider,
           provider_workflow_id: String(workflow.value),
           type: WorkflowType.DEPLOYMENT,
           org_repo_id: groupedRepos[repoName]?.id
@@ -375,7 +370,8 @@ const getTeamReposMap = async (org_id: ID, providers: Integration[]) => {
   const repoWithWorkflows = dbRepos.map((repo) => {
     const updatedWorkflows = repo.repo_workflows.map((workflow) => ({
       name: workflow.name,
-      value: workflow.provider_workflow_id
+      value: workflow.provider_workflow_id,
+      provider: workflow.provider
     }));
 
     return {
