@@ -43,7 +43,8 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
     () =>
       repo.repo_workflows?.map((val) => ({
         label: val.name,
-        value: val.value
+        value: val.value,
+        provider: val.provider
       })) || [],
     [repo.repo_workflows]
   );
@@ -92,7 +93,8 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
         </FlexBox>
       ),
       label: w.name,
-      value: w.id
+      value: w.provider_workflow_id,
+      provider: w.provider
     }));
 
     depFn(options.set, (prev) => union(prev, workflowOpts));
@@ -154,7 +156,11 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
                     const updatedOptions = isChecked
                       ? [
                           ...selectedOptions,
-                          { label: o.label, value: String(o.value) }
+                          {
+                            label: o.label,
+                            value: String(o.value),
+                            provider: o.provider
+                          }
                         ]
                       : selectedOptions.filter(
                           (w) => w.value !== String(o.value)
@@ -163,7 +169,8 @@ export const DeploymentWorkflowSelector: FC<{ repo: BaseRepo }> = ({
                       repo,
                       updatedOptions.map((rw) => ({
                         name: rw.label,
-                        value: rw.value
+                        value: rw.value,
+                        provider: rw.provider
                       }))
                     );
                   }}

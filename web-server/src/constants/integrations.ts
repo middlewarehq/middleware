@@ -15,7 +15,8 @@ export enum Integration {
 
 export enum CIProvider {
   GITHUB_ACTIONS = 'GITHUB_ACTIONS',
-  CIRCLE_CI = 'CIRCLE_CI'
+  CIRCLE_CI = 'CIRCLE_CI',
+  WEBHOOK = 'WEBHOOK'
 }
 
 export enum WorkflowType {

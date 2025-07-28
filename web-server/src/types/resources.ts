@@ -202,12 +202,15 @@ export type RepoWorkflow = {
   id: number;
   name: string;
   html_url: string | null;
-  ci_provider: CIProvider;
+  provider: CIProvider;
   provider_workflow_id: string;
   value: string;
 };
 
-export type AdaptedRepoWorkflow = Pick<RepoWorkflow, 'name' | 'value'>;
+export type AdaptedRepoWorkflow = Pick<
+  RepoWorkflow,
+  'name' | 'value' | 'provider'
+>;
 
 export type SelectedRepo = Row<'OrgRepo'> & {
   repo_workflow: Row<'RepoWorkflow'>;
