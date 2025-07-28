@@ -1,6 +1,8 @@
 from functools import wraps
+import traceback
 from typing import Dict, List
 from uuid import UUID
+from mhq.exceptions.webhook import WebhookException
 
 from mhq.store.models.code.enums import TeamReposDeploymentType
 from flask import request
@@ -72,6 +74,23 @@ def dataschema(schema):
         return new_func
 
     return decorator
+
+
+def wrap_webhook_exceptions(f):
+    @wraps(f)
+    def decorator_function(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except WebhookException:
+            raise
+        except Exception as e:
+            tb = traceback.format_exc()
+            raise WebhookException(
+                message=f"Unexpected error: {str(e)}",
+                resolution=f"{tb}",
+            ) from e
+
+    return decorator_function
 
 
 def coerce_workflow_filter(filter_data: str) -> WorkflowFilter:
