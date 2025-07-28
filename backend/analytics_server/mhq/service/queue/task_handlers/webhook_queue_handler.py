@@ -3,14 +3,25 @@ from mhq.service.events.event_service import (
     get_event_service,
     EventService,
 )
+from procrastinate import jobs, RetryStrategy
+from mhq.utils.log import LOG
 import traceback
+
+
+# total_wait = wait + lineal_wait * attempts + exponential_wait ** (attempts + 1)
+MAX_RETRIES = 2
+WAIT = 60
+LINEAR_WAIT = 540
+NEXT_ATTEMPT_TIME = [60, 600]  # 1min, 10min
+
+retry = RetryStrategy(max_attempts=MAX_RETRIES, wait=WAIT, linear_wait=LINEAR_WAIT)
 
 
 class WebhookQueueHandler:
     def __init__(self, event_service: EventService):
         self.event_service = event_service
 
-    def handle(self, event_id: str):
+    def handle(self, event_id: str, job: jobs.Job):
         webhook_event = None
         try:
             webhook_event = self.event_service.get_event(event_id)
@@ -32,6 +43,18 @@ class WebhookQueueHandler:
                 "traceback": traceback.format_exc(),
             }
             self.event_service.update_event(webhook_event)
+
+            if job.attempts < len(NEXT_ATTEMPT_TIME):
+                next_attempt_minutes = int(NEXT_ATTEMPT_TIME[job.attempts] / 60)
+                time_unit = "minute" if next_attempt_minutes == 1 else "minutes"
+                LOG.info(
+                    f"Job got failed. It will be retried in {next_attempt_minutes} {time_unit}."
+                )
+            elif job.attempts == len(NEXT_ATTEMPT_TIME):
+                LOG.info(
+                    f"Job has reached the maximum of {MAX_RETRIES + 1} attempts and is now marked as permanently failed. No further retries will be made."
+                )
+
             raise e
 
 
