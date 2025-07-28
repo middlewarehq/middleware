@@ -187,6 +187,10 @@ Make sure docker is running.
    ```bash
    docker exec -it middleware-dev tail --lines 500 -f /var/log/postgres/postgres.log
    ```
+   **Queue logs**
+   ```bash
+   docker exec -it middleware-dev tail --lines 500 -f /var/log/queue/queue.log
+   ```
 
 
 ## 🛠️ Manual Setup
@@ -305,6 +309,13 @@ To set up middleware locally, follow these steps:
         flask --app sync_app --debug run --port 9697
         ```
         NOTE: Open this sync sever in a new terminal window after activating the virtual environment only after starting analytics server.
+
+      - For queue worker:
+        ```bash
+        PYTHONPATH=. PROCRASTINATE_APP=procrastinate_worker.app procrastinate worker
+        ```
+        NOTE: This step is required only if you intend to receive webhooks.  
+        Make sure you are in `analytics_server` directory and virtual environment is activated.
 
 6. **Web Server Setup**
 
