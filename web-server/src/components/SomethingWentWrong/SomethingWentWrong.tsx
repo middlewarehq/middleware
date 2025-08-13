@@ -1,4 +1,3 @@
-import { showNewMessage } from '@intercom/messenger-js-sdk';
 import { Button, Card, Link } from '@mui/material';
 import { useRouter } from 'next/router';
 import { FC, useEffect, useMemo } from 'react';
@@ -12,20 +11,7 @@ import errPattern from '../ErrorBoundaryFallback/err-pattern.png';
 import { FlexBox } from '../FlexBox';
 import { Line } from '../Text';
 
-const helpdeskPrefill = (error: string, details: string) => {
-  if (typeof window === 'undefined') return;
-  try {
-    showNewMessage(`${error}\n\n${details}`);
-  } catch (err) {
-    console.warn('Failed to show Intercom message:', err);
-  }
-};
 
-export const useHelpdeskPrefill = (error: string, details: string) => {
-  useEffect(() => {
-    helpdeskPrefill(error, details);
-  }, [details, error]);
-};
 
 export const useDebug = (
   error = 'Something went wrong',
@@ -56,7 +42,6 @@ export const useDebug = (
     [debugData, desc]
   );
 
-  useHelpdeskPrefill(error, details);
 
   const mailtoLink = getMailtoLink(error, details.replaceAll('\n', '%0A'));
 
