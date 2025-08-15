@@ -67,10 +67,12 @@ const SidebarContent = () => {
 
   const imageStatus = useSelector((s) => s.app.latestImageStatus);
 
-  const formattedDate = format(
-    new Date(imageStatus.current_docker_image_build_date),
-    'dd MMM yyyy HH:mm:ss'
-  );
+  const formattedDate = imageStatus?.current_docker_image_build_date
+    ? format(
+        new Date(imageStatus.current_docker_image_build_date),
+        'dd MMM yyyy HH:mm:ss'
+      )
+    : 'Not Available';
 
   return (
     <>
