@@ -5,6 +5,7 @@ import { Endpoint, nullSchema } from '@/api-helpers/global';
 const dockerRepoName = 'middlewareeng/middleware';
 const githubOrgName = 'middlewarehq';
 const githubRepoName = 'middleware';
+const latestTagName = 'latest';
 
 const endpoint = new Endpoint(nullSchema);
 
@@ -24,13 +25,6 @@ type CheckNewVersionResponse = {
   is_update_available: boolean;
   latest_docker_image_build_date: Date;
   current_docker_image_build_date: Date;
-};
-
-type DockerHubAPIResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: TagResult[];
 };
 
 type TagResult = {
@@ -69,7 +63,7 @@ type DockerImage = {
 type TagCompressed = {
   name: string;
   last_updated: string;
-  digest: string;
+  digest?: string;
 };
 
 function getProjectVersionInfo(): ProjectVersionInfo {
@@ -83,19 +77,14 @@ function getProjectVersionInfo(): ProjectVersionInfo {
 }
 
 async function fetchDockerHubLatestTag(): Promise<TagCompressed> {
-  const dockerHubUrl = `https://hub.docker.com/v2/repositories/${dockerRepoName}/tags?ordering=last_updated&page_size=1`;
-  const response = await axios.get<DockerHubAPIResponse>(dockerHubUrl);
-
-  const latestTagName = response.data.results[0].name;
-
-  const tagUrl = `https://hub.docker.com/v2/repositories/${dockerRepoName}/tags/${latestTagName}`;
-  const latestTag = (await axios.get<TagResult>(tagUrl)).data;
+  const latestTagUrl = `https://hub.docker.com/v2/repositories/${dockerRepoName}/tags/${latestTagName}`;
+  const latestTag = (await axios.get<TagResult>(latestTagUrl)).data;
 
   const amdArchImage = latestTag.images.find((i) => i.architecture === 'amd64');
 
   return {
     name: latestTag.name,
-    digest: amdArchImage.digest,
+    digest: amdArchImage?.digest,
     last_updated: latestTag.last_updated
   };
 }
@@ -133,7 +122,10 @@ async function checkNewImageRelease(): Promise<CheckNewVersionResponse> {
 
   const latestRemoteDate = new Date(latestTag.last_updated);
 
-  const latestDockerImageLink = `https://hub.docker.com/layers/${dockerRepoName}/${latestTag.name}/images/${latestTag.digest}`;
+  let latestDockerImageLink = `https://hub.docker.com/r/${dockerRepoName}/tags`;
+  if (latestTag.digest) {
+    latestDockerImageLink = `https://hub.docker.com/layers/${dockerRepoName}/${latestTag.name}/images/${latestTag.digest}`;
+  }
 
   const githubRepLink = `https://github.com/${githubOrgName}/${githubRepoName}`;
 
