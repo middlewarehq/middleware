@@ -7,7 +7,7 @@ import {
   useTheme,
   lighten
 } from '@mui/material';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { useContext, useMemo } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -67,10 +67,10 @@ const SidebarContent = () => {
 
   const imageStatus = useSelector((s) => s.app.latestImageStatus);
 
-  const formattedDate = format(
-    new Date(imageStatus.current_docker_image_build_date),
-    'dd MMM yyyy HH:mm:ss'
-  );
+  const imageBuildDate = new Date(imageStatus?.current_docker_image_build_date);
+  const formattedDate = isValid(imageBuildDate)
+    ? format(imageBuildDate, 'dd MMM yyyy HH:mm:ss')
+    : 'Not Available';
 
   return (
     <>
