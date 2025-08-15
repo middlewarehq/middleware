@@ -5,10 +5,10 @@ SQLAlchemy==2.0.29
 pytz==2022.1
 PyGithub==1.55
 pycryptodome==3.21.0
-aiohttp==3.9.4
+aiohttp==3.12.14
 redis==5.0.3
 python-redis-lock==4.0.0
 psycopg2==2.9.3
 python-dotenv==1.0.1
-gunicorn==22.0.0
+gunicorn==23.0.0
 Flask-SQLAlchemy==3.1.1
