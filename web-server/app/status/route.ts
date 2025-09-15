@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'path';
 
 let version = 'unknown';
@@ -18,7 +18,6 @@ export async function GET() {
   },
   {
     headers: {
-      'Content-Type': 'text/plain',
       'Cache-Control': 'no-store',
       'X-Robots-Tag': 'noindex',
     },
