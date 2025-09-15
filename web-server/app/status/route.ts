@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { readFileSync } from 'node:fs';
-import { join } from 'path';
+import { join } from 'node:path';
 
 let version = 'unknown';
 try {
