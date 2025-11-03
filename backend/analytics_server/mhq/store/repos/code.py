@@ -2,8 +2,8 @@ from datetime import datetime
 from operator import and_
 from typing import Optional, List
 
-from mhq.store.models.code.enums import CodeProvider
-from sqlalchemy import or_
+from mhq.store.models.code.enums import CodeProvider, PullRequestEventType
+from sqlalchemy import or_, not_, exists
 from sqlalchemy.orm import defer
 from mhq.store.models.core import Team
 
@@ -282,6 +282,35 @@ class CodeRepoService:
             .filter(OrgRepo.id.in_(repo_ids), OrgRepo.is_active.is_(True))
             .all()
         )
+
+    @rollback_on_exc
+    def get_prs_merged_without_review(
+        self, 
+        repo_ids: List[str],
+        interval: Interval,
+        pr_filter: PRFilter = None,
+    ) -> List[PullRequest]:
+        query = self._db.session.query(PullRequest).options(defer(PullRequest.data))
+
+        query = self._filter_prs_by_repo_ids(query, repo_ids)
+        query = self._filter_prs_merged_in_interval(query, interval)
+
+        query = self._filter_prs(query, pr_filter)
+        
+        query = query.filter(
+            not_(
+                exists().where(
+                    and_(
+                        PullRequestEvent.pull_request_id == PullRequest.id,
+                        PullRequestEvent.type == PullRequestEventType.REVIEW,
+                    )
+                )
+            )   
+        )
+
+        query = query.order_by(PullRequest.state_changed_at.asc())
+
+        return query.all()
 
     @rollback_on_exc
     def get_prs_merged_in_interval(
