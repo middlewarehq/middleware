@@ -24,7 +24,7 @@ class CodeETLAnalyticsService:
         if pr.state == PullRequestState.OPEN:
             return pr
         non_bot_pr_events = self.filter_non_bot_events(pr_events)
-        pr_performance = self.get_pr_performance(pr, non_bot_pr_events) 
+        pr_performance = self.get_pr_performance(pr, non_bot_pr_events)
         pr.first_response_time = (
             pr_performance.first_review_time
             if pr_performance.first_review_time != -1
@@ -90,9 +90,7 @@ class CodeETLAnalyticsService:
         )
 
         first_response_end_time = (
-            first_review.created_at
-            if first_review
-            else pr.state_changed_at
+            first_review.created_at if first_review else pr.state_changed_at
         )
 
         if not approved_reviews:
@@ -110,7 +108,7 @@ class CodeETLAnalyticsService:
         if pr.state != PullRequestState.MERGED:
             merge_time = -1
         elif not approved_reviews:
-            merge_time = 0  
+            merge_time = 0
         else:
             merge_time = (
                 pr.state_changed_at - approved_reviews[0].created_at
