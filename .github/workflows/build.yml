@@ -102,7 +102,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Print build metadata
-        run: echo "${{ toJson(steps.meta.outputs) }}"
+        env:
+          META_JSON: ${{ toJson(steps.meta.outputs) }}
+        run: echo "$META_JSON"
 
       - name: Build and push Docker image by digest
         id: build
@@ -119,7 +121,9 @@ jobs:
           outputs: type=image,name=${{ env.REGISTRY_IMAGE }},push-by-digest=false,name-canonical=true,push=true
 
       - name: Print build output
-        run: echo "${{ toJson(steps.build.outputs) }}"
+        env:
+            BUILD_JSON: ${{ toJson(steps.build.outputs) }}
+        run: echo "$BUILD_JSON"
 
       - name: Export digest
         run: |
