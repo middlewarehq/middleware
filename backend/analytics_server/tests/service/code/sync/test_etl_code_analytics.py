@@ -21,11 +21,15 @@ def test_pr_performance_returns_first_review_tat_for_first_review():
     assert performance.first_review_time == 3600
 
 
-def test_pr_performance_returns_minus1_first_review_tat_for_no_reviews():
+def test_pr_performance_returns_first_review_time_as_fallback_for_no_reviews():
     pr_service = CodeETLAnalyticsService()
-    pr = get_pull_request()
+    t1 = time_now()
+    t2 = t1 + timedelta(minutes=30)
+    pr = get_pull_request(
+        state=PullRequestState.MERGED, state_changed_at=t2, created_at=t1, updated_at=t2
+    )
     performance = pr_service.get_pr_performance(pr, [])
-    assert performance.first_review_time == -1
+    assert performance.first_review_time == 1800.0
 
 
 def test_pr_performance_returns_minus1_first_approved_review_tat_for_no_approved_review():
@@ -40,7 +44,7 @@ def test_pr_performance_returns_minus1_first_approved_review_tat_for_no_approved
     assert performance.merge_time == -1
 
 
-def test_pr_performance_returns_merge_time_minus1_for_merged_pr_without_review():
+def test_pr_performance_returns_merge_time_zero_for_merged_pr_without_review():
     pr_service = CodeETLAnalyticsService()
     t1 = time_now()
     t2 = time_now() + timedelta(minutes=30)
@@ -48,7 +52,7 @@ def test_pr_performance_returns_merge_time_minus1_for_merged_pr_without_review()
         state=PullRequestState.MERGED, state_changed_at=t2, created_at=t1, updated_at=t2
     )
     performance = pr_service.get_pr_performance(pr, [])
-    assert performance.merge_time == -1
+    assert performance.merge_time == 0
 
 
 def test_pr_performance_returns_blocking_reviews():
@@ -156,11 +160,14 @@ def test_pr_performance_returns_rework_time_for_open_prs():
     assert performance.rework_time == (t3 - t2).total_seconds()
 
 
-def test_pr_performance_returns_rework_time_minus1_for_non_approved_prs():
+def test_pr_performance_returns_rework_time_for_non_approved_prs():
     pr_service = CodeETLAnalyticsService()
     t1 = time_now()
     t2 = t1 + timedelta(hours=1)
-    pr = get_pull_request(state=PullRequestState.OPEN, created_at=t1, updated_at=t1)
+    t3 = t2 + timedelta(hours=2)
+    pr = get_pull_request(
+        state=PullRequestState.OPEN, created_at=t1, updated_at=t1, state_changed_at=t3
+    )
     changes_requested_1 = get_pull_request_event(
         pull_request_id=pr.id,
         state=PullRequestEventState.CHANGES_REQUESTED.value,
@@ -168,10 +175,10 @@ def test_pr_performance_returns_rework_time_minus1_for_non_approved_prs():
     )
     performance = pr_service.get_pr_performance(pr, [changes_requested_1])
 
-    assert performance.rework_time == -1
+    assert performance.rework_time == (t3 - t2).total_seconds()
 
 
-def test_pr_performance_returns_rework_time_minus1_for_merged_prs_without_reviews():
+def test_pr_performance_returns_rework_time_zero_for_merged_prs_without_reviews():
     pr_service = CodeETLAnalyticsService()
     t1 = time_now()
     pr = get_pull_request(
@@ -179,7 +186,7 @@ def test_pr_performance_returns_rework_time_minus1_for_merged_prs_without_review
     )
     performance = pr_service.get_pr_performance(pr, [])
 
-    assert performance.rework_time == -1
+    assert performance.rework_time == 0.0
 
 
 def test_pr_performance_returns_cycle_time_for_merged_pr():

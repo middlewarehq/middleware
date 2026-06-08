@@ -23,10 +23,8 @@ class CodeETLAnalyticsService:
     ) -> PullRequest:
         if pr.state == PullRequestState.OPEN:
             return pr
-
         non_bot_pr_events = self.filter_non_bot_events(pr_events)
         pr_performance = self.get_pr_performance(pr, non_bot_pr_events)
-
         pr.first_response_time = (
             pr_performance.first_review_time
             if pr_performance.first_review_time != -1
@@ -60,7 +58,6 @@ class CodeETLAnalyticsService:
 
     @staticmethod
     def get_pr_performance(pr: PullRequest, pr_events: [PullRequestEvent]):
-
         review_events = [
             event
             for event in pr_events
@@ -92,8 +89,14 @@ class CodeETLAnalyticsService:
             )
         )
 
+        first_response_end_time = (
+            first_review.created_at if first_review else pr.state_changed_at
+        )
+
         if not approved_reviews:
-            rework_time = -1
+            rework_time = (
+                pr.state_changed_at - first_response_end_time
+            ).total_seconds()
         else:
             if first_review.data.get("state") == PullRequestEventState.APPROVED.value:
                 rework_time = 0
@@ -102,8 +105,10 @@ class CodeETLAnalyticsService:
                     approved_reviews[0].created_at - first_review.created_at
                 ).total_seconds()
 
-        if pr.state != PullRequestState.MERGED or not approved_reviews:
+        if pr.state != PullRequestState.MERGED:
             merge_time = -1
+        elif not approved_reviews:
+            merge_time = 0
         else:
             merge_time = (
                 pr.state_changed_at - approved_reviews[0].created_at
@@ -124,9 +129,9 @@ class CodeETLAnalyticsService:
         return PRPerformance(
             first_review_time=(
                 (
-                    first_review.created_at - pull_request_ready_for_review_time
+                    first_response_end_time - pull_request_ready_for_review_time
                 ).total_seconds()
-                if first_review
+                if first_response_end_time
                 else -1
             ),
             rework_time=rework_time,
