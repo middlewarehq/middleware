@@ -751,3 +751,28 @@ def test_cycle_time_ready_for_review_with_draft_pr_workflow():
 
     assert performance.cycle_time == 86400
     assert performance.first_review_time == 14400
+
+
+def test_create_pr_metrics_calculates_first_commit_to_open_using_ready_for_review():
+    """Test that first_commit_to_open correctly accounts for the draft PR window."""
+    pr_service = CodeETLAnalyticsService()
+    t1 = time_now()  # commit time
+    t2 = t1 + timedelta(hours=20)  # pr created
+    t3 = t2 + timedelta(
+        hours=2
+    )  # sat in draft for 2 hours (ready_for_review event time)
+
+    pr = get_pull_request(state=PullRequestState.MERGED, created_at=t2, updated_at=t3)
+    commit = get_pull_request_commit(pr_id=pr.id, created_at=t1)
+
+    ready_for_review_event = get_pull_request_event(
+        pull_request_id=pr.id,
+        type=PullRequestEventType.READY_FOR_REVIEW.value,
+        created_at=t3,
+    )
+
+    updated_pr = pr_service.create_pr_metrics(pr, [ready_for_review_event], [commit])
+
+    expected_seconds = (t3 - t1).total_seconds()
+
+    assert updated_pr.first_commit_to_open == expected_seconds
