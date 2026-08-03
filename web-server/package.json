@@ -15,6 +15,7 @@
     "@emotion/styled": "11.8.1",
     "@faker-js/faker": "^6.0.0",
     "@hookform/resolvers": "^2.8.8",
+    "@intercom/messenger-js-sdk": "^0.0.14",
     "@mui/icons-material": "^5.11.0",
     "@mui/lab": "^5.0.0-alpha.152",
     "@mui/material": "^5.14.17",
