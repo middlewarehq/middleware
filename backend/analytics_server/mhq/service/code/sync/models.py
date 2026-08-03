@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class PRPerformance:
     first_commit_to_open: int = -1
     first_review_time: int = -1
+    pull_request_ready_for_review_time: int = -1
     rework_time: int = -1
     merge_time: int = -1
     merge_to_deploy: int = -1

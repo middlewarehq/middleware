@@ -50,7 +50,10 @@ class CodeETLAnalyticsService:
         if pr_commits:
             pr.rework_cycles = self.get_rework_cycles(pr, non_bot_pr_events, pr_commits)
             pr_commits.sort(key=lambda x: x.created_at)
-            first_commit_to_open = pr.created_at - pr_commits[0].created_at
+            first_commit_to_open = (
+                pr_performance.pull_request_ready_for_review_time
+                - pr_commits[0].created_at
+            )
             if isinstance(first_commit_to_open, timedelta):
                 pr.first_commit_to_open = first_commit_to_open.total_seconds()
 
@@ -134,6 +137,7 @@ class CodeETLAnalyticsService:
                 if first_response_end_time
                 else -1
             ),
+            pull_request_ready_for_review_time=pull_request_ready_for_review_time,
             rework_time=rework_time,
             merge_time=merge_time,
             cycle_time=cycle_time if pr.state == PullRequestState.MERGED else -1,
