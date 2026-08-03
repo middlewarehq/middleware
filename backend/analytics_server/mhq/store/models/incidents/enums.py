@@ -4,6 +4,7 @@ from enum import Enum
 class IncidentProvider(Enum):
     GITHUB = "github"
     GITLAB = "gitlab"
+    BITBUCKET = "bitbucket"
 
 
 class IncidentSource(Enum):

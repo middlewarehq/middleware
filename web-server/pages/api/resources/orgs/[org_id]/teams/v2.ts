@@ -91,7 +91,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     org_id,
     providers?.length
       ? (providers as Integration[])
-      : [Integration.GITHUB, Integration.GITLAB]
+      : [Integration.GITHUB, Integration.GITLAB,Integration.BITBUCKET]
   );
 
   res.send({
@@ -116,6 +116,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
       } as any as ReqRepoWithProvider);
     });
   }, org_repos);
+  console.log('orgReposList in POST', orgReposList);
   const [team, onboardingState] = await Promise.all([
     createTeam(org_id, name, []),
     getOnBoardingState(org_id)
@@ -165,7 +166,7 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
       } as any as ReqRepoWithProvider);
     });
   }, org_repos);
-
+console.log('orgReposList in Patch', orgReposList);
   const [team] = await Promise.all([
     updateTeam(id, name, []),
     handleRequest<(Row<'TeamRepos'> & Row<'OrgRepo'>)[]>(`/teams/${id}/repos`, {
@@ -301,7 +302,7 @@ const updateReposWorkflows = async (
       .whereIn('name', reposForWorkflows)
       .where('org_id', org_id)
       .andWhere('is_active', true)
-      .and.whereIn('provider', [Integration.GITHUB, Integration.GITLAB]);
+      .and.whereIn('provider', [Integration.GITHUB, Integration.GITLAB, Integration.BITBUCKET]);
 
     const groupedRepos = groupBy(dbReposForWorkflows, 'name');
 

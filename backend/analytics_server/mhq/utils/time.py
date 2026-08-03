@@ -273,30 +273,34 @@ def fill_missing_week_buckets(
 def dt_from_iso_time_string(j_str_dt) -> Optional[datetime]:
     if not j_str_dt:
         return None
-    datetime_formats = [
-        "%Y-%m-%dT%H:%M:%S.%f%z",
-        "%Y-%m-%dT%H:%M:%S%z",
-        "%Y-%m-%dT%H:%M:%S.%fZ",
+    
+    # List of common datetime formats used by different APIs
+    formats = [
+        "%Y-%m-%dT%H:%M:%S.%f%z",  # With microseconds and timezone
+        "%Y-%m-%dT%H:%M:%S%z",     # Without microseconds but with timezone
+        "%Y-%m-%dT%H:%M:%S.%fZ",   # With microseconds, Z timezone
+        "%Y-%m-%dT%H:%M:%SZ",      # Without microseconds, Z timezone
+        "%Y-%m-%dT%H:%M:%S",       # Without timezone
     ]
-    normalized_dt_str = (
-        j_str_dt.replace("Z", "+00:00") if j_str_dt.endswith("Z") else j_str_dt
-    )
-    for fmt in datetime_formats:
+    
+    for fmt in formats:
         try:
-            if "%z" in fmt:
-                dt_without_timezone = datetime.strptime(normalized_dt_str, fmt)
+            if fmt.endswith('%z'):
+                dt_without_timezone = datetime.strptime(j_str_dt, fmt)
+                return dt_without_timezone.astimezone(pytz.UTC)
+            elif fmt.endswith('Z'):
+                # Replace Z with +00:00 for proper parsing
+                j_str_dt_fixed = j_str_dt.replace('Z', '+00:00')
+                dt_without_timezone = datetime.strptime(j_str_dt_fixed, fmt.replace('Z', '%z'))
+                return dt_without_timezone.astimezone(pytz.UTC)
             else:
-                dt_without_timezone = datetime.strptime(j_str_dt, fmt).replace(
-                    tzinfo=pytz.UTC
-                )
-
-            return dt_without_timezone.astimezone(pytz.UTC)
+                # Assume UTC if no timezone info
+                dt_without_timezone = datetime.strptime(j_str_dt, fmt)
+                return dt_without_timezone.replace(tzinfo=pytz.UTC)
         except ValueError:
             continue
-    try:
-        dt = datetime.fromisoformat(normalized_dt_str)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=pytz.UTC)
-        return dt.astimezone(pytz.UTC)
-    except (ValueError, AttributeError):
-        return None
+    
+    # If none of the formats work, log an error and return None
+    from mhq.utils.log import LOG
+    LOG.warning(f"Could not parse datetime string: {j_str_dt}")
+    return None

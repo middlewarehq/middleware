@@ -4,6 +4,7 @@ from enum import Enum
 class UserIdentityProvider(Enum):
     GITHUB = "github"
     GITLAB = "gitlab"
+    BITBUCKET = "bitbucket"
 
     @classmethod
     def get_enum(self, provider: str):
