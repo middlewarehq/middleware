@@ -53,10 +53,17 @@ export const AuthProvider: FC = (props) => {
   const loadingState = useBoolState(true);
 
   const fetchSession = useCallback(() => {
-    return axios
-      .get('/api/auth/session')
-      .then((r) => r.data)
-      .then(sessionState.set);
+    return (
+      axios
+        .get('/api/auth/session')
+        .then((r) => r.data)
+        .then(sessionState.set)
+        // CLUSTOX: a 401 here is the expected unauthenticated case, not an
+        // error. Without this the rejection is unhandled and the login page
+        // is buried under a runtime error overlay. Falling through to a null
+        // session lets initialize() take its existing onUnauthenticated path.
+        .catch(() => sessionState.set(null))
+    );
   }, [sessionState.set]);
 
   useEffect(() => {
