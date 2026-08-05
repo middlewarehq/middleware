@@ -8,6 +8,8 @@ import {
 import { getTeamRepos } from '@/api/resources/team_repos';
 import { Endpoint } from '@/api-helpers/global';
 import { getTeamMembersFilterSettingForOrg } from '@/api-helpers/team';
+// CLUSTOX: per-team scoping for the team picker.
+import { getAccessibleTeamIds } from '@/auth/guard';
 import { getTeamV2Mock } from '@/mocks/teams';
 import { FetchTeamsResponse } from '@/types/resources';
 import { db } from '@/utils/db';
@@ -28,7 +30,18 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   }
 
   const { include_teams, org_id, user_id } = req.payload;
-  res.send(await getOrgTeams(org_id, user_id, include_teams));
+  const result = await getOrgTeams(org_id, user_id, include_teams);
+
+  // CLUSTOX: an admin must only see their assigned teams in the picker.
+  // Filtered here rather than in getOrgTeams because that helper is also
+  // imported by other routes which do their own scoping.
+  const accessible = await getAccessibleTeamIds((req as any).session);
+  const allowed = new Set(accessible);
+
+  res.send({
+    ...result,
+    teams: result.teams.filter((t: { id: ID }) => allowed.has(t.id))
+  });
 });
 
 export const getOrgTeams = async (

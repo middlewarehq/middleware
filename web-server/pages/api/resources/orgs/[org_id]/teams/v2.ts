@@ -13,6 +13,8 @@ import {
 } from '@/api/resources/orgs/[org_id]/onboarding';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
+// CLUSTOX: per-team scoping and superadmin-only team creation.
+import { assertRole, getAccessibleTeamIds } from '@/auth/guard';
 import { Row, Table } from '@/constants/db';
 import {
   CIProvider,
@@ -94,13 +96,19 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       : [Integration.GITHUB, Integration.GITLAB]
   );
 
+  // CLUSTOX: an admin must only see their assigned teams in the picker.
+  const accessible = await getAccessibleTeamIds((req as any).session);
+  const allowed = new Set(accessible);
+
   res.send({
-    teams: teams,
+    teams: teams.filter((t: { id: ID }) => allowed.has(t.id)),
     teamReposMap
   });
 });
 
 endpoint.handle.POST(postSchema, async (req, res) => {
+  // CLUSTOX: only superadmins create teams.
+  assertRole((req as any).session, 'SUPERADMIN');
   if (req.meta?.features?.use_mock_data) {
     return res.send(getTeamV2Mock);
   }

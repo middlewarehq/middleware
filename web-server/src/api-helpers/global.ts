@@ -2,7 +2,7 @@ import { NextApiRequest } from 'next/types';
 import { AnySchema, InferType, object } from 'yup';
 
 // CLUSTOX: enforce the `authenticated` flag that upstream declared but never read.
-import { assertAuthenticated } from '@/auth/guard';
+import { assertAuthenticated, assertTeamAccess } from '@/auth/guard';
 import { getAuthSession } from '@/auth/session';
 import { Errors, ResponseError } from '@/constants/error';
 import { ApiRequest, ApiResponse, HttpMethods } from '@/types/request';
@@ -88,6 +88,13 @@ export class Endpoint<PathSchema extends AnySchema> {
           const session = await getAuthSession(nextReq);
           assertAuthenticated(session);
           (req as any).session = session;
+
+          // CLUSTOX: any route addressing a specific team is scoped centrally
+          // here rather than in each of the ~18 team routes. Doing it at the
+          // choke point means a newly added team route is protected by default
+          // instead of relying on the author remembering a guard call.
+          const teamId = (req.payload as any)?.team_id;
+          if (teamId) await assertTeamAccess(session, String(teamId));
         }
 
         if (this.pathSchema) {

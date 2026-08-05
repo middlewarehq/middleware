@@ -14,7 +14,10 @@ const postSchema = yup.object().shape({
   base_url: yup.string().optional()
 });
 
-const endpoint = new Endpoint(nullSchema, { unauthenticated: true });
+// CLUSTOX: was unauthenticated, which let anyone POST unbounded rows into
+// URLShortenerData and read stored link state. Everyone who should open a
+// share link has an account, so requiring one costs nothing.
+const endpoint = new Endpoint(nullSchema);
 
 endpoint.handle.GET(getSchema, async (req, res) => {
   const { share_link_id } = req.payload;

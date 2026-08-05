@@ -1,6 +1,8 @@
 import * as yup from 'yup';
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
+// CLUSTOX: integration management is superadmin-only.
+import { assertRole } from '@/auth/guard';
 import { Columns, Table } from '@/constants/db';
 import { Integration } from '@/constants/integrations';
 import { db, getFirstRow } from '@/utils/db';
@@ -25,6 +27,10 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 });
 
 endpoint.handle.DELETE(deleteSchema, async (req, res) => {
+  // CLUSTOX: unlinking a code provider wipes the org's synced data source.
+  // Superadmin only.
+  assertRole((req as any).session, 'SUPERADMIN');
+
   const data = await db(Table.Integration)
     .delete()
     .where({
