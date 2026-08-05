@@ -13,7 +13,47 @@ possible but slow. Writing three lines at merge time is not.
 
 | Date | Upstream ref merged | Commits | Files changed | Conflicts | Sentinels before → after | Smoke test | PR | Notes |
 |---|---|---|---|---|---|---|---|---|
-| _(no syncs yet — fork is at `844eb42` with zero divergence)_ | | | | | | | | |
+| _(no syncs yet)_ | | | | | | | | |
+
+## Current divergence baseline
+
+Recorded 2026-08-06, after the authentication and RBAC work. **The first sync compares against
+these numbers.**
+
+| | |
+|---|---|
+| Fork point | `844eb42` |
+| Modified upstream files | **19** |
+| New files | **26** |
+| `CLUSTOX:` sentinel lines | **33** |
+
+Regenerate any time:
+
+```bash
+# modified upstream files
+git diff --name-only 844eb42..HEAD | while read -r f; do
+  git cat-file -e 844eb42:"$f" 2>/dev/null && echo "$f"
+done | wc -l
+
+# sentinel lines
+grep -rn "CLUSTOX" --include='*.py' --include='*.ts' --include='*.tsx' \
+  --include='*.sql' --include='*.sh' --include='*.txt' --include='*.js' . \
+  | grep -v node_modules | grep -v '^./docs/' | wc -l
+```
+
+**The 12 high-risk files** — the ones carrying real edits to upstream behaviour, to re-check on
+every merge:
+
+`backend/analytics_server/app.py` · `sync_app.py` · `web-server/middleware.ts` ·
+`pages/_app.tsx` · `src/api-helpers/global.ts` · `src/api-helpers/axios.ts` ·
+`src/constants/db.ts` · `src/contexts/ThirdPartyAuthContext.tsx` ·
+`pages/api/integrations/index.ts` · `pages/api/resources/orgs/[org_id]/teams/index.ts` ·
+`.../teams/v2.ts` · `pages/api/resources/share.ts`
+
+`src/api-helpers/global.ts` is the most important of these: it is the single enforcement point for
+authentication *and* per-team scoping across all BFF routes. A bad merge there silently disables
+access control everywhere. The regression test at
+`src/api-helpers/__tests__/endpoint-team-scope.test.ts` exists to catch exactly that.
 
 ---
 

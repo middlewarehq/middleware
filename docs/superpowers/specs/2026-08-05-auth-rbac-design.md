@@ -229,7 +229,15 @@ be administered.
 
 ## 6. File inventory
 
-### Upstream files modified (red/yellow zone — six files)
+> **Corrected after implementation (2026-08-06).** The estimate below was wrong.
+> The real footprint is **19 modified upstream files**, listed in
+> [§6.1](#61-actual-footprint-after-implementation). The estimate missed every
+> file that only reveals itself when the code runs — the `_app.tsx` auth gate,
+> the knex/webpack conflict in `next.config.js`, the unhandled session
+> rejection in `ThirdPartyAuthContext.tsx`, and the cron path. Left in place
+> because the gap between estimate and reality is the useful part.
+
+### Upstream files modified (original estimate — six files)
 
 | File | Change | Size |
 |---|---|---|
@@ -265,11 +273,49 @@ web-server/src/auth/queries.ts
 `Authenticated/index.tsx` is left alone — `middleware.ts` does the real work, and rewriting the
 stub only adds divergence.
 
+### 6.1 Actual footprint after implementation
+
+Reproduce with:
+
+```bash
+git diff --name-only 844eb42..HEAD | while read -r f; do
+  git cat-file -e 844eb42:"$f" 2>/dev/null && echo "MODIFIED $f"
+done
+```
+
+**19 modified upstream files, 26 new files.** The modified set, by conflict risk:
+
+| Risk | Files | Why |
+|---|---|---|
+| **Low** (generated or append-only) | `database-docker/db/schema.sql`, `web-server/yarn.lock`, `web-server/package.json`, `env.example` | Regenerated or appended; conflicts are mechanical |
+| **Medium** (config) | `Dockerfile.dev`, `web-server/next.config.js`, `setup_utils/cronjob.txt` | Small, isolated edits |
+| **High** (logic) | `app.py`, `sync_app.py`, `middleware.ts`, `_app.tsx`, `global.ts`, `axios.ts`, `constants/db.ts`, `ThirdPartyAuthContext.tsx`, `integrations/index.ts`, `teams/index.ts`, `teams/v2.ts`, `share.ts` | Real edits to upstream behaviour; review carefully on every sync |
+
+**33 `CLUSTOX:` sentinel lines** across the tree. That count is the tripwire for the sync
+procedure in [FORK_STRATEGY.md §5](../../FORK_STRATEGY.md) — if it drops after an upstream merge,
+a conflict resolution ate one of our changes.
+
+### Why the estimate was wrong
+
+Every missed file shared a trait: it was invisible until the code ran.
+
+- **`_app.tsx`** gates every page on `auth.isInitialized`, which needs a session fetch that now
+  401s — making the login page unreachable. A chicken-and-egg only visible in a browser.
+- **`next.config.js`** — knex resolves dialects dynamically, so webpack could not bundle it for the
+  instrumentation hook. The bootstrap silently never ran.
+- **`ThirdPartyAuthContext.tsx`** — `fetchSession` had no `.catch()`, so the expected 401 rejected
+  unhandled and buried the login form under an error overlay.
+- **`cronjob.txt` / `trigger_sync.sh`** — cron does not inherit the container environment.
+
+The lesson for future estimates: **auth touches everything that assumed it could always fetch
+data.** Grep for callers, not just for the routes being protected.
+
 ### Fork impact
 
-Cross-cutting auth for five touched upstream files is an unusually good ratio, entirely because
-upstream left the hook points in. This remains **permanent divergence**: upstream will not accept
-it, since gated auth is plausibly what their commercial product sells.
+Twelve genuinely-modified logic files for cross-cutting auth is still a good ratio, largely because
+upstream left the hook points in (`Endpoint.authenticated`, `Errors.SESSION_USER_NOT_FOUND`, the
+`unauthenticated` opt-out). This remains **permanent divergence**: upstream will not accept it,
+since gated auth is plausibly what their commercial product sells.
 
 ---
 
