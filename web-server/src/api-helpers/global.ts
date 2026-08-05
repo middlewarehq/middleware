@@ -1,6 +1,9 @@
 import { NextApiRequest } from 'next/types';
 import { AnySchema, InferType, object } from 'yup';
 
+// CLUSTOX: enforce the `authenticated` flag that upstream declared but never read.
+import { assertAuthenticated } from '@/auth/guard';
+import { getAuthSession } from '@/auth/session';
 import { Errors, ResponseError } from '@/constants/error';
 import { ApiRequest, ApiResponse, HttpMethods } from '@/types/request';
 
@@ -78,6 +81,15 @@ export class Endpoint<PathSchema extends AnySchema> {
     return async (nextReq: NextApiRequest, res: ApiResponse) => {
       try {
         const req = transformNextRequest(nextReq);
+
+        // CLUSTOX: single enforcement point for all BFF routes. Routes opt out
+        // with `new Endpoint(schema, { unauthenticated: true })`.
+        if (this.authenticated) {
+          const session = await getAuthSession(nextReq);
+          assertAuthenticated(session);
+          (req as any).session = session;
+        }
+
         if (this.pathSchema) {
           await this.pathSchema.validate(req.payload);
         }
