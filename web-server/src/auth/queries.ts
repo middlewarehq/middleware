@@ -31,6 +31,38 @@ export const getAuthUserByEmail = async (
   };
 };
 
+/**
+ * Current auth state for a user id, straight from the database.
+ *
+ * Sessions are JWTs, so the token alone proves only that someone signed in at
+ * some point. It says nothing about whether the account still exists or still
+ * holds the role it had at sign-in. Every request resolves both here instead.
+ */
+export const getAuthUserById = async (
+  userId: string
+): Promise<{ userId: string; email: string; name: string; role: ClustoxRole } | null> => {
+  const row = await db(Table.ClustoxUserAuth)
+    .join(Table.Users, `${Table.Users}.id`, `${Table.ClustoxUserAuth}.user_id`)
+    .where(`${Table.ClustoxUserAuth}.user_id`, userId)
+    .andWhere(`${Table.Users}.is_deleted`, false)
+    .select(
+      `${Table.ClustoxUserAuth}.user_id`,
+      `${Table.ClustoxUserAuth}.role`,
+      `${Table.Users}.primary_email`,
+      `${Table.Users}.name`
+    )
+    .first();
+
+  if (!row) return null;
+
+  return {
+    userId: row.user_id,
+    email: row.primary_email,
+    name: row.name,
+    role: row.role as ClustoxRole
+  };
+};
+
 export const getTeamIdsForUser = async (userId: string): Promise<string[]> => {
   const rows = await db(Table.ClustoxUserTeamAccess)
     .select(Columns[Table.ClustoxUserTeamAccess].team_id)
