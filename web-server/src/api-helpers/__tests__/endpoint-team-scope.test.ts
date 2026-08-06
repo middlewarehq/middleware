@@ -1,11 +1,12 @@
 jest.mock('@/auth/session', () => ({ getAuthSession: jest.fn() }));
 jest.mock('@/auth/queries', () => ({
-  getTeamIdsForUser: jest.fn(),
+  getTeamOrgId: jest.fn(),
+  getTeamIdsForOrg: jest.fn(),
   getAllTeamIds: jest.fn()
 }));
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
-import { getTeamIdsForUser } from '@/auth/queries';
+import { getTeamOrgId } from '@/auth/queries';
 import { getAuthSession } from '@/auth/session';
 
 const mockRes = () => {
@@ -28,7 +29,8 @@ const asAdmin = () =>
     userId: 'ad1',
     email: 'lead@clustox.com',
     name: 'Lead',
-    role: 'ADMIN'
+    role: 'ADMIN',
+    orgId: 'workspace-1'
   });
 
 const asSuperadmin = () =>
@@ -36,7 +38,8 @@ const asSuperadmin = () =>
     userId: 'su1',
     email: 'boss@clustox.com',
     name: 'Boss',
-    role: 'SUPERADMIN'
+    role: 'SUPERADMIN',
+    orgId: null
   });
 
 const buildEndpoint = () => {
@@ -48,9 +51,9 @@ const buildEndpoint = () => {
 describe('Endpoint team scoping', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('403s when an admin requests a team they are not assigned', async () => {
+  it('403s when an admin requests a team outside their workspace', async () => {
     asAdmin();
-    (getTeamIdsForUser as jest.Mock).mockResolvedValue(['team-zda']);
+    (getTeamOrgId as jest.Mock).mockResolvedValue('workspace-2');
 
     const res = mockRes();
     await buildEndpoint().serve()(reqWithTeam('team-cgpt'), res);
@@ -58,9 +61,9 @@ describe('Endpoint team scoping', () => {
     expect(res.status).toHaveBeenCalledWith(403);
   });
 
-  it('allows an admin their own team', async () => {
+  it('allows an admin any team inside their own workspace', async () => {
     asAdmin();
-    (getTeamIdsForUser as jest.Mock).mockResolvedValue(['team-zda']);
+    (getTeamOrgId as jest.Mock).mockResolvedValue('workspace-1');
 
     const res = mockRes();
     await buildEndpoint().serve()(reqWithTeam('team-zda'), res);
@@ -75,7 +78,7 @@ describe('Endpoint team scoping', () => {
     await buildEndpoint().serve()(reqWithTeam('team-anything'), res);
 
     expect(res.send).toHaveBeenCalledWith({ ok: true });
-    expect(getTeamIdsForUser).not.toHaveBeenCalled();
+    expect(getTeamOrgId).not.toHaveBeenCalled();
   });
 
   it('does not attempt a team check when the payload has no team_id', async () => {
@@ -85,7 +88,7 @@ describe('Endpoint team scoping', () => {
     await buildEndpoint().serve()(reqWithTeam(undefined), res);
 
     expect(res.send).toHaveBeenCalledWith({ ok: true });
-    expect(getTeamIdsForUser).not.toHaveBeenCalled();
+    expect(getTeamOrgId).not.toHaveBeenCalled();
   });
 
   it('skips the team check entirely on unauthenticated endpoints', async () => {

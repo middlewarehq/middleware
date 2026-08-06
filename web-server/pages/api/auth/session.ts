@@ -32,10 +32,21 @@ export const delUserIdCookie = (res: NextApiResponse) => {
   ]);
 };
 
-endpoint.handle.GET(nullSchema, async (_req, res) => {
+endpoint.handle.GET(nullSchema, async (req, res) => {
+  // CLUSTOX: resolve the caller's own workspace. Upstream took whichever
+  // Organization came back first, which was correct only while exactly one
+  // existed. A superadmin owns none, so they get no workspace context here --
+  // cross-workspace views are served by dedicated endpoints.
+  const session = (req as any).session;
+  const orgId: string | null = session?.orgId ?? null;
+
+  if (!orgId) {
+    return res.send({ org: null });
+  }
+
   const [orgDetails, integrationsLinkedAtMap] = await Promise.all([
-    getOrgDetails(),
-    getOrgIntegrations()
+    getOrgDetails(orgId),
+    getOrgIntegrations(orgId)
   ]);
 
   const [onboardingState, codeProviderLastSyncedAt] = await Promise.all([
@@ -69,13 +80,15 @@ endpoint.handle.GET(nullSchema, async (_req, res) => {
 
 export default endpoint.serve();
 
-const getOrgDetails = async () => {
-  return db(Table.Organization).select('*').then(getFirstRow);
+// CLUSTOX: scoped to a workspace rather than "the" organization.
+const getOrgDetails = async (orgId: string) => {
+  return db(Table.Organization).select('*').where('id', orgId).then(getFirstRow);
 };
 
-export const getOrgIntegrations = async () => {
+export const getOrgIntegrations = async (orgId: string) => {
   return db(Table.Integration)
     .select('*')
+    .where('org_id', orgId)
     .whereNotNull('access_token_enc_chunks')
     .then(async (rows) => {
       const integrationsLinkedAtMap = rows.reduce(

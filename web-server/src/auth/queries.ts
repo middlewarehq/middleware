@@ -88,6 +88,25 @@ export const getAllTeamIds = async (): Promise<string[]> => {
   return rows.map((r: { id: string }) => r.id);
 };
 
+/** Which workspace a team belongs to, or null if the team does not exist. */
+export const getTeamOrgId = async (teamId: string): Promise<string | null> => {
+  const row = await db(Table.Team)
+    .select('org_id')
+    .where('id', teamId)
+    .andWhere('is_deleted', false)
+    .first();
+  return row?.org_id ?? null;
+};
+
+/** Every live team in a workspace. */
+export const getTeamIdsForOrg = async (orgId: string): Promise<string[]> => {
+  const rows = await db(Table.Team)
+    .select('id')
+    .where('org_id', orgId)
+    .andWhere('is_deleted', false);
+  return rows.map((r: { id: string }) => r.id);
+};
+
 export const countSuperadmins = async (): Promise<number> => {
   const rows = await db(Table.ClustoxUserAuth)
     .where(Columns[Table.ClustoxUserAuth].role, 'SUPERADMIN')
