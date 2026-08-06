@@ -4,8 +4,9 @@ import {
   Analytics,
   Settings,
   Dns,
-  // CLUSTOX: icon for the user management item
-  ManageAccounts
+  // CLUSTOX: icons for user management and workspace health
+  ManageAccounts,
+  Workspaces
 } from '@mui/icons-material';
 
 import { ROUTES } from '@/constants/routes';
@@ -44,7 +45,9 @@ export enum SideBarItems {
   MANAGE_INTEGRATIONS = 'Manage Integrations',
   SERVER_ADMIN = 'Server Admin',
   // CLUSTOX: superadmin-only, filtered in useFilteredSidebarItems
-  MANAGE_USERS = 'Manage Users'
+  MANAGE_USERS = 'Manage Users',
+  // CLUSTOX: visible to admins too, scoped to their own workspace
+  WORKSPACES = 'Workspaces'
 }
 
 const menuItems = (): MenuItems[] => [
@@ -75,6 +78,12 @@ const menuItems = (): MenuItems[] => [
         name: 'System Logs',
         icon: Dns,
         link: ROUTES.SYSTEM_LOGS.PATH
+      },
+      // CLUSTOX: sync health. Admins see their own workspace, superadmins all.
+      {
+        name: SideBarItems.WORKSPACES,
+        icon: Workspaces,
+        link: ROUTES.WORKSPACES.PATH
       },
       // CLUSTOX: only rendered for superadmins.
       {

@@ -111,6 +111,54 @@ export const listWorkspaces = async (): Promise<
   }));
 };
 
+export type WorkspaceSummary = {
+  id: string;
+  name: string;
+  ownerEmail: string | null;
+  hasIntegration: boolean;
+  repoCount: number;
+  teamCount: number;
+};
+
+/**
+ * Every workspace with enough context to answer "is this one healthy?".
+ *
+ * Deliberately excludes sync status: that lives on the sync server, so the
+ * route composes the two rather than this query reaching across a service
+ * boundary.
+ */
+export const listWorkspaceSummaries = async (): Promise<WorkspaceSummary[]> => {
+  const [orgs, owners, integrations, repos, teams] = await Promise.all([
+    db(Table.Organization).select('id', 'name').orderBy('created_at', 'asc'),
+    db(Table.ClustoxUserAuth)
+      .join(Table.Users, `${Table.Users}.id`, `${Table.ClustoxUserAuth}.user_id`)
+      .where(`${Table.ClustoxUserAuth}.role`, 'ADMIN')
+      .andWhere(`${Table.Users}.is_deleted`, false)
+      .select(`${Table.Users}.org_id`, `${Table.Users}.primary_email`),
+    db(Table.Integration)
+      .whereNotNull('access_token_enc_chunks')
+      .select('org_id'),
+    db(Table.OrgRepo).where('is_active', true).select('org_id'),
+    db(Table.Team).where('is_deleted', false).select('org_id')
+  ]);
+
+  const countBy = (rows: { org_id: string }[], orgId: string) =>
+    rows.filter((r) => r.org_id === orgId).length;
+
+  return orgs.map((o: { id: string; name: string }) => ({
+    id: o.id,
+    name: o.name,
+    ownerEmail:
+      owners.find((u: { org_id: string }) => u.org_id === o.id)
+        ?.primary_email ?? null,
+    hasIntegration: integrations.some(
+      (i: { org_id: string }) => i.org_id === o.id
+    ),
+    repoCount: countBy(repos, o.id),
+    teamCount: countBy(teams, o.id)
+  }));
+};
+
 /** Does this workspace exist? Guards the SuperAdmin's selected workspace. */
 export const workspaceExists = async (orgId: string): Promise<boolean> => {
   const row = await db(Table.Organization).select('id').where('id', orgId).first();
