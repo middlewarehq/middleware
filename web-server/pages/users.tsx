@@ -1,27 +1,46 @@
 import {
+  AdminPanelSettingsTwoTone,
+  MoreVertTwoTone,
+  PersonAddAlt1TwoTone,
+  WorkspacesTwoTone
+} from '@mui/icons-material';
+import {
   Alert,
-  Box,
+  Avatar,
   Button,
-  Card,
   Chip,
   CircularProgress,
-  FormControl,
-  InputLabel,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
   MenuItem,
-  Select,
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TextField,
-  Typography
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+  useTheme
 } from '@mui/material';
 import Head from 'next/head';
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { useSnackbar } from 'notistack';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 import { FlexBox } from '@/components/FlexBox';
+import { Line } from '@/components/Text';
+import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { PageLayout } from '@/types/resources';
 
 type ClustoxRole = 'SUPERADMIN' | 'ADMIN';
@@ -31,27 +50,64 @@ type UserRow = {
   email: string;
   name: string;
   role: ClustoxRole;
-  teamIds: string[];
+  orgId: string | null;
+  orgName: string | null;
 };
 
-type Team = { id: string; name: string };
+const MIN_PASSWORD = 12;
 
 const emptyForm = {
   name: '',
   email: '',
   password: '',
-  role: 'ADMIN' as ClustoxRole,
-  team_ids: [] as string[]
+  role: 'ADMIN' as ClustoxRole
 };
 
+const initials = (name: string, email: string) => {
+  const source = name?.trim() || email;
+  const parts = source.split(/[\s.@]+/).filter(Boolean);
+  return (parts[0]?.[0] ?? '?').concat(parts[1]?.[0] ?? '').toUpperCase();
+};
+
+/** Identifiers read as data, not prose. */
+const Mono = ({ children }: { children: React.ReactNode }) => (
+  <Typography
+    component="span"
+    sx={{
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+      fontSize: '0.8125rem',
+      letterSpacing: '-0.01em'
+    }}
+  >
+    {children}
+  </Typography>
+);
+
+const RoleChip = ({ role }: { role: ClustoxRole }) => (
+  <Chip
+    size="small"
+    label={role === 'SUPERADMIN' ? 'Superadmin' : 'Admin'}
+    color={role === 'SUPERADMIN' ? 'primary' : 'default'}
+    variant={role === 'SUPERADMIN' ? 'filled' : 'outlined'}
+    sx={{ fontWeight: 600, letterSpacing: '0.02em' }}
+  />
+);
+
 function UsersPage() {
+  const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
+
   const [users, setUsers] = useState<UserRow[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuUser, setMenuUser] = useState<UserRow | null>(null);
 
   const loadUsers = useCallback(async () => {
     const res = await fetch('/api/clustox/users');
@@ -64,76 +120,97 @@ function UsersPage() {
     setLoading(false);
   }, []);
 
-  const loadTeams = useCallback(async () => {
-    const sessionRes = await fetch('/api/auth/session');
-    if (!sessionRes.ok) return;
-    const session = await sessionRes.json();
-    const orgId = session?.org?.id;
-    if (!orgId) return;
-
-    const res = await fetch(`/api/resources/orgs/${orgId}/teams`);
-    if (!res.ok) return;
-    const data = await res.json();
-    setTeams(data.teams || []);
-  }, []);
-
   useEffect(() => {
     loadUsers();
-    loadTeams();
-  }, [loadUsers, loadTeams]);
+  }, [loadUsers]);
 
-  const teamName = (id: string) =>
-    teams.find((t) => t.id === id)?.name ?? id.slice(0, 8);
+  const counts = useMemo(
+    () => ({
+      total: users.length,
+      admins: users.filter((u) => u.role === 'ADMIN').length,
+      workspaces: new Set(users.map((u) => u.orgId).filter(Boolean)).size
+    }),
+    [users]
+  );
+
+  const passwordTooShort =
+    form.password.length > 0 && form.password.length < MIN_PASSWORD;
 
   const onCreate = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    setError('');
+    setFormError('');
 
     const res = await fetch('/api/clustox/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      body: JSON.stringify({ ...form, team_ids: [] })
     });
 
     setBusy(false);
 
     if (!res.ok) {
-      setError(
+      setFormError(
         res.status === 409
-          ? 'A user with that email already exists'
-          : 'Could not create user. Password must be at least 12 characters.'
+          ? 'A user with that email already exists.'
+          : `Could not create user. Password must be at least ${MIN_PASSWORD} characters.`
       );
       return;
     }
 
+    const created = await res.json();
+    setDialogOpen(false);
     setForm(emptyForm);
     await loadUsers();
+
+    enqueueSnackbar(
+      form.role === 'ADMIN'
+        ? `${form.name} added — a new workspace was created for them`
+        : `${form.name} added as a superadmin`,
+      { variant: 'success', autoHideDuration: 5000 }
+    );
+    return created;
   };
 
-  const onChangeTeams = async (userId: string, teamIds: string[]) => {
-    await fetch(`/api/clustox/users/${userId}`, {
+  const changeRole = async (user: UserRow, role: ClustoxRole) => {
+    setMenuAnchor(null);
+    const res = await fetch(`/api/clustox/users/${user.userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ team_ids: teamIds })
+      body: JSON.stringify({ role })
     });
+
+    if (!res.ok) {
+      enqueueSnackbar(
+        res.status === 409
+          ? 'You cannot demote the last superadmin.'
+          : 'Could not change role.',
+        { variant: 'error' }
+      );
+      return;
+    }
+
     await loadUsers();
+    enqueueSnackbar(`${user.name} is now ${role.toLowerCase()}`, {
+      variant: 'success'
+    });
   };
 
   if (loading)
     return (
-      <FlexBox p={4} justifyCenter>
+      <FlexBox p={6} justifyCenter>
         <CircularProgress />
       </FlexBox>
     );
 
   if (forbidden)
     return (
-      <Box p={4}>
+      <FlexBox p={4} col gap={2} maxWidth="640px">
         <Alert severity="warning">
-          Not authorised. Only superadmins can manage users.
+          Only superadmins can manage users. If you need access, ask a
+          superadmin to change your role.
         </Alert>
-      </Box>
+      </FlexBox>
     );
 
   return (
@@ -141,22 +218,218 @@ function UsersPage() {
       <Head>
         <title>Users | MiddlewareHQ</title>
       </Head>
-      <Box p={4}>
-        <Typography variant="h3" mb={3}>
-          Users
-        </Typography>
 
-        <Card sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h5" mb={2}>
-            Add a user
-          </Typography>
-          <form onSubmit={onCreate}>
-            <FlexBox gap={2} flexWrap="wrap" alignCenter>
+      <FlexBox col gap={3} maxWidth="1100px">
+        {/* Summary + primary action */}
+        <FlexBox justifyBetween alignCenter flexWrap="wrap" gap={2}>
+          <FlexBox gap={3} alignCenter>
+            <FlexBox col>
+              <Line bigish bold>
+                {counts.total} {counts.total === 1 ? 'user' : 'users'}
+              </Line>
+              <Line small secondary>
+                {counts.admins} admin{counts.admins === 1 ? '' : 's'} across{' '}
+                {counts.workspaces} workspace
+                {counts.workspaces === 1 ? '' : 's'}
+              </Line>
+            </FlexBox>
+          </FlexBox>
+
+          <Button
+            variant="contained"
+            startIcon={<PersonAddAlt1TwoTone />}
+            onClick={() => {
+              setForm(emptyForm);
+              setFormError('');
+              setDialogOpen(true);
+            }}
+          >
+            Add user
+          </Button>
+        </FlexBox>
+
+        {/* Roster */}
+        <TableContainer
+          sx={{
+            border: `1px solid ${theme.colors.alpha.trueWhite[10]}`,
+            borderRadius: 1.5,
+            overflow: 'hidden'
+          }}
+        >
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>User</TableCell>
+                <TableCell width={160}>Role</TableCell>
+                <TableCell width={280}>Workspace</TableCell>
+                <TableCell width={64} align="right" />
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {users.map((u) => (
+                <TableRow key={u.userId} hover>
+                  <TableCell>
+                    <FlexBox alignCenter gap={1.5}>
+                      <Avatar
+                        sx={{
+                          width: 34,
+                          height: 34,
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          bgcolor:
+                            u.role === 'SUPERADMIN'
+                              ? theme.colors.primary.main
+                              : theme.colors.alpha.trueWhite[10]
+                        }}
+                      >
+                        {initials(u.name, u.email)}
+                      </Avatar>
+                      <FlexBox col>
+                        <Line medium>{u.name}</Line>
+                        <Line small secondary>
+                          <Mono>{u.email}</Mono>
+                        </Line>
+                      </FlexBox>
+                    </FlexBox>
+                  </TableCell>
+
+                  <TableCell>
+                    <RoleChip role={u.role} />
+                  </TableCell>
+
+                  <TableCell>
+                    {u.role === 'SUPERADMIN' ? (
+                      <Tooltip title="Superadmins are not scoped to a workspace and can view every one">
+                        <FlexBox alignCenter gap={0.75}>
+                          <AdminPanelSettingsTwoTone
+                            fontSize="small"
+                            sx={{ color: theme.colors.primary.main }}
+                          />
+                          <Line small secondary>
+                            All workspaces
+                          </Line>
+                        </FlexBox>
+                      </Tooltip>
+                    ) : (
+                      <FlexBox alignCenter gap={0.75}>
+                        <WorkspacesTwoTone
+                          fontSize="small"
+                          sx={{ color: theme.colors.alpha.trueWhite[50] }}
+                        />
+                        <Mono>{u.orgName ?? '—'}</Mono>
+                      </FlexBox>
+                    )}
+                  </TableCell>
+
+                  <TableCell align="right">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        setMenuUser(u);
+                        setMenuAnchor(e.currentTarget);
+                      }}
+                    >
+                      <MoreVertTwoTone fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {users.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={4}>
+                    <FlexBox col alignCenter gap={1} py={5}>
+                      <Line secondary>No users yet.</Line>
+                      <Line small secondary>
+                        Add an admin to create their first workspace.
+                      </Line>
+                    </FlexBox>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </FlexBox>
+
+      {/* Row actions */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+      >
+        {menuUser?.role === 'ADMIN' ? (
+          <MenuItem onClick={() => changeRole(menuUser, 'SUPERADMIN')}>
+            <ListItemIcon>
+              <AdminPanelSettingsTwoTone fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Promote to superadmin"
+              secondary="Sees every workspace"
+            />
+          </MenuItem>
+        ) : (
+          <MenuItem onClick={() => menuUser && changeRole(menuUser, 'ADMIN')}>
+            <ListItemIcon>
+              <WorkspacesTwoTone fontSize="small" />
+            </ListItemIcon>
+            <ListItemText
+              primary="Demote to admin"
+              secondary="Scoped to one workspace"
+            />
+          </MenuItem>
+        )}
+      </Menu>
+
+      {/* Add user */}
+      <Dialog
+        open={dialogOpen}
+        onClose={() => !busy && setDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <form onSubmit={onCreate}>
+          <DialogTitle>Add a user</DialogTitle>
+          <Divider />
+          <DialogContent>
+            <FlexBox col gap={2.5} pt={1}>
+              <ToggleButtonGroup
+                exclusive
+                fullWidth
+                size="small"
+                value={form.role}
+                onChange={(_e, v) => v && setForm({ ...form, role: v })}
+              >
+                <ToggleButton value="ADMIN">Admin</ToggleButton>
+                <ToggleButton value="SUPERADMIN">Superadmin</ToggleButton>
+              </ToggleButtonGroup>
+
+              <Alert
+                severity="info"
+                icon={
+                  form.role === 'ADMIN' ? (
+                    <WorkspacesTwoTone fontSize="inherit" />
+                  ) : (
+                    <AdminPanelSettingsTwoTone fontSize="inherit" />
+                  )
+                }
+              >
+                {form.role === 'ADMIN'
+                  ? 'Gets their own workspace, connects their own GitHub or GitLab, and sees only their own projects.'
+                  : 'Sees every workspace, manages users, and owns no workspace of their own.'}
+              </Alert>
+
               <TextField
-                label="Name"
+                label="Full name"
                 value={form.name}
                 required
+                autoFocus
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                helperText={
+                  form.role === 'ADMIN'
+                    ? 'Also names their workspace'
+                    : undefined
+                }
               />
               <TextField
                 label="Email"
@@ -166,131 +439,62 @@ function UsersPage() {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
               <TextField
-                label="Password"
+                label="Temporary password"
                 type="password"
                 value={form.password}
                 required
-                helperText="Minimum 12 characters"
+                error={passwordTooShort}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
+                helperText={
+                  passwordTooShort
+                    ? `${MIN_PASSWORD - form.password.length} more characters needed`
+                    : `At least ${MIN_PASSWORD} characters. Share it with them directly.`
+                }
               />
-              <FormControl sx={{ minWidth: 160 }}>
-                <InputLabel id="role-label">Role</InputLabel>
-                <Select
-                  labelId="role-label"
-                  label="Role"
-                  value={form.role}
-                  onChange={(e) =>
-                    setForm({ ...form, role: e.target.value as ClustoxRole })
-                  }
-                >
-                  <MenuItem value="ADMIN">Admin</MenuItem>
-                  <MenuItem value="SUPERADMIN">Superadmin</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl sx={{ minWidth: 220 }}>
-                <InputLabel id="teams-label">Teams</InputLabel>
-                <Select
-                  labelId="teams-label"
-                  label="Teams"
-                  multiple
-                  value={form.team_ids}
-                  disabled={form.role === 'SUPERADMIN'}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      team_ids: e.target.value as string[]
-                    })
-                  }
-                  renderValue={(selected) =>
-                    (selected as string[]).map(teamName).join(', ')
-                  }
-                >
-                  {teams.map((t) => (
-                    <MenuItem key={t.id} value={t.id}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <Button type="submit" variant="contained" disabled={busy}>
-                {busy ? 'Adding...' : 'Add user'}
-              </Button>
-            </FlexBox>
-            {form.role === 'SUPERADMIN' && (
-              <Typography variant="body2" color="text.secondary" mt={1}>
-                Superadmins see every team, so no team assignment is needed.
-              </Typography>
-            )}
-            {error && (
-              <Typography color="error" mt={2} role="alert">
-                {error}
-              </Typography>
-            )}
-          </form>
-        </Card>
 
-        <Card>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Role</TableCell>
-                <TableCell>Teams</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {users.map((u) => (
-                <TableRow key={u.userId}>
-                  <TableCell>{u.name}</TableCell>
-                  <TableCell>{u.email}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={u.role}
-                      color={u.role === 'SUPERADMIN' ? 'primary' : 'default'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {u.role === 'SUPERADMIN' ? (
-                      <Typography variant="body2" color="text.secondary">
-                        All teams
-                      </Typography>
-                    ) : (
-                      <Select
-                        multiple
-                        size="small"
-                        sx={{ minWidth: 200 }}
-                        value={u.teamIds}
-                        onChange={(e) =>
-                          onChangeTeams(u.userId, e.target.value as string[])
-                        }
-                        renderValue={(selected) =>
-                          (selected as string[]).length
-                            ? (selected as string[]).map(teamName).join(', ')
-                            : 'No teams'
-                        }
-                      >
-                        {teams.map((t) => (
-                          <MenuItem key={t.id} value={t.id}>
-                            {t.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      </Box>
+              {formError && (
+                <Alert severity="error" role="alert">
+                  {formError}
+                </Alert>
+              )}
+            </FlexBox>
+          </DialogContent>
+          <Divider />
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={() => setDialogOpen(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={busy || passwordTooShort}
+            >
+              {busy ? 'Adding…' : 'Add user'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </>
   );
 }
 
 UsersPage.getLayout = (page: PageLayout) => (
-  <ExtendedSidebarLayout>{page}</ExtendedSidebarLayout>
+  <ExtendedSidebarLayout>
+    <PageWrapper
+      title={
+        <FlexBox gap={1} alignCenter>
+          <AdminPanelSettingsTwoTone />
+          Users
+        </FlexBox>
+      }
+      pageTitle="Users"
+      hideAllSelectors
+      showEvenIfNoTeamSelected
+      showDate={false}
+    >
+      {page}
+    </PageWrapper>
+  </ExtendedSidebarLayout>
 );
 
 export default UsersPage;
