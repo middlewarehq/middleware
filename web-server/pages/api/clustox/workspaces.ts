@@ -2,7 +2,7 @@ import * as yup from 'yup';
 
 import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { assertRole } from '@/auth/guard';
-import { listWorkspaces } from '@/auth/queries';
+import { listUnownedWorkspaces, listWorkspaces } from '@/auth/queries';
 
 /**
  * Every workspace, for the SuperAdmin workspace switcher.
@@ -16,7 +16,16 @@ const endpoint = new Endpoint(nullSchema);
 
 endpoint.handle.GET(nullSchema, async (req, res) => {
   assertRole((req as any).session, 'SUPERADMIN');
-  res.send(await listWorkspaces());
+
+  const [all, unowned] = await Promise.all([
+    listWorkspaces(),
+    listUnownedWorkspaces()
+  ]);
+  const unownedIds = new Set(unowned.map((w) => w.id));
+
+  // `owned` lets the user form offer adoption of a workspace that has no
+  // admin -- notably the pre-multitenancy one holding the real data.
+  res.send(all.map((w) => ({ ...w, owned: !unownedIds.has(w.id) })));
 });
 
 const putSchema = yup.object().shape({

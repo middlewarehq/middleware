@@ -56,11 +56,16 @@ type UserRow = {
 
 const MIN_PASSWORD = 12;
 
+const NEW_WORKSPACE = '__new__';
+
 const emptyForm = {
   name: '',
   email: '',
   password: '',
-  role: 'ADMIN' as ClustoxRole
+  role: 'ADMIN' as ClustoxRole,
+  // NEW_WORKSPACE provisions a fresh one; otherwise adopt an existing
+  // workspace that has no owner.
+  org_id: NEW_WORKSPACE
 };
 
 const initials = (name: string, email: string) => {
@@ -98,6 +103,9 @@ function UsersPage() {
   const { enqueueSnackbar } = useSnackbar();
 
   const [users, setUsers] = useState<UserRow[]>([]);
+  const [workspaces, setWorkspaces] = useState<
+    { id: string; name: string; owned: boolean }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
 
@@ -120,9 +128,15 @@ function UsersPage() {
     setLoading(false);
   }, []);
 
+  const loadWorkspaces = useCallback(async () => {
+    const res = await fetch('/api/clustox/workspaces');
+    if (res.ok) setWorkspaces(await res.json());
+  }, []);
+
   useEffect(() => {
     loadUsers();
-  }, [loadUsers]);
+    loadWorkspaces();
+  }, [loadUsers, loadWorkspaces]);
 
   const counts = useMemo(
     () => ({
@@ -144,7 +158,11 @@ function UsersPage() {
     const res = await fetch('/api/clustox/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, team_ids: [] })
+      body: JSON.stringify({
+        ...form,
+        team_ids: [],
+        org_id: form.org_id === NEW_WORKSPACE ? null : form.org_id
+      })
     });
 
     setBusy(false);
@@ -161,12 +179,15 @@ function UsersPage() {
     const created = await res.json();
     setDialogOpen(false);
     setForm(emptyForm);
-    await loadUsers();
+    await Promise.all([loadUsers(), loadWorkspaces()]);
 
+    const adopted = workspaces.find((w) => w.id === form.org_id);
     enqueueSnackbar(
-      form.role === 'ADMIN'
-        ? `${form.name} added — a new workspace was created for them`
-        : `${form.name} added as a superadmin`,
+      form.role !== 'ADMIN'
+        ? `${form.name} added as a superadmin`
+        : adopted
+          ? `${form.name} now owns the “${adopted.name}” workspace`
+          : `${form.name} added — a new workspace was created for them`,
       { variant: 'success', autoHideDuration: 5000 }
     );
     return created;
@@ -426,11 +447,38 @@ function UsersPage() {
                 autoFocus
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 helperText={
-                  form.role === 'ADMIN'
+                  form.role === 'ADMIN' && form.org_id === NEW_WORKSPACE
                     ? 'Also names their workspace'
                     : undefined
                 }
               />
+
+              {form.role === 'ADMIN' && (
+                <TextField
+                  select
+                  label="Workspace"
+                  value={form.org_id}
+                  onChange={(e) =>
+                    setForm({ ...form, org_id: e.target.value })
+                  }
+                  helperText={
+                    form.org_id === NEW_WORKSPACE
+                      ? 'A new workspace is created and named after them'
+                      : 'They take ownership of this existing workspace, keeping its integration and repositories'
+                  }
+                >
+                  <MenuItem value={NEW_WORKSPACE}>
+                    Create a new workspace
+                  </MenuItem>
+                  {workspaces
+                    .filter((w) => !w.owned)
+                    .map((w) => (
+                      <MenuItem key={w.id} value={w.id}>
+                        Adopt “{w.name}” (currently unowned)
+                      </MenuItem>
+                    ))}
+                </TextField>
+              )}
               <TextField
                 label="Email"
                 type="email"

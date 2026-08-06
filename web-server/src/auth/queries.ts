@@ -290,6 +290,40 @@ export const createUser = async (input: {
   return { userId, orgId };
 };
 
+/**
+ * Workspaces with no admin owning them.
+ *
+ * The pre-multitenancy workspace is the motivating case: it holds all the real
+ * data but predates the idea of ownership, so it belongs to nobody. Adopting it
+ * is preferable to recreating its integration and repositories from scratch.
+ */
+export const listUnownedWorkspaces = async (): Promise<
+  { id: string; name: string }[]
+> => {
+  const [orgs, owned] = await Promise.all([
+    db(Table.Organization).select('id', 'name').orderBy('created_at', 'asc'),
+    db(Table.ClustoxUserAuth)
+      .join(Table.Users, `${Table.Users}.id`, `${Table.ClustoxUserAuth}.user_id`)
+      .where(`${Table.ClustoxUserAuth}.role`, 'ADMIN')
+      .andWhere(`${Table.Users}.is_deleted`, false)
+      .whereNotNull(`${Table.Users}.org_id`)
+      .select(`${Table.Users}.org_id`)
+  ]);
+
+  const ownedIds = new Set(owned.map((r: { org_id: string }) => r.org_id));
+  return orgs.filter((o: { id: string }) => !ownedIds.has(o.id));
+};
+
+/** Move an admin into a different workspace, or detach them from one. */
+export const setUserWorkspace = async (
+  userId: string,
+  orgId: string | null
+): Promise<void> => {
+  await db(Table.Users)
+    .where('id', userId)
+    .update({ org_id: orgId, updated_at: new Date() });
+};
+
 export const updateUserRole = async (
   userId: string,
   role: ClustoxRole
