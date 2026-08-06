@@ -21,6 +21,16 @@ class CoreRepoService:
             .one_or_none()
         )
 
+    # CLUSTOX: every workspace. Upstream never needed this because only one
+    # Organization ever existed; multitenancy syncs each of them.
+    @rollback_on_exc
+    def get_all_orgs(self) -> List[Organization]:
+        return (
+            self._db.session.query(Organization)
+            .order_by(Organization.created_at.asc())
+            .all()
+        )
+
     @rollback_on_exc
     def get_org_by_name(self, org_name: str):
         return (

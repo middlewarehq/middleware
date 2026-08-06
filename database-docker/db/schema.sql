@@ -72,6 +72,21 @@ CREATE TABLE public."BookmarkPullRequestRevertPRMapping" (
 
 
 --
+-- Name: ClustoxSyncRun; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ClustoxSyncRun" (
+    id uuid DEFAULT extensions.uuid_generate_v4() NOT NULL,
+    org_id uuid NOT NULL,
+    started_at timestamp with time zone DEFAULT now() NOT NULL,
+    finished_at timestamp with time zone,
+    status character varying NOT NULL,
+    detail text,
+    CONSTRAINT "ClustoxSyncRun_status_check" CHECK (((status)::text = ANY ((ARRAY['RUNNING'::character varying, 'SUCCESS'::character varying, 'FAILED'::character varying, 'SKIPPED'::character varying])::text[])))
+);
+
+
+--
 -- Name: ClustoxUserAuth; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -508,6 +523,14 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: ClustoxSyncRun ClustoxSyncRun_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ClustoxSyncRun"
+    ADD CONSTRAINT "ClustoxSyncRun_pkey" PRIMARY KEY (id);
+
+
+--
 -- Name: ClustoxUserAuth ClustoxUserAuth_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -846,6 +869,13 @@ CREATE INDEX "Team_org_idx" ON public."Team" USING btree (org_id);
 
 
 --
+-- Name: idx_clustox_sync_run_org_started; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_clustox_sync_run_org_started ON public."ClustoxSyncRun" USING btree (org_id, started_at DESC);
+
+
+--
 -- Name: idx_clustox_user_team_access_user; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1156,6 +1186,14 @@ ALTER TABLE ONLY public."Bookmark"
 
 
 --
+-- Name: ClustoxSyncRun ClustoxSyncRun_org_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ClustoxSyncRun"
+    ADD CONSTRAINT "ClustoxSyncRun_org_id_fkey" FOREIGN KEY (org_id) REFERENCES public."Organization"(id) ON DELETE CASCADE;
+
+
+--
 -- Name: ClustoxUserAuth ClustoxUserAuth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1434,4 +1472,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20240503060203'),
     ('20240503073715'),
     ('20260805150000'),
-    ('20260806120000');
+    ('20260806120000'),
+    ('20260806160000');
