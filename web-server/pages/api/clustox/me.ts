@@ -19,7 +19,11 @@ endpoint.handle.GET(nullSchema, async (req, res) => {
     user_id: session.userId,
     email: session.email,
     name: session.name,
-    role: session.role
+    role: session.role,
+    // The workspace to act on. Resolved server-side per request, so unlike the
+    // redux copy it can never be a stale value rehydrated from a previous
+    // session's persisted state.
+    org_id: session.orgId
   });
 });
 
