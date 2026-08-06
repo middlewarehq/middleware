@@ -17,13 +17,15 @@ const superadmin: AuthSession = {
   userId: 'su1',
   email: 'boss@clustox.com',
   name: 'Boss',
-  role: 'SUPERADMIN'
+  role: 'SUPERADMIN',
+  orgId: null
 };
 const admin: AuthSession = {
   userId: 'ad1',
   email: 'lead@clustox.com',
   name: 'Lead',
-  role: 'ADMIN'
+  role: 'ADMIN',
+  orgId: 'workspace-1'
 };
 
 describe('assertAuthenticated', () => {

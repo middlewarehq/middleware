@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { Columns, Table } from '@/constants/db';
 import { db } from '@/utils/db';
 
@@ -16,7 +18,8 @@ export const getAuthUserByEmail = async (
       `${Table.ClustoxUserAuth}.role`,
       `${Table.ClustoxUserAuth}.password_hash`,
       `${Table.Users}.primary_email`,
-      `${Table.Users}.name`
+      `${Table.Users}.name`,
+      `${Table.Users}.org_id`
     )
     .first();
 
@@ -27,6 +30,7 @@ export const getAuthUserByEmail = async (
     email: row.primary_email,
     name: row.name,
     role: row.role as ClustoxRole,
+    orgId: row.org_id ?? null,
     passwordHash: row.password_hash
   };
 };
@@ -40,7 +44,13 @@ export const getAuthUserByEmail = async (
  */
 export const getAuthUserById = async (
   userId: string
-): Promise<{ userId: string; email: string; name: string; role: ClustoxRole } | null> => {
+): Promise<{
+  userId: string;
+  email: string;
+  name: string;
+  role: ClustoxRole;
+  orgId: string | null;
+} | null> => {
   const row = await db(Table.ClustoxUserAuth)
     .join(Table.Users, `${Table.Users}.id`, `${Table.ClustoxUserAuth}.user_id`)
     .where(`${Table.ClustoxUserAuth}.user_id`, userId)
@@ -49,7 +59,8 @@ export const getAuthUserById = async (
       `${Table.ClustoxUserAuth}.user_id`,
       `${Table.ClustoxUserAuth}.role`,
       `${Table.Users}.primary_email`,
-      `${Table.Users}.name`
+      `${Table.Users}.name`,
+      `${Table.Users}.org_id`
     )
     .first();
 
@@ -59,7 +70,9 @@ export const getAuthUserById = async (
     userId: row.user_id,
     email: row.primary_email,
     name: row.name,
-    role: row.role as ClustoxRole
+    role: row.role as ClustoxRole,
+    // null for SUPERADMIN, who sits above every workspace.
+    orgId: row.org_id ?? null
   };
 };
 
@@ -85,12 +98,20 @@ export const countSuperadmins = async (): Promise<number> => {
 export const listUsers = async (): Promise<AuthUserListItem[]> => {
   const rows = await db(Table.ClustoxUserAuth)
     .join(Table.Users, `${Table.Users}.id`, `${Table.ClustoxUserAuth}.user_id`)
+    .leftJoin(
+      Table.Organization,
+      `${Table.Organization}.id`,
+      `${Table.Users}.org_id`
+    )
     .where(`${Table.Users}.is_deleted`, false)
     .select(
       `${Table.ClustoxUserAuth}.user_id`,
       `${Table.ClustoxUserAuth}.role`,
       `${Table.Users}.primary_email`,
-      `${Table.Users}.name`
+      `${Table.Users}.name`,
+      `${Table.Users}.org_id`,
+      // left join: null for a superadmin, who owns no workspace
+      `${Table.Organization}.name as org_name`
     );
 
   const access = await db(Table.ClustoxUserTeamAccess).select(
@@ -103,25 +124,63 @@ export const listUsers = async (): Promise<AuthUserListItem[]> => {
     email: r.primary_email,
     name: r.name,
     role: r.role as ClustoxRole,
+    orgId: r.org_id ?? null,
+    orgName: r.org_name ?? null,
     teamIds: access
       .filter((a: any) => a.user_id === r.user_id)
       .map((a: any) => a.team_id)
   }));
 };
 
+/**
+ * Create a workspace and return its id.
+ *
+ * Upstream only ever created one Organization, named "default", at boot. The
+ * schema was always multi-workspace -- every table carries org_id and
+ * Integration is keyed on (name, org_id) -- so provisioning more is simply
+ * doing what the schema already allows.
+ */
+export const createWorkspace = async (name: string): Promise<string> => {
+  // Organization.id has no database default -- upstream's bootstrap supplies
+  // one from Python. The exported `db` helper is a table function, not the
+  // knex instance, so there is no db.raw() here either. Generate it in JS.
+  const id = randomUUID();
+
+  await db(Table.Organization).insert({
+    id,
+    name,
+    domain: name,
+    created_at: new Date()
+  });
+
+  return id;
+};
+
+/**
+ * Create a user.
+ *
+ * An ADMIN gets their own workspace, provisioned here. A SUPERADMIN gets none
+ * (org_id null) because they sit above every workspace rather than owning one.
+ */
 export const createUser = async (input: {
   name: string;
   email: string;
   password: string;
   role: ClustoxRole;
   teamIds: string[];
-  orgId: string;
-}): Promise<string> => {
+  /** Existing workspace to place an ADMIN in. Omit to provision a new one. */
+  orgId?: string | null;
+}): Promise<{ userId: string; orgId: string | null }> => {
   const passwordHash = await hashPassword(input.password);
+
+  let orgId: string | null = null;
+  if (input.role === 'ADMIN') {
+    orgId = input.orgId ?? (await createWorkspace(input.name));
+  }
 
   const [user] = await db(Table.Users)
     .insert({
-      org_id: input.orgId,
+      org_id: orgId,
       name: input.name,
       primary_email: input.email,
       is_deleted: false
@@ -142,7 +201,7 @@ export const createUser = async (input: {
     );
   }
 
-  return userId;
+  return { userId, orgId };
 };
 
 export const updateUserRole = async (
