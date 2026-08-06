@@ -55,10 +55,19 @@ const createAdmin = async (su: APIRequestContext, name: string) => {
   return { userId: user_id, orgId: org_id as string, email, password };
 };
 
-const deleteUsers = async (emails: string[]) => {
-  // No delete endpoint yet, so the accounts are simply left disabled by being
-  // unreachable. Recorded rather than silently skipped.
-  void emails;
+/**
+ * Remove accounts the suite created, and their workspaces with them.
+ *
+ * Without this every run left behind an admin and a workspace, which
+ * accumulated until the superadmin's cross-workspace view was unreadable.
+ */
+const deleteUsers = async (su: APIRequestContext, userIds: string[]) => {
+  for (const id of userIds) {
+    await su.fetch(`/api/clustox/users/${id}`, {
+      method: 'DELETE',
+      failOnStatusCode: false
+    });
+  }
 };
 
 test.describe('cross-workspace isolation', () => {
@@ -77,7 +86,7 @@ test.describe('cross-workspace isolation', () => {
   });
 
   test.afterAll(async () => {
-    await deleteUsers([alpha.email, beta.email]);
+    await deleteUsers(su, [alpha.userId, beta.userId]);
   });
 
   test('each admin is given a distinct workspace', async () => {

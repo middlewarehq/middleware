@@ -4,6 +4,7 @@ import { Endpoint } from '@/api-helpers/global';
 import { assertRole } from '@/auth/guard';
 import {
   countSuperadmins,
+  deleteUserAndEmptyWorkspace,
   setUserTeams,
   setUserWorkspace,
   updateUserRole
@@ -60,6 +61,19 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
   }
 
   res.send({ ok: true });
+});
+
+endpoint.handle.DELETE(pathSchema, async (req, res) => {
+  const session = assertRole((req as any).session, 'SUPERADMIN');
+
+  // Deleting yourself would immediately end your own session, and if you were
+  // the last superadmin nobody could administer the instance afterwards.
+  if (session.userId === req.payload.user_id) {
+    throw new ResponseError(Errors.ACCESS_DENIED, 409);
+  }
+
+  const result = await deleteUserAndEmptyWorkspace(req.payload.user_id);
+  res.send({ ok: true, workspace_removed: result.workspaceRemoved });
 });
 
 export default endpoint.serve();

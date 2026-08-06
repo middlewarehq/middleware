@@ -29,8 +29,13 @@ const signIn = async (email: string, password: string) => {
   return ctx;
 };
 
-const unique = (p: string) =>
-  `${p}.${Date.now()}${Math.floor(Math.random() * 1000)}@clustox.com`;
+const createdEmails: string[] = [];
+
+const unique = (p: string) => {
+  const email = `${p}.${Date.now()}${Math.floor(Math.random() * 1000)}@clustox.com`;
+  createdEmails.push(email);
+  return email;
+};
 
 const tokenFrom = (url: string) => url.split('token=')[1];
 
@@ -47,11 +52,26 @@ test.describe('invite links', () => {
 
   let su: APIRequestContext;
   let anon: APIRequestContext;
+  // Accounts redeemed during the run, cleaned up afterwards so workspaces do
+  // not accumulate across runs.
+  const created = createdEmails;
 
   test.beforeAll(async () => {
     su = await signIn(SUPERADMIN.email, SUPERADMIN.password);
     // No cookies: an invitee has no account and therefore no session.
     anon = await request.newContext({ baseURL: APP });
+  });
+
+  test.afterAll(async () => {
+    const users = await (await su.get('/api/clustox/users')).json();
+    for (const u of users) {
+      if (u.role === 'ADMIN' && created.includes(u.email)) {
+        await su.fetch(`/api/clustox/users/${u.userId}`, {
+          method: 'DELETE',
+          failOnStatusCode: false
+        });
+      }
+    }
   });
 
   test('only a superadmin can issue an invite', async () => {

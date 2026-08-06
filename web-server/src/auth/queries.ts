@@ -318,6 +318,64 @@ export const listUnownedWorkspaces = async (): Promise<
   return orgs.filter((o: { id: string }) => !ownedIds.has(o.id));
 };
 
+/**
+ * Remove a user, and their workspace if removing them would strand it empty.
+ *
+ * The user is soft-deleted, matching how upstream treats Users and Teams. The
+ * workspace is only hard-deleted when it holds nothing worth keeping -- no
+ * integration, no repositories, and no other owner. A workspace with real data
+ * is left behind unowned instead, where it can be adopted; silently destroying
+ * synced history because the last admin left would be the wrong default.
+ *
+ * Returns whether the workspace was removed, so callers can say what happened.
+ */
+export const deleteUserAndEmptyWorkspace = async (
+  userId: string
+): Promise<{ workspaceRemoved: boolean }> => {
+  const user = await db(Table.Users).where('id', userId).first();
+  const orgId: string | null = user?.org_id ?? null;
+
+  // org_id is cleared as well as flagging the row deleted: a removed user
+  // should not still own a workspace, and the Users.org_id foreign key would
+  // otherwise block removing the workspace below.
+  await db(Table.Users)
+    .where('id', userId)
+    .update({ is_deleted: true, org_id: null, updated_at: new Date() });
+  await db(Table.ClustoxUserAuth).where('user_id', userId).delete();
+  await db(Table.ClustoxUserTeamAccess).where('user_id', userId).delete();
+
+  if (!orgId) return { workspaceRemoved: false };
+
+  const [otherOwners, repos, integrations] = await Promise.all([
+    db(Table.Users)
+      .where('org_id', orgId)
+      .andWhere('is_deleted', false)
+      .whereNot('id', userId)
+      .select('id'),
+    db(Table.OrgRepo).where('org_id', orgId).select('id'),
+    db(Table.Integration).where('org_id', orgId).select('org_id')
+  ]);
+
+  const worthKeeping =
+    otherOwners.length > 0 || repos.length > 0 || integrations.length > 0;
+  if (worthKeeping) return { workspaceRemoved: false };
+
+  // Nothing references the workspace except its own teams, and the foreign
+  // keys have no cascade, so those go first.
+  await db(Table.ClustoxUserTeamAccess)
+    .whereIn(
+      'team_id',
+      db(Table.Team).where('org_id', orgId).select('id')
+    )
+    .delete();
+  await db(Table.Team).where('org_id', orgId).delete();
+  await db(Table.ClustoxSyncRun).where('org_id', orgId).delete();
+  await db(Table.ClustoxInvite).where('org_id', orgId).update({ org_id: null });
+  await db(Table.Organization).where('id', orgId).delete();
+
+  return { workspaceRemoved: true };
+};
+
 /** Move an admin into a different workspace, or detach them from one. */
 export const setUserWorkspace = async (
   userId: string,

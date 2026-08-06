@@ -11,12 +11,14 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
   Tooltip,
   Typography,
   useTheme
@@ -27,6 +29,7 @@ import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useState } from 'react';
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
+import { ClustoxWorkspaceMetrics } from '@/components/ClustoxWorkspaceMetrics';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
@@ -79,6 +82,7 @@ function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [tab, setTab] = useState<'health' | 'metrics'>('health');
 
   const load = useCallback(async () => {
     const res = await fetch('/api/clustox/workspace-status');
@@ -219,6 +223,20 @@ function WorkspacesPage() {
           </Alert>
         )}
 
+        {isSuperadmin && (
+          <Tabs
+            value={tab}
+            onChange={(_e, v) => setTab(v)}
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab value="health" label="Sync health" />
+            <Tab value="metrics" label="DORA comparison" />
+          </Tabs>
+        )}
+
+        {isSuperadmin && tab === 'metrics' && <ClustoxWorkspaceMetrics />}
+
+        {(!isSuperadmin || tab === 'health') && (
         <TableContainer
           sx={{
             border: `1px solid ${theme.colors.alpha.trueWhite[10]}`,
@@ -276,11 +294,14 @@ function WorkspacesPage() {
             </TableBody>
           </Table>
         </TableContainer>
+        )}
 
-        <Line small secondary>
-          Syncs run automatically every 30 minutes. A failed workspace does not
-          affect the others.
-        </Line>
+        {(!isSuperadmin || tab === 'health') && (
+          <Line small secondary>
+            Syncs run automatically every 30 minutes. A failed workspace does
+            not affect the others.
+          </Line>
+        )}
       </FlexBox>
     </>
   );
