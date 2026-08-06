@@ -32,7 +32,12 @@ export const useFilteredSidebarItems = () => {
       // CLUSTOX: hide user management from non-superadmins. Presentation only
       // -- the API returns 403 regardless of what the sidebar shows.
       if (item.name === SideBarItems.MANAGE_USERS && !isSuperadmin) return false;
+      // CLUSTOX: a SuperAdmin owns no workspace, so the workspace they are
+      // viewing may legitimately have no integration yet. Collapsing their nav
+      // to just "Manage Integrations" would strand them, since user management
+      // and the workspace switcher are how they administer the instance.
       if (
+        !isSuperadmin &&
         !integrationList.length &&
         item.name !== SideBarItems.MANAGE_INTEGRATIONS
       )

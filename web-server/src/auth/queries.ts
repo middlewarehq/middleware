@@ -98,6 +98,25 @@ export const getTeamOrgId = async (teamId: string): Promise<string | null> => {
   return row?.org_id ?? null;
 };
 
+/** Every workspace, oldest first. Used by the SuperAdmin switcher. */
+export const listWorkspaces = async (): Promise<
+  { id: string; name: string }[]
+> => {
+  const rows = await db(Table.Organization)
+    .select('id', 'name')
+    .orderBy('created_at', 'asc');
+  return rows.map((r: { id: string; name: string }) => ({
+    id: r.id,
+    name: r.name
+  }));
+};
+
+/** Does this workspace exist? Guards the SuperAdmin's selected workspace. */
+export const workspaceExists = async (orgId: string): Promise<boolean> => {
+  const row = await db(Table.Organization).select('id').where('id', orgId).first();
+  return Boolean(row);
+};
+
 /** Every live team in a workspace. */
 export const getTeamIdsForOrg = async (orgId: string): Promise<string[]> => {
   const rows = await db(Table.Team)
