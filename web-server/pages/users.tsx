@@ -1,5 +1,6 @@
 import {
   AdminPanelSettingsTwoTone,
+  LinkTwoTone,
   MoreVertTwoTone,
   PersonAddAlt1TwoTone,
   WorkspacesTwoTone
@@ -114,6 +115,12 @@ function UsersPage() {
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [invites, setInvites] = useState<
+    { id: string; email: string; name: string; role: ClustoxRole; orgName: string | null; expired: boolean }[]
+  >([]);
+
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuUser, setMenuUser] = useState<UserRow | null>(null);
 
@@ -133,10 +140,16 @@ function UsersPage() {
     if (res.ok) setWorkspaces(await res.json());
   }, []);
 
+  const loadInvites = useCallback(async () => {
+    const res = await fetch('/api/clustox/invites');
+    if (res.ok) setInvites(await res.json());
+  }, []);
+
   useEffect(() => {
     loadUsers();
     loadWorkspaces();
-  }, [loadUsers, loadWorkspaces]);
+    loadInvites();
+  }, [loadUsers, loadWorkspaces, loadInvites]);
 
   const counts = useMemo(
     () => ({
@@ -191,6 +204,46 @@ function UsersPage() {
       { variant: 'success', autoHideDuration: 5000 }
     );
     return created;
+  };
+
+  const createInvite = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setFormError('');
+
+    const res = await fetch('/api/clustox/invites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: form.name,
+        email: form.email,
+        role: form.role,
+        org_id: form.org_id === NEW_WORKSPACE ? null : form.org_id
+      })
+    });
+
+    setBusy(false);
+
+    if (!res.ok) {
+      setFormError(
+        res.status === 409
+          ? 'A user with that email already exists.'
+          : 'Could not create the invitation.'
+      );
+      return;
+    }
+
+    const { invite_url } = await res.json();
+    // Shown once and only once: only the hash is stored, so a lost link
+    // cannot be recovered and has to be reissued.
+    setInviteLink(invite_url);
+    await loadInvites();
+  };
+
+  const revokeInvite = async (id: string) => {
+    await fetch(`/api/clustox/invites/${id}`, { method: 'DELETE' });
+    await loadInvites();
+    enqueueSnackbar('Invitation revoked', { variant: 'success' });
   };
 
   const changeRole = async (user: UserRow, role: ClustoxRole) => {
@@ -256,18 +309,54 @@ function UsersPage() {
             </FlexBox>
           </FlexBox>
 
-          <Button
-            variant="contained"
-            startIcon={<PersonAddAlt1TwoTone />}
-            onClick={() => {
-              setForm(emptyForm);
-              setFormError('');
-              setDialogOpen(true);
-            }}
-          >
-            Add user
-          </Button>
+          <FlexBox gap={1.5}>
+            <Button
+              variant="outlined"
+              startIcon={<LinkTwoTone />}
+              onClick={() => {
+                setForm(emptyForm);
+                setFormError('');
+                setInviteLink('');
+                setInviteOpen(true);
+              }}
+            >
+              Invite
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<PersonAddAlt1TwoTone />}
+              onClick={() => {
+                setForm(emptyForm);
+                setFormError('');
+                setDialogOpen(true);
+              }}
+            >
+              Add user
+            </Button>
+          </FlexBox>
         </FlexBox>
+
+        {invites.length > 0 && (
+          <FlexBox col gap={1}>
+            <Line small secondary>
+              Pending invitations
+            </Line>
+            <FlexBox gap={1} flexWrap="wrap">
+              {invites.map((i) => (
+                <Chip
+                  key={i.id}
+                  size="small"
+                  variant="outlined"
+                  color={i.expired ? 'error' : 'default'}
+                  onDelete={() => revokeInvite(i.id)}
+                  label={`${i.email} · ${i.role === 'ADMIN' ? 'admin' : 'superadmin'}${
+                    i.expired ? ' · expired' : ''
+                  }`}
+                />
+              ))}
+            </FlexBox>
+          </FlexBox>
+        )}
 
         {/* Roster */}
         <TableContainer
@@ -401,6 +490,131 @@ function UsersPage() {
           </MenuItem>
         )}
       </Menu>
+
+      {/* Invite */}
+      <Dialog
+        open={inviteOpen}
+        onClose={() => !busy && setInviteOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        {inviteLink ? (
+          <>
+            <DialogTitle>Invitation ready</DialogTitle>
+            <Divider />
+            <DialogContent>
+              <FlexBox col gap={2} pt={1}>
+                <Alert severity="warning">
+                  Copy this link now. Only its fingerprint is stored, so it
+                  cannot be shown again — if it is lost you will have to issue a
+                  new one.
+                </Alert>
+                <TextField
+                  fullWidth
+                  multiline
+                  value={inviteLink}
+                  InputProps={{ readOnly: true }}
+                  onFocus={(e) => e.target.select()}
+                />
+                <Line small secondary>
+                  Single use, expires in 7 days. Send it over Slack — the
+                  recipient chooses their own password.
+                </Line>
+              </FlexBox>
+            </DialogContent>
+            <Divider />
+            <DialogActions sx={{ px: 3, py: 2 }}>
+              <Button
+                onClick={() => {
+                  navigator.clipboard?.writeText(inviteLink);
+                  enqueueSnackbar('Link copied', { variant: 'success' });
+                }}
+              >
+                Copy link
+              </Button>
+              <Button variant="contained" onClick={() => setInviteOpen(false)}>
+                Done
+              </Button>
+            </DialogActions>
+          </>
+        ) : (
+          <form onSubmit={createInvite}>
+            <DialogTitle>Invite someone</DialogTitle>
+            <Divider />
+            <DialogContent>
+              <FlexBox col gap={2.5} pt={1}>
+                <ToggleButtonGroup
+                  exclusive
+                  fullWidth
+                  size="small"
+                  value={form.role}
+                  onChange={(_e, v) => v && setForm({ ...form, role: v })}
+                >
+                  <ToggleButton value="ADMIN">Admin</ToggleButton>
+                  <ToggleButton value="SUPERADMIN">Superadmin</ToggleButton>
+                </ToggleButtonGroup>
+
+                <Alert severity="info">
+                  They set their own password, so you never have to choose or
+                  send one.
+                </Alert>
+
+                <TextField
+                  label="Full name"
+                  value={form.name}
+                  required
+                  autoFocus
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  required
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+
+                {form.role === 'ADMIN' && (
+                  <TextField
+                    select
+                    label="Workspace"
+                    value={form.org_id}
+                    onChange={(e) =>
+                      setForm({ ...form, org_id: e.target.value })
+                    }
+                  >
+                    <MenuItem value={NEW_WORKSPACE}>
+                      Create a new workspace
+                    </MenuItem>
+                    {workspaces
+                      .filter((w) => !w.owned)
+                      .map((w) => (
+                        <MenuItem key={w.id} value={w.id}>
+                          Adopt “{w.name}” (currently unowned)
+                        </MenuItem>
+                      ))}
+                  </TextField>
+                )}
+
+                {formError && (
+                  <Alert severity="error" role="alert">
+                    {formError}
+                  </Alert>
+                )}
+              </FlexBox>
+            </DialogContent>
+            <Divider />
+            <DialogActions sx={{ px: 3, py: 2 }}>
+              <Button onClick={() => setInviteOpen(false)} disabled={busy}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="contained" disabled={busy}>
+                {busy ? 'Creating…' : 'Create link'}
+              </Button>
+            </DialogActions>
+          </form>
+        )}
+      </Dialog>
 
       {/* Add user */}
       <Dialog

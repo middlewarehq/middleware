@@ -42,7 +42,9 @@ enum TableT {
   // CLUSTOX: auth tables — appended so upstream additions above never conflict.
   // See docs/superpowers/specs/2026-08-05-auth-rbac-design.md
   ClustoxUserAuth,
-  ClustoxUserTeamAccess
+  ClustoxUserTeamAccess,
+  ClustoxSyncRun,
+  ClustoxInvite
 }
 
 export const Table = objectEnum(TableT);
@@ -572,6 +574,34 @@ export const Columns = {
       user_id,
       team_id,
       created_at
+    }
+    return Columns;
+  }),
+  [Table.ClustoxSyncRun]: objectEnumFromFn(() => {
+    enum Columns {
+      id,
+      org_id,
+      started_at,
+      finished_at,
+      status,
+      detail
+    }
+    return Columns;
+  }),
+  [Table.ClustoxInvite]: objectEnumFromFn(() => {
+    enum Columns {
+      id,
+      token_hash,
+      email,
+      name,
+      role,
+      org_id,
+      created_by,
+      created_at,
+      expires_at,
+      accepted_at,
+      accepted_by,
+      revoked_at
     }
     return Columns;
   })
