@@ -235,7 +235,11 @@ export const createWorkspace = async (name: string): Promise<string> => {
   await db(Table.Organization).insert({
     id,
     name,
-    domain: name,
+    // Organization.domain carries a UNIQUE constraint. Deriving it from the
+    // workspace name meant two admins with the same name could not both exist
+    // -- "Ali Khan" joining twice would fail on a duplicate key. The id is
+    // unique by construction and nothing reads this column.
+    domain: id,
     created_at: new Date()
   });
 
