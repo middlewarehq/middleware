@@ -42,6 +42,7 @@ import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
+import { useAutofillSync } from '@/hooks/useAutofillSync';
 import { PageLayout } from '@/types/resources';
 
 type ClustoxRole = 'SUPERADMIN' | 'ADMIN';
@@ -117,12 +118,25 @@ function UsersPage() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
+  const [inviteEmailed, setInviteEmailed] = useState(false);
   const [invites, setInvites] = useState<
-    { id: string; email: string; name: string; role: ClustoxRole; orgName: string | null; expired: boolean }[]
+    { id: string; email: string; name: string; role: ClustoxRole; orgName: string | null; expired: boolean; emailed: boolean }[]
   >([]);
 
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [menuUser, setMenuUser] = useState<UserRow | null>(null);
+
+  // Shared between the Invite and Add user dialogs -- only one is ever
+  // open at a time, and they both edit the same `form` fields.
+  const nameRef = useAutofillSync(form.name, (name) =>
+    setForm((f) => ({ ...f, name }))
+  );
+  const emailRef = useAutofillSync(form.email, (email) =>
+    setForm((f) => ({ ...f, email }))
+  );
+  const passwordRef = useAutofillSync(form.password, (password) =>
+    setForm((f) => ({ ...f, password }))
+  );
 
   const loadUsers = useCallback(async () => {
     const res = await fetch('/api/clustox/users');
@@ -233,10 +247,11 @@ function UsersPage() {
       return;
     }
 
-    const { invite_url } = await res.json();
+    const { invite_url, emailed } = await res.json();
     // Shown once and only once: only the hash is stored, so a lost link
     // cannot be recovered and has to be reissued.
     setInviteLink(invite_url);
+    setInviteEmailed(emailed);
     await loadInvites();
   };
 
@@ -317,6 +332,7 @@ function UsersPage() {
                 setForm(emptyForm);
                 setFormError('');
                 setInviteLink('');
+                setInviteEmailed(false);
                 setInviteOpen(true);
               }}
             >
@@ -349,7 +365,9 @@ function UsersPage() {
                   variant="outlined"
                   color={i.expired ? 'error' : 'default'}
                   onDelete={() => revokeInvite(i.id)}
-                  label={`${i.email} · ${i.role === 'ADMIN' ? 'admin' : 'superadmin'}${
+                  label={`${i.email} · ${
+                    i.role === 'ADMIN' ? 'admin' : 'superadmin'
+                  }${i.emailed ? '' : ' · not emailed'}${
                     i.expired ? ' · expired' : ''
                   }`}
                 />
@@ -504,11 +522,19 @@ function UsersPage() {
             <Divider />
             <DialogContent>
               <FlexBox col gap={2} pt={1}>
-                <Alert severity="warning">
-                  Copy this link now. Only its fingerprint is stored, so it
-                  cannot be shown again — if it is lost you will have to issue a
-                  new one.
-                </Alert>
+                {inviteEmailed ? (
+                  <Alert severity="success">
+                    Emailed. The link is also below in case it needs to be
+                    forwarded — only its fingerprint is stored, so it cannot be
+                    shown again if lost.
+                  </Alert>
+                ) : (
+                  <Alert severity="warning">
+                    Couldn't email this one (SMTP isn't set up, or the send
+                    failed) — copy the link below and send it yourself. Only its
+                    fingerprint is stored, so it cannot be shown again if lost.
+                  </Alert>
+                )}
                 <TextField
                   fullWidth
                   multiline
@@ -517,8 +543,8 @@ function UsersPage() {
                   onFocus={(e) => e.target.select()}
                 />
                 <Line small secondary>
-                  Single use, expires in 7 days. Send it over Slack — the
-                  recipient chooses their own password.
+                  Single use, expires in 7 days. The recipient chooses their own
+                  password.
                 </Line>
               </FlexBox>
             </DialogContent>
@@ -565,6 +591,8 @@ function UsersPage() {
                   required
                   autoFocus
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  inputRef={nameRef}
+                  InputLabelProps={{ shrink: true }}
                 />
                 <TextField
                   label="Email"
@@ -572,6 +600,8 @@ function UsersPage() {
                   value={form.email}
                   required
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  inputRef={emailRef}
+                  InputLabelProps={{ shrink: true }}
                 />
 
                 {form.role === 'ADMIN' && (
@@ -665,6 +695,8 @@ function UsersPage() {
                     ? 'Also names their workspace'
                     : undefined
                 }
+                inputRef={nameRef}
+                InputLabelProps={{ shrink: true }}
               />
 
               {form.role === 'ADMIN' && (
@@ -699,6 +731,8 @@ function UsersPage() {
                 value={form.email}
                 required
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
+                inputRef={emailRef}
+                InputLabelProps={{ shrink: true }}
               />
               <TextField
                 label="Temporary password"
@@ -707,6 +741,8 @@ function UsersPage() {
                 required
                 error={passwordTooShort}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
+                inputRef={passwordRef}
+                InputLabelProps={{ shrink: true }}
                 helperText={
                   passwordTooShort
                     ? `${MIN_PASSWORD - form.password.length} more characters needed`

@@ -601,7 +601,8 @@ export const Columns = {
       expires_at,
       accepted_at,
       accepted_by,
-      revoked_at
+      revoked_at,
+      emailed_at
     }
     return Columns;
   })
