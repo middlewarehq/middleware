@@ -19,6 +19,9 @@ from mhq.api.ai.dora_ai import app as ai_api
 
 from mhq.store.initialise_db import initialize_database
 
+# CLUSTOX: restrict this API to the BFF. See mhq/clustox_auth/internal_token.py
+from mhq.clustox_auth.internal_token import register_internal_token_guard
+
 ANALYTICS_SERVER_PORT = getenv("ANALYTICS_SERVER_PORT")
 
 app = Flask(__name__)
@@ -32,6 +35,9 @@ app.register_blueprint(integrations_api)
 app.register_blueprint(teams_api)
 app.register_blueprint(bookmark_api)
 app.register_blueprint(ai_api)
+
+# CLUSTOX: reject any request that did not come from the BFF.
+register_internal_token_guard(app)
 
 configure_db_with_app(app)
 initialize_database(app)

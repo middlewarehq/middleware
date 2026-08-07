@@ -10,6 +10,8 @@ import {
 import { format, isValid } from 'date-fns';
 import { useContext, useMemo } from 'react';
 
+// CLUSTOX: signed-in user + sign out
+import { ClustoxUserFooter } from '@/components/ClustoxUserFooter';
 import { FlexBox } from '@/components/FlexBox';
 import Scrollbar from '@/components/Scrollbar';
 import { Line } from '@/components/Text';
@@ -85,6 +87,9 @@ const SidebarContent = () => {
         />
         <SidebarMenu />
       </Scrollbar>
+      <Divider sx={{ background: theme.colors.alpha.trueWhite[10] }} />
+      {/* CLUSTOX: signed-in identity and the only sign-out affordance. */}
+      <ClustoxUserFooter />
       <Divider sx={{ background: theme.colors.alpha.trueWhite[10] }} />
       <FlexBox justifyCenter alignCenter height="60px">
         <Line small medium secondary>

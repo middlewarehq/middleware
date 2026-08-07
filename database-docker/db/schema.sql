@@ -72,6 +72,31 @@ CREATE TABLE public."BookmarkPullRequestRevertPRMapping" (
 
 
 --
+-- Name: ClustoxUserAuth; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ClustoxUserAuth" (
+    user_id uuid NOT NULL,
+    password_hash text NOT NULL,
+    role character varying NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT "ClustoxUserAuth_role_check" CHECK (((role)::text = ANY ((ARRAY['SUPERADMIN'::character varying, 'ADMIN'::character varying])::text[])))
+);
+
+
+--
+-- Name: ClustoxUserTeamAccess; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public."ClustoxUserTeamAccess" (
+    user_id uuid NOT NULL,
+    team_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: Incident; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -483,6 +508,22 @@ CREATE TABLE public.schema_migrations (
 
 
 --
+-- Name: ClustoxUserAuth ClustoxUserAuth_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ClustoxUserAuth"
+    ADD CONSTRAINT "ClustoxUserAuth_pkey" PRIMARY KEY (user_id);
+
+
+--
+-- Name: ClustoxUserTeamAccess ClustoxUserTeamAccess_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ClustoxUserTeamAccess"
+    ADD CONSTRAINT "ClustoxUserTeamAccess_pkey" PRIMARY KEY (user_id, team_id);
+
+
+--
 -- Name: IncidentOrgIncidentServiceMap IncidentOrgIncidentServiceMap_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -805,6 +846,13 @@ CREATE INDEX "Team_org_idx" ON public."Team" USING btree (org_id);
 
 
 --
+-- Name: idx_clustox_user_team_access_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_clustox_user_team_access_user ON public."ClustoxUserTeamAccess" USING btree (user_id);
+
+
+--
 -- Name: incident_resolved_date_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1108,6 +1156,30 @@ ALTER TABLE ONLY public."Bookmark"
 
 
 --
+-- Name: ClustoxUserAuth ClustoxUserAuth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ClustoxUserAuth"
+    ADD CONSTRAINT "ClustoxUserAuth_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public."Users"(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ClustoxUserTeamAccess ClustoxUserTeamAccess_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ClustoxUserTeamAccess"
+    ADD CONSTRAINT "ClustoxUserTeamAccess_team_id_fkey" FOREIGN KEY (team_id) REFERENCES public."Team"(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ClustoxUserTeamAccess ClustoxUserTeamAccess_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public."ClustoxUserTeamAccess"
+    ADD CONSTRAINT "ClustoxUserTeamAccess_user_id_fkey" FOREIGN KEY (user_id) REFERENCES public."Users"(id) ON DELETE CASCADE;
+
+
+--
 -- Name: IncidentOrgIncidentServiceMap IncidentOrgIncidentServiceMap_incident_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1360,4 +1432,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20240404142732'),
     ('20240430142502'),
     ('20240503060203'),
-    ('20240503073715');
+    ('20240503073715'),
+    ('20260805150000');

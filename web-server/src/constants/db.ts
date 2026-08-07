@@ -38,7 +38,11 @@ enum TableT {
   TicketState,
   UserActivity,
   UIPreferences,
-  URLShortenerData
+  URLShortenerData,
+  // CLUSTOX: auth tables — appended so upstream additions above never conflict.
+  // See docs/superpowers/specs/2026-08-05-auth-rbac-design.md
+  ClustoxUserAuth,
+  ClustoxUserTeamAccess
 }
 
 export const Table = objectEnum(TableT);
@@ -549,6 +553,25 @@ export const Columns = {
       relation,
       related_user_id,
       org_id
+    }
+    return Columns;
+  }),
+  // CLUSTOX: auth tables
+  [Table.ClustoxUserAuth]: objectEnumFromFn(() => {
+    enum Columns {
+      user_id,
+      password_hash,
+      role,
+      created_at,
+      updated_at
+    }
+    return Columns;
+  }),
+  [Table.ClustoxUserTeamAccess]: objectEnumFromFn(() => {
+    enum Columns {
+      user_id,
+      team_id,
+      created_at
     }
     return Columns;
   })

@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+// CLUSTOX: real Clustox role for sidebar visibility
+import { useClustoxUser } from '@/hooks/useClustoxUser';
 import {
   ItemTags,
   SideBarItems
@@ -17,6 +19,8 @@ const checkTag = (tag: string | number[] | number, check: string | number) => {
 
 export const useFilteredSidebarItems = () => {
   const { integrationList } = useAuth();
+  // CLUSTOX: the real role, since useAuth().role is hardcoded upstream.
+  const { isSuperadmin } = useClustoxUser();
 
   const flagFilteredMenuItems = useMemo(() => {
     return menuItems();
@@ -25,6 +29,9 @@ export const useFilteredSidebarItems = () => {
   const sidebarItems = useMemo(() => {
     const filterCheck = (item: MenuItem): boolean => {
       if (checkTag(item.tag, ItemTags.HideItem)) return false;
+      // CLUSTOX: hide user management from non-superadmins. Presentation only
+      // -- the API returns 403 regardless of what the sidebar shows.
+      if (item.name === SideBarItems.MANAGE_USERS && !isSuperadmin) return false;
       if (
         !integrationList.length &&
         item.name !== SideBarItems.MANAGE_INTEGRATIONS
@@ -46,7 +53,7 @@ export const useFilteredSidebarItems = () => {
         items: itemsFilter(section.items)
       }))
       .filter((section) => section.items?.length);
-  }, [flagFilteredMenuItems, integrationList]);
+  }, [flagFilteredMenuItems, integrationList, isSuperadmin]);
 
   return sidebarItems;
 };
