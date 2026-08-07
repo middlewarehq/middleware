@@ -55,7 +55,9 @@ function MyApp(props: MyAppProps) {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
   const getLayout = Component.getLayout ?? ((page) => page);
   // CLUSTOX: see the AuthConsumer gate below.
-  const isLoginRoute = useRouter().pathname === '/login';
+  const pathname = useRouter().pathname;
+  const isLoginRoute =
+    pathname === '/login' || pathname === '/accept-invite';
   useScrollTop();
   const overrides = useFlagOverrides();
   useResizeEventTracking();

@@ -43,15 +43,14 @@ describe('bootstrapSuperadmin', () => {
     process.env.SUPERADMIN_EMAIL = 'boss@clustox.com';
     process.env.SUPERADMIN_PASSWORD = 'strong-password';
 
-    await bootstrapSuperadmin('org-1');
+    await bootstrapSuperadmin();
 
     expect(createUser).toHaveBeenCalledWith(
       expect.objectContaining({
         email: 'boss@clustox.com',
         password: 'strong-password',
         role: 'SUPERADMIN',
-        teamIds: [],
-        orgId: 'org-1'
+        teamIds: []
       })
     );
   });

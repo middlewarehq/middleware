@@ -4,9 +4,7 @@ import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { assertRole } from '@/auth/guard';
 import { createUser, getAuthUserByEmail, listUsers } from '@/auth/queries';
 import { ClustoxRole } from '@/auth/types';
-import { Table } from '@/constants/db';
 import { Errors, ResponseError } from '@/constants/error';
-import { db } from '@/utils/db';
 
 const postSchema = yup.object().shape({
   name: yup.string().required(),
@@ -14,7 +12,10 @@ const postSchema = yup.object().shape({
   // Enforced here so the UI cannot create a weak account.
   password: yup.string().min(12).required(),
   role: yup.string().oneOf(['SUPERADMIN', 'ADMIN']).required(),
-  team_ids: yup.array().of(yup.string().uuid()).required()
+  team_ids: yup.array().of(yup.string().uuid()).required(),
+  // Optional: place the admin in an existing workspace instead of
+  // provisioning a new one. Used to adopt the pre-multitenancy workspace.
+  org_id: yup.string().uuid().nullable().optional()
 });
 
 const endpoint = new Endpoint(nullSchema);
@@ -32,20 +33,19 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     throw new ResponseError(Errors.INSUFFICIENT_PARAMS, 409);
   }
 
-  const org = await db(Table.Organization).select('id').first();
-  if (!org) throw new ResponseError(Errors.USER_NOT_FOUND, 500);
-
-  const userId = await createUser({
+  // An ADMIN gets a freshly provisioned workspace unless one is named; a
+  // SUPERADMIN gets none. createUser decides based on the role.
+  const { userId, orgId } = await createUser({
     name: req.payload.name,
     email: req.payload.email,
     password: req.payload.password,
     // yup's .oneOf() widens to string; the schema has already validated it.
     role: req.payload.role as ClustoxRole,
     teamIds: req.payload.team_ids,
-    orgId: org.id
+    orgId: req.payload.org_id ?? null
   });
 
-  res.send({ user_id: userId });
+  res.send({ user_id: userId, org_id: orgId });
 });
 
 export default endpoint.serve();

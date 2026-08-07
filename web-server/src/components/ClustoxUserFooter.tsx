@@ -2,6 +2,7 @@ import { LogoutTwoTone } from '@mui/icons-material';
 import { Button, Chip, Tooltip, Typography } from '@mui/material';
 import { signOut } from 'next-auth/react';
 
+import { ClustoxWorkspaceSwitcher } from '@/components/ClustoxWorkspaceSwitcher';
 import { FlexBox } from '@/components/FlexBox';
 import { useClustoxUser } from '@/hooks/useClustoxUser';
 
@@ -15,8 +16,10 @@ export const ClustoxUserFooter = () => {
   if (loading || !user) return null;
 
   return (
-    <FlexBox col gap={1} px={2} py={1.5}>
-      <FlexBox alignCenter gap={1} justifyBetween>
+    <FlexBox col gap={1} py={1.5}>
+      {/* Only renders for a SuperAdmin, who owns no workspace of their own. */}
+      <ClustoxWorkspaceSwitcher />
+      <FlexBox alignCenter gap={1} justifyBetween px={2}>
         <Tooltip title={user.email}>
           <Typography
             variant="body2"
@@ -32,15 +35,18 @@ export const ClustoxUserFooter = () => {
           color={user.role === 'SUPERADMIN' ? 'primary' : 'default'}
         />
       </FlexBox>
-      <Button
-        size="small"
-        variant="outlined"
-        color="secondary"
-        startIcon={<LogoutTwoTone fontSize="small" />}
-        onClick={() => signOut({ callbackUrl: '/login' })}
-      >
-        Sign out
-      </Button>
+      <FlexBox px={2}>
+        <Button
+          fullWidth
+          size="small"
+          variant="outlined"
+          color="secondary"
+          startIcon={<LogoutTwoTone fontSize="small" />}
+          onClick={() => signOut({ callbackUrl: '/login' })}
+        >
+          Sign out
+        </Button>
+      </FlexBox>
     </FlexBox>
   );
 };

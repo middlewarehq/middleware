@@ -17,15 +17,20 @@ possible but slow. Writing three lines at merge time is not.
 
 ## Current divergence baseline
 
-Recorded 2026-08-06, after the authentication and RBAC work. **The first sync compares against
-these numbers.**
+Recorded 2026-08-06, after authentication, RBAC and multitenancy. **The first sync compares
+against these numbers.**
 
 | | |
 |---|---|
 | Fork point | `844eb42` |
-| Modified upstream files | **19** |
-| New files | **26** |
-| `CLUSTOX:` sentinel lines | **33** |
+| Modified upstream files | **30** |
+| New files | **48** |
+| `CLUSTOX:` sentinel lines | **66** |
+
+> Superseded an earlier baseline of 19 / 26 / 33, recorded after the auth work and left stale
+> through the multitenancy branch. A stale baseline is worse than none: it would have raised a
+> false alarm on the very first sync, and the natural response to a tripwire that cries wolf is
+> to stop trusting it. Re-record this after every feature branch, not just before a sync.
 
 Regenerate any time:
 
@@ -41,19 +46,26 @@ grep -rn "CLUSTOX" --include='*.py' --include='*.ts' --include='*.tsx' \
   | grep -v node_modules | grep -v '^./docs/' | wc -l
 ```
 
-**The 12 high-risk files** — the ones carrying real edits to upstream behaviour, to re-check on
-every merge:
+**The 26 files carrying real edits** (the other four are generated or append-only: `schema.sql`,
+`yarn.lock`, `package.json`, `env.example`). Regenerate with:
 
-`backend/analytics_server/app.py` · `sync_app.py` · `web-server/middleware.ts` ·
-`pages/_app.tsx` · `src/api-helpers/global.ts` · `src/api-helpers/axios.ts` ·
-`src/constants/db.ts` · `src/contexts/ThirdPartyAuthContext.tsx` ·
-`pages/api/integrations/index.ts` · `pages/api/resources/orgs/[org_id]/teams/index.ts` ·
-`.../teams/v2.ts` · `pages/api/resources/share.ts`
+```bash
+git diff --name-only 844eb42..HEAD | while read -r f; do
+  git cat-file -e 844eb42:"$f" 2>/dev/null && echo "$f"
+done | grep -vE "schema.sql|yarn.lock|package.json|env.example"
+```
 
-`src/api-helpers/global.ts` is the most important of these: it is the single enforcement point for
-authentication *and* per-team scoping across all BFF routes. A bad merge there silently disables
-access control everywhere. The regression test at
-`src/api-helpers/__tests__/endpoint-team-scope.test.ts` exists to catch exactly that.
+**Check these three first on any conflict:**
+
+| File | Why it matters |
+|---|---|
+| `web-server/src/api-helpers/global.ts` | The single enforcement point for authentication **and** workspace/team scoping across every BFF route. A bad merge here silently disables access control everywhere. |
+| `backend/analytics_server/mhq/api/sync.py` | Rewritten to sync every workspace. Upstream's version syncs one org; taking theirs would silently stop syncing all but one workspace, with no error. |
+| `web-server/pages/api/resources/orgs/[org_id]/teams/v2.ts` | Names the team `id`, not `team_id`, so central scoping does not cover it. It carries explicit `assertTeamAccess` calls; losing them reopens a cross-workspace hole. |
+
+Regression tests guarding these: `endpoint-team-scope.test.ts`, `workspace-guard.test.ts`,
+`tests/clustox_auth/test_sync_run.py`, and `e2e/multitenancy.spec.ts` — the last covers the
+cross-workspace delete that the central guard cannot see.
 
 ---
 

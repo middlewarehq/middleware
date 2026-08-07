@@ -8,6 +8,10 @@ import { defaultFlags } from '@/constants/feature';
 // container and UI status probes keep working.
 const PUBLIC_PATHS = [
   '/login',
+  // CLUSTOX: an invitee has no account yet, so this must be reachable
+  // signed out -- both the page and the endpoint behind it.
+  '/accept-invite',
+  '/api/clustox/accept-invite',
   '/api/auth',
   '/api/status',
   '/api/db_status',

@@ -7,6 +7,8 @@ export type ClustoxUser = {
   email: string;
   name: string;
   role: ClustoxRole;
+  /** Workspace to act on. Server-resolved, never persisted client-side. */
+  org_id: string | null;
 };
 
 /**
@@ -38,6 +40,7 @@ export const useClustoxUser = () => {
   return {
     user,
     loading,
-    isSuperadmin: user?.role === 'SUPERADMIN'
+    isSuperadmin: user?.role === 'SUPERADMIN',
+    orgId: user?.org_id ?? null
   };
 };

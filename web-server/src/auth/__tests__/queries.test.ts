@@ -19,13 +19,14 @@ const chain = (result: any) => {
 describe('getAuthUserByEmail', () => {
   beforeEach(() => mockDb.mockReset());
 
-  it('maps a row to AuthUserRow', async () => {
+  it('maps a row to AuthUserRow, including the workspace', async () => {
     mockDb.mockReturnValue(
       chain({
         user_id: 'u1',
         primary_email: 'a@clustox.com',
         name: 'Ayesha',
         role: 'ADMIN',
+        org_id: 'workspace-1',
         password_hash: 'hashed'
       })
     );
@@ -35,7 +36,26 @@ describe('getAuthUserByEmail', () => {
       email: 'a@clustox.com',
       name: 'Ayesha',
       role: 'ADMIN',
+      orgId: 'workspace-1',
       passwordHash: 'hashed'
+    });
+  });
+
+  it('maps a superadmin with no workspace to a null orgId', async () => {
+    mockDb.mockReturnValue(
+      chain({
+        user_id: 'su1',
+        primary_email: 'boss@clustox.com',
+        name: 'Boss',
+        role: 'SUPERADMIN',
+        org_id: null,
+        password_hash: 'hashed'
+      })
+    );
+
+    await expect(getAuthUserByEmail('boss@clustox.com')).resolves.toMatchObject({
+      role: 'SUPERADMIN',
+      orgId: null
     });
   });
 

@@ -1,16 +1,6 @@
-import { Table } from '@/constants/db';
-import { db } from '@/utils/db';
-
 import { countSuperadmins, createUser } from './queries';
 
-const getDefaultOrgId = async (): Promise<string | null> => {
-  const row = await db(Table.Organization).select('id').first();
-  return row?.id ?? null;
-};
-
-export const bootstrapSuperadmin = async (
-  orgIdOverride?: string
-): Promise<void> => {
+export const bootstrapSuperadmin = async (): Promise<void> => {
   const existing = await countSuperadmins();
   if (existing > 0) return;
 
@@ -27,21 +17,14 @@ export const bootstrapSuperadmin = async (
     return;
   }
 
-  const orgId = orgIdOverride ?? (await getDefaultOrgId());
-  if (!orgId) {
-    console.error(
-      '[CLUSTOX] No organization found; cannot bootstrap superadmin.'
-    );
-    return;
-  }
-
+  // No workspace: a superadmin sits above every workspace rather than owning
+  // one, so createUser leaves org_id null for this role.
   await createUser({
     name: 'Superadmin',
     email,
     password,
     role: 'SUPERADMIN',
-    teamIds: [],
-    orgId
+    teamIds: []
   });
 
   console.info(`[CLUSTOX] Bootstrapped superadmin ${email}`);
