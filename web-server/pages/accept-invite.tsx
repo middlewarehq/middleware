@@ -95,7 +95,11 @@ export default function AcceptInvite() {
       router.replace('/login');
       return;
     }
-    router.replace('/');
+    // CLUSTOX FIX: same AuthProvider one-shot-session issue as login.tsx --
+    // router.replace() is a client-side nav that leaves AuthProvider on its
+    // pre-sign-in (unauthenticated, no org) snapshot. Full navigation forces
+    // a remount so it fetches session fresh, now with the auth cookie set.
+    window.location.assign('/');
   };
 
   if (loading)

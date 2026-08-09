@@ -1,13 +1,11 @@
 import { Box, Button, Card, TextField, Typography } from '@mui/material';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
 import { signIn } from 'next-auth/react';
 import { FormEvent, ReactElement, useState } from 'react';
 
 import { useAutofillSync } from '@/hooks/useAutofillSync';
 
 export default function Login() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -42,7 +40,17 @@ export default function Login() {
       setError('Invalid email or password');
       return;
     }
-    router.replace('/');
+    // CLUSTOX FIX: a router.replace() here is a client-side navigation --
+    // AuthProvider fetches /api/auth/session exactly once, on mount, and
+    // nothing re-triggers that fetch afterwards. Since AuthProvider is
+    // mounted at the app root (above /login itself), it had already fetched
+    // and cached the pre-login (unauthenticated, no org) session before this
+    // sign-in happened, and a client-side route change doesn't remount it --
+    // every org-scoped read (integrations included) kept serving that stale
+    // snapshot until a manual hard refresh forced a remount. A full
+    // navigation here remounts AuthProvider so it fetches session fresh,
+    // this time with the auth cookie actually present.
+    window.location.assign('/');
   };
 
   return (
