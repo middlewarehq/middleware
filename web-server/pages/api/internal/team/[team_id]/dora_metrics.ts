@@ -16,6 +16,7 @@ import {
   fetchMeanTimeToRestoreStats,
   fetchDeploymentFrequencyStats
 } from '@/utils/cockpitMetricUtils';
+import { stripContributorFilters } from '@/utils/contributorFilters';
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
 import {
   getBranchesAndRepoFilter,
@@ -79,6 +80,11 @@ endpoint.handle.GET(getSchema, async (req, res) => {
   ]);
 
   const {
+    prFilter: prFilterWithoutAuthors,
+    workflowFilter: workflowFilterWithoutEventActors
+  } = stripContributorFilters(prFilters, workflowFilters);
+
+  const {
     currTrendsTimeObject,
     prevTrendsTimeObject,
     prevCycleStartDay,
@@ -121,7 +127,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      prFilter: prFilters
+      prFilter: prFilterWithoutAuthors
     }),
     fetchChangeFailureRateStats({
       teamId,
@@ -135,8 +141,8 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      prFilter: prFilters,
-      workflowFilter: workflowFilters
+      prFilter: prFilterWithoutAuthors,
+      workflowFilter: workflowFilterWithoutEventActors
     }),
     fetchDeploymentFrequencyStats({
       teamId,
