@@ -125,12 +125,13 @@ class FakeWorkflowRepoService:
         ]
 
     def get_repo_workflow_by_repo_id_and_provider_workflow_id(
-        self, repo_id, provider, provider_workflow_id
+        self, repo_id, provider_workflow_id
     ) -> Optional[FakeWorkflow]:
+        # Matches repoworkflow_orgrepoid_provider_workflow_id, which is not
+        # scoped by provider -- so neither is this.
         for w in self.workflows:
             if (
                 str(w.org_repo_id) == str(repo_id)
-                and w.provider == provider
                 and w.provider_workflow_id == provider_workflow_id
             ):
                 return w
@@ -260,7 +261,7 @@ def test_unmapping_restores_the_github_actions_workflow(routes):
     client, service = routes
     _map(client, "deploy-api")
     jenkins_workflow = service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
-        REPO_ID, RepoWorkflowProviders.JENKINS, "deploy-api"
+        REPO_ID, "deploy-api"
     )
 
     response = _unmap(client, jenkins_workflow.id)
@@ -310,7 +311,7 @@ def test_unmapping_leaves_deselected_github_actions_workflows_inactive(routes):
 
     assert _map(client, "deploy-api").json["deactivated_workflows"] == 1
     jenkins_workflow = service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
-        REPO_ID, RepoWorkflowProviders.JENKINS, "deploy-api"
+        REPO_ID, "deploy-api"
     )
     # Only the row the mapping actually switched off is recorded as displaced.
     assert jenkins_workflow.meta["jenkins_displaced_workflow_ids"] == [str(selected.id)]
@@ -360,7 +361,7 @@ def test_remapping_the_same_job_after_unmapping_does_not_hit_the_unique_index(ro
     client, service = routes
     assert _map(client, "deploy-api").status_code == 200
     jenkins_workflow = service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
-        REPO_ID, RepoWorkflowProviders.JENKINS, "deploy-api"
+        REPO_ID, "deploy-api"
     )
     assert _unmap(client, jenkins_workflow.id).status_code == 200
 
@@ -371,6 +372,36 @@ def test_remapping_the_same_job_after_unmapping_does_not_hit_the_unique_index(ro
     assert response.status_code == 200
     assert len(service.workflows) == 1
     assert service.workflows[0].is_active is True
+
+
+@pytest.mark.parametrize(
+    "routes",
+    [
+        [
+            FakeWorkflow(
+                RepoWorkflowProviders.GITHUB_ACTIONS, provider_workflow_id="deploy-api"
+            )
+        ]
+    ],
+    indirect=True,
+)
+def test_mapping_a_job_whose_name_collides_with_another_provider_is_409(routes):
+    # repoworkflow_orgrepoid_provider_workflow_id is on
+    # (org_repo_id, provider_workflow_id), with no provider in it. A lookup
+    # narrower than the index reported "no row here" and the insert then hit
+    # the constraint -> IntegrityError -> 500. Reusing the row instead would be
+    # worse: a GitHub Actions workflow, its runs and its history silently
+    # become a Jenkins mapping.
+    client, service = routes
+    github_workflow = service.workflows[0]
+
+    response = _map(client, "deploy-api")
+
+    assert response.status_code == 409
+    assert "deploy-api" in response.json["error"]
+    assert len(service.workflows) == 1
+    assert github_workflow.provider == RepoWorkflowProviders.GITHUB_ACTIONS
+    assert github_workflow.is_active is True
 
 
 @pytest.mark.parametrize(

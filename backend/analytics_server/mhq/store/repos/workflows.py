@@ -137,18 +137,25 @@ class WorkflowRepoService:
     # inserting a second one violates
     # repoworkflow_orgrepoid_provider_workflow_id. meta is loaded rather than
     # deferred: mapping rewrites the displaced-workflow record it holds.
+    #
+    # Not filtered by provider, because the index is not either. Filtering by
+    # provider made the lookup narrower than the constraint it exists to avoid
+    # tripping: a Jenkins job whose full name matched an existing non-Jenkins
+    # provider_workflow_id came back as "no row here", and the insert then hit
+    # the index and 500'd. Unlikely -- GitHub Actions ids are numeric -- but
+    # the caller can only handle a collision it is told about. Callers that
+    # care about the provider must check RepoWorkflow.provider themselves;
+    # returning a foreign row is the point.
     @rollback_on_exc
     def get_repo_workflow_by_repo_id_and_provider_workflow_id(
         self,
         repo_id: str,
-        provider: RepoWorkflowProviders,
         provider_workflow_id: str,
     ) -> Optional[RepoWorkflow]:
         return (
             self._db.session.query(RepoWorkflow)
             .filter(
                 RepoWorkflow.org_repo_id == repo_id,
-                RepoWorkflow.provider == provider,
                 RepoWorkflow.provider_workflow_id == provider_workflow_id,
             )
             .one_or_none()

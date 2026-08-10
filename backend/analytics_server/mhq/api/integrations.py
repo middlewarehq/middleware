@@ -339,11 +339,35 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
     # A row may already exist for this (org_repo_id, provider_workflow_id) --
     # left behind inactive by a previous unmapping. The pair is uniquely
     # indexed, so inserting a second one raises IntegrityError; reuse it.
-    existing_jenkins_workflow = (
+    existing_workflow = (
         workflow_repo_service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
-            org_repo_id, RepoWorkflowProviders.JENKINS, job_full_name
+            org_repo_id, job_full_name
         )
     )
+    # The lookup matches the index, which is not scoped by provider, so the row
+    # occupying this pair may belong to another provider -- a Jenkins job whose
+    # full name happens to equal a GitHub Actions workflow id. Reusing it would
+    # silently convert someone else's deployment workflow into a Jenkins
+    # mapping, taking its runs and its history with it. Refuse instead: an
+    # admin who sees this can rename the job, and one who does not would never
+    # have found the takeover.
+    if (
+        existing_workflow is not None
+        and existing_workflow.provider != RepoWorkflowProviders.JENKINS
+    ):
+        return (
+            jsonify(
+                {
+                    "error": (
+                        f"Repo {org_repo_id} already has a "
+                        f"{existing_workflow.provider.value} workflow with the "
+                        f"id {job_full_name}"
+                    )
+                }
+            ),
+            409,
+        )
+    existing_jenkins_workflow = existing_workflow
 
     active_workflows = workflow_repo_service.get_repo_workflow_by_repo_ids(
         [org_repo_id], RepoWorkflowType.DEPLOYMENT
