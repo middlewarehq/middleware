@@ -39,6 +39,7 @@ import { BaseRepo, DeploymentSources } from '@/types/resources';
 import { trimWithEllipsis } from '@/utils/stringFormatting';
 
 import { BatchImportModal } from './BatchImportModal';
+import { TeamJiraProjects } from './TeamJiraProjects';
 
 import AnimatedInputWrapper from '../AnimatedInputWrapper/AnimatedInputWrapper';
 import { FlexBox } from '../FlexBox';
@@ -65,7 +66,7 @@ export const CreateEditTeams: FC<CRUDProps> = ({
   );
 };
 
-const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
+const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard, teamId }) => {
   const { isPageLoading, editingTeam, isEditing } = useTeamCRUD();
   return (
     <>
@@ -88,6 +89,12 @@ const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
               <TeamName />
               <TeamRepos />
               <ActionTray onDiscard={onDiscard} onSave={onSave} />
+              {/* CLUSTOX: Jira project selection saves independently of the
+                  team's name/repos above (its own Save button) and needs
+                  an existing team_id, so it only appears once a team has
+                  already been created. See
+                  docs/JIRA_INTEGRATION_PROPOSAL.md. */}
+              {isEditing && <TeamJiraProjects teamId={teamId} />}
             </>
           )}
         </FlexBox>
