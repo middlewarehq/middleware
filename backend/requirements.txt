@@ -15,7 +15,7 @@ Flask-SQLAlchemy==3.1.1
 # CLUSTOX: mhq/exapi/jenkins.py imports requests directly. It resolved only
 # transitively through PyGithub before, so an upstream bump that dropped it
 # would have broken the Jenkins client.
-requests==2.34.2
+requests==2.32.5
 # CLUSTOX: mhq/exapi/jenkins.py enforces its wall-clock ceiling with
 # response.raw.read1(), which urllib3 only grew in 2.0. requests itself accepts
 # anything <3, so without this pin an environment could resolve urllib3 1.26
