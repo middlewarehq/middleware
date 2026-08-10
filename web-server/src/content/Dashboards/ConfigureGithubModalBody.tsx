@@ -163,6 +163,11 @@ export const ConfigureGithubModalBody: FC<{
             }}
             label="Github Personal Access Token"
             type="password"
+            // Browsers apply their password-autofill heuristics to any
+            // type="password" field, token or not. Keeping the label
+            // permanently shrunk removes any race between that and React
+            // learning the value.
+            InputLabelProps={{ shrink: true }}
           />
           <Line error tiny mt={1}>
             {showError.value}

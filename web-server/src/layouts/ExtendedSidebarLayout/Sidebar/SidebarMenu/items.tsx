@@ -89,7 +89,9 @@ const menuItems = (): MenuItems[] => [
       {
         name: SideBarItems.MANAGE_USERS,
         icon: ManageAccounts,
-        link: ROUTES.USERS.PATH
+        link: ROUTES.USERS.PATH,
+        badge: 'NEW',
+        badgeTooltip: 'Invite teammates and manage roles'
       }
     ]
   }

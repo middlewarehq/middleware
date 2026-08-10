@@ -12,9 +12,9 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { signIn } from 'next-auth/react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { signIn } from 'next-auth/react';
 import { FormEvent, ReactElement, useCallback, useEffect, useState } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -95,7 +95,11 @@ export default function AcceptInvite() {
       router.replace('/login');
       return;
     }
-    router.replace('/');
+    // CLUSTOX FIX: same AuthProvider one-shot-session issue as login.tsx --
+    // router.replace() is a client-side nav that leaves AuthProvider on its
+    // pre-sign-in (unauthenticated, no org) snapshot. Full navigation forces
+    // a remount so it fetches session fresh, now with the auth cookie set.
+    window.location.assign('/');
   };
 
   if (loading)
@@ -180,6 +184,11 @@ export default function AcceptInvite() {
                   ? `${MIN_PASSWORD - password.length} more characters needed`
                   : `At least ${MIN_PASSWORD} characters`
               }
+              // A "create account" password field is exactly the kind
+              // browsers offer to generate/autofill a password into.
+              // Keeping the label permanently shrunk removes any race
+              // between that and React learning the value.
+              InputLabelProps={{ shrink: true }}
             />
             <TextField
               fullWidth
@@ -191,6 +200,7 @@ export default function AcceptInvite() {
               error={mismatch}
               onChange={(e) => setConfirm(e.target.value)}
               helperText={mismatch ? 'Passwords do not match' : ' '}
+              InputLabelProps={{ shrink: true }}
             />
 
             {error && (
