@@ -1,18 +1,38 @@
 from typing import List
 from flask import Blueprint, jsonify
 from github import GithubException
-from voluptuous import Schema, Optional, Coerce, Range, All
+from voluptuous import Schema, Optional, Required, Coerce, Range, All
 
 from mhq.exapi.models.gitlab import GitlabRepo
-from mhq.api.request_utils import queryschema
+from mhq.api.request_utils import dataschema, queryschema, uuid_validator
 from mhq.service.external_integrations_service import get_external_integrations_service
 from mhq.service.query_validator import get_query_validator
 from mhq.store.models import UserIdentityProvider
+from mhq.store.models.code import RepoWorkflowProviders, RepoWorkflowType
+from mhq.store.models.code.workflows.workflows import RepoWorkflow
+from mhq.store.repos.code import CodeRepoService
+from mhq.store.repos.workflows import WorkflowRepoService
 from mhq.utils.github import github_org_data_multi_thread_worker
 
 app = Blueprint("integrations", __name__)
 
 STATUS_TOO_MANY_REQUESTS = 429
+
+
+# CLUSTOX: one deployment source per repo. A repo tracked through both GitHub
+# Actions and Jenkins would count every deploy twice, doubling Deployment
+# Frequency with nothing visibly wrong. Deactivation is reversible: the rows
+# survive, so removing the Jenkins mapping can restore them.
+def deactivate_github_actions_workflows_for_repo(workflows: List) -> int:
+    deactivated = 0
+    for workflow in workflows:
+        if (
+            workflow.provider == RepoWorkflowProviders.GITHUB_ACTIONS
+            and workflow.is_active
+        ):
+            workflow.is_active = False
+            deactivated += 1
+    return deactivated
 
 
 @app.route("/orgs/<org_id>/integrations/github/orgs", methods={"GET"})
@@ -208,6 +228,98 @@ def get_gitlab_projects(org_id: str, group_id: str, page_size: int, page: int):
         }
         for project in projects
     ]
+
+
+@app.route("/orgs/<org_id>/integrations/jenkins/jobs", methods={"GET"})
+def get_jenkins_jobs(org_id: str):
+    # CLUSTOX: Jenkins-specific imports stay local to the handler, mirroring
+    # the lazy-import precedent for provider modules in
+    # mhq/service/workflows/sync/etl_jenkins_handler.py.
+    from mhq.exapi.jenkins import JenkinsApiService
+    from mhq.store.repos.core import CoreRepoService
+    from mhq.utils.jenkins import get_jenkins_config
+
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    api_token = CoreRepoService().get_access_token(org_id, UserIdentityProvider.JENKINS)
+    base_url, username = get_jenkins_config(org_id)
+    if not (api_token and base_url and username):
+        return {"error": "Jenkins is not configured for this workspace"}, 400
+
+    return JenkinsApiService(base_url, username, api_token).get_jobs()
+
+
+@app.route("/orgs/<org_id>/integrations/jenkins/mappings", methods={"POST"})
+@dataschema(
+    Schema(
+        {
+            Required("org_repo_id"): All(str, Coerce(uuid_validator)),
+            Required("job_full_name"): str,
+        }
+    ),
+)
+def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    org_repo = CodeRepoService().get_repo_by_id(org_repo_id)
+    if org_repo is None or str(org_repo.org_id) != str(org_id):
+        return jsonify({"error": f"Repo {org_repo_id} not found in org {org_id}"}), 404
+
+    workflow_repo_service = WorkflowRepoService()
+    existing_workflows = workflow_repo_service.get_repo_workflow_by_repo_ids(
+        [org_repo_id], RepoWorkflowType.DEPLOYMENT
+    )
+    # Mutates existing_workflows in place, flipping GitHub Actions rows to
+    # inactive; the actual write happens together with the new Jenkins row
+    # below, in one commit.
+    deactivated_count = deactivate_github_actions_workflows_for_repo(existing_workflows)
+
+    jenkins_workflow = RepoWorkflow(
+        org_repo_id=org_repo_id,
+        type=RepoWorkflowType.DEPLOYMENT,
+        provider=RepoWorkflowProviders.JENKINS,
+        provider_workflow_id=job_full_name,
+        is_active=True,
+        name=job_full_name,
+    )
+    workflow_repo_service.create_jenkins_repo_workflow(
+        jenkins_workflow, existing_workflows
+    )
+
+    return {"ok": True, "deactivated_github_workflows": deactivated_count}
+
+
+@app.route("/orgs/<org_id>/integrations/jenkins/mappings", methods={"DELETE"})
+@dataschema(
+    Schema(
+        {
+            Required("repo_workflow_id"): All(str, Coerce(uuid_validator)),
+        }
+    ),
+)
+def delete_jenkins_mapping(org_id: str, repo_workflow_id: str):
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    workflow_repo_service = WorkflowRepoService()
+    repo_workflow = workflow_repo_service.get_repo_workflow_by_id(repo_workflow_id)
+    if repo_workflow is None:
+        return jsonify({"error": f"Workflow {repo_workflow_id} not found"}), 404
+
+    org_repo = CodeRepoService().get_repo_by_id(repo_workflow.org_repo_id)
+    if org_repo is None or str(org_repo.org_id) != str(org_id):
+        return (
+            jsonify(
+                {"error": f"Workflow {repo_workflow_id} not found in org {org_id}"}
+            ),
+            404,
+        )
+
+    workflow_repo_service.deactivate_repo_workflow(repo_workflow)
+
+    return {"ok": True}
 
 
 @app.route("/orgs/<org_id>/integrations/gitlab/user/repos", methods={"GET"})

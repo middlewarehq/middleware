@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from sqlalchemy.orm import defer
 from sqlalchemy import and_
@@ -117,6 +117,39 @@ class WorkflowRepoService:
             )
             .all()
         )
+
+    @rollback_on_exc
+    def get_repo_workflow_by_id(self, repo_workflow_id: str) -> Optional[RepoWorkflow]:
+        return (
+            self._db.session.query(RepoWorkflow)
+            .options(defer(RepoWorkflow.meta))
+            .filter(RepoWorkflow.id == repo_workflow_id)
+            .one_or_none()
+        )
+
+    # CLUSTOX: creates the Jenkins mapping and deactivates the repo's active
+    # GitHub Actions workflows in a single commit. If either half failed on
+    # its own, a repo could be left with two active deployment sources,
+    # silently double-counting deployments -- see
+    # deactivate_github_actions_workflows_for_repo in mhq/api/integrations.py.
+    @rollback_on_exc
+    def create_jenkins_repo_workflow(
+        self,
+        jenkins_workflow: RepoWorkflow,
+        workflows_to_deactivate: List[RepoWorkflow],
+    ) -> RepoWorkflow:
+        self._db.session.add(jenkins_workflow)
+        for workflow in workflows_to_deactivate:
+            self._db.session.merge(workflow)
+        self._db.session.commit()
+        return jenkins_workflow
+
+    @rollback_on_exc
+    def deactivate_repo_workflow(self, repo_workflow: RepoWorkflow) -> RepoWorkflow:
+        repo_workflow.is_active = False
+        self._db.session.merge(repo_workflow)
+        self._db.session.commit()
+        return repo_workflow
 
     @rollback_on_exc
     def get_repo_workflows_by_repo_id(self, repo_id: str) -> List[RepoWorkflow]:
