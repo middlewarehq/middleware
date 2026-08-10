@@ -2,6 +2,7 @@ from typing import List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from flask import Flask
 from sqlalchemy.exc import IntegrityError
 
@@ -314,3 +315,40 @@ def test_mapping_a_repo_from_another_workspace_is_404(routes):
 
     assert response.status_code == 404
     assert service.workflows == []
+
+
+def _jobs_route(get_jobs_result):
+    """Drives GET .../jenkins/jobs against a fully configured workspace."""
+    client = _build_client()
+    api_service = MagicMock()
+    if isinstance(get_jobs_result, Exception):
+        api_service.get_jobs.side_effect = get_jobs_result
+    else:
+        api_service.get_jobs.return_value = get_jobs_result
+
+    with patch.object(
+        integrations_module, "get_query_validator", return_value=MagicMock()
+    ), patch("mhq.store.repos.core.CoreRepoService") as core_repo_service_cls, patch(
+        "mhq.utils.jenkins.get_jenkins_config",
+        return_value=("https://jenkins.example.com", "user"),
+    ), patch(
+        "mhq.exapi.jenkins.JenkinsApiService", return_value=api_service
+    ):
+        core_repo_service_cls.return_value.get_access_token.return_value = "token"
+        return client.get(f"/orgs/{ORG_ID}/integrations/jenkins/jobs")
+
+
+def test_an_unreachable_jenkins_is_a_502_not_a_500():
+    response = _jobs_route(requests.ConnectionError("connection refused"))
+
+    # A 500 reached the setup form as "check your credentials", which sends the
+    # admin looking in entirely the wrong place.
+    assert response.status_code == 502
+    assert "Could not reach Jenkins" in response.json["error"]
+
+
+def test_a_reachable_jenkins_returns_its_jobs():
+    response = _jobs_route([{"name": "deploy-api", "full_name": "deploy-api"}])
+
+    assert response.status_code == 200
+    assert response.json[0]["full_name"] == "deploy-api"

@@ -258,6 +258,8 @@ def get_jenkins_jobs(org_id: str):
     # CLUSTOX: Jenkins-specific imports stay local to the handler, mirroring
     # the lazy-import precedent for provider modules in
     # mhq/service/workflows/sync/etl_jenkins_handler.py.
+    import requests
+
     from mhq.exapi.jenkins import JenkinsApiService
     from mhq.store.repos.core import CoreRepoService
     from mhq.utils.jenkins import get_jenkins_config
@@ -270,7 +272,16 @@ def get_jenkins_jobs(org_id: str):
     if not (api_token and base_url and username):
         return {"error": "Jenkins is not configured for this workspace"}, 400
 
-    return JenkinsApiService(base_url, username, api_token).get_jobs()
+    try:
+        return JenkinsApiService(base_url, username, api_token).get_jobs()
+    except requests.RequestException as e:
+        # An unreachable, slow or erroring Jenkins is not a bug in this server.
+        # Surfaced as a 500 it reached the setup form as "check your
+        # credentials", which sends the admin looking in the wrong place.
+        return (
+            jsonify({"error": f"Could not reach Jenkins: {str(e)}"}),
+            502,
+        )
 
 
 # CLUSTOX: maps a Jenkins job to a repo as its deployment source. Enforces the

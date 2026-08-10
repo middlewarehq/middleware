@@ -12,3 +12,7 @@ psycopg2==2.9.3
 python-dotenv==1.0.1
 gunicorn==22.0.0
 Flask-SQLAlchemy==3.1.1
+# CLUSTOX: mhq/exapi/jenkins.py imports requests directly. It resolved only
+# transitively through PyGithub before, so an upstream bump that dropped it
+# would have broken the Jenkins client.
+requests==2.34.2
