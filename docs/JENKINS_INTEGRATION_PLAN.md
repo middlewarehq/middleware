@@ -1152,7 +1152,7 @@ test.describe('jenkins workspace isolation', () => {
     const res = await alphaCtx.post('/api/clustox/jenkins/mappings', {
       data: {
         org_id: beta.orgId,
-        org_repo_id: '00000000-0000-0000-0000-000000000001',
+        org_repo_id: '00000000-0000-4000-8000-000000000001',
         job_full_name: 'deploy-api'
       },
       failOnStatusCode: false
