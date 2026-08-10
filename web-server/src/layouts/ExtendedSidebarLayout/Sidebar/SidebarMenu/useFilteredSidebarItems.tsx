@@ -18,7 +18,7 @@ const checkTag = (tag: string | number[] | number, check: string | number) => {
 };
 
 export const useFilteredSidebarItems = () => {
-  const { integrationList } = useAuth();
+  const { hasCodeProviderLinked } = useAuth();
   // CLUSTOX: the real role, since useAuth().role is hardcoded upstream.
   const { isSuperadmin } = useClustoxUser();
 
@@ -36,9 +36,13 @@ export const useFilteredSidebarItems = () => {
       // viewing may legitimately have no integration yet. Collapsing their nav
       // to just "Manage Integrations" would strand them, since user management
       // and the workspace switcher are how they administer the instance.
+      // Gated on a code provider specifically, not "any integration" --
+      // linking only Jira shouldn't unlock Teams/DORA/Settings, which have
+      // nothing to show without repo data behind them. See
+      // docs/JIRA_INTEGRATION_PROPOSAL.md.
       if (
         !isSuperadmin &&
-        !integrationList.length &&
+        !hasCodeProviderLinked &&
         item.name !== SideBarItems.MANAGE_INTEGRATIONS
       )
         return false;
@@ -58,7 +62,7 @@ export const useFilteredSidebarItems = () => {
         items: itemsFilter(section.items)
       }))
       .filter((section) => section.items?.length);
-  }, [flagFilteredMenuItems, integrationList, isSuperadmin]);
+  }, [flagFilteredMenuItems, hasCodeProviderLinked, isSuperadmin]);
 
   return sidebarItems;
 };

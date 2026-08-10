@@ -14,7 +14,6 @@ import { ClustoxJenkinsSetup } from '@/components/ClustoxJenkinsSetup';
 // END CLUSTOX
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
-import { CODE_PROVIDERS } from '@/constants/codeProviders';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/GithubIntegrationCard';
@@ -66,15 +65,13 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
-  const { orgId, integrations, integrationList } = useAuth();
-  const codeProviderList = useMemo(
-    () =>
-      integrationList.filter((item) =>
-        (CODE_PROVIDERS as readonly string[]).includes(item)
-      ),
-    [integrationList]
-  );
-  const hasCodeProviderLinked = codeProviderList.length > 0;
+  const {
+    orgId,
+    integrations,
+    integrationList,
+    codeProviderIntegrationList,
+    hasCodeProviderLinked
+  } = useAuth();
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
   const loadedTeams = useBoolState(false);
@@ -84,7 +81,7 @@ const Content = () => {
     hasCodeProviderLinked && !teamCount && loadedTeams.value;
 
   const lastSyncMap = useMemo(() => {
-    return codeProviderList
+    return codeProviderIntegrationList
       .map((item) => {
         const linkedAt =
           integrations[item as 'github' | 'gitlab' | 'bitbucket'].linked_at;
@@ -98,7 +95,7 @@ const Content = () => {
         return diff;
       })
       .filter(Boolean);
-  }, [codeProviderList, integrations]);
+  }, [codeProviderIntegrationList, integrations]);
 
   const showForceSyncBtn = useMemo(() => {
     if (!hasCodeProviderLinked) return false;

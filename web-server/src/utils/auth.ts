@@ -102,16 +102,30 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
 
 // Jira functions
 
-// Strip any protocol/trailing slash so "mycompany.atlassian.net" and
-// "https://mycompany.atlassian.net/" are stored the same way. Mirrors the
+// Reduces any of "mycompany.atlassian.net", "https://mycompany.atlassian.net/",
+// or a full URL copied from the browser while looking at a board
+// ("https://mycompany.atlassian.net/jira/software/projects/ABC/boards/1")
+// to just the hostname. A regex that only stripped a leading protocol and
+// trailing slash left any path/query intact, which broke the very next
+// request (GET https://{that}/rest/api/3/myself 404s) for anyone who
+// pasted a full address rather than typing the bare domain. Mirrors the
 // normalizer in pages/api/integrations/jira/validate.ts -- kept as two
 // small copies rather than a shared import across the client/server
 // boundary, same as this file's other provider helpers.
-export const normalizeJiraSiteUrl = (input: string) =>
-  input
-    .trim()
-    .replace(/^https?:\/\//i, '')
-    .replace(/\/+$/, '');
+export const normalizeJiraSiteUrl = (input: string) => {
+  const trimmed = input.trim();
+  try {
+    const withProtocol = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    return new URL(withProtocol).hostname;
+  } catch {
+    // Not parseable as a URL at all (e.g. empty string) -- fall through to
+    // the caller's own "fill in all three fields"/validity check rather
+    // than throw here.
+    return trimmed;
+  }
+};
 
 export type JiraValidityResult = {
   valid: boolean;

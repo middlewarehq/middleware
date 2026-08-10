@@ -76,6 +76,34 @@ describe('POST /api/integrations/jira/validate', () => {
     );
   });
 
+  // CLUSTOX: regression test for a real bug found in code review. A regex
+  // that only stripped a leading protocol and trailing slash left any
+  // path/query intact -- pasting a full address copied from the browser
+  // while looking at a board would have built a request against the
+  // wrong path (a plausible thing for a user to paste, since /rest/api/3
+  // is not something they'd normally see or think to strip themselves).
+  it('normalizes a full URL with a path down to just the hostname before requesting', async () => {
+    (axios.get as jest.Mock).mockResolvedValue({
+      data: { accountId: 'acc-1' }
+    });
+    const res = mockRes();
+
+    await validateHandler(
+      mockReq({
+        site_url:
+          'https://mycompany.atlassian.net/jira/software/projects/ABC/boards/1',
+        email: 'a@b.com',
+        api_token: 'tok'
+      }),
+      res
+    );
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'https://mycompany.atlassian.net/rest/api/3/myself',
+      expect.anything()
+    );
+  });
+
   it('falls back to the submitted email as display name when Jira omits displayName', async () => {
     (axios.get as jest.Mock).mockResolvedValue({
       data: { accountId: 'acc-1' }

@@ -4,6 +4,7 @@ import { FC, createContext, useEffect, useCallback } from 'react';
 import { useMemo } from 'react';
 
 import { CODE_PROVIDER_INTEGRATIONS_MAP } from '@/constants/api';
+import { CODE_PROVIDERS } from '@/constants/codeProviders';
 import { Integration } from '@/constants/integrations';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { useRefMounted } from '@/hooks/useRefMounted';
@@ -28,6 +29,13 @@ export interface AuthContextValue extends AuthState {
   integrations: Org['integrations'];
   onboardingState: OnboardingStep[];
   integrationList: Integration[];
+  // CLUSTOX: integrationList filtered to code-hosting providers only --
+  // see docs/JIRA_INTEGRATION_PROPOSAL.md. This is the ONE place that
+  // filter is applied; every consumer that means "is a code provider
+  // linked" (not "is anything linked") should read hasCodeProviderLinked
+  // or this list, never integrationList.length directly.
+  codeProviderIntegrationList: Integration[];
+  hasCodeProviderLinked: boolean;
   integrationSet: Set<IntegrationGroup>;
   activeCodeProvider: CodeProviderIntegrations | null;
 }
@@ -40,6 +48,8 @@ export const AuthContext = createContext<AuthContextValue>({
   integrations: {},
   onboardingState: [],
   integrationList: [],
+  codeProviderIntegrationList: [],
+  hasCodeProviderLinked: false,
   integrationSet: new Set(),
   activeCodeProvider: null
 });
@@ -160,15 +170,30 @@ export const AuthProvider: FC = (props) => {
     [integrations, isCodeProvider]
   );
 
+  // CLUSTOX: the one place integrationList is filtered down to code
+  // providers -- every other file that used to read integrationList.length
+  // (or iterate integrationList directly) to mean "is a code provider
+  // linked" now reads this instead, so a future non-code integration
+  // doesn't silently break the same way Jira did. See
+  // docs/JIRA_INTEGRATION_PROPOSAL.md and pages/integrations.tsx's history.
+  const codeProviderIntegrationList = useMemo(
+    () =>
+      integrationList.filter((item) =>
+        (CODE_PROVIDERS as readonly string[]).includes(item)
+      ),
+    [integrationList]
+  );
+  const hasCodeProviderLinked = codeProviderIntegrationList.length > 0;
+
   const activeCodeProvider = useMemo(
     () =>
-      Object.keys(state?.org?.integrations || {}).find(
+      (Object.keys(state?.org?.integrations || {}).find(
         (integrationName) =>
-          isCodeProvider(integrationName) &&
+          (CODE_PROVIDERS as readonly string[]).includes(integrationName) &&
           state?.org?.integrations[integrationName as keyof IntegrationsMap]
             ?.integrated
-      ) as CodeProviderIntegrations | null,
-    [isCodeProvider, state?.org?.integrations]
+      ) ?? null) as CodeProviderIntegrations | null,
+    [state?.org?.integrations]
   );
 
   return (
@@ -179,6 +204,8 @@ export const AuthProvider: FC = (props) => {
         orgId: state.org?.id,
         role,
         integrations,
+        codeProviderIntegrationList,
+        hasCodeProviderLinked,
         integrationSet,
         integrationList,
         activeCodeProvider,

@@ -34,6 +34,26 @@ describe('normalizeJiraSiteUrl', () => {
       'mycompany.atlassian.net'
     );
   });
+
+  // CLUSTOX: regression test for a real bug found in code review. A regex
+  // that only stripped a leading protocol and trailing slash left any
+  // path/query intact -- pasting a full address copied from the browser
+  // while looking at a board (a very plausible thing for a user to do,
+  // more plausible than typing the bare domain) broke the very next
+  // request even with valid credentials.
+  it('reduces a full URL with a path to just the hostname', () => {
+    expect(
+      normalizeJiraSiteUrl(
+        'https://mycompany.atlassian.net/jira/software/projects/ABC/boards/1'
+      )
+    ).toBe('mycompany.atlassian.net');
+  });
+
+  it('drops a port and query string too', () => {
+    expect(
+      normalizeJiraSiteUrl('https://mycompany.atlassian.net:443/?foo=bar')
+    ).toBe('mycompany.atlassian.net');
+  });
 });
 
 describe('checkJiraValidity', () => {
