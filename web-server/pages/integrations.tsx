@@ -7,8 +7,11 @@ import { useEffect, useMemo } from 'react';
 import { Authenticated } from 'src/components/Authenticated';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
+// CLUSTOX: the two halves of the Jenkins integration card below -- the
+// credentials form and the job-to-repo mapping table.
 import { ClustoxJenkinsMapping } from '@/components/ClustoxJenkinsMapping';
 import { ClustoxJenkinsSetup } from '@/components/ClustoxJenkinsSetup';
+// END CLUSTOX
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { ROUTES } from '@/constants/routes';
@@ -166,7 +169,9 @@ const Content = () => {
       <FlexBox gap={2}>
         <GithubIntegrationCard />
         <GitlabIntegrationCard />
+        {/* CLUSTOX: Jenkins as a third deployment-detection provider. */}
         <JenkinsIntegrationCard />
+        {/* END CLUSTOX */}
       </FlexBox>
       {showCreationCTA && (
         <FlexBox mt={'56px'} col fit alignStart>

@@ -100,7 +100,13 @@ export const ClustoxJenkinsSetup: FC<{ onLinked?: () => void }> = ({
       });
       onLinked?.();
     } catch (e) {
-      console.error('Failed to connect Jenkins', e);
+      // CLUSTOX: message only. If the failing call is the credential save, the
+      // axios error object carries config.data with the raw API token in it,
+      // which would then sit in the browser console.
+      console.error(
+        'Failed to connect Jenkins',
+        e instanceof Error ? e.message : String(e)
+      );
       // CLUSTOX: don't leave a workspace "linked" to credentials that don't
       // work -- the mapping screen would otherwise open to a broken job list.
       await unlinkProvider(orgId, Integration.JENKINS).catch(() => {});

@@ -1,3 +1,6 @@
+// CLUSTOX: BFF route for the Jenkins job-to-repo mapping. POST creates the
+// mapping, DELETE removes it; both proxy straight through to the analytics
+// server, which owns the one-active-deployment-source-per-repo invariant.
 import * as yup from 'yup';
 
 import { Endpoint } from '@/api-helpers/global';
