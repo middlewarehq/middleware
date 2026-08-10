@@ -8,12 +8,16 @@ from mhq.store.models.code.workflows.filter import WorkflowFilter
 
 class ParseWorkflowFilterProcessor:
     def apply(self, workflow_filter: Dict = None) -> WorkflowFilter:
+        workflow_filter = workflow_filter or {}
         head_branches: List[str] = self._parse_head_branches(workflow_filter)
         repo_filters: Dict[str, Dict] = self._parse_repo_filters(workflow_filter)
+        # CLUSTOX: contributor filter for deployment frequency.
+        event_actors: List[str] = workflow_filter.get("event_actors")
 
         return WorkflowFilter(
             head_branches=head_branches,
             repo_filters=repo_filters,
+            event_actors=event_actors,
         )
 
     def _parse_head_branches(self, workflow_filter: Dict) -> List[str]:
