@@ -141,3 +141,28 @@ class JenkinsETLHandler(WorkflowProviderETLHandler):
             if causes:
                 return causes[0].get("userId") or causes[0].get("userName")
         return None
+
+
+def get_jenkins_etl_handler(org_id: str) -> JenkinsETLHandler:
+    from mhq.exapi.jenkins import JenkinsApiService
+    from mhq.store.models import UserIdentityProvider
+    from mhq.store.repos.core import CoreRepoService
+    from mhq.store.repos.workflows import WorkflowRepoService
+    from mhq.utils.jenkins import get_jenkins_config
+
+    api_token = CoreRepoService().get_access_token(org_id, UserIdentityProvider.JENKINS)
+    base_url, username = get_jenkins_config(org_id)
+
+    if not (api_token and base_url and username):
+        LOG.error(
+            f"Jenkins is not fully configured for org {org_id}: "
+            f"base_url={'set' if base_url else 'missing'}, "
+            f"username={'set' if username else 'missing'}, "
+            f"token={'set' if api_token else 'missing'}"
+        )
+
+    return JenkinsETLHandler(
+        org_id,
+        JenkinsApiService(base_url or "", username or "", api_token or ""),
+        WorkflowRepoService(),
+    )
