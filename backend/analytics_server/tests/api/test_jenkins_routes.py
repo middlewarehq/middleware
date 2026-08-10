@@ -271,6 +271,23 @@ def test_remapping_the_same_job_after_unmapping_does_not_hit_the_unique_index(ro
 
 @pytest.mark.parametrize(
     "routes",
+    [[FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, provider_workflow_id="9931")]],
+    indirect=True,
+)
+def test_deleting_a_github_actions_workflow_through_the_jenkins_route_is_404(routes):
+    client, service = routes
+    github_workflow = service.workflows[0]
+
+    response = _unmap(client, github_workflow.id)
+
+    assert response.status_code == 404
+    # Untouched: the Jenkins route must not be a way to disable a GitHub
+    # Actions deployment workflow.
+    assert github_workflow.is_active is True
+
+
+@pytest.mark.parametrize(
+    "routes",
     [[FakeWorkflow(RepoWorkflowProviders.JENKINS, org_repo_id="nope")]],
     indirect=True,
 )

@@ -343,7 +343,7 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
 
 
 # CLUSTOX: removes a Jenkins mapping and restores the GitHub Actions workflows
-# the mapping displaced.
+# the mapping displaced. Jenkins rows only -- see the provider check below.
 @app.route("/orgs/<org_id>/integrations/jenkins/mappings", methods={"DELETE"})
 @dataschema(
     Schema(
@@ -367,6 +367,15 @@ def delete_jenkins_mapping(org_id: str, repo_workflow_id: str):
             jsonify(
                 {"error": f"Workflow {repo_workflow_id} not found in org {org_id}"}
             ),
+            404,
+        )
+
+    # get_repo_workflow_by_id is not filtered by provider, so without this an
+    # admin could pass any workflow id from their own workspace and silently
+    # disable a GitHub Actions deployment workflow through the Jenkins route.
+    if repo_workflow.provider != RepoWorkflowProviders.JENKINS:
+        return (
+            jsonify({"error": f"Jenkins mapping {repo_workflow_id} not found"}),
             404,
         )
 
