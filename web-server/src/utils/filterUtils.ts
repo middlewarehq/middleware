@@ -84,11 +84,17 @@ export const getWorkFlowFilters = (params: {
 export const getWorkFlowFiltersAsPayloadForSingleTeam = async (params: {
   orgId: ID;
   teamId: ID;
+  // CLUSTOX: contributor filter. Deployments have no author, so the nearest
+  // equivalent is the actor who triggered the run.
+  eventActors?: string[];
 }) => {
-  const { orgId, teamId } = params;
+  const { orgId, teamId, eventActors } = params;
   const teamProdBranchesMap =
     await getAllTeamsReposProdBranchesForOrgAsMap(orgId);
-  return Object.fromEntries(
+  const filter = Object.fromEntries(
     Object.entries(workFlowFiltersFromTeamProdBranches(teamProdBranchesMap))
   )[teamId];
+
+  if (!eventActors?.length) return filter;
+  return { ...filter, event_actors: eventActors };
 };

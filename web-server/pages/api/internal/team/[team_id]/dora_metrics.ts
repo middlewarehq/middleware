@@ -33,7 +33,8 @@ const getSchema = yup.object().shape({
   branches: yup.string().optional().nullable(),
   from_date: yup.date().required(),
   to_date: yup.date().required(),
-  branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required()
+  branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required(),
+  authors: yup.array().of(yup.string()).optional()
 });
 
 const endpoint = new Endpoint(pathSchema);
@@ -49,7 +50,8 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     from_date: rawFromDate,
     to_date: rawToDate,
     branches,
-    branch_mode
+    branch_mode,
+    authors
   } = req.payload;
 
   const from_date = isoDateString(startOfDay(new Date(rawFromDate)));
@@ -64,14 +66,15 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     getUnsyncedRepos(teamId)
   ]);
   const [prFilters, workflowFilters] = await Promise.all([
-    updatePrFilterParams(teamId, {}, branchAndRepoFilters).then(
+    updatePrFilterParams(teamId, {}, { ...branchAndRepoFilters, authors }).then(
       ({ pr_filter }) => ({
         pr_filter
       })
     ),
     getWorkFlowFiltersAsPayloadForSingleTeam({
       orgId: org_id,
-      teamId: teamId
+      teamId: teamId,
+      eventActors: authors
     })
   ]);
 

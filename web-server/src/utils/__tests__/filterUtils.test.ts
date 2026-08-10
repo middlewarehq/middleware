@@ -270,4 +270,27 @@ describe('getWorkFlowFiltersAsPayloadForSingleTeam', () => {
 
     expect(result).toEqual({ workflow_filter: { head_branches: ['^main$'] } });
   });
+
+  it('should add event_actors to the payload when eventActors is passed', async () => {
+    const result = await getWorkFlowFiltersAsPayloadForSingleTeam({
+      orgId: 'f48d7cce-25d4-41d1-903e-e09166677d92',
+      teamId: '18d934c1-2699-41bd-af64-c0394ba32fdf',
+      eventActors: ['octocat']
+    });
+
+    expect(result).toEqual({
+      workflow_filter: { head_branches: ['^main$'] },
+      event_actors: ['octocat']
+    });
+  });
+
+  it('should leave the payload unchanged when eventActors is omitted', async () => {
+    const result = await getWorkFlowFiltersAsPayloadForSingleTeam({
+      orgId: 'f48d7cce-25d4-41d1-903e-e09166677d92',
+      teamId: '18d934c1-2699-41bd-af64-c0394ba32fdf',
+      eventActors: []
+    });
+
+    expect(result).toEqual({ workflow_filter: { head_branches: ['^main$'] } });
+  });
 });
