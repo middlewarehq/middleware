@@ -18,7 +18,7 @@ changing any of them changes the design rather than the implementation.
 |---|---|---|
 | Network direction | **Pull** — Middleware calls Jenkins | Jenkins is reachable from the Middleware host, so this fits the existing ETL contract with no new ingest endpoint. |
 | Job → repo mapping | **Manual, in the UI** | Explicit and accurate. Mapping a job is also what designates it a deployment, so PR builds, lint jobs, and nightlies are ignored by default — and staging jobs are excluded simply by not mapping them. |
-| Repo with two CI systems | **One deployment source per repo** | Mapping Jenkins deactivates that repo's GitHub Actions deployment workflows, after a UI warning. Prevents silent double-counting of Deployment Frequency. |
+| Repo with two CI systems | **One deployment source per repo** | Mapping Jenkins deactivates that repo's active deployment workflows, after a UI warning. Prevents silent double-counting of Deployment Frequency. Unmapping restores exactly the rows that mapping switched off — recorded on the Jenkins row's `meta` — and nothing else: a repo can hold deployment workflows the admin deselected in the team config, which Jenkins never touched. |
 | Delivery shape | **Single slice** | One PR rather than a thin proof first. Simpler to plan; the Jenkins API risk (below) surfaces later than it otherwise would. |
 
 ## The risk worth naming up front

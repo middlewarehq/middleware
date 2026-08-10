@@ -120,12 +120,13 @@ class WorkflowRepoService:
 
     # CLUSTOX: used by the Jenkins mapping routes to resolve a workflow by id.
     # Deliberately not filtered by provider -- callers that are provider
-    # specific must check RepoWorkflow.provider themselves.
+    # specific must check RepoWorkflow.provider themselves. meta is loaded
+    # rather than deferred: unmapping reads the displaced-workflow record out
+    # of it, and a deferred load would just cost a second round trip.
     @rollback_on_exc
     def get_repo_workflow_by_id(self, repo_workflow_id: str) -> Optional[RepoWorkflow]:
         return (
             self._db.session.query(RepoWorkflow)
-            .options(defer(RepoWorkflow.meta))
             .filter(RepoWorkflow.id == repo_workflow_id)
             .one_or_none()
         )
@@ -134,7 +135,8 @@ class WorkflowRepoService:
     # (org_repo_id, provider_workflow_id) pair, active or not. Mapping a job
     # that was previously mapped and then unmapped has to reuse this row;
     # inserting a second one violates
-    # repoworkflow_orgrepoid_provider_workflow_id.
+    # repoworkflow_orgrepoid_provider_workflow_id. meta is loaded rather than
+    # deferred: mapping rewrites the displaced-workflow record it holds.
     @rollback_on_exc
     def get_repo_workflow_by_repo_id_and_provider_workflow_id(
         self,
@@ -144,7 +146,6 @@ class WorkflowRepoService:
     ) -> Optional[RepoWorkflow]:
         return (
             self._db.session.query(RepoWorkflow)
-            .options(defer(RepoWorkflow.meta))
             .filter(
                 RepoWorkflow.org_repo_id == repo_id,
                 RepoWorkflow.provider == provider,

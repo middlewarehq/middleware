@@ -27,34 +27,64 @@ app = Blueprint("integrations", __name__)
 STATUS_TOO_MANY_REQUESTS = 429
 
 
+# CLUSTOX: key under RepoWorkflow.meta on the Jenkins row, holding the ids of
+# the deployment workflows that this mapping switched off. Written on mapping,
+# read on unmapping. Without it an unmapping has no way to tell a workflow it
+# displaced from one that was already inactive for an unrelated reason.
+DISPLACED_WORKFLOW_IDS_KEY = "jenkins_displaced_workflow_ids"
+
+
+# CLUSTOX: JSONB columns on this model default to the string "{}" rather than a
+# dict, and a row written before DISPLACED_WORKFLOW_IDS_KEY existed has no
+# record at all. Both read as "displaced nothing".
+def _workflow_meta(workflow) -> dict:
+    meta = getattr(workflow, "meta", None)
+    return meta if isinstance(meta, dict) else {}
+
+
 # CLUSTOX: one active deployment source per repo, whatever the provider. A repo
 # tracked through both GitHub Actions and Jenkins -- or through two Jenkins jobs,
 # which is two clicks away if an admin maps the wrong job and then the right one
 # -- would count every deploy twice, doubling Deployment Frequency with nothing
 # visibly wrong. Deactivation is reversible: the rows survive, and
 # reactivate_github_actions_workflows_for_repo restores them when the Jenkins
-# mapping is removed.
-def deactivate_deployment_workflows_for_repo(workflows: List) -> int:
-    deactivated = 0
+# mapping is removed. Returns the rows it actually switched off, because those
+# -- and only those -- are what the unmapping has to switch back on.
+def deactivate_deployment_workflows_for_repo(workflows: List) -> List:
+    deactivated = []
     for workflow in workflows:
         if workflow.is_active:
             workflow.is_active = False
-            deactivated += 1
+            deactivated.append(workflow)
     return deactivated
 
 
 # CLUSTOX: the other half of the invariant above. docs/JENKINS_INTEGRATION.md and
 # the mapping dialog both promise the admin can undo a mapping, which means the
 # GitHub Actions rows the mapping switched off have to come back on.
-def reactivate_github_actions_workflows_for_repo(workflows: List) -> int:
-    reactivated = 0
+#
+# Restricted to displaced_workflow_ids, which is the whole point. Mapping only
+# ever deactivates *active* rows, but a repo can hold inactive GitHub Actions
+# deployment workflows that Jenkins never touched: teams/v2.ts deactivates all
+# of a repo's deployment workflows and re-enables only the ones the admin
+# selected, so every deselected workflow sits there inactive. Reactivating
+# every inactive row -- as this did -- turns a repo with one selected and four
+# deselected workflows into a repo with five active ones after a single
+# map/unmap round trip, inflating Deployment Frequency through the GitHub path
+# instead of the Jenkins one.
+def reactivate_github_actions_workflows_for_repo(
+    workflows: List, displaced_workflow_ids: List[str]
+) -> List:
+    displaced = {str(workflow_id) for workflow_id in displaced_workflow_ids or []}
+    reactivated = []
     for workflow in workflows:
         if (
             workflow.provider == RepoWorkflowProviders.GITHUB_ACTIONS
             and not workflow.is_active
+            and str(workflow.id) in displaced
         ):
             workflow.is_active = True
-            reactivated += 1
+            reactivated.append(workflow)
     return reactivated
 
 
@@ -329,9 +359,7 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
     ]
     # Mutates the rows in place; the actual write happens together with the
     # Jenkins row below, in one commit.
-    deactivated_count = deactivate_deployment_workflows_for_repo(
-        workflows_to_deactivate
-    )
+    deactivated = deactivate_deployment_workflows_for_repo(workflows_to_deactivate)
 
     if existing_jenkins_workflow is not None:
         existing_jenkins_workflow.is_active = True
@@ -346,11 +374,19 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
             is_active=True,
             name=job_full_name,
         )
+    # CLUSTOX: the record of what this mapping displaced. Replaced rather than
+    # merged: a remapping recomputes the set from scratch, and anything left
+    # over from a previous mapping was already restored when that one was
+    # removed. A new dict, not a mutation, so SQLAlchemy sees the change.
+    jenkins_workflow.meta = {
+        **_workflow_meta(jenkins_workflow),
+        DISPLACED_WORKFLOW_IDS_KEY: [str(workflow.id) for workflow in deactivated],
+    }
     workflow_repo_service.create_jenkins_repo_workflow(
         jenkins_workflow, workflows_to_deactivate
     )
 
-    return {"ok": True, "deactivated_workflows": deactivated_count}
+    return {"ok": True, "deactivated_workflows": len(deactivated)}
 
 
 # CLUSTOX: removes a Jenkins mapping and restores the GitHub Actions workflows
@@ -391,16 +427,29 @@ def delete_jenkins_mapping(org_id: str, repo_workflow_id: str):
         )
 
     # Removing the mapping gives the repo its deployment source back, which is
-    # what both the docs and the mapping dialog promise.
+    # what both the docs and the mapping dialog promise -- but only the rows
+    # the mapping itself displaced. A mapping written before this record
+    # existed restores nothing, which is the safe direction: a repo with no
+    # active deployment source reads as zero deployments, a repo with several
+    # reads as several times too many, and only the second one is silent.
+    meta = _workflow_meta(repo_workflow)
     github_workflows = workflow_repo_service.get_repo_workflows_by_repo_id_and_provider(
         str(repo_workflow.org_repo_id),
         RepoWorkflowProviders.GITHUB_ACTIONS,
         RepoWorkflowType.DEPLOYMENT,
     )
-    reactivated_count = reactivate_github_actions_workflows_for_repo(github_workflows)
-    workflow_repo_service.deactivate_repo_workflow(repo_workflow, github_workflows)
+    reactivated = reactivate_github_actions_workflows_for_repo(
+        github_workflows, meta.get(DISPLACED_WORKFLOW_IDS_KEY)
+    )
+    # Drop the record in the same commit that acts on it, so a second unmapping
+    # -- or one that follows a team-config edit that deselected these same
+    # workflows -- does not restore them a second time.
+    repo_workflow.meta = {
+        key: value for key, value in meta.items() if key != DISPLACED_WORKFLOW_IDS_KEY
+    }
+    workflow_repo_service.deactivate_repo_workflow(repo_workflow, reactivated)
 
-    return {"ok": True, "reactivated_github_workflows": reactivated_count}
+    return {"ok": True, "reactivated_github_workflows": len(reactivated)}
 
 
 @app.route("/orgs/<org_id>/integrations/gitlab/user/repos", methods={"GET"})

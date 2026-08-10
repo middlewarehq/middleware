@@ -36,6 +36,9 @@ class FakeWorkflow:
         self.provider_workflow_id = provider_workflow_id
         self.type = type
         self.name = provider_workflow_id
+        # Matches the column default on RepoWorkflow: a row written before the
+        # displaced-workflow record existed carries no dict at all.
+        self.meta = None
 
 
 def test_deactivates_every_active_deployment_workflow_whatever_the_provider():
@@ -45,35 +48,53 @@ def test_deactivates_every_active_deployment_workflow_whatever_the_provider():
         FakeWorkflow(RepoWorkflowProviders.JENKINS),
     ]
 
-    count = deactivate_deployment_workflows_for_repo(workflows)
+    deactivated = deactivate_deployment_workflows_for_repo(workflows)
 
     # One active deployment source per repo is the invariant. Leaving the
     # Jenkins row active -- as the GitHub-only version did -- lets a repo end
     # up mapped to two Jenkins jobs and count every deploy twice.
-    assert count == 3
+    assert deactivated == workflows
     assert [w.is_active for w in workflows] == [False, False, False]
 
 
 def test_deactivating_is_idempotent():
     workflows = [FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, is_active=False)]
 
-    count = deactivate_deployment_workflows_for_repo(workflows)
+    deactivated = deactivate_deployment_workflows_for_repo(workflows)
 
-    # Already inactive, so nothing changed and nothing is reported.
-    assert count == 0
+    # Already inactive, so nothing changed and nothing is reported -- and,
+    # crucially, nothing is recorded as displaced, because it was not.
+    assert deactivated == []
 
 
-def test_reactivates_only_inactive_github_actions_workflows():
-    github = FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, is_active=False)
+def test_reactivates_only_the_inactive_workflows_the_mapping_displaced():
+    displaced = FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, is_active=False)
+    deselected = FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, is_active=False)
     already_on = FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, is_active=True)
     jenkins = FakeWorkflow(RepoWorkflowProviders.JENKINS, is_active=False)
 
-    count = reactivate_github_actions_workflows_for_repo([github, already_on, jenkins])
+    reactivated = reactivate_github_actions_workflows_for_repo(
+        [displaced, deselected, already_on, jenkins], [displaced.id]
+    )
 
-    assert count == 1
-    assert github.is_active is True
+    assert reactivated == [displaced]
+    assert displaced.is_active is True
+    # Inactive because the admin deselected it in the team config, not because
+    # the Jenkins mapping touched it. Turning it on is a deployment the repo
+    # never had.
+    assert deselected.is_active is False
     assert already_on.is_active is True
     assert jenkins.is_active is False
+
+
+def test_reactivates_nothing_when_the_mapping_recorded_no_displacement():
+    # A mapping created before the displaced-workflow record existed. Restoring
+    # nothing is the safe reading: too few active sources under-reports
+    # visibly, too many over-reports silently.
+    github = FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, is_active=False)
+
+    assert reactivate_github_actions_workflows_for_repo([github], None) == []
+    assert github.is_active is False
 
 
 class FakeOrgRepo:
@@ -251,6 +272,88 @@ def test_unmapping_restores_the_github_actions_workflow(routes):
     # and its Deployment Frequency stays at zero.
     active = service.active_deployment_workflows
     assert [w.provider for w in active] == [RepoWorkflowProviders.GITHUB_ACTIONS]
+
+
+@pytest.mark.parametrize(
+    "routes",
+    [
+        [
+            FakeWorkflow(
+                RepoWorkflowProviders.GITHUB_ACTIONS, provider_workflow_id="9931"
+            ),
+        ]
+        + [
+            FakeWorkflow(
+                RepoWorkflowProviders.GITHUB_ACTIONS,
+                provider_workflow_id=str(9932 + offset),
+                is_active=False,
+            )
+            for offset in range(4)
+        ]
+    ],
+    indirect=True,
+)
+def test_unmapping_leaves_deselected_github_actions_workflows_inactive(routes):
+    """
+    One selected GitHub Actions deployment workflow and four the admin
+    deselected. teams/v2.ts deactivates all of a repo's deployment workflows
+    and re-enables only the selected ones, so those four sit inactive for a
+    reason that has nothing to do with Jenkins. Mapping switches off exactly
+    one row, so unmapping must switch on exactly one row -- restoring all five
+    gives the repo five active deployment sources and inflates Deployment
+    Frequency fivefold, which is the double-counting the invariant exists to
+    prevent, reached through the GitHub path instead of the Jenkins one.
+    """
+    client, service = routes
+    selected = service.workflows[0]
+    deselected = service.workflows[1:]
+
+    assert _map(client, "deploy-api").json["deactivated_workflows"] == 1
+    jenkins_workflow = service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
+        REPO_ID, RepoWorkflowProviders.JENKINS, "deploy-api"
+    )
+    # Only the row the mapping actually switched off is recorded as displaced.
+    assert jenkins_workflow.meta["jenkins_displaced_workflow_ids"] == [str(selected.id)]
+
+    response = _unmap(client, jenkins_workflow.id)
+
+    assert response.status_code == 200
+    assert response.json["reactivated_github_workflows"] == 1
+    assert selected.is_active is True
+    assert [w.is_active for w in deselected] == [False, False, False, False]
+    active = service.active_deployment_workflows
+    assert [w.provider_workflow_id for w in active] == ["9931"]
+
+
+@pytest.mark.parametrize(
+    "routes",
+    [
+        [
+            FakeWorkflow(
+                RepoWorkflowProviders.JENKINS, provider_workflow_id="deploy-api"
+            ),
+            FakeWorkflow(
+                RepoWorkflowProviders.GITHUB_ACTIONS,
+                provider_workflow_id="9931",
+                is_active=False,
+            ),
+        ]
+    ],
+    indirect=True,
+)
+def test_unmapping_a_mapping_with_no_displacement_record_restores_nothing(routes):
+    # A mapping written before the record existed. There is no way to tell
+    # which rows it displaced, and guessing "all the inactive ones" is how the
+    # over-restore happened in the first place.
+    client, service = routes
+    jenkins_workflow, github_workflow = service.workflows
+    assert jenkins_workflow.meta is None
+
+    response = _unmap(client, jenkins_workflow.id)
+
+    assert response.status_code == 200
+    assert response.json["reactivated_github_workflows"] == 0
+    assert github_workflow.is_active is False
 
 
 def test_remapping_the_same_job_after_unmapping_does_not_hit_the_unique_index(routes):
