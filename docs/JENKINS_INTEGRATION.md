@@ -52,8 +52,10 @@ whole contract is two methods:
 
 **`WorkflowETLFactory`** (changed) — one branch returning the Jenkins handler.
 
-**`RepoWorkflowProviders`** (changed) — add `JENKINS = "jenkins"`. This is a
-Postgres enum, so it needs a migration.
+**`RepoWorkflowProviders`** (changed) — add `JENKINS = "jenkins"`. No migration
+required: despite the SQLAlchemy `ENUM()` wrapper, `RepoWorkflow.provider` is
+persisted as `character varying` and the schema declares no Postgres enum
+types, so a new provider is a code change only.
 
 **Job mapping API and UI** (new) — list the workspace's Jenkins jobs; create a
 mapping. A mapping writes a `RepoWorkflow` row with `provider=JENKINS`,
