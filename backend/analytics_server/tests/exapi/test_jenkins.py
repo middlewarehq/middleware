@@ -1,10 +1,14 @@
+import gzip
+import json
+import socket
+import threading
 from datetime import datetime
+from time import monotonic, sleep
 
 import pytest
 import pytz
 import requests
 
-from mhq.exapi import jenkins as jenkins_module
 from mhq.exapi.jenkins import JOB_TREE, JenkinsApiService, job_path
 from tests.factories.models.exapi.jenkins import get_jenkins_nested_jobs_dict
 
@@ -102,87 +106,174 @@ def test_get_jobs_survives_an_instance_with_no_jobs():
     assert _service_returning({}).get_jobs() == []
 
 
-class DribblingResponse:
-    """A Jenkins that sends one byte just inside every read timeout."""
+# CLUSTOX: the ceiling tests below drive a real socket, not a fake response.
+# The fake they replace yielded one byte per iter_content() iteration, which
+# requests never does: urllib3 blocks until it has the whole requested chunk,
+# so the deadline between chunks was not consulted until 64 KiB had arrived.
+# The fake passed against an implementation that could not bound a real
+# connection -- confidence with nothing behind it.
+class LocalJenkins:
+    """
+    An HTTP server on 127.0.0.1 that declares a Content-Length and then hands
+    the body over in pieces, optionally slowly. Content-Length (not chunked
+    transfer encoding) is the case that matters: chunked responses happen to
+    yield per HTTP chunk, so they hide the bug.
+    """
 
-    status_code = 200
+    def __init__(
+        self,
+        body: bytes,
+        chunk_size: int = None,
+        interval: float = 0.0,
+        status_line: bytes = b"HTTP/1.1 200 OK",
+        headers=(),
+    ):
+        self._body = body
+        self._chunk_size = chunk_size or max(len(body), 1)
+        self._interval = interval
+        self._status_line = status_line
+        self._headers = list(headers)
+        self._stop = threading.Event()
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self._socket.bind(("127.0.0.1", 0))
+        self._socket.listen(8)
+        self._socket.settimeout(0.25)
+        self._thread = threading.Thread(target=self._serve, daemon=True)
 
-    def __init__(self, clock, seconds_per_chunk):
-        self._clock = clock
-        self._seconds_per_chunk = seconds_per_chunk
-        self.closed = False
+    @property
+    def url(self) -> str:
+        return "http://127.0.0.1:{}".format(self._socket.getsockname()[1])
 
-    def iter_content(self, chunk_size):
-        while True:
-            self._clock["now"] += self._seconds_per_chunk
-            yield b"x"
+    def __enter__(self):
+        self._thread.start()
+        return self
 
-    def close(self):
-        self.closed = True
+    def __exit__(self, *exc_info):
+        self._stop.set()
+        self._thread.join(timeout=5)
+        self._socket.close()
+        return False
+
+    def _serve(self):
+        while not self._stop.is_set():
+            try:
+                connection, _ = self._socket.accept()
+            except socket.timeout:
+                continue
+            except OSError:
+                return
+            with connection:
+                try:
+                    self._respond(connection)
+                except OSError:
+                    # The client hit its ceiling and hung up mid-dribble, which
+                    # is exactly what these tests are checking for.
+                    pass
+
+    def _respond(self, connection):
+        connection.settimeout(5)
+        request = b""
+        while b"\r\n\r\n" not in request:
+            received = connection.recv(4096)
+            if not received:
+                return
+            request += received
+
+        head = [
+            self._status_line,
+            b"Content-Length: %d" % len(self._body),
+            b"Connection: close",
+        ]
+        head.extend(self._headers)
+        connection.sendall(b"\r\n".join(head) + b"\r\n\r\n")
+
+        for start in range(0, len(self._body), self._chunk_size):
+            if self._stop.is_set():
+                return
+            end = start + self._chunk_size
+            connection.sendall(self._body[start:end])
+            if self._interval:
+                sleep(self._interval)
 
 
-def _patch_clock_and_response(monkeypatch, response, clock):
-    monkeypatch.setattr(jenkins_module, "monotonic", lambda: clock["now"])
-    monkeypatch.setattr(jenkins_module.requests, "get", lambda *a, **kw: response)
-
-
-def test_a_dribbling_jenkins_hits_the_total_ceiling(monkeypatch):
-    clock = {"now": 0.0}
-    response = DribblingResponse(clock, seconds_per_chunk=29)
-    _patch_clock_and_response(monkeypatch, response, clock)
-
-    service = JenkinsApiService(
-        "https://jenkins.example.com", "user", "token", max_seconds=60
+def _service(url, max_seconds=5):
+    return JenkinsApiService(
+        url, "user", "token", timeout=(2, 2), max_seconds=max_seconds
     )
 
-    # Without a wall-clock ceiling this loops forever: requests' read timeout
-    # is between bytes, and the sequential sync loop stalls behind it.
-    with pytest.raises(requests.exceptions.Timeout):
-        service.check_pat()
 
-    assert response.closed is True
+def test_a_dribbling_jenkins_is_cut_off_at_the_ceiling():
+    # 4000 bytes handed over 50 at a time every 50ms: four seconds to complete,
+    # with every gap comfortably inside the read timeout, so nothing but the
+    # total ceiling can stop it. The whole body is under one 64 KiB chunk, so
+    # an implementation that checks its deadline between iter_content() chunks
+    # blocks for the full four seconds before looking at the clock even once.
+    with LocalJenkins(b"x" * 4000, chunk_size=50, interval=0.05) as jenkins:
+        service = _service(jenkins.url, max_seconds=1)
 
+        started = monotonic()
+        with pytest.raises(requests.exceptions.Timeout) as raised:
+            service.check_pat()
+        elapsed = monotonic() - started
 
-def test_a_prompt_jenkins_is_read_in_full(monkeypatch):
-    clock = {"now": 0.0}
-
-    class PromptResponse:
-        status_code = 200
-        closed = False
-
-        @staticmethod
-        def iter_content(chunk_size):
-            yield b'{"jobs": '
-            yield b"[]}"
-
-        def close(self):
-            PromptResponse.closed = True
-
-    _patch_clock_and_response(monkeypatch, PromptResponse(), clock)
-
-    service = JenkinsApiService("https://jenkins.example.com", "user", "token")
-
-    assert service.get_jobs() == []
-    assert PromptResponse.closed is True
+    assert "ceiling" in str(raised.value)
+    # Generous, and still nowhere near the 4s the body needs to finish. The
+    # sequential sync loop is the thing being protected: every workspace behind
+    # this one waits for it.
+    assert elapsed < 2.5, f"ceiling did not bound the read: took {elapsed:.1f}s"
 
 
-def test_an_http_error_is_raised_rather_than_parsed(monkeypatch):
-    clock = {"now": 0.0}
+def test_a_prompt_jenkins_is_read_in_full():
+    with LocalJenkins(b'{"jobs": []}') as jenkins:
+        assert _service(jenkins.url).get_jobs() == []
 
-    class ForbiddenResponse:
-        status_code = 403
 
-        @staticmethod
-        def iter_content(chunk_size):
-            yield b"forbidden"
+def test_a_body_larger_than_one_read_is_reassembled():
+    # read1() returns whatever is available rather than a full chunk, so the
+    # loop has to keep going until EOF instead of stopping at the first short
+    # read.
+    payload = {
+        "jobs": [
+            {
+                "_class": "hudson.model.FreeStyleProject",
+                "name": f"deploy-{index}",
+                "fullName": f"deploy-{index}",
+                "url": f"http://jenkins/job/deploy-{index}/",
+            }
+            for index in range(2000)
+        ]
+    }
+    body = json.dumps(payload).encode()
+    assert len(body) > 64 * 1024
 
-        def close(self):
-            return None
+    with LocalJenkins(body, chunk_size=1024) as jenkins:
+        jobs = _service(jenkins.url).get_jobs()
 
-    _patch_clock_and_response(monkeypatch, ForbiddenResponse(), clock)
+    assert len(jobs) == 2000
+    assert jobs[-1]["full_name"] == "deploy-1999"
 
-    service = JenkinsApiService("https://jenkins.example.com", "user", "token")
 
-    assert service.check_pat() is False
-    with pytest.raises(requests.HTTPError):
-        service.get_jobs()
+def test_a_gzipped_response_is_decoded():
+    # requests advertises gzip on every request. Reading response.raw without
+    # decode_content hands json.loads a gzip stream.
+    body = gzip.compress(json.dumps(get_jenkins_nested_jobs_dict()).encode())
+
+    with LocalJenkins(body, headers=[b"Content-Encoding: gzip"]) as jenkins:
+        jobs = _service(jenkins.url).get_jobs()
+
+    assert [job["full_name"] for job in jobs] == [
+        "deploy-legacy",
+        "platform/deploy-api",
+        "platform/web/main",
+        "platform/tooling/lint",
+    ]
+
+
+def test_an_http_error_is_raised_rather_than_parsed():
+    with LocalJenkins(b"forbidden", status_line=b"HTTP/1.1 403 Forbidden") as jenkins:
+        service = _service(jenkins.url)
+
+        assert service.check_pat() is False
+        with pytest.raises(requests.HTTPError):
+            service.get_jobs()

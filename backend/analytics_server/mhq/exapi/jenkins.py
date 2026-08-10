@@ -18,6 +18,7 @@ DEFAULT_TIMEOUT: Tuple[int, int] = (5, 30)
 # indefinitely. This is the ceiling the design doc promised.
 DEFAULT_MAX_SECONDS: int = 60
 
+# Upper bound on a single read, not a demand for that many bytes -- see _get.
 RESPONSE_CHUNK_SIZE = 64 * 1024
 
 # Fetched per build. Explicit rather than a wildcard so a Jenkins with many
@@ -98,27 +99,49 @@ class JenkinsApiService:
     def _get(self, path: str) -> JenkinsResponse:
         url = f"{self._base_url}/{path}"
         deadline = monotonic() + self._max_seconds
+        connect_timeout, read_timeout = self._timeout
+        # CLUSTOX: a read timeout longer than the total ceiling can never be
+        # reached without the ceiling firing first, and it is the only thing
+        # standing between us and a server that stops sending entirely. Capping
+        # it keeps the worst case at ceiling + one gap instead of
+        # ceiling + read_timeout.
+        read_timeout = min(read_timeout, self._max_seconds)
         # TLS verification is deliberately not configurable. A skip-verify
         # option is easy to add, hard to remove, and this connection carries an
         # API token.
         response = requests.get(
             url,
             auth=self._auth,
-            timeout=self._timeout,
+            timeout=(connect_timeout, read_timeout),
             verify=True,
             stream=True,
         )
         body = bytearray()
         try:
-            for chunk in response.iter_content(chunk_size=RESPONSE_CHUNK_SIZE):
-                # The connect and read timeouts bound the gaps; this bounds the
-                # whole call. Worst case the request overshoots the ceiling by
-                # one read timeout, because the check only runs between chunks.
+            # CLUSTOX: read1(), not iter_content(). iter_content() asks
+            # urllib3.stream() for a whole chunk, and on a Content-Length
+            # response urllib3 blocks until it has that many bytes -- so a
+            # deadline checked between chunks is not consulted until 64 KiB has
+            # accumulated. Measured against a server dribbling 100 bytes every
+            # 50ms, the first chunk arrived after 36 seconds with the ceiling
+            # set well below that. read1() returns whatever bytes are already
+            # available, so the deadline is re-checked at the pace the server
+            # actually sends and the ceiling genuinely bounds the call.
+            # Chunked-transfer responses happen to yield per HTTP chunk, but
+            # nothing guarantees a Jenkins sends chunked.
+            raw = response.raw
+            while True:
                 if monotonic() > deadline:
                     raise requests.exceptions.Timeout(
                         f"Jenkins request to {url} exceeded the "
                         f"{self._max_seconds}s ceiling"
                     )
+                # decode_content=True so a gzipped body -- requests advertises
+                # gzip on every request -- is still decoded, which reading
+                # response.raw directly would otherwise skip.
+                chunk = raw.read1(RESPONSE_CHUNK_SIZE, decode_content=True)
+                if not chunk:
+                    break
                 body.extend(chunk)
         finally:
             response.close()
