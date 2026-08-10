@@ -17,6 +17,16 @@ from mhq.store.models.code import (
 from mhq.utils.log import LOG
 from mhq.utils.time import time_now
 
+REFS_HEADS_PREFIX = "refs/heads/"
+REFS_REMOTES_PREFIX = "refs/remotes/"
+
+# Remote names stripped from a bare "<remote>/<branch>" value. Deliberately a
+# whitelist rather than "drop the first segment": branch names legitimately
+# contain slashes, and release/2.0 or feature/origin-story must survive intact.
+# Anything after an explicit refs/remotes/ prefix is a remote by definition and
+# does not need this list.
+KNOWN_REMOTE_NAMES = frozenset({"origin", "upstream"})
+
 
 class JenkinsETLHandler(WorkflowProviderETLHandler):
     def __init__(self, org_id: str, jenkins_api_service, workflow_repo_service):
@@ -131,8 +141,40 @@ class JenkinsETLHandler(WorkflowProviderETLHandler):
         for action in build.get("actions", []):
             revision = (action or {}).get("lastBuiltRevision")
             if revision and revision.get("branch"):
-                return revision["branch"][0].get("name")
+                return JenkinsETLHandler._normalise_branch(
+                    revision["branch"][0].get("name")
+                )
         return None
+
+    @staticmethod
+    def _normalise_branch(branch: Optional[str]) -> Optional[str]:
+        """
+        The git plugin reports 'origin/main', sometimes 'refs/remotes/origin/main'.
+        Every DORA query filters head_branch against prod_branches, which
+        defaults to the Postgres regex '^<default_branch>$' -- and
+        'origin/main' ~ '^main$' is false, so an un-normalised value drops the
+        run out of Deployment Frequency, Lead Time, CFR and MTTR with no error.
+        """
+        if not branch:
+            return None
+        branch = branch.strip()
+        if not branch:
+            return None
+
+        if branch.startswith(REFS_HEADS_PREFIX):
+            return branch.split(REFS_HEADS_PREFIX, 1)[1] or None
+
+        if branch.startswith(REFS_REMOTES_PREFIX):
+            # The segment straight after refs/remotes/ is a remote name by
+            # definition, whatever it is called.
+            rest = branch.split(REFS_REMOTES_PREFIX, 1)[1]
+            _, separator, after_remote = rest.partition("/")
+            return (after_remote if separator and after_remote else rest) or None
+
+        remote, separator, rest = branch.partition("/")
+        if separator and rest and remote in KNOWN_REMOTE_NAMES:
+            return rest
+        return branch
 
     @staticmethod
     def _get_actor(build: Dict) -> Optional[str]:
