@@ -534,6 +534,26 @@ export const MainTheme = createTheme({
         }
       }
     },
+    MuiInputLabel: {
+      styleOverrides: {
+        outlined: {
+          // A shrunk outlined label always straddles the border by design
+          // -- its bottom few pixels sit inside the input's own box, with
+          // only a notch cut into the *border stroke* so it isn't crossed
+          // out. That's invisible against a transparent input background,
+          // but browser autofill paints the input a solid opaque color
+          // right up to that same line, so the same normal overlap reads
+          // as text sitting on a hard block. Giving the shrunk label its
+          // own backing (matching the card) keeps it legible regardless of
+          // what's behind it -- autofill fill or otherwise.
+          '&.MuiInputLabel-shrink': {
+            backgroundColor: colors.alpha.white[100],
+            padding: '0 6px',
+            marginLeft: -6
+          }
+        }
+      }
+    },
     MuiListSubheader: {
       styleOverrides: {
         colorPrimary: {

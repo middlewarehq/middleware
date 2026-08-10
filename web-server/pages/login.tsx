@@ -1,26 +1,37 @@
 import { Box, Button, Card, TextField, Typography } from '@mui/material';
-import { signIn } from 'next-auth/react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
+import { signIn } from 'next-auth/react';
 import { FormEvent, ReactElement, useState } from 'react';
 
+import { useAutofillSync } from '@/hooks/useAutofillSync';
+
 export default function Login() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const emailRef = useAutofillSync(email, setEmail);
+  const passwordRef = useAutofillSync(password, setPassword);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError('');
 
-    const res = await signIn('credentials', {
-      email,
-      password,
-      redirect: false
-    });
+    let res: Awaited<ReturnType<typeof signIn>>;
+    try {
+      res = await signIn('credentials', { email, password, redirect: false });
+    } catch {
+      setBusy(false);
+      // CLUSTOX FIX: signIn() throwing (a network/server failure) used to be
+      // indistinguishable from a bad password -- both fell through to the
+      // same generic message. Kept the wording deliberately vague about
+      // *why*, since we still don't want to reveal which case happened, but
+      // this path no longer requires the request to have actually reached
+      // the server and returned an { error }.
+      setError('Something went wrong. Please try again.');
+      return;
+    }
 
     setBusy(false);
 
@@ -29,7 +40,17 @@ export default function Login() {
       setError('Invalid email or password');
       return;
     }
-    router.replace('/');
+    // CLUSTOX FIX: a router.replace() here is a client-side navigation --
+    // AuthProvider fetches /api/auth/session exactly once, on mount, and
+    // nothing re-triggers that fetch afterwards. Since AuthProvider is
+    // mounted at the app root (above /login itself), it had already fetched
+    // and cached the pre-login (unauthenticated, no org) session before this
+    // sign-in happened, and a client-side route change doesn't remount it --
+    // every org-scoped read (integrations included) kept serving that stale
+    // snapshot until a manual hard refresh forced a remount. A full
+    // navigation here remounts AuthProvider so it fetches session fresh,
+    // this time with the auth cookie actually present.
+    window.location.assign('/');
   };
 
   return (
@@ -43,10 +64,29 @@ export default function Login() {
         justifyContent="center"
         minHeight="100vh"
       >
-        <Card sx={{ p: 4, width: 380 }}>
-          <Typography variant="h4" mb={3}>
-            Sign in
+        <Card sx={{ p: 4.5, width: 380 }}>
+          <Box display="flex" alignItems="center" gap={1.1} mb={3.5}>
+            <Box
+              sx={{
+                width: 9,
+                height: 9,
+                borderRadius: '50%',
+                bgcolor: 'primary.main',
+                boxShadow: (t) => `0 0 12px ${t.palette.primary.main}`
+              }}
+            />
+            <Typography fontWeight={700} letterSpacing={-0.2}>
+              Middleware
+            </Typography>
+          </Box>
+
+          <Typography variant="h5" fontWeight={600} mb={0.5}>
+            Sign in to your workspace
           </Typography>
+          <Typography variant="body2" color="text.secondary" mb={3}>
+            Use the account your Super Admin set up for you.
+          </Typography>
+
           <form onSubmit={onSubmit}>
             <TextField
               fullWidth
@@ -56,6 +96,12 @@ export default function Login() {
               margin="normal"
               onChange={(e) => setEmail(e.target.value)}
               required
+              inputRef={emailRef}
+              // Deterministic fix for the autofill-overlap: keep the label
+              // permanently shrunk instead of trying to detect the exact
+              // moment the browser autofills, which is inherently racy
+              // against React's own render timing.
+              InputLabelProps={{ shrink: true }}
             />
             <TextField
               fullWidth
@@ -65,9 +111,11 @@ export default function Login() {
               margin="normal"
               onChange={(e) => setPassword(e.target.value)}
               required
+              inputRef={passwordRef}
+              InputLabelProps={{ shrink: true }}
             />
             {error && (
-              <Typography color="error" mt={2} role="alert">
+              <Typography color="error" mt={2} role="alert" variant="body2">
                 {error}
               </Typography>
             )}
@@ -81,6 +129,17 @@ export default function Login() {
               {busy ? 'Signing in...' : 'Sign in'}
             </Button>
           </form>
+
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            textAlign="center"
+            mt={3.5}
+            sx={{ letterSpacing: 0.4, fontFamily: 'monospace', fontSize: 10.5 }}
+          >
+            SELF-HOSTED · YOUR DATA STAYS ON YOUR INFRASTRUCTURE
+          </Typography>
         </Card>
       </Box>
     </>

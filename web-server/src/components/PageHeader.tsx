@@ -14,6 +14,7 @@ import { SidebarContext } from 'src/contexts/SidebarContext';
 
 import { TeamSelectorModes } from '@/types/resources';
 
+import { AccountMenu } from './AccountMenu';
 import { AvatarPageTitle } from './AvatarPageTitle';
 import { BranchSelector } from './BranchSelector';
 import { FlexBox, FlexBoxProps } from './FlexBox';
@@ -102,6 +103,10 @@ export const PageHeader: FC<
           </FlexBox>
           {Boolean(subRoutes?.length) && <PageTabs subRoutes={subRoutes} />}
           <GithubButton />
+          {/* CLUSTOX: rendered once, here, so the account menu appears at
+              the top-right of every authenticated page without each page
+              needing to wire it in individually. */}
+          <AccountMenu />
         </FlexBox>
         {showSelectorSection && (
           <>

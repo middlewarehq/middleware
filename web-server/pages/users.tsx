@@ -1,13 +1,12 @@
 import {
   AdminPanelSettingsTwoTone,
-  LinkTwoTone,
+  LockTwoTone,
   MoreVertTwoTone,
   PersonAddAlt1TwoTone,
   WorkspacesTwoTone
 } from '@mui/icons-material';
 import {
   Alert,
-  Avatar,
   Button,
   Chip,
   CircularProgress,
@@ -28,8 +27,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
   useTheme
@@ -40,8 +37,11 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 import { FlexBox } from '@/components/FlexBox';
+import { RoleChip } from '@/components/RoleChip';
 import { Line } from '@/components/Text';
+import { UserAvatar } from '@/components/UserAvatar';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
+import { useAutofillSync } from '@/hooks/useAutofillSync';
 import { PageLayout } from '@/types/resources';
 
 type ClustoxRole = 'SUPERADMIN' | 'ADMIN';
@@ -55,24 +55,32 @@ type UserRow = {
   orgName: string | null;
 };
 
-const MIN_PASSWORD = 12;
+type InviteRow = {
+  id: string;
+  email: string;
+  name: string;
+  role: ClustoxRole;
+  orgName: string | null;
+  expired: boolean;
+  emailed: boolean;
+};
+
+// CLUSTOX: users and pending invites rendered as one roster instead of a
+// table plus a separate strip of chips above it -- an invite is just a
+// person who hasn't finished signing up yet, not a different kind of thing.
+type RosterRow =
+  | { kind: 'user'; key: string; name: string; email: string; role: ClustoxRole; orgName: string | null; user: UserRow }
+  | { kind: 'invite'; key: string; name: string; email: string; role: ClustoxRole; orgName: string | null; invite: InviteRow };
 
 const NEW_WORKSPACE = '__new__';
 
 const emptyForm = {
   name: '',
   email: '',
-  password: '',
   role: 'ADMIN' as ClustoxRole,
   // NEW_WORKSPACE provisions a fresh one; otherwise adopt an existing
   // workspace that has no owner.
   org_id: NEW_WORKSPACE
-};
-
-const initials = (name: string, email: string) => {
-  const source = name?.trim() || email;
-  const parts = source.split(/[\s.@]+/).filter(Boolean);
-  return (parts[0]?.[0] ?? '?').concat(parts[1]?.[0] ?? '').toUpperCase();
 };
 
 /** Identifiers read as data, not prose. */
@@ -89,15 +97,91 @@ const Mono = ({ children }: { children: React.ReactNode }) => (
   </Typography>
 );
 
-const RoleChip = ({ role }: { role: ClustoxRole }) => (
+const StatusChip = ({ status }: { status: 'active' | 'invited' | 'expired' }) => (
   <Chip
     size="small"
-    label={role === 'SUPERADMIN' ? 'Superadmin' : 'Admin'}
-    color={role === 'SUPERADMIN' ? 'primary' : 'default'}
-    variant={role === 'SUPERADMIN' ? 'filled' : 'outlined'}
-    sx={{ fontWeight: 600, letterSpacing: '0.02em' }}
+    label={
+      status === 'active' ? 'Active' : status === 'expired' ? 'Expired' : 'Invited'
+    }
+    color={status === 'active' ? 'success' : status === 'expired' ? 'error' : 'warning'}
+    variant="outlined"
+    sx={{ fontWeight: 600 }}
   />
 );
+
+const ROLE_OPTIONS: {
+  value: ClustoxRole;
+  label: string;
+  description: string;
+  icon: typeof WorkspacesTwoTone;
+}[] = [
+  {
+    value: 'ADMIN',
+    label: 'Admin',
+    description:
+      'Gets their own workspace, connects their own GitHub or GitLab, and sees only their own projects.',
+    icon: WorkspacesTwoTone
+  },
+  {
+    value: 'SUPERADMIN',
+    label: 'Superadmin',
+    description:
+      'Sees every workspace, manages users and roles, and owns no workspace of their own.',
+    icon: AdminPanelSettingsTwoTone
+  }
+];
+
+/** Role picker as description cards, not a plain toggle-button pair. */
+const RolePicker = ({
+  value,
+  onChange
+}: {
+  value: ClustoxRole;
+  onChange: (role: ClustoxRole) => void;
+}) => {
+  const theme = useTheme();
+
+  return (
+    <FlexBox gap={1.5}>
+      {ROLE_OPTIONS.map((opt) => {
+        const Icon = opt.icon;
+        const selected = value === opt.value;
+        return (
+          <FlexBox
+            key={opt.value}
+            col
+            gap={0.75}
+            p={1.75}
+            flex={1}
+            corner="10px"
+            onClick={() => onChange(opt.value)}
+            sx={{
+              cursor: 'pointer',
+              border: '1.5px solid',
+              borderColor: selected
+                ? theme.colors.primary.main
+                : theme.colors.alpha.trueWhite[30],
+              background: selected
+                ? theme.colors.alpha.black[10]
+                : 'transparent',
+              transition: 'border-color 0.15s'
+            }}
+          >
+            <FlexBox alignCenter gap={1}>
+              <Icon fontSize="small" color={selected ? 'primary' : 'inherit'} />
+              <Line medium bold>
+                {opt.label}
+              </Line>
+            </FlexBox>
+            <Line small secondary>
+              {opt.description}
+            </Line>
+          </FlexBox>
+        );
+      })}
+    </FlexBox>
+  );
+};
 
 function UsersPage() {
   const theme = useTheme();
@@ -110,19 +194,24 @@ function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
-  const [invites, setInvites] = useState<
-    { id: string; email: string; name: string; role: ClustoxRole; orgName: string | null; expired: boolean }[]
-  >([]);
+  const [inviteEmailed, setInviteEmailed] = useState(false);
+  const [invites, setInvites] = useState<InviteRow[]>([]);
 
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [menuUser, setMenuUser] = useState<UserRow | null>(null);
+  const [menuRow, setMenuRow] = useState<RosterRow | null>(null);
+
+  const nameRef = useAutofillSync(form.name, (name) =>
+    setForm((f) => ({ ...f, name }))
+  );
+  const emailRef = useAutofillSync(form.email, (email) =>
+    setForm((f) => ({ ...f, email }))
+  );
 
   const loadUsers = useCallback(async () => {
     const res = await fetch('/api/clustox/users');
@@ -151,60 +240,39 @@ function UsersPage() {
     loadInvites();
   }, [loadUsers, loadWorkspaces, loadInvites]);
 
+  const roster: RosterRow[] = useMemo(
+    () => [
+      ...users.map((u): RosterRow => ({
+        kind: 'user',
+        key: u.userId,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        orgName: u.orgName,
+        user: u
+      })),
+      ...invites.map((i): RosterRow => ({
+        kind: 'invite',
+        key: i.id,
+        name: i.name,
+        email: i.email,
+        role: i.role,
+        orgName: i.orgName,
+        invite: i
+      }))
+    ],
+    [users, invites]
+  );
+
   const counts = useMemo(
     () => ({
       total: users.length,
       admins: users.filter((u) => u.role === 'ADMIN').length,
-      workspaces: new Set(users.map((u) => u.orgId).filter(Boolean)).size
+      workspaces: new Set(users.map((u) => u.orgId).filter(Boolean)).size,
+      pending: invites.length
     }),
-    [users]
+    [users, invites]
   );
-
-  const passwordTooShort =
-    form.password.length > 0 && form.password.length < MIN_PASSWORD;
-
-  const onCreate = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setFormError('');
-
-    const res = await fetch('/api/clustox/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        team_ids: [],
-        org_id: form.org_id === NEW_WORKSPACE ? null : form.org_id
-      })
-    });
-
-    setBusy(false);
-
-    if (!res.ok) {
-      setFormError(
-        res.status === 409
-          ? 'A user with that email already exists.'
-          : `Could not create user. Password must be at least ${MIN_PASSWORD} characters.`
-      );
-      return;
-    }
-
-    const created = await res.json();
-    setDialogOpen(false);
-    setForm(emptyForm);
-    await Promise.all([loadUsers(), loadWorkspaces()]);
-
-    const adopted = workspaces.find((w) => w.id === form.org_id);
-    enqueueSnackbar(
-      form.role !== 'ADMIN'
-        ? `${form.name} added as a superadmin`
-        : adopted
-          ? `${form.name} now owns the “${adopted.name}” workspace`
-          : `${form.name} added — a new workspace was created for them`,
-      { variant: 'success', autoHideDuration: 5000 }
-    );
-    return created;
-  };
 
   const createInvite = async (e: FormEvent) => {
     e.preventDefault();
@@ -233,17 +301,46 @@ function UsersPage() {
       return;
     }
 
-    const { invite_url } = await res.json();
+    const { invite_url, emailed } = await res.json();
     // Shown once and only once: only the hash is stored, so a lost link
     // cannot be recovered and has to be reissued.
     setInviteLink(invite_url);
+    setInviteEmailed(emailed);
     await loadInvites();
   };
 
   const revokeInvite = async (id: string) => {
+    setMenuAnchor(null);
     await fetch(`/api/clustox/invites/${id}`, { method: 'DELETE' });
     await loadInvites();
     enqueueSnackbar('Invitation revoked', { variant: 'success' });
+  };
+
+  const resendInvite = async (invite: InviteRow) => {
+    setMenuAnchor(null);
+    // No dedicated resend endpoint -- revoke the old one and issue a fresh
+    // link with the same details, which is exactly what "resend" means
+    // given only a hash of the link is ever stored server-side.
+    await fetch(`/api/clustox/invites/${invite.id}`, { method: 'DELETE' });
+    const res = await fetch('/api/clustox/invites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: invite.name,
+        email: invite.email,
+        role: invite.role
+      })
+    });
+    await loadInvites();
+    if (!res.ok) {
+      enqueueSnackbar('Could not resend the invitation.', { variant: 'error' });
+      return;
+    }
+    const { emailed } = await res.json();
+    enqueueSnackbar(
+      emailed ? `Invite resent to ${invite.email}` : `New invite link created for ${invite.email}, but it couldn't be emailed`,
+      { variant: emailed ? 'success' : 'warning' }
+    );
   };
 
   const changeRole = async (user: UserRow, role: ClustoxRole) => {
@@ -279,11 +376,28 @@ function UsersPage() {
 
   if (forbidden)
     return (
-      <FlexBox p={4} col gap={2} maxWidth="640px">
-        <Alert severity="warning">
-          Only superadmins can manage users. If you need access, ask a
-          superadmin to change your role.
-        </Alert>
+      <FlexBox col alignCenter justifyCenter gap={1.75} py={8} px={4}>
+        <FlexBox
+          alignCenter
+          justifyCenter
+          width={52}
+          height={52}
+          corner="50%"
+          sx={{ background: theme.colors.alpha.trueWhite[10] }}
+        >
+          <LockTwoTone sx={{ color: theme.colors.alpha.trueWhite[70] }} />
+        </FlexBox>
+        <Line bigish bold>
+          You don&apos;t have access to this page
+        </Line>
+        <Line
+          secondary
+          textAlign="center"
+          sx={{ maxWidth: 360 }}
+        >
+          Only Superadmins can manage users and roles. Ask your Superadmin if
+          someone needs to be added or removed.
+        </Line>
       </FlexBox>
     );
 
@@ -296,67 +410,32 @@ function UsersPage() {
       <FlexBox col gap={3} maxWidth="1100px">
         {/* Summary + primary action */}
         <FlexBox justifyBetween alignCenter flexWrap="wrap" gap={2}>
-          <FlexBox gap={3} alignCenter>
-            <FlexBox col>
-              <Line bigish bold>
-                {counts.total} {counts.total === 1 ? 'user' : 'users'}
-              </Line>
-              <Line small secondary>
-                {counts.admins} admin{counts.admins === 1 ? '' : 's'} across{' '}
-                {counts.workspaces} workspace
-                {counts.workspaces === 1 ? '' : 's'}
-              </Line>
-            </FlexBox>
-          </FlexBox>
-
-          <FlexBox gap={1.5}>
-            <Button
-              variant="outlined"
-              startIcon={<LinkTwoTone />}
-              onClick={() => {
-                setForm(emptyForm);
-                setFormError('');
-                setInviteLink('');
-                setInviteOpen(true);
-              }}
-            >
-              Invite
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<PersonAddAlt1TwoTone />}
-              onClick={() => {
-                setForm(emptyForm);
-                setFormError('');
-                setDialogOpen(true);
-              }}
-            >
-              Add user
-            </Button>
-          </FlexBox>
-        </FlexBox>
-
-        {invites.length > 0 && (
-          <FlexBox col gap={1}>
-            <Line small secondary>
-              Pending invitations
+          <FlexBox col>
+            <Line bigish bold>
+              {counts.total} {counts.total === 1 ? 'user' : 'users'}
             </Line>
-            <FlexBox gap={1} flexWrap="wrap">
-              {invites.map((i) => (
-                <Chip
-                  key={i.id}
-                  size="small"
-                  variant="outlined"
-                  color={i.expired ? 'error' : 'default'}
-                  onDelete={() => revokeInvite(i.id)}
-                  label={`${i.email} · ${i.role === 'ADMIN' ? 'admin' : 'superadmin'}${
-                    i.expired ? ' · expired' : ''
-                  }`}
-                />
-              ))}
-            </FlexBox>
+            <Line small secondary>
+              {counts.admins} admin{counts.admins === 1 ? '' : 's'} across{' '}
+              {counts.workspaces} workspace{counts.workspaces === 1 ? '' : 's'}
+              {counts.pending > 0 &&
+                ` · ${counts.pending} pending invite${counts.pending === 1 ? '' : 's'}`}
+            </Line>
           </FlexBox>
-        )}
+
+          <Button
+            variant="contained"
+            startIcon={<PersonAddAlt1TwoTone />}
+            onClick={() => {
+              setForm(emptyForm);
+              setFormError('');
+              setInviteLink('');
+              setInviteEmailed(false);
+              setInviteOpen(true);
+            }}
+          >
+            Invite user
+          </Button>
+        </FlexBox>
 
         {/* Roster */}
         <TableContainer
@@ -370,45 +449,45 @@ function UsersPage() {
             <TableHead>
               <TableRow>
                 <TableCell>User</TableCell>
-                <TableCell width={160}>Role</TableCell>
-                <TableCell width={280}>Workspace</TableCell>
+                <TableCell width={140}>Role</TableCell>
+                <TableCell width={120}>Status</TableCell>
+                <TableCell width={260}>Workspace</TableCell>
                 <TableCell width={64} align="right" />
               </TableRow>
             </TableHead>
             <TableBody>
-              {users.map((u) => (
-                <TableRow key={u.userId} hover>
+              {roster.map((row) => (
+                <TableRow key={row.key} hover>
                   <TableCell>
                     <FlexBox alignCenter gap={1.5}>
-                      <Avatar
-                        sx={{
-                          width: 34,
-                          height: 34,
-                          fontSize: '0.8rem',
-                          fontWeight: 700,
-                          bgcolor:
-                            u.role === 'SUPERADMIN'
-                              ? theme.colors.primary.main
-                              : theme.colors.alpha.trueWhite[10]
-                        }}
-                      >
-                        {initials(u.name, u.email)}
-                      </Avatar>
+                      <UserAvatar name={row.name} email={row.email} />
                       <FlexBox col>
-                        <Line medium>{u.name}</Line>
+                        <Line medium>{row.name}</Line>
                         <Line small secondary>
-                          <Mono>{u.email}</Mono>
+                          <Mono>{row.email}</Mono>
                         </Line>
                       </FlexBox>
                     </FlexBox>
                   </TableCell>
 
                   <TableCell>
-                    <RoleChip role={u.role} />
+                    <RoleChip role={row.role} />
                   </TableCell>
 
                   <TableCell>
-                    {u.role === 'SUPERADMIN' ? (
+                    <StatusChip
+                      status={
+                        row.kind === 'user'
+                          ? 'active'
+                          : row.invite.expired
+                            ? 'expired'
+                            : 'invited'
+                      }
+                    />
+                  </TableCell>
+
+                  <TableCell>
+                    {row.role === 'SUPERADMIN' ? (
                       <Tooltip title="Superadmins are not scoped to a workspace and can view every one">
                         <FlexBox alignCenter gap={0.75}>
                           <AdminPanelSettingsTwoTone
@@ -426,7 +505,7 @@ function UsersPage() {
                           fontSize="small"
                           sx={{ color: theme.colors.alpha.trueWhite[50] }}
                         />
-                        <Mono>{u.orgName ?? '—'}</Mono>
+                        <Mono>{row.orgName ?? '—'}</Mono>
                       </FlexBox>
                     )}
                   </TableCell>
@@ -435,7 +514,7 @@ function UsersPage() {
                     <IconButton
                       size="small"
                       onClick={(e) => {
-                        setMenuUser(u);
+                        setMenuRow(row);
                         setMenuAnchor(e.currentTarget);
                       }}
                     >
@@ -445,13 +524,13 @@ function UsersPage() {
                 </TableRow>
               ))}
 
-              {users.length === 0 && (
+              {roster.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4}>
+                  <TableCell colSpan={5}>
                     <FlexBox col alignCenter gap={1} py={5}>
                       <Line secondary>No users yet.</Line>
                       <Line small secondary>
-                        Add an admin to create their first workspace.
+                        Invite an admin to create their first workspace.
                       </Line>
                     </FlexBox>
                   </TableCell>
@@ -468,27 +547,47 @@ function UsersPage() {
         open={Boolean(menuAnchor)}
         onClose={() => setMenuAnchor(null)}
       >
-        {menuUser?.role === 'ADMIN' ? (
-          <MenuItem onClick={() => changeRole(menuUser, 'SUPERADMIN')}>
+        {menuRow?.kind === 'user' &&
+          (menuRow.user.role === 'ADMIN' ? (
+            <MenuItem onClick={() => changeRole(menuRow.user, 'SUPERADMIN')}>
+              <ListItemIcon>
+                <AdminPanelSettingsTwoTone fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Promote to superadmin"
+                secondary="Sees every workspace"
+              />
+            </MenuItem>
+          ) : (
+            <MenuItem onClick={() => changeRole(menuRow.user, 'ADMIN')}>
+              <ListItemIcon>
+                <WorkspacesTwoTone fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Demote to admin"
+                secondary="Scoped to one workspace"
+              />
+            </MenuItem>
+          ))}
+
+        {menuRow?.kind === 'invite' && [
+          <MenuItem key="resend" onClick={() => resendInvite(menuRow.invite)}>
             <ListItemIcon>
-              <AdminPanelSettingsTwoTone fontSize="small" />
+              <PersonAddAlt1TwoTone fontSize="small" />
             </ListItemIcon>
-            <ListItemText
-              primary="Promote to superadmin"
-              secondary="Sees every workspace"
-            />
-          </MenuItem>
-        ) : (
-          <MenuItem onClick={() => menuUser && changeRole(menuUser, 'ADMIN')}>
+            <ListItemText primary="Resend invite" />
+          </MenuItem>,
+          <MenuItem
+            key="revoke"
+            onClick={() => revokeInvite(menuRow.invite.id)}
+            sx={{ color: 'error.main' }}
+          >
             <ListItemIcon>
-              <WorkspacesTwoTone fontSize="small" />
+              <LockTwoTone fontSize="small" color="error" />
             </ListItemIcon>
-            <ListItemText
-              primary="Demote to admin"
-              secondary="Scoped to one workspace"
-            />
+            <ListItemText primary="Revoke invite" />
           </MenuItem>
-        )}
+        ]}
       </Menu>
 
       {/* Invite */}
@@ -504,11 +603,20 @@ function UsersPage() {
             <Divider />
             <DialogContent>
               <FlexBox col gap={2} pt={1}>
-                <Alert severity="warning">
-                  Copy this link now. Only its fingerprint is stored, so it
-                  cannot be shown again — if it is lost you will have to issue a
-                  new one.
-                </Alert>
+                {inviteEmailed ? (
+                  <Alert severity="success">
+                    Emailed. The link is also below in case it needs to be
+                    forwarded — only its fingerprint is stored, so it cannot be
+                    shown again if lost.
+                  </Alert>
+                ) : (
+                  <Alert severity="warning">
+                    Couldn&apos;t email this one (SMTP isn&apos;t set up, or the
+                    send failed) — copy the link below and send it yourself.
+                    Only its fingerprint is stored, so it cannot be shown again
+                    if lost.
+                  </Alert>
+                )}
                 <TextField
                   fullWidth
                   multiline
@@ -517,8 +625,8 @@ function UsersPage() {
                   onFocus={(e) => e.target.select()}
                 />
                 <Line small secondary>
-                  Single use, expires in 7 days. Send it over Slack — the
-                  recipient chooses their own password.
+                  Single use, expires in 7 days. The recipient chooses their own
+                  password.
                 </Line>
               </FlexBox>
             </DialogContent>
@@ -539,48 +647,49 @@ function UsersPage() {
           </>
         ) : (
           <form onSubmit={createInvite}>
-            <DialogTitle>Invite someone</DialogTitle>
+            <DialogTitle>Invite a teammate</DialogTitle>
             <Divider />
             <DialogContent>
               <FlexBox col gap={2.5} pt={1}>
-                <ToggleButtonGroup
-                  exclusive
-                  fullWidth
-                  size="small"
-                  value={form.role}
-                  onChange={(_e, v) => v && setForm({ ...form, role: v })}
-                >
-                  <ToggleButton value="ADMIN">Admin</ToggleButton>
-                  <ToggleButton value="SUPERADMIN">Superadmin</ToggleButton>
-                </ToggleButtonGroup>
-
-                <Alert severity="info">
-                  They set their own password, so you never have to choose or
-                  send one.
-                </Alert>
-
+                <TextField
+                  label="Email address"
+                  type="email"
+                  value={form.email}
+                  required
+                  autoFocus
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  inputRef={emailRef}
+                  InputLabelProps={{ shrink: true }}
+                />
                 <TextField
                   label="Full name"
                   value={form.name}
                   required
-                  autoFocus
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  inputRef={nameRef}
+                  InputLabelProps={{ shrink: true }}
                 />
-                <TextField
-                  label="Email"
-                  type="email"
-                  value={form.email}
-                  required
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
+
+                <FlexBox col gap={0.75}>
+                  <Line small secondary>
+                    Role
+                  </Line>
+                  <RolePicker
+                    value={form.role}
+                    onChange={(role) => setForm({ ...form, role })}
+                  />
+                </FlexBox>
 
                 {form.role === 'ADMIN' && (
                   <TextField
                     select
                     label="Workspace"
                     value={form.org_id}
-                    onChange={(e) =>
-                      setForm({ ...form, org_id: e.target.value })
+                    onChange={(e) => setForm({ ...form, org_id: e.target.value })}
+                    helperText={
+                      form.org_id === NEW_WORKSPACE
+                        ? 'A new workspace is created and named after them'
+                        : 'They take ownership of this existing workspace, keeping its integration and repositories'
                     }
                   >
                     <MenuItem value={NEW_WORKSPACE}>
@@ -609,132 +718,11 @@ function UsersPage() {
                 Cancel
               </Button>
               <Button type="submit" variant="contained" disabled={busy}>
-                {busy ? 'Creating…' : 'Create link'}
+                {busy ? 'Sending…' : 'Send invite'}
               </Button>
             </DialogActions>
           </form>
         )}
-      </Dialog>
-
-      {/* Add user */}
-      <Dialog
-        open={dialogOpen}
-        onClose={() => !busy && setDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <form onSubmit={onCreate}>
-          <DialogTitle>Add a user</DialogTitle>
-          <Divider />
-          <DialogContent>
-            <FlexBox col gap={2.5} pt={1}>
-              <ToggleButtonGroup
-                exclusive
-                fullWidth
-                size="small"
-                value={form.role}
-                onChange={(_e, v) => v && setForm({ ...form, role: v })}
-              >
-                <ToggleButton value="ADMIN">Admin</ToggleButton>
-                <ToggleButton value="SUPERADMIN">Superadmin</ToggleButton>
-              </ToggleButtonGroup>
-
-              <Alert
-                severity="info"
-                icon={
-                  form.role === 'ADMIN' ? (
-                    <WorkspacesTwoTone fontSize="inherit" />
-                  ) : (
-                    <AdminPanelSettingsTwoTone fontSize="inherit" />
-                  )
-                }
-              >
-                {form.role === 'ADMIN'
-                  ? 'Gets their own workspace, connects their own GitHub or GitLab, and sees only their own projects.'
-                  : 'Sees every workspace, manages users, and owns no workspace of their own.'}
-              </Alert>
-
-              <TextField
-                label="Full name"
-                value={form.name}
-                required
-                autoFocus
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                helperText={
-                  form.role === 'ADMIN' && form.org_id === NEW_WORKSPACE
-                    ? 'Also names their workspace'
-                    : undefined
-                }
-              />
-
-              {form.role === 'ADMIN' && (
-                <TextField
-                  select
-                  label="Workspace"
-                  value={form.org_id}
-                  onChange={(e) =>
-                    setForm({ ...form, org_id: e.target.value })
-                  }
-                  helperText={
-                    form.org_id === NEW_WORKSPACE
-                      ? 'A new workspace is created and named after them'
-                      : 'They take ownership of this existing workspace, keeping its integration and repositories'
-                  }
-                >
-                  <MenuItem value={NEW_WORKSPACE}>
-                    Create a new workspace
-                  </MenuItem>
-                  {workspaces
-                    .filter((w) => !w.owned)
-                    .map((w) => (
-                      <MenuItem key={w.id} value={w.id}>
-                        Adopt “{w.name}” (currently unowned)
-                      </MenuItem>
-                    ))}
-                </TextField>
-              )}
-              <TextField
-                label="Email"
-                type="email"
-                value={form.email}
-                required
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-              <TextField
-                label="Temporary password"
-                type="password"
-                value={form.password}
-                required
-                error={passwordTooShort}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                helperText={
-                  passwordTooShort
-                    ? `${MIN_PASSWORD - form.password.length} more characters needed`
-                    : `At least ${MIN_PASSWORD} characters. Share it with them directly.`
-                }
-              />
-
-              {formError && (
-                <Alert severity="error" role="alert">
-                  {formError}
-                </Alert>
-              )}
-            </FlexBox>
-          </DialogContent>
-          <Divider />
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={() => setDialogOpen(false)} disabled={busy}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={busy || passwordTooShort}
-            >
-              {busy ? 'Adding…' : 'Add user'}
-            </Button>
-          </DialogActions>
-        </form>
       </Dialog>
     </>
   );
@@ -744,7 +732,7 @@ UsersPage.getLayout = (page: PageLayout) => (
   <ExtendedSidebarLayout>
     <PageWrapper
       title={
-        <FlexBox gap={1} alignCenter>
+        <FlexBox gap1 alignCenter>
           <AdminPanelSettingsTwoTone />
           Users
         </FlexBox>

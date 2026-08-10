@@ -19,6 +19,11 @@ export type PendingInvite = {
   createdAt: string;
   expiresAt: string;
   expired: boolean;
+  // Whether the invite email actually went out -- separate from the link
+  // existing, since SMTP is optional and best-effort (see
+  // src/utils/mailer.ts). A superadmin can always fall back to copying the
+  // link, but the list should be able to say whether that's necessary.
+  emailed: boolean;
 };
 
 /**
@@ -39,23 +44,34 @@ export const createInvite = async (input: {
   role: ClustoxRole;
   orgId: string | null;
   createdBy: string;
-}): Promise<{ token: string; expiresAt: Date }> => {
+}): Promise<{ id: string; token: string; expiresAt: Date }> => {
   const token = randomBytes(32).toString('hex');
   const expiresAt = new Date(
     Date.now() + INVITE_TTL_DAYS * 24 * 60 * 60 * 1000
   );
 
-  await db(Table.ClustoxInvite).insert({
-    token_hash: hashToken(token),
-    email: input.email,
-    name: input.name,
-    role: input.role,
-    org_id: input.role === 'ADMIN' ? input.orgId : null,
-    created_by: input.createdBy,
-    expires_at: expiresAt
-  });
+  const [row] = await db(Table.ClustoxInvite)
+    .insert({
+      token_hash: hashToken(token),
+      email: input.email,
+      name: input.name,
+      role: input.role,
+      org_id: input.role === 'ADMIN' ? input.orgId : null,
+      created_by: input.createdBy,
+      expires_at: expiresAt
+    })
+    .returning('id');
 
-  return { token, expiresAt };
+  const id = typeof row === 'string' ? row : row.id;
+
+  return { id, token, expiresAt };
+};
+
+/** Best-effort delivery marker -- see the `emailed` field on PendingInvite. */
+export const markInviteEmailed = async (inviteId: string): Promise<void> => {
+  await db(Table.ClustoxInvite)
+    .where('id', inviteId)
+    .update({ emailed_at: new Date() });
 };
 
 export const listPendingInvites = async (): Promise<PendingInvite[]> => {
@@ -75,6 +91,7 @@ export const listPendingInvites = async (): Promise<PendingInvite[]> => {
       `${Table.ClustoxInvite}.org_id`,
       `${Table.ClustoxInvite}.created_at`,
       `${Table.ClustoxInvite}.expires_at`,
+      `${Table.ClustoxInvite}.emailed_at`,
       `${Table.Organization}.name as org_name`
     )
     .orderBy(`${Table.ClustoxInvite}.created_at`, 'desc');
@@ -92,7 +109,8 @@ export const listPendingInvites = async (): Promise<PendingInvite[]> => {
     expiresAt: new Date(r.expires_at).toISOString(),
     // Surfaced rather than hidden: an expired invite still explains why
     // someone's link stopped working.
-    expired: new Date(r.expires_at).getTime() < now
+    expired: new Date(r.expires_at).getTime() < now,
+    emailed: Boolean(r.emailed_at)
   }));
 };
 
