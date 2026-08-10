@@ -681,7 +681,7 @@ class JenkinsETLHandler(WorkflowProviderETLHandler):
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `cd backend/analytics_server && python -m pytest tests/service/workflows/sync/test_etl_jenkins_handler.py -v`
-Expected: PASS (10 tests)
+Expected: PASS (9 tests)
 
 - [ ] **Step 5: Format and lint**
 
