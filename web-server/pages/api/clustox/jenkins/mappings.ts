@@ -3,6 +3,10 @@ import * as yup from 'yup';
 import { Endpoint } from '@/api-helpers/global';
 import { internal } from '@/api-helpers/axios';
 
+const pathSchema = yup.object().shape({
+  org_id: yup.string().uuid().required()
+});
+
 const postSchema = yup.object().shape({
   org_id: yup.string().uuid().required(),
   org_repo_id: yup.string().uuid().required(),
@@ -14,7 +18,7 @@ const deleteSchema = yup.object().shape({
   repo_workflow_id: yup.string().uuid().required()
 });
 
-const endpoint = new Endpoint(postSchema);
+const endpoint = new Endpoint(pathSchema);
 
 endpoint.handle.POST(postSchema, async (req, res) => {
   // One deployment source per repo: creating this mapping deactivates the
