@@ -44,7 +44,10 @@ declare type IdentityMap = Record<
 
 declare type IntegrationsMap = Partial<
   Record<
-    'github' | 'gitlab' | 'bitbucket',
+    // CLUSTOX: 'jenkins' added so the workspace's linked state is readable
+    // via useAuth().integrations.jenkins. It is a deployment provider, not a
+    // code provider -- see CODE_PROVIDER_INTEGRATIONS_MAP.
+    'github' | 'gitlab' | 'bitbucket' | 'jenkins',
     {
       integrated: Boolean;
       linked_at: DateString | null;
