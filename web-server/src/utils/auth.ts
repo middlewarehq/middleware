@@ -99,3 +99,48 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
   );
   return missingScopes;
 };
+
+// Jira functions
+
+// Strip any protocol/trailing slash so "mycompany.atlassian.net" and
+// "https://mycompany.atlassian.net/" are stored the same way. Mirrors the
+// normalizer in pages/api/integrations/jira/validate.ts -- kept as two
+// small copies rather than a shared import across the client/server
+// boundary, same as this file's other provider helpers.
+export const normalizeJiraSiteUrl = (input: string) =>
+  input
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/+$/, '');
+
+export type JiraValidityResult = {
+  valid: boolean;
+  displayName?: string;
+  reason?: 'unauthorized' | 'unreachable' | 'unknown';
+};
+
+// CLUSTOX: unlike checkGitHubValidity/checkGitLabValidity, this cannot call
+// Jira's API directly from the browser -- Jira Cloud doesn't send CORS
+// headers permissive enough for a third-party origin's Basic-auth request,
+// so it's proxied through our own backend instead (see
+// pages/api/integrations/jira/validate.ts for why).
+export const checkJiraValidity = async (
+  siteUrl: string,
+  email: string,
+  apiToken: string
+): Promise<JiraValidityResult> => {
+  try {
+    const { data } = await axios.post('/api/integrations/jira/validate', {
+      site_url: siteUrl,
+      email,
+      api_token: apiToken
+    });
+    return { valid: data.valid, displayName: data.display_name, reason: data.reason };
+  } catch (error) {
+    return { valid: false, reason: 'unknown' };
+  }
+};
+
+// Jira API tokens inherit the full permissions of the account they belong
+// to -- there's no OAuth-style scope grant to inspect the way there is for
+// a GitHub/GitLab PAT, so there's no getMissingJiraScopes equivalent.

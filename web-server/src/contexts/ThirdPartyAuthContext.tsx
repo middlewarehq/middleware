@@ -125,9 +125,15 @@ export const AuthProvider: FC = (props) => {
             (integrations.github || integrations.gitlab) &&
               IntegrationGroup.CODE
           )
+          // CLUSTOX: Jira is a project-tracker integration, not a code
+          // provider -- see docs/JIRA_INTEGRATION_PROPOSAL.md. Kept as its
+          // own concat term rather than folded into the CODE check above,
+          // same shape as that check, so the two groups stay independently
+          // readable as the set of integration kinds grows.
+          .concat(integrations.jira && IntegrationGroup.PROJECT)
           .filter(Boolean)
       ),
-    [integrations.github, integrations.gitlab]
+    [integrations.github, integrations.gitlab, integrations.jira]
   );
 
   // CLUSTOX: consumers of integrationList/activeCodeProvider (DORA metrics

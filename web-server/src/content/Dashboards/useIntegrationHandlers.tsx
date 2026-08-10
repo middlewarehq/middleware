@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 
 import { Integration } from '@/constants/integrations';
 import { ConfigureGitlabModalBody } from '@/content/Dashboards/ConfigureGitlabModalBody';
+import { ConfigureJiraModalBody } from '@/content/Dashboards/ConfigureJiraModalBody';
 import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { unlinkProvider } from '@/utils/auth';
@@ -27,11 +28,18 @@ export const useIntegrationHandlers = () => {
             title: 'Configure Gitlab',
             body: <ConfigureGitlabModalBody onClose={closeAllModals} />,
             showCloseIcon: true
+          }),
+        jira: () =>
+          addModal({
+            title: 'Configure Jira',
+            body: <ConfigureJiraModalBody onClose={closeAllModals} />,
+            showCloseIcon: true
           })
       },
       unlink: {
         github: () => unlinkProvider(orgId, Integration.GITHUB),
-        gitlab: () => unlinkProvider(orgId, Integration.GITLAB)
+        gitlab: () => unlinkProvider(orgId, Integration.GITLAB),
+        jira: () => unlinkProvider(orgId, Integration.JIRA)
       }
     };
 
