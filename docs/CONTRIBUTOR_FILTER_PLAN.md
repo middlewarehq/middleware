@@ -24,7 +24,7 @@
 - Backend style: `black` formatted, `flake8` clean. Run from `backend/analytics_server` using `./venv/bin/python`.
 - Frontend must be `tsc` clean. Local Node is 20 and the project needs 22 — verify inside the `middleware-dev` container, which has Node 22.16.
 - Every Clustox-authored change carries a `# CLUSTOX:` or `// CLUSTOX:` comment explaining **why**, per `docs/FORK_STRATEGY.md`.
-- Backend suite baseline is **214 passing**. Do not break any.
+- Backend suite baseline is **159 passing** (this branch is cut from `main`, which does not include the Jenkins work). Do not break any.
 - Bot matching is on the exact `[bot]` suffix plus an explicit list — never a substring match on `bot`, which would exclude a real user called `robotnik`.
 
 ## The trap both filter classes share — read before Task 1 or 2
@@ -168,7 +168,7 @@ Expected: PASS (5 tests)
 - [ ] **Step 5: Run the full suite**
 
 Run: `cd backend/analytics_server && ./venv/bin/python -m pytest tests -q`
-Expected: 219 passed (214 baseline + 5)
+Expected: 164 passed (159 baseline + 5)
 
 - [ ] **Step 6: Format, lint, commit**
 
@@ -329,7 +329,7 @@ Expected: PASS (6 tests)
 
 ```bash
 cd backend/analytics_server
-./venv/bin/python -m pytest tests -q          # expect 225 passed
+./venv/bin/python -m pytest tests -q          # expect 170 passed
 ./venv/bin/python -m black mhq/store/models/code/workflows/filter.py mhq/service/workflows/workflow_filter.py tests/store/models/code/workflows/test_workflow_filter_actors.py
 ./venv/bin/python -m flake8 mhq/store/models/code/workflows/filter.py mhq/service/workflows/workflow_filter.py
 cd ../..
@@ -503,7 +503,7 @@ def get_team_contributors(team_id: str, from_time: datetime, to_time: datetime):
 
 ```bash
 cd backend/analytics_server
-./venv/bin/python -m pytest tests -q          # expect 230 passed
+./venv/bin/python -m pytest tests -q          # expect 175 passed
 ./venv/bin/python -m black mhq/utils/string.py mhq/store/repos/code.py mhq/api/pull_requests.py tests/service/code/test_contributors.py
 ./venv/bin/python -m flake8 mhq/utils/string.py mhq/store/repos/code.py mhq/api/pull_requests.py
 cd ../..
@@ -745,7 +745,7 @@ git commit -m "feat(contributors): add the contributor filter to dora metrics"
 
 ## Final verification
 
-- [ ] `cd backend/analytics_server && ./venv/bin/python -m pytest tests -q` — expect 230 passed
+- [ ] `cd backend/analytics_server && ./venv/bin/python -m pytest tests -q` — expect 175 passed
 - [ ] `./venv/bin/python -m black --check mhq && ./venv/bin/python -m flake8 mhq` — clean
 - [ ] `docker exec middleware-dev sh -c 'cd /app/web-server && ./node_modules/.bin/tsc --noEmit'` — 0 errors
 - [ ] Unfiltered dashboards are byte-identical to before this work — the regression tests in Tasks 1 and 2 cover the query layer, but confirm in the running app too
