@@ -3,6 +3,7 @@ import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
@@ -54,6 +55,7 @@ export const WeeklyDeliveryVolumeCard = () => {
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
   const deploymentFrequencyProps = useAvgIntervalBasedDeploymentFrequency();
+  const selectedContributors = useSelectedContributors();
 
   const { addPage } = useOverlayPage();
   const deploymentsConfigured = true;
@@ -172,6 +174,13 @@ export const WeeklyDeliveryVolumeCard = () => {
             </FlexBox>
           )}
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: filtered by deploy actor, not PR author -- see the note
+          // on ChangeTimeCard for why that distinction has to be visible.
+          <Line small secondary paddingX={2} mt={-1}>
+            deployed by {selectedContributors.join(', ')}
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isCodeProviderIntegrationEnabled ? (

@@ -1,6 +1,7 @@
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 import { Authenticated } from '@/components/Authenticated';
+import { ContributorFilter } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import Loader from '@/components/Loader';
 import { FetchState } from '@/constants/ui-states';
@@ -27,6 +28,7 @@ function Page() {
       pageTitle="DORA metrics"
       isLoading={isLoading}
       teamDateSelectorMode="single"
+      additionalFilters={[<ContributorFilter key="contributor-filter" />]}
     >
       {integrationList.length > 0 ? <DoraMetricsBody /> : <Loader />}
     </PageWrapper>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { FC, useEffect, useMemo } from 'react';
 
 import { AiButton } from '@/components/AiButton';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { DoraMetricsConfigurationSettings } from '@/components/DoraMetricsConfigurationSettings';
 import { DoraScoreV2 } from '@/components/DoraScoreV2';
 import { EmptyState } from '@/components/EmptyState';
@@ -44,6 +45,7 @@ export const DoraMetricsBody = () => {
   );
   const { singleTeamId, dates } = useSingleTeamConfig();
   const branchPayloadForPrFilters = useBranchesForPrFilters();
+  const selectedContributors = useSelectedContributors();
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.metrics_summary === FetchState.REQUEST
   );
@@ -73,6 +75,7 @@ export const DoraMetricsBody = () => {
         teamId: singleTeamId,
         fromDate: dates.start,
         toDate: dates.end,
+        authors: selectedContributors,
         ...branchPayloadForPrFilters
       })
     );
@@ -83,7 +86,8 @@ export const DoraMetricsBody = () => {
     orgId,
     singleTeamId,
     isCodeProviderIntegrated,
-    branchPayloadForPrFilters
+    branchPayloadForPrFilters,
+    selectedContributors
   ]);
 
   const stats = useDoraStats();

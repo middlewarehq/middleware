@@ -179,6 +179,11 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
     toDate: Date;
     branches: string;
     branch_mode?: ActiveBranchMode;
+    // CLUSTOX: contributor filter -- git usernames. Sent under the
+    // bracketed key so the BFF's array-param transform (`key[]` ->
+    // `key: value[]`) picks it up; a plain `authors` key would arrive
+    // server-side as a lone string instead of an array.
+    authors?: string[];
   }) => {
     return await handleApi<TeamDoraMetricsApiResponseType>(
       `internal/team/${params.teamId}/dora_metrics`,
@@ -188,7 +193,8 @@ export const fetchTeamDoraMetrics = createAsyncThunk(
           from_date: params.fromDate,
           to_date: params.toDate,
           branches: params.branches,
-          branch_mode: params.branch_mode || ActiveBranchMode.ALL
+          branch_mode: params.branch_mode || ActiveBranchMode.ALL,
+          'authors[]': params.authors?.length ? params.authors : undefined
         }
       }
     );

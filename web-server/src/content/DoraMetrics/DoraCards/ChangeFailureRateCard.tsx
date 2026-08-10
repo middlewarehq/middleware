@@ -4,6 +4,7 @@ import { head } from 'ramda';
 import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
@@ -56,6 +57,7 @@ const chartOptions = {
 export const ChangeFailureRateCard = () => {
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
+  const selectedContributors = useSelectedContributors();
 
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isCodeProviderIntegrationEnabled = integrationSet.has(
@@ -171,6 +173,14 @@ export const ChangeFailureRateCard = () => {
             )}
           </FlexBox>
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: unlike Lead Time and Deployment Frequency, this card
+          // has no per-contributor breakdown yet -- say so explicitly, or a
+          // selected filter with an unmoving number reads as broken.
+          <Line small secondary paddingX={2} mt={-1}>
+            team-wide — per-contributor arrives with Jira
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowIncidentsData ? (

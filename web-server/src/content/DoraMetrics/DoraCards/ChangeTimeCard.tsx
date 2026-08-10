@@ -7,6 +7,7 @@ import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
@@ -57,6 +58,7 @@ export const ChangeTimeCard = () => {
   const { addPage } = useOverlayPage();
   const { role } = useAuth();
   const isEng = isRoleLessThanEM(role);
+  const selectedContributors = useSelectedContributors();
 
   const {
     reposCountWithWorkflowConfigured,
@@ -270,6 +272,15 @@ export const ChangeTimeCard = () => {
             )}
           </FlexBox>
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: this card's number is filtered by PR author, while
+          // Deployment Frequency is filtered by deploy actor -- often a
+          // different person. Naming the relationship here is what keeps
+          // the two cards disagreeing from reading as a bug.
+          <Line small secondary paddingX={2} mt={-1}>
+            authored by {selectedContributors.join(', ')}
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isSufficientDataAvailable ? (
