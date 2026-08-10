@@ -118,6 +118,9 @@ class WorkflowRepoService:
             .all()
         )
 
+    # CLUSTOX: used by the Jenkins mapping routes to resolve a workflow by id.
+    # Deliberately not filtered by provider -- callers that are provider
+    # specific must check RepoWorkflow.provider themselves.
     @rollback_on_exc
     def get_repo_workflow_by_id(self, repo_workflow_id: str) -> Optional[RepoWorkflow]:
         return (
@@ -127,27 +130,84 @@ class WorkflowRepoService:
             .one_or_none()
         )
 
-    # CLUSTOX: creates the Jenkins mapping and deactivates the repo's active
-    # GitHub Actions workflows in a single commit. If either half failed on
+    # CLUSTOX: resolves the row that occupies the uniquely indexed
+    # (org_repo_id, provider_workflow_id) pair, active or not. Mapping a job
+    # that was previously mapped and then unmapped has to reuse this row;
+    # inserting a second one violates
+    # repoworkflow_orgrepoid_provider_workflow_id.
+    @rollback_on_exc
+    def get_repo_workflow_by_repo_id_and_provider_workflow_id(
+        self,
+        repo_id: str,
+        provider: RepoWorkflowProviders,
+        provider_workflow_id: str,
+    ) -> Optional[RepoWorkflow]:
+        return (
+            self._db.session.query(RepoWorkflow)
+            .options(defer(RepoWorkflow.meta))
+            .filter(
+                RepoWorkflow.org_repo_id == repo_id,
+                RepoWorkflow.provider == provider,
+                RepoWorkflow.provider_workflow_id == provider_workflow_id,
+            )
+            .one_or_none()
+        )
+
+    # CLUSTOX: unlike get_repo_workflow_by_repo_ids this returns inactive rows
+    # too, because the inactive ones are exactly what a Jenkins mapping turned
+    # off and an unmapping has to turn back on.
+    @rollback_on_exc
+    def get_repo_workflows_by_repo_id_and_provider(
+        self,
+        repo_id: str,
+        provider: RepoWorkflowProviders,
+        type: RepoWorkflowType,
+    ) -> List[RepoWorkflow]:
+        return (
+            self._db.session.query(RepoWorkflow)
+            .options(defer(RepoWorkflow.meta))
+            .filter(
+                RepoWorkflow.org_repo_id == repo_id,
+                RepoWorkflow.provider == provider,
+                RepoWorkflow.type == type,
+            )
+            .all()
+        )
+
+    # CLUSTOX: writes the Jenkins mapping and the deactivation of the repo's
+    # other deployment workflows in a single commit. If either half failed on
     # its own, a repo could be left with two active deployment sources,
     # silently double-counting deployments -- see
-    # deactivate_github_actions_workflows_for_repo in mhq/api/integrations.py.
+    # deactivate_deployment_workflows_for_repo in mhq/api/integrations.py.
     @rollback_on_exc
     def create_jenkins_repo_workflow(
         self,
         jenkins_workflow: RepoWorkflow,
         workflows_to_deactivate: List[RepoWorkflow],
     ) -> RepoWorkflow:
+        # add() on an instance already loaded in this session is a no-op, so
+        # this covers both a brand new mapping and the reactivation of a row
+        # that a previous unmapping left inactive.
         self._db.session.add(jenkins_workflow)
         for workflow in workflows_to_deactivate:
             self._db.session.merge(workflow)
         self._db.session.commit()
         return jenkins_workflow
 
+    # CLUSTOX: removing a Jenkins mapping and restoring the GitHub Actions rows
+    # it displaced happen in one commit. Half of this applied on its own would
+    # leave the repo with no active deployment source at all, and its
+    # Deployment Frequency at zero.
     @rollback_on_exc
-    def deactivate_repo_workflow(self, repo_workflow: RepoWorkflow) -> RepoWorkflow:
+    def deactivate_repo_workflow(
+        self,
+        repo_workflow: RepoWorkflow,
+        workflows_to_reactivate: List[RepoWorkflow] = None,
+    ) -> RepoWorkflow:
         repo_workflow.is_active = False
         self._db.session.merge(repo_workflow)
+        for workflow in workflows_to_reactivate or []:
+            self._db.session.merge(workflow)
         self._db.session.commit()
         return repo_workflow
 

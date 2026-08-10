@@ -1,9 +1,15 @@
 from typing import List
 from flask import Blueprint, jsonify
 from github import GithubException
+
+# CLUSTOX: Required is used by the Jenkins mapping request schemas below.
 from voluptuous import Schema, Optional, Required, Coerce, Range, All
 
 from mhq.exapi.models.gitlab import GitlabRepo
+
+# CLUSTOX: the Jenkins mapping routes take a JSON body rather than query
+# params, and resolve repos and workflow rows directly -- hence dataschema,
+# uuid_validator, the RepoWorkflow model and the two repo services.
 from mhq.api.request_utils import dataschema, queryschema, uuid_validator
 from mhq.service.external_integrations_service import get_external_integrations_service
 from mhq.service.query_validator import get_query_validator
@@ -12,6 +18,8 @@ from mhq.store.models.code import RepoWorkflowProviders, RepoWorkflowType
 from mhq.store.models.code.workflows.workflows import RepoWorkflow
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.workflows import WorkflowRepoService
+
+# END CLUSTOX
 from mhq.utils.github import github_org_data_multi_thread_worker
 
 app = Blueprint("integrations", __name__)
@@ -19,20 +27,35 @@ app = Blueprint("integrations", __name__)
 STATUS_TOO_MANY_REQUESTS = 429
 
 
-# CLUSTOX: one deployment source per repo. A repo tracked through both GitHub
-# Actions and Jenkins would count every deploy twice, doubling Deployment
-# Frequency with nothing visibly wrong. Deactivation is reversible: the rows
-# survive, so removing the Jenkins mapping can restore them.
-def deactivate_github_actions_workflows_for_repo(workflows: List) -> int:
+# CLUSTOX: one active deployment source per repo, whatever the provider. A repo
+# tracked through both GitHub Actions and Jenkins -- or through two Jenkins jobs,
+# which is two clicks away if an admin maps the wrong job and then the right one
+# -- would count every deploy twice, doubling Deployment Frequency with nothing
+# visibly wrong. Deactivation is reversible: the rows survive, and
+# reactivate_github_actions_workflows_for_repo restores them when the Jenkins
+# mapping is removed.
+def deactivate_deployment_workflows_for_repo(workflows: List) -> int:
     deactivated = 0
     for workflow in workflows:
-        if (
-            workflow.provider == RepoWorkflowProviders.GITHUB_ACTIONS
-            and workflow.is_active
-        ):
+        if workflow.is_active:
             workflow.is_active = False
             deactivated += 1
     return deactivated
+
+
+# CLUSTOX: the other half of the invariant above. docs/JENKINS_INTEGRATION.md and
+# the mapping dialog both promise the admin can undo a mapping, which means the
+# GitHub Actions rows the mapping switched off have to come back on.
+def reactivate_github_actions_workflows_for_repo(workflows: List) -> int:
+    reactivated = 0
+    for workflow in workflows:
+        if (
+            workflow.provider == RepoWorkflowProviders.GITHUB_ACTIONS
+            and not workflow.is_active
+        ):
+            workflow.is_active = True
+            reactivated += 1
+    return reactivated
 
 
 @app.route("/orgs/<org_id>/integrations/github/orgs", methods={"GET"})
@@ -250,6 +273,9 @@ def get_jenkins_jobs(org_id: str):
     return JenkinsApiService(base_url, username, api_token).get_jobs()
 
 
+# CLUSTOX: maps a Jenkins job to a repo as its deployment source. Enforces the
+# one-active-deployment-source-per-repo invariant and reuses the row for an
+# already-known (org_repo_id, provider_workflow_id) pair.
 @app.route("/orgs/<org_id>/integrations/jenkins/mappings", methods={"POST"})
 @dataschema(
     Schema(
@@ -268,29 +294,56 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
         return jsonify({"error": f"Repo {org_repo_id} not found in org {org_id}"}), 404
 
     workflow_repo_service = WorkflowRepoService()
-    existing_workflows = workflow_repo_service.get_repo_workflow_by_repo_ids(
+
+    # A row may already exist for this (org_repo_id, provider_workflow_id) --
+    # left behind inactive by a previous unmapping. The pair is uniquely
+    # indexed, so inserting a second one raises IntegrityError; reuse it.
+    existing_jenkins_workflow = (
+        workflow_repo_service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
+            org_repo_id, RepoWorkflowProviders.JENKINS, job_full_name
+        )
+    )
+
+    active_workflows = workflow_repo_service.get_repo_workflow_by_repo_ids(
         [org_repo_id], RepoWorkflowType.DEPLOYMENT
     )
-    # Mutates existing_workflows in place, flipping GitHub Actions rows to
-    # inactive; the actual write happens together with the new Jenkins row
-    # below, in one commit.
-    deactivated_count = deactivate_github_actions_workflows_for_repo(existing_workflows)
-
-    jenkins_workflow = RepoWorkflow(
-        org_repo_id=org_repo_id,
-        type=RepoWorkflowType.DEPLOYMENT,
-        provider=RepoWorkflowProviders.JENKINS,
-        provider_workflow_id=job_full_name,
-        is_active=True,
-        name=job_full_name,
+    # Every active deployment workflow on this repo except the one being mapped,
+    # regardless of provider: an already-active Jenkins job for a different
+    # pipeline has to go too, or the repo ends up with two live sources.
+    workflows_to_deactivate = [
+        workflow
+        for workflow in active_workflows
+        if existing_jenkins_workflow is None
+        or str(workflow.id) != str(existing_jenkins_workflow.id)
+    ]
+    # Mutates the rows in place; the actual write happens together with the
+    # Jenkins row below, in one commit.
+    deactivated_count = deactivate_deployment_workflows_for_repo(
+        workflows_to_deactivate
     )
+
+    if existing_jenkins_workflow is not None:
+        existing_jenkins_workflow.is_active = True
+        existing_jenkins_workflow.name = job_full_name
+        jenkins_workflow = existing_jenkins_workflow
+    else:
+        jenkins_workflow = RepoWorkflow(
+            org_repo_id=org_repo_id,
+            type=RepoWorkflowType.DEPLOYMENT,
+            provider=RepoWorkflowProviders.JENKINS,
+            provider_workflow_id=job_full_name,
+            is_active=True,
+            name=job_full_name,
+        )
     workflow_repo_service.create_jenkins_repo_workflow(
-        jenkins_workflow, existing_workflows
+        jenkins_workflow, workflows_to_deactivate
     )
 
-    return {"ok": True, "deactivated_github_workflows": deactivated_count}
+    return {"ok": True, "deactivated_workflows": deactivated_count}
 
 
+# CLUSTOX: removes a Jenkins mapping and restores the GitHub Actions workflows
+# the mapping displaced.
 @app.route("/orgs/<org_id>/integrations/jenkins/mappings", methods={"DELETE"})
 @dataschema(
     Schema(
@@ -317,9 +370,17 @@ def delete_jenkins_mapping(org_id: str, repo_workflow_id: str):
             404,
         )
 
-    workflow_repo_service.deactivate_repo_workflow(repo_workflow)
+    # Removing the mapping gives the repo its deployment source back, which is
+    # what both the docs and the mapping dialog promise.
+    github_workflows = workflow_repo_service.get_repo_workflows_by_repo_id_and_provider(
+        str(repo_workflow.org_repo_id),
+        RepoWorkflowProviders.GITHUB_ACTIONS,
+        RepoWorkflowType.DEPLOYMENT,
+    )
+    reactivated_count = reactivate_github_actions_workflows_for_repo(github_workflows)
+    workflow_repo_service.deactivate_repo_workflow(repo_workflow, github_workflows)
 
-    return {"ok": True}
+    return {"ok": True, "reactivated_github_workflows": reactivated_count}
 
 
 @app.route("/orgs/<org_id>/integrations/gitlab/user/repos", methods={"GET"})
