@@ -21,7 +21,10 @@
  */
 import { APIRequestContext, expect, request, test } from '@playwright/test';
 
-const APP = 'http://localhost:3333';
+// CLUSTOX: overridable so the suite can run against an instance other than the
+// default dev one -- e.g. a second server started from a branch build while the
+// usual port is still serving something else.
+const APP = process.env.E2E_BASE_URL || 'http://localhost:3333';
 
 const SUPERADMIN = {
   email: process.env.SUPERADMIN_EMAIL || 'admin@clustox.com',
