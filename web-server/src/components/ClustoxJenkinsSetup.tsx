@@ -14,6 +14,7 @@ import { useClustoxUser } from '@/hooks/useClustoxUser';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { fetchCurrentOrg } from '@/slices/auth';
 import { useDispatch } from '@/store';
+import { readApiError } from '@/utils/api-error';
 import { linkProvider, unlinkProvider } from '@/utils/auth';
 import { checkDomainWithRegex } from '@/utils/domainCheck';
 import { depFn } from '@/utils/fn';
@@ -81,11 +82,17 @@ export const ClustoxJenkinsSetup: FC<{ onLinked?: () => void }> = ({
     if (hasError) return;
 
     depFn(isLoading.true);
+    // CLUSTOX: which of the two calls below failed decides whether the server's
+    // message is about Jenkins at all. A 400 from the credential save is a
+    // schema complaint about this form; a 400 from the probe is the analytics
+    // server refusing the address, and that text is the whole point.
+    let credentialsSaved = false;
     try {
       await linkProvider(apiToken.value, orgId, Integration.JENKINS, {
         base_url: baseUrl.value,
         username: username.value
       });
+      credentialsSaved = true;
 
       // CLUSTOX: the actual connection probe -- this is the first call that
       // hits the real Jenkins instance with the credentials just saved.
@@ -109,8 +116,20 @@ export const ClustoxJenkinsSetup: FC<{ onLinked?: () => void }> = ({
       );
       // CLUSTOX: don't leave a workspace "linked" to credentials that don't
       // work -- the mapping screen would otherwise open to a broken job list.
+      // True of a refused address too: nothing here can reach that Jenkins.
       await unlinkProvider(orgId, Integration.JENKINS).catch(() => {});
-      depFn(baseUrlError.set, CONNECTION_ERROR);
+
+      // CLUSTOX: a 400 from the probe is the server naming something about this
+      // URL it will not fetch -- a private, loopback or link-local address, or
+      // a missing scheme. Reported as CONNECTION_ERROR it sends the admin to
+      // re-check a username and token that are fine.
+      const { status, message } = readApiError(e);
+      depFn(
+        baseUrlError.set,
+        credentialsSaved && status === 400 && message
+          ? message
+          : CONNECTION_ERROR
+      );
     } finally {
       depFn(isLoading.false);
     }
