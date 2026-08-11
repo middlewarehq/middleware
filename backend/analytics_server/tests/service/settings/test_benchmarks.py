@@ -1,12 +1,16 @@
+from datetime import datetime
+
 import pytest
 from werkzeug.exceptions import BadRequest
 
+from mhq.api.resources.settings_resource import adapt_configuration_settings_response
 from mhq.service.settings.benchmarks import (
     BENCHMARK_METRICS,
     resolve_benchmarks,
     validate_benchmark_payload,
 )
-from mhq.service.settings.models import BenchmarkSetting
+from mhq.service.settings.models import BenchmarkSetting, ConfigurationSettings
+from mhq.store.models.settings.enums import EntityType
 
 
 def test_team_value_wins_and_reports_its_source():
@@ -116,3 +120,46 @@ def test_resolution_asks_for_the_team_row_and_the_global_row():
         EntityType.GLOBAL,
         GLOBAL_BENCHMARK_ENTITY_ID,
     ) in asked
+
+
+def test_benchmark_setting_response_always_has_all_four_keys():
+    # Set, zero, and unset must all round-trip distinctly: a dropped or
+    # zero-coerced key would make the config form unable to tell "inherit"
+    # apart from "target of 0".
+    config_settings = ConfigurationSettings(
+        entity_id="team-1",
+        entity_type=EntityType.TEAM,
+        specific_settings=BenchmarkSetting(lead_time=3600, change_failure_rate=0),
+        updated_by=None,
+        created_at=datetime(2026, 1, 1),
+        updated_at=datetime(2026, 1, 1),
+    )
+
+    response = adapt_configuration_settings_response(config_settings)
+
+    assert response["setting"] == {
+        "lead_time": 3600,
+        "deployment_frequency": None,
+        "change_failure_rate": 0,
+        "mean_time_to_recovery": None,
+    }
+
+
+def test_global_benchmark_row_reports_scope_not_the_sentinel_id():
+    from mhq.service.settings.benchmarks import GLOBAL_BENCHMARK_ENTITY_ID
+
+    config_settings = ConfigurationSettings(
+        entity_id=GLOBAL_BENCHMARK_ENTITY_ID,
+        entity_type=EntityType.GLOBAL,
+        specific_settings=BenchmarkSetting(lead_time=3600),
+        updated_by=None,
+        created_at=datetime(2026, 1, 1),
+        updated_at=datetime(2026, 1, 1),
+    )
+
+    response = adapt_configuration_settings_response(config_settings)
+
+    assert response["scope"] == "global"
+    assert "team_id" not in response
+    assert "org_id" not in response
+    assert "user_id" not in response
