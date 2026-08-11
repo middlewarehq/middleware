@@ -2,6 +2,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Button, Menu, MenuItem } from '@mui/material';
 import { useCallback, useRef, useEffect } from 'react';
 
+import { BenchmarkSettingsForm } from '@/components/BenchmarkSettingsForm';
 import { FlexBox } from '@/components/FlexBox';
 import { TeamIncidentPRsFilter } from '@/components/TeamIncidentPRsFilter';
 import { TeamProductionBranchSelector } from '@/components/TeamProductionBranchSelector';
@@ -41,6 +42,22 @@ export const DoraMetricsConfigurationSettings = () => {
     const modal = addModal({
       title: `Configure Filters for Incident PRs`,
       body: <TeamIncidentPRsFilter onClose={() => closeModal(modal.key)} />,
+      showCloseIcon: true
+    });
+  }, [addModal, closeModal]);
+
+  // CLUSTOX: per-team DORA benchmark targets. Same modal shape as the other
+  // team settings above -- a menu item opens a dedicated form, which closes
+  // itself on save.
+  const openBenchmarkSettingsModal = useCallback(async () => {
+    const modal = addModal({
+      title: `Configure DORA Benchmarks`,
+      body: (
+        <BenchmarkSettingsForm
+          scope="team"
+          onClose={() => closeModal(modal.key)}
+        />
+      ),
       showCloseIcon: true
     });
   }, [addModal, closeModal]);
@@ -94,6 +111,14 @@ export const DoraMetricsConfigurationSettings = () => {
           }}
         >
           Configure Filters for Incident PRs
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            open.false();
+            openBenchmarkSettingsModal();
+          }}
+        >
+          Configure DORA Benchmarks
         </MenuItem>
       </Menu>
     </>
