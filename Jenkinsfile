@@ -1,6 +1,13 @@
 pipeline {
     agent any
 
+    environment {
+        APP_DIR = '/opt/app/middleware'
+        // CLUSTOX: the production compose file, not the default one. See the
+        // Build & Deploy stage for why that distinction is the whole point.
+        COMPOSE_FILE = 'docker-compose.prod.yml'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -11,94 +18,162 @@ pipeline {
         stage('Update Deployment Copy') {
             steps {
                 sh '''
-                    cd /opt/app/middleware
+                    cd ${APP_DIR}
                     git fetch origin main
                     git reset --hard origin/main
                 '''
             }
         }
 
-        stage('Build & Deploy') {
+        // CLUSTOX: .env is gitignored, so a release that needs a new variable
+        // cannot deliver it. Without this stage the app builds, starts, and
+        // then fails at runtime in ways the health check cannot see -- an unset
+        // INTERNAL_API_TOKEN makes the Flask servers reject every request, and
+        // an unset SUPERADMIN_PASSWORD means no account is ever created.
+        //
+        // Failing here, before anything is torn down, leaves the running
+        // deployment alive through a misconfigured release.
+        stage('Verify Environment') {
             steps {
                 sh '''
-                    cd /opt/app/middleware
-                    docker compose build
-                    docker compose up -d
+                    cd ${APP_DIR}
+
+                    if [ ! -f .env ]; then
+                        echo "FATAL: ${APP_DIR}/.env does not exist."
+                        exit 1
+                    fi
+
+                    MISSING=""
+                    for VAR in NEXTAUTH_URL NEXTAUTH_SECRET INTERNAL_API_TOKEN \
+                               SUPERADMIN_EMAIL SUPERADMIN_PASSWORD; do
+                        # Present AND non-empty. `grep -q "^VAR="` alone would
+                        # pass on a variable set to nothing.
+                        if ! grep -qE "^${VAR}=.+" .env; then
+                            MISSING="${MISSING} ${VAR}"
+                        fi
+                    done
+
+                    if [ -n "${MISSING}" ]; then
+                        echo "FATAL: required variables missing or empty in ${APP_DIR}/.env:"
+                        for VAR in ${MISSING}; do echo "  - ${VAR}"; done
+                        echo ""
+                        echo "See env.example. Nothing has been changed."
+                        exit 1
+                    fi
+
+                    echo "All required environment variables are present."
+                '''
+            }
+        }
+
+        stage('Build') {
+            steps {
+                // CLUSTOX: builds docker-compose.prod.yml, which uses the
+                // production Dockerfile and runs `yarn build`. The default
+                // docker-compose.yml is upstream's *local development* file: it
+                // builds Dockerfile.dev, which never builds the frontend, so the
+                // container serves the app through `next dev` and compiles every
+                // route inside the first request that asks for it. Measured on a
+                // cold container: /login 7.5s, /workspaces 5.7s, /users 21.8s,
+                // against 0.02s once warm.
+                //
+                // The build is deliberately its own stage. `docker compose build
+                // && docker compose up -d` in one step is a trap: when the build
+                // fails, `up -d` happily recreates the container from the
+                // PREVIOUS image, so a broken release presents as a healthy app
+                // serving stale code and the pipeline reports success. That is
+                // not hypothetical -- it happened during development when a
+                // dependency pin was wrong for the image's Python version.
+                sh '''
+                    cd ${APP_DIR}
+                    docker compose -f ${COMPOSE_FILE} build
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    cd ${APP_DIR}
+                    docker compose -f ${COMPOSE_FILE} up -d
                 '''
             }
         }
 
         stage('Health Check') {
             steps {
+                // CLUSTOX: the previous check was `sleep 10` then a curl of `/`.
+                // Both halves were wrong. `/` answers 307 to /login for a
+                // signed-out request and curl treats a redirect as success, so
+                // it passed against an app whose API was entirely broken. And
+                // 10s is short for a cold start that also runs migrations, so it
+                // produced false failures too.
+                //
+                // Instead: poll until the app answers, then assert the API
+                // returns 401. Reaching 401 proves Next.js is serving, the
+                // database is reachable, and auth is wired up. A misconfigured
+                // instance returns 500 or refuses the connection.
                 sh '''
-                    sleep 10
-                    curl -sf http://127.0.0.1:${PORT:-3333} || (echo "Health check failed" && exit 1)
+                    PORT_NUM=${PORT:-3333}
+                    BASE="http://127.0.0.1:${PORT_NUM}"
+
+                    echo "Waiting for the app to accept connections..."
+                    READY=0
+                    for i in $(seq 1 60); do
+                        if curl -sf -o /dev/null "${BASE}/login"; then
+                            READY=1
+                            echo "App responded after $((i * 5))s."
+                            break
+                        fi
+                        sleep 5
+                    done
+
+                    if [ "${READY}" != "1" ]; then
+                        echo "FATAL: app did not respond within 300s."
+                        cd ${APP_DIR} && docker compose -f ${COMPOSE_FILE} logs --tail=80
+                        exit 1
+                    fi
+
+                    echo "Checking that the API is up and enforcing auth..."
+                    CODE=$(curl -s -o /dev/null -w '%{http_code}' "${BASE}/api/clustox/me")
+                    if [ "${CODE}" != "401" ]; then
+                        echo "FATAL: /api/clustox/me returned ${CODE}, expected 401."
+                        echo "The app is serving pages but the API is not healthy."
+                        cd ${APP_DIR} && docker compose -f ${COMPOSE_FILE} logs --tail=80
+                        exit 1
+                    fi
+
+                    echo "Health check passed."
                 '''
             }
         }
 
-        // CLUSTOX: the container serves the app through `next dev`, which
-        // compiles each route the first time it is requested -- inside the
-        // user's request, not at boot. Measured on a cold container: /login
-        // 7.5s, /workspaces 5.7s, /users 21.8s, against 0.02s once warm.
+        // CLUSTOX: proves the deploy is actually serving a compiled bundle
+        // rather than silently falling back to the dev server. A production
+        // build answers a cold page request in well under a second; `next dev`
+        // takes seconds to tens of seconds because it compiles on demand.
         //
-        // Warming has to be authenticated. middleware.ts redirects
-        // unauthenticated page requests to /login BEFORE Next renders, so an
-        // anonymous request returns 307 in ~37ms and compiles nothing --
-        // verified by checking .next/server/pages afterwards. A loop without a
-        // session warms /login and nothing else.
-        //
-        // This is a workaround, not a fix. The compile cache lives in memory,
-        // so it is lost on restart and can be evicted under memory pressure.
-        // The real fix is building the production image, which runs
-        // `yarn build` and serves a compiled bundle -- tracked separately.
-        stage('Warm Routes') {
+        // This is a warning rather than a failure: a slow disk or a loaded host
+        // could trip it without the deploy being wrong, and failing a healthy
+        // release over a timing measurement would be worse than the problem.
+        stage('Verify Production Build') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'middleware-warmup-account',
-                    usernameVariable: 'WARM_EMAIL',
-                    passwordVariable: 'WARM_PASSWORD'
-                )]) {
-                    sh '''
-                        BASE="http://127.0.0.1:${PORT:-3333}"
-                        JAR=$(mktemp)
-                        trap 'rm -f "$JAR"' EXIT
+                sh '''
+                    BASE="http://127.0.0.1:${PORT:-3333}"
 
-                        CSRF=$(curl -s -c "$JAR" "${BASE}/api/auth/csrf" \
-                               | sed -n 's/.*"csrfToken":"\\([^"]*\\)".*/\\1/p')
+                    ELAPSED=$(curl -s -o /dev/null -w '%{time_total}' "${BASE}/login")
+                    echo "Cold /login response: ${ELAPSED}s"
 
-                        if [ -z "$CSRF" ]; then
-                            echo "Could not obtain a CSRF token; skipping warm-up."
-                            exit 0
-                        fi
-
-                        curl -s -b "$JAR" -c "$JAR" -o /dev/null \
-                            -X POST "${BASE}/api/auth/callback/credentials" \
-                            --data-urlencode "csrfToken=${CSRF}" \
-                            --data-urlencode "email=${WARM_EMAIL}" \
-                            --data-urlencode "password=${WARM_PASSWORD}" \
-                            --data-urlencode "json=true"
-
-                        # A 200 here means the session took and the page really
-                        # compiled. A 307 means we are still anonymous, so the
-                        # warm-up is not doing anything and should be noisy
-                        # about it rather than reporting false success.
-                        WARMED=0
-                        for ROUTE in /dora-metrics /teams /integrations \
-                                     /settings /users /workspaces /collaborate; do
-                            CODE=$(curl -s -b "$JAR" -o /dev/null \
-                                   -w '%{http_code}' --max-time 180 "${BASE}${ROUTE}")
-                            echo "warmed ${ROUTE} -> ${CODE}"
-                            [ "$CODE" = "200" ] && WARMED=$((WARMED + 1))
-                        done
-
-                        if [ "$WARMED" -eq 0 ]; then
-                            echo "WARNING: no route compiled -- check the warm-up credentials."
-                        else
-                            echo "Route warm-up complete (${WARMED} compiled)."
-                        fi
-                    '''
-                }
+                    # Integer compare; `sh` has no float arithmetic.
+                    WHOLE=$(echo "${ELAPSED}" | cut -d. -f1)
+                    if [ "${WHOLE}" -ge 3 ]; then
+                        echo "WARNING: ${ELAPSED}s is slow for a compiled build."
+                        echo "The container may be running 'next dev' -- check that"
+                        echo "ENVIRONMENT=prod reached it and that ${COMPOSE_FILE} was used."
+                    else
+                        echo "Response time is consistent with a production build."
+                    fi
+                '''
             }
         }
     }
