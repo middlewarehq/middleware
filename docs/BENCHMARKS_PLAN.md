@@ -21,9 +21,9 @@
 - Frontend must be `tsc` clean. Local Node is 20 and the project needs 22 — verify inside the `middleware-dev` container.
 - Every Clustox-authored change carries a `# CLUSTOX:` or `// CLUSTOX:` comment explaining **why**, per `docs/FORK_STRATEGY.md`.
 
-## The ten extension points — read before Task 1
+## The eleven extension points — read before Task 1
 
-Adding a `SettingType` to this codebase means touching ten places. Upstream
+Adding a `SettingType` to this codebase means touching eleven places. Upstream
 marks each with a comment. **Missing one is a silent failure, not a crash** —
 the setting saves but reads back wrong, or validates but never persists.
 
@@ -39,8 +39,20 @@ the setting saves but reads back wrong, or validates but never persists.
 | 8 | `mhq/service/settings/configuration_settings.py:272` | `ADD NEW DATACLASS TO JSON DATA ADAPTERS HERE` |
 | 9 | `mhq/service/settings/configuration_settings.py:308` | `ADD NEW HANDLE TO DB SETTINGS HERE` |
 | 10 | `mhq/service/settings/setting_type_validator.py:25` | `ADD NEW VALIDATOR HERE` |
+| 11 | `mhq/api/resources/settings_resource.py` | `ADD NEW API ADAPTER HERE` |
 
 Line numbers drift — search for the marker text, not the number.
+
+**Point 11 was missed when this plan was first written**, because the search
+that found the others covered only `mhq/service/settings/` and
+`mhq/store/models/settings/`. Without it, `adapt_configuration_settings_response`
+never populates `response["setting"]` for a benchmark, so `GET` returns only
+timestamps — invisible until something tries to read a saved value. Search the
+whole of `mhq/` for the marker text, not a subtree:
+
+```
+grep -rn "ADD NEW" mhq/
+```
 
 ---
 
@@ -73,7 +85,7 @@ Line numbers drift — search for the marker text, not the number.
 
 ---
 
-### Task 1: Register BENCHMARK_SETTING across all ten extension points
+### Task 1: Register BENCHMARK_SETTING across the extension points
 
 **Files:**
 - Modify: `backend/analytics_server/mhq/store/models/settings/configuration_settings.py`
