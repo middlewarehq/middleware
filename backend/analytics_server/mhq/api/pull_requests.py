@@ -31,6 +31,7 @@ from mhq.service.settings.configuration_settings import get_settings_service
 
 from mhq.store.models import SettingType, EntityType
 
+
 app = Blueprint("pull_requests", __name__)
 
 

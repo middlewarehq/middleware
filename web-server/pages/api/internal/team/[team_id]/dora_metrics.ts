@@ -16,6 +16,7 @@ import {
   fetchMeanTimeToRestoreStats,
   fetchDeploymentFrequencyStats
 } from '@/utils/cockpitMetricUtils';
+// CLUSTOX: contributor filter.
 import { stripContributorFilters } from '@/utils/contributorFilters';
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
 import {
@@ -35,6 +36,8 @@ const getSchema = yup.object().shape({
   from_date: yup.date().required(),
   to_date: yup.date().required(),
   branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required(),
+  // CLUSTOX: contributor filter -- git usernames, optional so an unfiltered
+  // dashboard sends exactly what it always did.
   authors: yup.array().of(yup.string()).optional()
 });
 
@@ -52,6 +55,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     to_date: rawToDate,
     branches,
     branch_mode,
+    // CLUSTOX: contributor filter.
     authors
   } = req.payload;
 
@@ -67,6 +71,9 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     getUnsyncedRepos(teamId)
   ]);
   const [prFilters, workflowFilters] = await Promise.all([
+    // CLUSTOX: contributor filter -- `authors` narrows Lead Time by PR author,
+    // `eventActors` narrows Deployment Frequency by the actor who triggered the
+    // run. Both are no-ops when the selection is empty.
     updatePrFilterParams(teamId, {}, { ...branchAndRepoFilters, authors }).then(
       ({ pr_filter }) => ({
         pr_filter
@@ -77,12 +84,19 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       teamId: teamId,
       eventActors: authors
     })
+    // END CLUSTOX
   ]);
 
+  // CLUSTOX: contributor filter -- Change Failure Rate and MTTR stay team-wide
+  // (no defensible per-contributor definition until Jira incident ownership
+  // lands), so they get a copy of the filters with the contributor keys
+  // removed. With nothing selected these are identical to the originals, which
+  // is what keeps unfiltered dashboards byte-for-byte unchanged.
   const {
     prFilter: prFilterWithoutAuthors,
     workflowFilter: workflowFilterWithoutEventActors
   } = stripContributorFilters(prFilters, workflowFilters);
+  // END CLUSTOX
 
   const {
     currTrendsTimeObject,
