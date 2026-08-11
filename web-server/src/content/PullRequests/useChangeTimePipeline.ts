@@ -5,7 +5,7 @@ import { track } from '@/constants/events';
 import { useEasyState } from '@/hooks/useEasyState';
 import { useSelector } from '@/store';
 import { brandColors } from '@/theme/schemes/theme';
-import { ChangeTimeModes } from '@/types/resources';
+import { ChangeTimeModes, LeadTimeApiResponse } from '@/types/resources';
 
 export enum ClipPathEnum {
   'FIRST' = 'polygon(0% 0%, calc(100% - 15px) 0%, 100% 50%, calc(100% - 15px) 100%, 0% 100%)',
@@ -19,9 +19,19 @@ export enum StatMode {
 }
 
 export const useLeadTimePipeline = () => {
-  const averageSummary = useSelector(
-    (s) => s.doraMetrics.metrics_summary.lead_time_stats.current
-  );
+  // CLUSTOX: metrics_summary is null until fetchTeamDoraMetrics resolves
+  // (see the redux slice's initialState) -- reading .lead_time_stats
+  // off it unguarded threw on first render for any caller mounted
+  // before that fetch completes, not just after. This only stayed
+  // hidden as long as every caller (LeadTimeStatsCore via
+  // usePrChangeTimePipeline) happened to mount lazily, after the fetch
+  // was already done -- LeadTimeBreakdownCard, mounted inline on the
+  // same page as the fetch itself, hit it immediately and blanked the
+  // whole page. strictNullChecks is off in this project, so tsc never
+  // caught it.
+  const averageSummary: Partial<LeadTimeApiResponse> =
+    useSelector((s) => s.doraMetrics.metrics_summary?.lead_time_stats.current) ||
+    {};
 
   const firstCommitToPrDetails = useMemo(
     () => ({
