@@ -127,8 +127,9 @@ const TeamJiraProjectsBody: FC<{ teamId: ID }> = ({ teamId }) => {
           disabled={isSaving}
           variant="contained"
           onClick={onSave}
+          sx={{ whiteSpace: 'nowrap' }}
         >
-          Save
+          Save Jira projects
         </LoadingButton>
       </FlexBox>
 
