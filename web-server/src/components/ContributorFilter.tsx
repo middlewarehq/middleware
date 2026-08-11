@@ -12,17 +12,15 @@ import { handleApi } from '@/api-helpers/axios-api-instance';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
+import {
+  CONTRIBUTOR_QUERY_KEY as QUERY_KEY,
+  contributorSelectionKey,
+  parseSelectedFromQuery
+} from '@/utils/contributorQuery';
 
 type Contributor = {
   username: string;
   pr_count: number;
-};
-
-const QUERY_KEY = 'contributors';
-
-const parseSelectedFromQuery = (raw: string | string[]): string[] => {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  return value ? value.split(',').filter(Boolean) : [];
 };
 
 /**
@@ -39,9 +37,12 @@ export const useSelectedContributors = (): string[] => {
   // object -- that object gets a new identity on every navigation, including
   // unrelated ones like OverlayPageContext pushing its own `overlays` param
   // when a "See details" panel opens. Depending on the whole object would
-  // refetch the DORA summary on every such click.
+  // refetch the DORA summary on every such click. `contributorSelectionKey`
+  // also flattens the repeated-param array form, which would otherwise be a
+  // fresh identity on every render and defeat the memo entirely.
   const raw = query[QUERY_KEY] as string | string[];
-  return useMemo(() => parseSelectedFromQuery(raw), [raw]);
+  const key = contributorSelectionKey(raw);
+  return useMemo(() => parseSelectedFromQuery(key), [key]);
 };
 
 export const ContributorFilter = () => {
