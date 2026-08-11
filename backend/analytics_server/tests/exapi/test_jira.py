@@ -181,3 +181,115 @@ class TestGetAllIssues:
         assert transition.from_status == "To Do"
         assert transition.to_status == "In Progress"
         assert transition.idempotency_key == "100"
+
+
+# CLUSTOX: Jira integration -- the Sprint rollup chart. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md §6D.
+class TestGetBoardsForProject:
+    @patch("mhq.exapi.jira.requests.get")
+    def test_maps_every_board_field(self, mock_get):
+        mock_get.return_value = _response(
+            200,
+            {
+                "isLast": True,
+                "values": [{"id": 1076, "name": "PZDA board", "type": "scrum"}],
+            },
+        )
+
+        [board] = _service().get_boards_for_project("PZDA")
+
+        assert board.id == 1076
+        assert board.name == "PZDA board"
+        assert board.board_type == "scrum"
+
+    @patch("mhq.exapi.jira.requests.get")
+    def test_paginates_via_start_at_until_is_last(self, mock_get):
+        mock_get.side_effect = [
+            _response(200, {"isLast": False, "values": [{"id": 1, "type": "scrum"}]}),
+            _response(200, {"isLast": True, "values": [{"id": 2, "type": "scrum"}]}),
+        ]
+
+        boards = _service().get_boards_for_project("PZDA")
+
+        assert [b.id for b in boards] == [1, 2]
+        assert mock_get.call_args_list[1].kwargs["params"]["startAt"] == 1
+
+    @patch("mhq.exapi.jira.requests.get")
+    def test_returns_empty_list_when_the_project_has_no_boards(self, mock_get):
+        mock_get.return_value = _response(200, {"isLast": True, "values": []})
+        assert _service().get_boards_for_project("PZDA") == []
+
+
+class TestGetSprintsForBoard:
+    @patch("mhq.exapi.jira.requests.get")
+    def test_maps_every_sprint_field_including_dates(self, mock_get):
+        mock_get.return_value = _response(
+            200,
+            {
+                "isLast": True,
+                "values": [
+                    {
+                        "id": 299,
+                        "name": "PZDA Sprint 1",
+                        "state": "closed",
+                        "startDate": "2026-07-20T07:55:00.130Z",
+                        "endDate": "2026-08-03T05:00:00.000Z",
+                    }
+                ],
+            },
+        )
+
+        [sprint] = _service().get_sprints_for_board(1076)
+
+        assert sprint.id == 299
+        assert sprint.name == "PZDA Sprint 1"
+        assert sprint.state == "closed"
+        assert sprint.start_date is not None
+        assert sprint.end_date is not None
+
+    @patch("mhq.exapi.jira.requests.get")
+    def test_a_sprint_with_no_end_date_yet_does_not_error(self, mock_get):
+        # A currently-active sprint's endDate can be absent/still open.
+        mock_get.return_value = _response(
+            200,
+            {
+                "isLast": True,
+                "values": [
+                    {
+                        "id": 332,
+                        "name": "Active sprint",
+                        "state": "active",
+                        "startDate": "2026-08-04T08:19:44.893Z",
+                    }
+                ],
+            },
+        )
+
+        [sprint] = _service().get_sprints_for_board(1076)
+
+        assert sprint.end_date is None
+
+
+class TestGetSprintIssueCounts:
+    @patch("mhq.exapi.jira.requests.get")
+    def test_reads_total_from_each_response_without_fetching_issue_bodies(
+        self, mock_get
+    ):
+        mock_get.side_effect = [
+            _response(200, {"total": 355}),
+            _response(200, {"total": 272}),
+        ]
+
+        planned, completed = _service().get_sprint_issue_counts(299)
+
+        assert planned == 355
+        assert completed == 272
+        # maxResults=0 on both calls -- issue bodies are never requested.
+        for call in mock_get.call_args_list:
+            assert call.kwargs["params"]["maxResults"] == 0
+        # The second call is the one scoped to done issues.
+        assert (
+            mock_get.call_args_list[1].kwargs["params"]["jql"]
+            == "statusCategory = Done"
+        )
+        assert "jql" not in mock_get.call_args_list[0].kwargs["params"]

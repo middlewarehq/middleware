@@ -19,9 +19,11 @@ from mhq.api.resources.ticket_insights_resources import (
 from mhq.api.resources.ticket_lead_time_resources import (
     adapt_ticket_lead_time_metrics,
 )
+from mhq.api.resources.sprint_resources import adapt_sprints
 from mhq.service.code.repository_service import get_repository_service
 from mhq.service.code.ticket_lead_time import get_ticket_lead_time_service
 from mhq.service.project.repository_service import get_project_service
+from mhq.service.sprints import get_sprint_service
 from mhq.service.ticket_insights import get_ticket_insights_service
 from mhq.api.resources.core_resources import adapt_team
 from mhq.store.models.core.teams import Team
@@ -296,3 +298,19 @@ def get_team_ticket_lead_time(team_id: str, from_time: datetime, to_time: dateti
     )
 
     return adapt_ticket_lead_time_metrics(metrics)
+
+
+# CLUSTOX: Jira integration -- the Sprint rollup chart (docs/
+# JIRA_INTEGRATION_PROPOSAL.md §6D). No date-range params -- a sprint's
+# own start/end dates are its natural window, unlike the DORA Metrics
+# page's selected period.
+@app.route("/teams/<team_id>/sprints", methods={"GET"})
+def get_team_sprints(team_id: str):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    sprint_service = get_sprint_service()
+    sprints = sprint_service.get_team_sprints(team)
+
+    return adapt_sprints(sprints)

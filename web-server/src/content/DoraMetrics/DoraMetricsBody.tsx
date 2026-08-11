@@ -36,6 +36,7 @@ import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
 import { LeadTimeBreakdownCard } from './DoraCards/LeadTimeBreakdownCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { DataStillSyncing } from './DoraCards/SkeletalCard';
+import { SprintRollupCard } from './DoraCards/SprintRollupCard';
 import { TicketCycleTimeCard } from './DoraCards/TicketCycleTimeCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
@@ -162,6 +163,7 @@ export const DoraMetricsBody = () => {
           Jira isn't linked or there's no ticket data for this
           team/period. See docs/JIRA_INTEGRATION_PROPOSAL.md. */}
       <LeadTimeBreakdownCard />
+      <SprintRollupCard />
       <TicketCycleTimeCard />
       <FlexBox col gap1 flexGrow={1}>
         <FlexBox gap={4}>

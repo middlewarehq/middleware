@@ -2,10 +2,10 @@ from datetime import datetime
 from typing import Dict, List, Tuple
 
 from mhq.exapi.jira import JiraApiService
-from mhq.exapi.models.jira import JiraChangelogEntry, JiraIssue
+from mhq.exapi.models.jira import JiraChangelogEntry, JiraIssue, JiraSprint
 from mhq.service.project.sync.etl_provider_handler import ProjectProviderETLHandler
 from mhq.store.models import UserIdentityProvider
-from mhq.store.models.projects import OrgProject, Ticket, TicketState
+from mhq.store.models.projects import OrgProject, Sprint, Ticket, TicketState
 from mhq.store.repos.core import CoreRepoService
 from mhq.store.repos.projects import ProjectRepoService
 from mhq.utils.log import LOG
@@ -114,6 +114,60 @@ class JiraETLHandler(ProjectProviderETLHandler):
                 entries_by_ticket, idempotency_keys
             )
         ]
+
+    def get_project_sprints_data(self, org_project: OrgProject) -> List[Sprint]:
+        boards = self._api.get_boards_for_project(org_project.key)
+        scrum_boards = [board for board in boards if board.board_type == "scrum"]
+        if not scrum_boards:
+            return []
+
+        jira_sprints = [
+            sprint
+            for board in scrum_boards
+            for sprint in self._api.get_sprints_for_board(board.id)
+        ]
+        if not jira_sprints:
+            return []
+
+        return self._to_sprints(org_project, jira_sprints)
+
+    def _to_sprints(
+        self, org_project: OrgProject, jira_sprints: List[JiraSprint]
+    ) -> List[Sprint]:
+        idempotency_keys = [self._sprint_idempotency_key(s) for s in jira_sprints]
+        existing_id_by_key = {
+            sprint.idempotency_key: sprint.id
+            for sprint in self._project_repo_service.get_sprints_by_idempotency_keys(
+                idempotency_keys
+            )
+        }
+
+        sprints = []
+        for sprint, idempotency_key in zip(jira_sprints, idempotency_keys):
+            planned_count, completed_count = self._api.get_sprint_issue_counts(
+                sprint.id
+            )
+            sprints.append(
+                Sprint(
+                    id=existing_id_by_key.get(idempotency_key, uuid4_str()),
+                    org_project_id=org_project.id,
+                    provider=UserIdentityProvider.JIRA.value,
+                    external_id=str(sprint.id),
+                    name=sprint.name,
+                    state=sprint.state,
+                    start_date=sprint.start_date,
+                    end_date=sprint.end_date,
+                    planned_count=planned_count,
+                    completed_count=completed_count,
+                    idempotency_key=idempotency_key,
+                )
+            )
+        return sprints
+
+    def _sprint_idempotency_key(self, sprint: JiraSprint) -> str:
+        # Scoped by org_id, same reasoning as _ticket_idempotency_key --
+        # each org's Jira site is independent.
+        return f"jira:{self.org_id}:sprint:{sprint.id}"
 
     def _ticket_idempotency_key(self, issue: JiraIssue) -> str:
         # Scoped by org_id, not the bare Jira issue id -- same reasoning as
