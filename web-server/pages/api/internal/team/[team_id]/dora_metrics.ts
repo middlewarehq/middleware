@@ -14,7 +14,9 @@ import {
   fetchLeadTimeStats,
   fetchChangeFailureRateStats,
   fetchMeanTimeToRestoreStats,
-  fetchDeploymentFrequencyStats
+  fetchDeploymentFrequencyStats,
+  // CLUSTOX: per-team DORA benchmarks.
+  fetchTeamBenchmarks
 } from '@/utils/cockpitMetricUtils';
 // CLUSTOX: contributor filter.
 import { stripContributorFilters } from '@/utils/contributorFilters';
@@ -61,14 +63,19 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 
   const from_date = isoDateString(startOfDay(new Date(rawFromDate)));
   const to_date = isoDateString(endOfDay(new Date(rawToDate)));
-  const [branchAndRepoFilters, unsyncedRepos] = await Promise.all([
+  const [branchAndRepoFilters, unsyncedRepos, benchmarks] = await Promise.all([
     getBranchesAndRepoFilter({
       orgId: org_id,
       teamId,
       branchMode: branch_mode as ActiveBranchMode,
       branches
     }),
-    getUnsyncedRepos(teamId)
+    getUnsyncedRepos(teamId),
+    // CLUSTOX: per-team DORA benchmarks. Deliberately fetched here and sent
+    // below, not on any other route: `metrics_summary` -- the only slice the
+    // four cards read `benchmarks` from -- is written solely by whatever this
+    // handler returns.
+    fetchTeamBenchmarks(teamId)
   ]);
   const [prFilters, workflowFilters] = await Promise.all([
     // CLUSTOX: contributor filter -- `authors` narrows Lead Time by PR author,
@@ -205,7 +212,10 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       deploymentFrequencyResponse.deployment_frequency_trends,
     lead_time_prs: leadtimePrs,
     assigned_repos: teamRepos,
-    unsynced_repos: unsyncedRepos
+    unsynced_repos: unsyncedRepos,
+    // CLUSTOX: read by all four DORA cards as
+    // `metrics_summary.benchmarks.<metric>.target` / `.source`.
+    benchmarks
   } as TeamDoraMetricsApiResponseType);
 });
 

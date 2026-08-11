@@ -13,8 +13,23 @@ import {
   ChangeFailureRateTrendsApiResponse,
   UpdatedDeploymentFrequencyAnalyticsResponseV2
 } from '@/types/resources';
+import { Benchmarks } from '@/utils/benchmarks';
 
 import { adaptDeploymentFrequencyAndGetBadge } from './adapt_deployment_frequency';
+
+// CLUSTOX: the resolved benchmark targets for a team -- the team's own row
+// falling back to the global baseline, per metric, resolved server-side.
+//
+// This has to be fetched on the dora_metrics path specifically. The four DORA
+// cards read `metrics_summary.benchmarks`, and that slice key is written only
+// by `fetchTeamDoraMetrics`, i.e. only by whatever this BFF route sends. A
+// benchmark produced anywhere else -- it previously rode on
+// /deployment_analytics -- lands in a different slice and no card ever sees
+// it. It joins the Promise.all the route already runs, so it costs no extra
+// round trip and the targets cannot disagree with the numbers drawn against
+// them.
+export const fetchTeamBenchmarks = (teamId: ID) =>
+  handleRequest<Benchmarks>(`/teams/${teamId}/benchmarks`);
 
 export const getFilters = (filtersArray: any[], teamIds: ID[]) => {
   return teamIds.reduce((objectSoFar, currentTeamId, currentIndex) => {

@@ -593,10 +593,11 @@ export type TeamDoraMetricsApiResponseType = {
   lead_time_prs: PR[];
   assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
   unsynced_repos: ID[];
-  // CLUSTOX: optional -- older responses (and this BFF route today, until
-  // it's wired to the resolved-benchmarks helper) simply omit the key. The
-  // four cards must treat a missing `benchmarks` exactly like every target
-  // being null: no line, no caption, unchanged from before this feature.
+  // CLUSTOX: populated by the dora_metrics BFF route from
+  // `GET /teams/<id>/benchmarks`. Optional because the mock response and any
+  // cached older response omit the key -- the four cards must treat a missing
+  // `benchmarks` exactly like every target being null: no line, no caption,
+  // unchanged from before this feature.
   benchmarks?: Benchmarks;
 };
 
