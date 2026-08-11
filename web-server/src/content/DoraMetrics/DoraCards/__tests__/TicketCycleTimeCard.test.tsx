@@ -2,16 +2,23 @@ jest.mock('@/hooks/useAuth', () => ({ useAuth: jest.fn() }));
 jest.mock('@/hooks/useStateTeamConfig', () => ({
   useSingleTeamConfig: jest.fn()
 }));
+jest.mock('@/contexts/ModalContext', () => ({ useModal: jest.fn() }));
 jest.mock('axios');
 
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 
+import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
 import { renderWithTheme as render } from '@/utils/testUtils';
 
-import { segmentWidths, TicketCycleTimeCard } from '../TicketCycleTimeCard';
+import {
+  segmentWidths,
+  TicketCycleTimeCard,
+  UnlinkedPrsModalBody
+} from '../TicketCycleTimeCard';
 
 const TEAM_ID = 'team-1';
 
@@ -40,6 +47,7 @@ describe('TicketCycleTimeCard', () => {
       singleTeamId: TEAM_ID,
       dates: { start: new Date('2026-05-01'), end: new Date('2026-08-01') }
     });
+    (useModal as jest.Mock).mockReturnValue({ addModal: jest.fn() });
   });
 
   it('renders nothing when Jira is not linked for this org', () => {
@@ -131,6 +139,28 @@ describe('TicketCycleTimeCard', () => {
     expect(
       screen.getByText(/PRs merged this period with no linked Jira ticket/)
     ).toBeInTheDocument();
+  });
+
+  it('opens the unlinked-PRs drill-down modal, scoped to the current team and date range, on "View PRs"', async () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      integrations: { jira: { integrated: true } }
+    });
+    (axios as unknown as jest.Mock).mockResolvedValue({
+      data: { cycle_time_by_project: [project()], prs_without_ticket_count: 4 }
+    });
+    const addModal = jest.fn();
+    (useModal as jest.Mock).mockReturnValue({ addModal });
+    render(<TicketCycleTimeCard />);
+
+    await userEvent.click(await screen.findByRole('button', { name: /view prs/i }));
+
+    expect(addModal).toHaveBeenCalledTimes(1);
+    const [modalArgs] = addModal.mock.calls[0];
+    expect(modalArgs.title).toBe('PRs with no linked Jira ticket');
+    expect(modalArgs.body.props).toMatchObject({
+      teamId: TEAM_ID,
+      dates: { start: new Date('2026-05-01'), end: new Date('2026-08-01') }
+    });
   });
 
   it('omits the Data Hygiene card entirely when every merged PR is linked', async () => {
@@ -230,5 +260,75 @@ describe('segmentWidths', () => {
     );
 
     expect(widths.find((w) => w.category === 'Done').seconds).toBe(2227);
+  });
+});
+
+const unlinkedPr = (overrides = {}) => ({
+  id: 'pr-1',
+  title: 'feat(payments): add refund flow',
+  url: 'https://github.com/org/repo/pull/42',
+  head_branch: 'feat/refund-flow',
+  author: 'jordan',
+  merged_at: '2026-07-15T10:00:00+00:00',
+  ...overrides
+});
+
+// CLUSTOX: Jira integration, Phase 4 (§6E) -- the Data Hygiene
+// drill-down's own lazy fetch. See docs/JIRA_INTEGRATION_PROPOSAL.md.
+describe('UnlinkedPrsModalBody', () => {
+  const DATES = { start: new Date('2026-05-01'), end: new Date('2026-08-01') };
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('fetches this team\'s unlinked PRs for the given date range', async () => {
+    (axios as unknown as jest.Mock).mockResolvedValue({ data: [unlinkedPr()] });
+
+    render(<UnlinkedPrsModalBody teamId={TEAM_ID} dates={DATES} />);
+
+    await screen.findByText(/feat\(payments\): add refund flow/);
+    expect(axios).toHaveBeenCalledWith(
+      `/api/internal/team/${TEAM_ID}/unlinked_prs`,
+      {
+        params: {
+          from_date: DATES.start.toISOString(),
+          to_date: DATES.end.toISOString()
+        }
+      }
+    );
+  });
+
+  it('renders branch, author, and merge date for each PR', async () => {
+    (axios as unknown as jest.Mock).mockResolvedValue({ data: [unlinkedPr()] });
+
+    render(<UnlinkedPrsModalBody teamId={TEAM_ID} dates={DATES} />);
+
+    expect(
+      await screen.findByText(/feat\/refund-flow/)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/jordan/)).toBeInTheDocument();
+    expect(screen.getByText(/Jul 15, 2026/)).toBeInTheDocument();
+  });
+
+  it('renders one entry per PR, in the order the backend returned them', async () => {
+    (axios as unknown as jest.Mock).mockResolvedValue({
+      data: [
+        unlinkedPr({ id: 'pr-new', title: 'newer PR' }),
+        unlinkedPr({ id: 'pr-old', title: 'older PR' })
+      ]
+    });
+
+    render(<UnlinkedPrsModalBody teamId={TEAM_ID} dates={DATES} />);
+
+    expect(await screen.findByText('newer PR')).toBeInTheDocument();
+    expect(screen.getByText('older PR')).toBeInTheDocument();
+  });
+
+  it('shows an error message instead of crashing when the fetch fails', async () => {
+    (axios as unknown as jest.Mock).mockRejectedValue(new Error('network error'));
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(<UnlinkedPrsModalBody teamId={TEAM_ID} dates={DATES} />);
+
+    expect(await screen.findByText(/Could not load PRs/)).toBeInTheDocument();
   });
 });

@@ -1,10 +1,13 @@
-import { WarningAmberRounded } from '@mui/icons-material';
+import { OpenInNew, WarningAmberRounded } from '@mui/icons-material';
+import { Button, CircularProgress } from '@mui/material';
 import axios from 'axios';
+import { format } from 'date-fns';
 import { FC, useEffect } from 'react';
 
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
+import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
@@ -120,11 +123,18 @@ const useTicketInsights = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isJiraLinked, singleTeamId, dates.start, dates.end]);
 
-  return { isJiraLinked, isLoading: isLoading.value, insights: insights.value };
+  return {
+    isJiraLinked,
+    isLoading: isLoading.value,
+    insights: insights.value,
+    singleTeamId,
+    dates
+  };
 };
 
 export const TicketCycleTimeCard: FC = () => {
-  const { isJiraLinked, isLoading, insights } = useTicketInsights();
+  const { isJiraLinked, isLoading, insights, singleTeamId, dates } =
+    useTicketInsights();
 
   if (!isJiraLinked || isLoading) return null;
   if (!insights?.cycle_time_by_project.length) return null;
@@ -132,7 +142,11 @@ export const TicketCycleTimeCard: FC = () => {
   return (
     <FlexBox gap={2} flexWrap="wrap">
       <ProjectCycleTimeCard projects={insights.cycle_time_by_project} />
-      <DataHygieneCard count={insights.prs_without_ticket_count} />
+      <DataHygieneCard
+        count={insights.prs_without_ticket_count}
+        teamId={singleTeamId}
+        dates={dates}
+      />
     </FlexBox>
   );
 };
@@ -202,8 +216,22 @@ const ProjectCycleTimeRow: FC<{ project: ProjectCycleTime }> = ({ project }) => 
   </FlexBox>
 );
 
-const DataHygieneCard: FC<{ count: number }> = ({ count }) => {
+const DataHygieneCard: FC<{
+  count: number;
+  teamId: ID;
+  dates: { start: Date; end: Date };
+}> = ({ count, teamId, dates }) => {
+  const { addModal } = useModal();
+
   if (!count) return null;
+
+  const openUnlinkedPrsModal = () => {
+    addModal({
+      title: 'PRs with no linked Jira ticket',
+      body: <UnlinkedPrsModalBody teamId={teamId} dates={dates} />,
+      showCloseIcon: true
+    });
+  };
 
   return (
     <CardRoot
@@ -225,6 +253,104 @@ const DataHygieneCard: FC<{ count: number }> = ({ count }) => {
           ticket
         </Line>
       </FlexBox>
+      <Button
+        size="small"
+        variant="text"
+        onClick={openUnlinkedPrsModal}
+        sx={{ alignSelf: 'flex-start', px: 0 }}
+      >
+        View PRs
+      </Button>
     </CardRoot>
+  );
+};
+
+type UnlinkedPr = {
+  id: string;
+  title: string;
+  url: string;
+  head_branch: string;
+  author: string;
+  merged_at: string;
+};
+
+// CLUSTOX: Jira integration, Phase 4 (§6E) -- the Data Hygiene
+// drill-down. Its own lazy fetch, only issued when the modal actually
+// opens -- the count above already answers "how many", this answers
+// "which ones", so it isn't worth loading on every DORA Metrics page
+// view. See docs/JIRA_INTEGRATION_PROPOSAL.md.
+export const UnlinkedPrsModalBody: FC<{
+  teamId: ID;
+  dates: { start: Date; end: Date };
+}> = ({ teamId, dates }) => {
+  const prs = useEasyState<UnlinkedPr[] | null>(null);
+  const isLoading = useBoolState(true);
+  const hasError = useBoolState(false);
+
+  useEffect(() => {
+    axios(`/api/internal/team/${teamId}/unlinked_prs`, {
+      params: {
+        from_date: dates.start.toISOString(),
+        to_date: dates.end.toISOString()
+      }
+    })
+      .then((res) => depFn(prs.set, res.data))
+      .catch((error) => {
+        console.error(error);
+        depFn(hasError.true);
+      })
+      .finally(isLoading.false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamId, dates.start, dates.end]);
+
+  if (isLoading.value)
+    return (
+      <FlexBox alignCenter gap2 p={2}>
+        <CircularProgress size="20px" />
+        <Line>Loading...</Line>
+      </FlexBox>
+    );
+
+  if (hasError.value)
+    return <Line p={2}>Could not load PRs. Please try again.</Line>;
+
+  return (
+    <FlexBox col gap2 p={2} minWidth="480px" maxWidth="640px">
+      <Line tiny secondary>
+        Check each branch/title against your ticket-key convention (e.g.
+        PROJ-123) -- a PR here either never referenced a ticket, or
+        referenced one this regex didn't recognize.
+      </Line>
+      <FlexBox col gap1 maxHeight="400px" overflow="auto">
+        {prs.value.map((pr) => (
+          <FlexBox
+            key={pr.id}
+            col
+            gap={0.5}
+            p={1}
+            borderRadius={1}
+            bgcolor="background.default"
+          >
+            <FlexBox
+              justifyBetween
+              alignCenter
+              gap2
+              link={pr.url}
+              openInNewTab
+              pointer
+            >
+              <Line tiny semibold white>
+                {pr.title}
+              </Line>
+              <OpenInNew sx={{ fontSize: '14px' }} />
+            </FlexBox>
+            <Line tiny secondary>
+              {pr.head_branch} · {pr.author} · merged{' '}
+              {format(new Date(pr.merged_at), 'MMM d, yyyy')}
+            </Line>
+          </FlexBox>
+        ))}
+      </FlexBox>
+    </FlexBox>
   );
 };

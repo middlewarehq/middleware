@@ -1,4 +1,20 @@
-from typing import Dict
+from typing import Dict, List
+
+from mhq.store.models.code import PullRequest
+
+
+def adapt_unlinked_prs(prs: List[PullRequest]) -> List[Dict]:
+    return [
+        {
+            "id": str(pr.id),
+            "title": pr.title,
+            "url": pr.url,
+            "head_branch": pr.head_branch,
+            "author": pr.author,
+            "merged_at": pr.state_changed_at.isoformat(),
+        }
+        for pr in prs
+    ]
 
 
 def adapt_ticket_insights(insights: Dict) -> Dict:

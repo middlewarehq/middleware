@@ -12,7 +12,10 @@ from mhq.api.resources.code_resouces import (
     adapt_team_repo_and_org_repo,
 )
 from mhq.api.resources.project_resources import adapt_org_projects
-from mhq.api.resources.ticket_insights_resources import adapt_ticket_insights
+from mhq.api.resources.ticket_insights_resources import (
+    adapt_ticket_insights,
+    adapt_unlinked_prs,
+)
 from mhq.service.code.repository_service import get_repository_service
 from mhq.service.project.repository_service import get_project_service
 from mhq.service.ticket_insights import get_ticket_insights_service
@@ -232,3 +235,29 @@ def get_team_ticket_insights(team_id: str, from_time: datetime, to_time: datetim
     insights = ticket_insights_service.get_team_ticket_insights(team, interval)
 
     return adapt_ticket_insights(insights)
+
+
+# CLUSTOX: Jira integration, Phase 4 (§6E) -- the Data Hygiene card's
+# drill-down. Its own route/fetch, not folded into ticket_insights above:
+# that one loads on every DORA Metrics page view, this one only when
+# someone actually opens the unmatched-PRs list. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md.
+@app.route("/teams/<team_id>/unlinked_prs", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_unlinked_prs(team_id: str, from_time: datetime, to_time: datetime):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+    interval = query_validator.interval_validator(from_time, to_time)
+
+    ticket_insights_service = get_ticket_insights_service()
+    prs = ticket_insights_service.get_team_unlinked_prs(team, interval)
+
+    return adapt_unlinked_prs(prs)

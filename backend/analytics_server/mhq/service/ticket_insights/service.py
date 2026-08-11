@@ -1,6 +1,7 @@
-from typing import Dict
+from typing import Dict, List
 
 from mhq.service.ticket_insights.cycle_time import compute_cycle_time_by_project
+from mhq.store.models.code import PullRequest
 from mhq.store.models.core import Team
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.projects import ProjectRepoService
@@ -42,8 +43,7 @@ class TicketInsightsService:
             tickets, ticket_states, projects_by_id
         )
 
-        org_repos = self._code_repo_service.get_team_repos(str(team.id))
-        repo_ids = [str(repo.id) for repo in org_repos]
+        repo_ids = self._team_repo_ids(team)
         prs_without_ticket_count = (
             self._ticket_matching_repo_service.get_unlinked_merged_pr_count(
                 repo_ids, interval.from_time, interval.to_time
@@ -54,6 +54,27 @@ class TicketInsightsService:
             "cycle_time_by_project": cycle_time_by_project,
             "prs_without_ticket_count": prs_without_ticket_count,
         }
+
+    def get_team_unlinked_prs(self, team: Team, interval: Interval) -> List[PullRequest]:
+        """
+        The actual merged PRs behind the Data Hygiene count above --
+        title, branch, merge time -- so a real gap in the ticket-key
+        convention (a typo, a PR that references a ticket in its
+        description instead of its title/branch, or one that genuinely
+        never had a ticket) can be found and fixed by a person, not just
+        counted. Deliberately its own call, not folded into
+        get_team_ticket_insights: the count is cheap and used on every
+        DORA Metrics page load, this list is only fetched when someone
+        actually opens the drill-down.
+        """
+        repo_ids = self._team_repo_ids(team)
+        return self._ticket_matching_repo_service.get_unlinked_merged_prs(
+            repo_ids, interval.from_time, interval.to_time
+        )
+
+    def _team_repo_ids(self, team: Team) -> List[str]:
+        org_repos = self._code_repo_service.get_team_repos(str(team.id))
+        return [str(repo.id) for repo in org_repos]
 
 
 def get_ticket_insights_service() -> TicketInsightsService:

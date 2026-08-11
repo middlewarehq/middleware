@@ -90,3 +90,40 @@ class TestGetTeamTicketInsights:
         assert project_result.project_key == "PZDA"
         assert project_result.ticket_count == 1
         assert project_result.avg_total_seconds == timedelta(days=3).total_seconds()
+
+
+# CLUSTOX: Jira integration, Phase 4 (§6E) -- the Data Hygiene
+# drill-down. See docs/JIRA_INTEGRATION_PROPOSAL.md.
+class TestGetTeamUnlinkedPrs:
+    def test_scopes_the_lookup_to_the_teams_tracked_repos(self):
+        code_repo = MagicMock()
+        code_repo.get_team_repos.return_value = [
+            MagicMock(id="repo-1"),
+            MagicMock(id="repo-2"),
+        ]
+        ticket_matching_repo = MagicMock()
+        ticket_matching_repo.get_unlinked_merged_prs.return_value = []
+
+        team = Team(id="team-1")
+        _service(code_repo=code_repo, ticket_matching_repo=ticket_matching_repo).get_team_unlinked_prs(
+            team, _interval()
+        )
+
+        looked_up_repo_ids = (
+            ticket_matching_repo.get_unlinked_merged_prs.call_args[0][0]
+        )
+        assert set(looked_up_repo_ids) == {"repo-1", "repo-2"}
+
+    def test_returns_exactly_what_the_repo_service_returns(self):
+        code_repo = MagicMock()
+        code_repo.get_team_repos.return_value = []
+        prs = [MagicMock(), MagicMock()]
+        ticket_matching_repo = MagicMock()
+        ticket_matching_repo.get_unlinked_merged_prs.return_value = prs
+
+        team = Team(id="team-1")
+        result = _service(
+            code_repo=code_repo, ticket_matching_repo=ticket_matching_repo
+        ).get_team_unlinked_prs(team, _interval())
+
+        assert result == prs
