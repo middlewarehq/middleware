@@ -13,6 +13,7 @@ from mhq.api.integrations import (
     restore_team_repo_deployment_types,
     switch_team_repos_to_workflow_deployments,
 )
+from mhq.exapi.jenkins import JenkinsAddressNotAllowed
 from mhq.service.deployments.deployment_service import DeploymentsService
 from mhq.store.models.code import RepoWorkflowProviders, RepoWorkflowType
 from mhq.store.models.code.enums import TeamReposDeploymentType
@@ -841,6 +842,21 @@ def test_an_unreachable_jenkins_is_a_502_not_a_500():
     # admin looking in entirely the wrong place.
     assert response.status_code == 502
     assert "Could not reach Jenkins" in response.json["error"]
+
+
+def test_a_refused_address_is_told_apart_from_an_unreachable_jenkins():
+    response = _jobs_route(
+        JenkinsAddressNotAllowed(
+            "Jenkins host metadata resolves to 169.254.169.254, which is a "
+            "private, loopback or link-local address."
+        )
+    )
+
+    # A 502 "Could not reach Jenkins" would send the admin to look at a
+    # firewall for a URL this server is refusing on purpose.
+    assert response.status_code == 400
+    assert "169.254.169.254" in response.json["error"]
+    assert "Could not reach Jenkins" not in response.json["error"]
 
 
 def test_a_reachable_jenkins_returns_its_jobs():

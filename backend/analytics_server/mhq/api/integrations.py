@@ -354,7 +354,7 @@ def get_jenkins_jobs(org_id: str):
     # mhq/service/workflows/sync/etl_jenkins_handler.py.
     import requests
 
-    from mhq.exapi.jenkins import JenkinsApiService
+    from mhq.exapi.jenkins import JenkinsAddressNotAllowed, JenkinsApiService
     from mhq.store.repos.core import CoreRepoService
     from mhq.utils.jenkins import get_jenkins_config
 
@@ -368,6 +368,12 @@ def get_jenkins_jobs(org_id: str):
 
     try:
         return JenkinsApiService(base_url, username, api_token).get_jobs()
+    except JenkinsAddressNotAllowed as e:
+        # CLUSTOX: caught ahead of RequestException, which it subclasses. The
+        # configured URL points somewhere this server refuses to fetch, which is
+        # a 400 the admin can fix -- reported as "could not reach Jenkins" it
+        # reads as a network problem and sends him to look at a firewall.
+        return jsonify({"error": str(e)}), 400
     except requests.RequestException as e:
         # An unreachable, slow or erroring Jenkins is not a bug in this server.
         # Surfaced as a 500 it reached the setup form as "check your

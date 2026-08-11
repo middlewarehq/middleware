@@ -9,7 +9,15 @@ import pytest
 import pytz
 import requests
 
-from mhq.exapi.jenkins import JOB_TREE, JenkinsApiService, job_path
+from unittest.mock import patch
+
+from mhq.exapi.jenkins import (
+    JOB_TREE,
+    JenkinsAddressNotAllowed,
+    JenkinsApiService,
+    assert_url_is_allowed,
+    job_path,
+)
 from tests.factories.models.exapi.jenkins import get_jenkins_nested_jobs_dict
 
 
@@ -203,7 +211,18 @@ def _service(url, max_seconds=5):
     )
 
 
-def test_a_dribbling_jenkins_is_cut_off_at_the_ceiling():
+# CLUSTOX: LocalJenkins listens on 127.0.0.1, which assert_url_is_allowed exists
+# to refuse. These tests are about reading a real socket under a deadline, not
+# about which addresses are allowed -- that has its own tests below -- so they
+# stand the guard down rather than working around it with a fake response, which
+# is what previously hid a bug in this exact code path.
+@pytest.fixture
+def loopback_allowed():
+    with patch("mhq.exapi.jenkins.assert_url_is_allowed"):
+        yield
+
+
+def test_a_dribbling_jenkins_is_cut_off_at_the_ceiling(loopback_allowed):
     # 4000 bytes handed over 50 at a time every 50ms: four seconds to complete,
     # with every gap comfortably inside the read timeout, so nothing but the
     # total ceiling can stop it. The whole body is under one 64 KiB chunk, so
@@ -224,12 +243,12 @@ def test_a_dribbling_jenkins_is_cut_off_at_the_ceiling():
     assert elapsed < 2.5, f"ceiling did not bound the read: took {elapsed:.1f}s"
 
 
-def test_a_prompt_jenkins_is_read_in_full():
+def test_a_prompt_jenkins_is_read_in_full(loopback_allowed):
     with LocalJenkins(b'{"jobs": []}') as jenkins:
         assert _service(jenkins.url).get_jobs() == []
 
 
-def test_a_body_larger_than_one_read_is_reassembled():
+def test_a_body_larger_than_one_read_is_reassembled(loopback_allowed):
     # read1() returns whatever is available rather than a full chunk, so the
     # loop has to keep going until EOF instead of stopping at the first short
     # read.
@@ -254,7 +273,7 @@ def test_a_body_larger_than_one_read_is_reassembled():
     assert jobs[-1]["full_name"] == "deploy-1999"
 
 
-def test_a_gzipped_response_is_decoded():
+def test_a_gzipped_response_is_decoded(loopback_allowed):
     # requests advertises gzip on every request. Reading response.raw without
     # decode_content hands json.loads a gzip stream.
     body = gzip.compress(json.dumps(get_jenkins_nested_jobs_dict()).encode())
@@ -270,10 +289,135 @@ def test_a_gzipped_response_is_decoded():
     ]
 
 
-def test_an_http_error_is_raised_rather_than_parsed():
+def test_an_http_error_is_raised_rather_than_parsed(loopback_allowed):
     with LocalJenkins(b"forbidden", status_line=b"HTTP/1.1 403 Forbidden") as jenkins:
         service = _service(jenkins.url)
 
         assert service.check_pat() is False
         with pytest.raises(requests.HTTPError):
             service.get_jobs()
+
+
+# CLUSTOX: base_url is admin-supplied and the server fetches it. ClustoxJenkinsSetup.tsx
+# checks it in the browser, which is no check at all: an authenticated admin
+# could point a workspace at http://169.254.169.254/latest and read the cloud
+# instance credentials back out of the jobs endpoint. None of these tests
+# resolve a name for real -- the resolver is patched, so they say what the guard
+# does rather than what this machine's DNS happens to answer.
+def _resolving_to(*addresses):
+    """Patches the resolver the guard uses, in the form getaddrinfo returns."""
+    return patch(
+        "mhq.exapi.jenkins.socket.getaddrinfo",
+        return_value=[
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, 8080))
+            for address in addresses
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    "url, address",
+    [
+        ("http://127.0.0.1:8080", "127.0.0.1"),
+        ("http://10.0.0.5", "10.0.0.5"),
+        ("https://192.168.1.1", "192.168.1.1"),
+        # The cloud metadata endpoint: the reason this guard exists.
+        ("http://169.254.169.254/latest", "169.254.169.254"),
+        ("http://localhost:8080", "127.0.0.1"),
+        ("http://jenkins.internal", "172.16.4.9"),
+        ("http://[::1]", "::1"),
+        # An IPv4 private address wearing an IPv6 hat.
+        ("http://jenkins.internal", "::ffff:10.0.0.5"),
+    ],
+)
+def test_an_internal_address_is_refused(url, address):
+    with _resolving_to(address):
+        with pytest.raises(JenkinsAddressNotAllowed) as raised:
+            assert_url_is_allowed(url)
+
+    assert address in str(raised.value)
+
+
+def test_a_host_resolving_to_both_a_public_and_a_private_address_is_refused():
+    # Rejecting on the first address only lets a hostname whose A records are
+    # public-then-private through, and which one is connected to is not ours to
+    # predict.
+    with _resolving_to("69.30.247.141", "10.0.0.5"):
+        with pytest.raises(JenkinsAddressNotAllowed):
+            assert_url_is_allowed("https://jenkins.example.com")
+
+
+def test_the_real_jenkins_this_was_built_against_is_still_allowed():
+    # https://jenkins-gpu.theclustox.com resolves to a public address. A guard
+    # that blocks the one Jenkins in use is not a fix.
+    with _resolving_to("69.30.247.141"):
+        assert_url_is_allowed("https://jenkins-gpu.theclustox.com/api/json")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "file:///etc/passwd",
+        "gopher://jenkins.example.com",
+        "ftp://jenkins.example.com",
+        "jenkins.example.com",
+        "https://",
+    ],
+)
+def test_only_http_urls_with_a_host_are_accepted(url):
+    with pytest.raises(JenkinsAddressNotAllowed):
+        assert_url_is_allowed(url)
+
+
+def test_a_name_that_does_not_resolve_reads_as_unreachable_not_as_refused():
+    # Two different problems for the admin: an address we will not fetch is one
+    # he retypes, a name that does not resolve is one he checks DNS for.
+    with patch(
+        "mhq.exapi.jenkins.socket.getaddrinfo", side_effect=socket.gaierror("no such")
+    ):
+        with pytest.raises(requests.ConnectionError):
+            assert_url_is_allowed("https://jenkins.example.com")
+
+
+def test_nothing_is_requested_when_the_address_is_refused():
+    # The check is worth nothing after the fact: a request to 169.254.169.254
+    # has leaked whatever it was going to leak by the time a response arrives.
+    with _resolving_to("169.254.169.254"), patch(
+        "mhq.exapi.jenkins.requests.get"
+    ) as requests_get:
+        with pytest.raises(JenkinsAddressNotAllowed):
+            _service("http://169.254.169.254").get_jobs()
+
+    requests_get.assert_not_called()
+
+
+def test_redirects_are_not_followed():
+    # A public host answering with a redirect to an internal one walks straight
+    # past an address check performed on the URL we asked for.
+    with _resolving_to("69.30.247.141"), patch(
+        "mhq.exapi.jenkins.requests.get"
+    ) as requests_get:
+        requests_get.return_value.status_code = 302
+        requests_get.return_value.headers = {"Location": "http://169.254.169.254/"}
+        requests_get.return_value.raw.read1.return_value = b""
+
+        with pytest.raises(requests.HTTPError) as raised:
+            _service("https://jenkins.example.com").get_jobs()
+
+    assert requests_get.call_args.kwargs["allow_redirects"] is False
+    # Falling through as a 200-with-no-body would have parsed as {} and reported
+    # a redirecting Jenkins as an empty one.
+    assert "169.254.169.254" in str(raised.value)
+
+
+def test_tls_verification_is_not_negotiable():
+    with _resolving_to("69.30.247.141"), patch(
+        "mhq.exapi.jenkins.requests.get"
+    ) as requests_get:
+        requests_get.return_value.status_code = 200
+        requests_get.return_value.headers = {}
+        requests_get.return_value.raw.read1.return_value = b""
+
+        _service("https://jenkins.example.com").check_pat()
+
+    assert requests_get.call_args.kwargs["verify"] is True
