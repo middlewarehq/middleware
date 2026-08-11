@@ -1,3 +1,4 @@
+from datetime import timedelta
 from unittest.mock import MagicMock
 
 from mhq.service.ticket_insights.service import TicketInsightsService
@@ -67,8 +68,9 @@ class TestGetTeamTicketInsights:
     def test_returns_ticket_count_and_cycle_time_together(self):
         project_repo = MagicMock()
         project_repo.get_team_projects.return_value = [MagicMock(id="proj-1")]
-        ticket = MagicMock(id="t1", status="To Do")
-        ticket.created_at = time_now()
+        ticket = MagicMock(id="t1", status="Done")
+        ticket.updated_at = time_now()
+        ticket.created_at = ticket.updated_at - timedelta(days=3)
         project_repo.get_tickets_with_states_for_projects.return_value = (
             [ticket],
             [],
@@ -84,4 +86,5 @@ class TestGetTeamTicketInsights:
         ).get_team_ticket_insights(team, _interval())
 
         assert result["ticket_count"] == 1
-        assert "To Do" in result["cycle_time_by_status"]
+        assert "Done" in result["cycle_time_by_status"]
+        assert result["avg_total_cycle_time"].avg_seconds == timedelta(days=3).total_seconds()

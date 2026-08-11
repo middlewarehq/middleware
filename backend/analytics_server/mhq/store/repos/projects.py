@@ -239,12 +239,20 @@ class ProjectRepoService:
         to_time: datetime,
     ) -> Tuple[List[Ticket], List[TicketState]]:
         """
-        Tickets updated within [from_time, to_time] for the given
-        projects, plus every TicketState for those tickets (not clipped
-        to the window -- a ticket's full status history is needed to
-        compute its time-in-status correctly, even for segments that
-        started before the window). Two queries total regardless of how
-        many tickets/states exist, not one per ticket.
+        Completed tickets (status_category == "Done" -- Jira Cloud's 3
+        category names are fixed, not customizable per workflow, unlike
+        individual status names) updated within [from_time, to_time] for
+        the given projects, plus every TicketState for those tickets (not
+        clipped to the window -- a ticket's full status history is needed
+        to compute its time-in-status correctly). Two queries total
+        regardless of how many tickets/states exist, not one per ticket.
+
+        Only completed tickets: an open ticket has no bounded end time,
+        and including it would let a single item sitting untouched in a
+        backlog for months dominate a cycle-time average with a duration
+        that has nothing to do with how long finished work actually took
+        -- see compute_average_seconds_by_status's own docstring for the
+        concrete case that surfaced this.
         """
         if not org_project_ids:
             return [], []
@@ -253,6 +261,7 @@ class ProjectRepoService:
             self._db.session.query(Ticket)
             .filter(
                 Ticket.org_project_id.in_(org_project_ids),
+                Ticket.status_category == "Done",
                 Ticket.updated_at.between(from_time, to_time),
             )
             .all()

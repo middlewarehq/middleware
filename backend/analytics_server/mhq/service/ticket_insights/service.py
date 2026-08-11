@@ -1,11 +1,14 @@
 from typing import Dict
 
-from mhq.service.ticket_insights.cycle_time import compute_average_seconds_by_status
+from mhq.service.ticket_insights.cycle_time import (
+    compute_average_seconds_by_status,
+    compute_average_total_cycle_seconds,
+)
 from mhq.store.models.core import Team
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.projects import ProjectRepoService
 from mhq.store.repos.ticket_matching import TicketMatchingRepoService
-from mhq.utils.time import Interval, time_now
+from mhq.utils.time import Interval
 
 
 class TicketInsightsService:
@@ -37,9 +40,8 @@ class TicketInsightsService:
                 project_ids, interval.from_time, interval.to_time
             )
         )
-        cycle_time_by_status = compute_average_seconds_by_status(
-            tickets, ticket_states, time_now()
-        )
+        cycle_time_by_status = compute_average_seconds_by_status(tickets, ticket_states)
+        avg_total_cycle_time = compute_average_total_cycle_seconds(tickets)
 
         org_repos = self._code_repo_service.get_team_repos(str(team.id))
         repo_ids = [str(repo.id) for repo in org_repos]
@@ -51,6 +53,7 @@ class TicketInsightsService:
 
         return {
             "cycle_time_by_status": cycle_time_by_status,
+            "avg_total_cycle_time": avg_total_cycle_time,
             "ticket_count": len(tickets),
             "prs_without_ticket_count": prs_without_ticket_count,
         }

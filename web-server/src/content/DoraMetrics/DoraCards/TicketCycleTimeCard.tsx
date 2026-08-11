@@ -23,6 +23,7 @@ type TicketInsights = {
     avg_seconds: number;
     ticket_count: number;
   }[];
+  avg_total_cycle_seconds: number | null;
   ticket_count: number;
   prs_without_ticket_count: number;
 };
@@ -63,13 +64,26 @@ export const TicketCycleTimeCard: FC = () => {
 
   return (
     <CardRoot sx={{ cursor: 'default', p: 2 }} gap2>
-      <FlexBox col>
-        <Line big semibold white>
-          Ticket Cycle Time
-        </Line>
-        <Line tiny secondary>
-          Average time Jira tickets spend in each status, this period
-        </Line>
+      <FlexBox justifyBetween alignCenter gap2>
+        <FlexBox col>
+          <Line big semibold white>
+            Ticket Cycle Time
+          </Line>
+          <Line tiny secondary>
+            Average time in each status, for tickets completed this
+            period
+          </Line>
+        </FlexBox>
+        {Boolean(insights.value.avg_total_cycle_seconds) && (
+          <FlexBox col alignItems="flex-end" flexShrink={0}>
+            <Line big semibold white>
+              {getDurationString(insights.value.avg_total_cycle_seconds)}
+            </Line>
+            <Line tiny secondary>
+              avg, creation to done
+            </Line>
+          </FlexBox>
+        )}
       </FlexBox>
       <FlexBox col gap1>
         {sortedStatuses.map((row) => (

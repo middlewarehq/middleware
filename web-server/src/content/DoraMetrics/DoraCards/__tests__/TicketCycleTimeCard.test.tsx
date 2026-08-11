@@ -71,6 +71,7 @@ describe('TicketCycleTimeCard', () => {
           { status: 'In Progress', avg_seconds: 3600, ticket_count: 5 },
           { status: 'To Do', avg_seconds: 864000, ticket_count: 10 }
         ],
+        avg_total_cycle_seconds: 950400,
         ticket_count: 15,
         prs_without_ticket_count: 0
       }
@@ -81,6 +82,25 @@ describe('TicketCycleTimeCard', () => {
     const rows = screen.getAllByText(/To Do|In Progress/);
     expect(rows[0]).toHaveTextContent('To Do');
     expect(rows[1]).toHaveTextContent('In Progress');
+  });
+
+  it('shows the overall average cycle time as a headline figure', async () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      integrations: { jira: { integrated: true } }
+    });
+    (axios as unknown as jest.Mock).mockResolvedValue({
+      data: {
+        cycle_time_by_status: [
+          { status: 'Done', avg_seconds: 3600, ticket_count: 1 }
+        ],
+        avg_total_cycle_seconds: 950400, // 11 days
+        ticket_count: 1,
+        prs_without_ticket_count: 0
+      }
+    });
+    render(<TicketCycleTimeCard />);
+
+    expect(await screen.findByText('avg, creation to done')).toBeInTheDocument();
   });
 
   it('shows the data-hygiene callout only when there are unlinked merged PRs', async () => {

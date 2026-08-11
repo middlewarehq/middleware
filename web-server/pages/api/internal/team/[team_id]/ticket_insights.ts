@@ -15,6 +15,7 @@ export type TicketInsights = {
     avg_seconds: number;
     ticket_count: number;
   }[];
+  avg_total_cycle_seconds: number | null;
   ticket_count: number;
   prs_without_ticket_count: number;
 };
