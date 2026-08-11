@@ -158,9 +158,20 @@ def test_restoring_leaves_a_row_the_admin_has_since_changed_alone():
 
 
 class FakeOrgRepo:
-    def __init__(self, repo_id=REPO_ID, org_id=ORG_ID):
+    def __init__(self, repo_id=REPO_ID, org_id=ORG_ID, name="middleware"):
         self.id = repo_id
         self.org_id = org_id
+        self.name = name
+
+
+def org_repo_for(repo_id) -> FakeOrgRepo:
+    """
+    Stands in for the OrgRepo join. Only REPO_ID belongs to ORG_ID; every other
+    repo belongs to another workspace, which is what the scoping tests turn on.
+    """
+    if str(repo_id) == REPO_ID:
+        return FakeOrgRepo()
+    return FakeOrgRepo(repo_id=repo_id, org_id=OTHER_ORG_ID, name="someone-elses-repo")
 
 
 class FakeCodeRepoService:
@@ -205,6 +216,18 @@ class FakeWorkflowRepoService:
         self.team_repos = list(
             team_repos if team_repos is not None else [FakeTeamRepo()]
         )
+
+    def get_active_repo_workflows_by_org_id_and_provider(self, org_id, provider, type):
+        # Reproduces the OrgRepo join: a workflow belongs to the workspace its
+        # repo belongs to, and no query the route makes can widen that.
+        return [
+            (w, org_repo_for(w.org_repo_id))
+            for w in self.workflows
+            if w.provider == provider
+            and w.type == type
+            and w.is_active
+            and str(org_repo_for(w.org_repo_id).org_id) == str(org_id)
+        ]
 
     def get_repo_workflow_by_repo_ids(self, repo_ids, type) -> List[FakeWorkflow]:
         return [
@@ -326,6 +349,92 @@ def _unmap(client, repo_workflow_id, org_id=ORG_ID):
         f"/orgs/{org_id}/integrations/jenkins/mappings",
         json={"repo_workflow_id": str(repo_workflow_id)},
     )
+
+
+def _list(client, org_id=ORG_ID):
+    return client.get(f"/orgs/{org_id}/integrations/jenkins/mappings")
+
+
+def test_listing_returns_the_workspaces_live_mappings(routes):
+    # The mapping table reloaded showing "Select a Jenkins job" for a repo that
+    # was mapped and ingesting deployments, and nothing could supply the
+    # repo_workflow_id the DELETE route needs -- so a mapping could not be
+    # undone from the UI at all.
+    client, service = routes
+    _map(client, "platform/deploy-api")
+    jenkins_workflow = service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
+        REPO_ID, "platform/deploy-api"
+    )
+
+    response = _list(client)
+
+    assert response.status_code == 200
+    assert response.json == [
+        {
+            "repo_workflow_id": str(jenkins_workflow.id),
+            "org_repo_id": REPO_ID,
+            "job_full_name": "platform/deploy-api",
+            "repo_name": "middleware",
+        }
+    ]
+    # The id it hands back is the one the DELETE route accepts.
+    assert _unmap(client, response.json[0]["repo_workflow_id"]).status_code == 200
+
+
+def test_listing_is_empty_for_a_workspace_with_no_mappings(routes):
+    client, _ = routes
+
+    response = _list(client)
+
+    assert response.status_code == 200
+    assert response.json == []
+
+
+@pytest.mark.parametrize(
+    "routes",
+    [
+        [
+            FakeWorkflow(
+                RepoWorkflowProviders.JENKINS,
+                org_repo_id="66666666-6666-4666-8666-666666666666",
+                provider_workflow_id="their-deploy-job",
+            )
+        ]
+    ],
+    indirect=True,
+)
+def test_listing_does_not_leak_another_workspaces_mappings(routes):
+    client, _ = routes
+    _map(client, "our-deploy-job")
+
+    ours = _list(client)
+    theirs = _list(client, org_id=OTHER_ORG_ID)
+
+    assert [m["job_full_name"] for m in ours.json] == ["our-deploy-job"]
+    # Same authenticated admin, another workspace's org id in the path. The
+    # scoping is the OrgRepo join, not anything the caller passes.
+    assert [m["job_full_name"] for m in theirs.json] == ["their-deploy-job"]
+
+
+@pytest.mark.parametrize(
+    "routes",
+    [[FakeWorkflow(RepoWorkflowProviders.GITHUB_ACTIONS, provider_workflow_id="9931")]],
+    indirect=True,
+)
+def test_listing_covers_neither_other_providers_nor_removed_mappings(routes):
+    client, service = routes
+    _map(client, "deploy-api")
+    jenkins_workflow = service.get_repo_workflow_by_repo_id_and_provider_workflow_id(
+        REPO_ID, "deploy-api"
+    )
+
+    assert len(_list(client).json) == 1
+
+    _unmap(client, jenkins_workflow.id)
+
+    # The GitHub Actions workflow is active again, but it is not a Jenkins
+    # mapping and the removed Jenkins row is not one any more.
+    assert _list(client).json == []
 
 
 def test_mapping_a_second_job_leaves_exactly_one_active_deployment_source(routes):

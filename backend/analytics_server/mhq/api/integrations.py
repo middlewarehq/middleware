@@ -378,6 +378,34 @@ def get_jenkins_jobs(org_id: str):
         )
 
 
+# CLUSTOX: the workspace's live Jenkins mappings. Without this the mapping table
+# reloads showing "Select a Jenkins job" for a repo that is mapped and ingesting
+# deployments -- an admin's configuration looks lost -- and nothing can supply
+# the repo_workflow_id the DELETE route needs, so a mapping cannot be undone
+# from the UI at all.
+@app.route("/orgs/<org_id>/integrations/jenkins/mappings", methods={"GET"})
+def get_jenkins_mappings(org_id: str):
+    query_validator = get_query_validator()
+    query_validator.org_validator(org_id)
+
+    # Active Jenkins deployment workflows only: an inactive row is a mapping the
+    # admin removed, and offering it back would misreport where a repo's
+    # deployments come from. Scoping is the OrgRepo join inside the query.
+    mappings = WorkflowRepoService().get_active_repo_workflows_by_org_id_and_provider(
+        org_id, RepoWorkflowProviders.JENKINS, RepoWorkflowType.DEPLOYMENT
+    )
+
+    return [
+        {
+            "repo_workflow_id": str(repo_workflow.id),
+            "org_repo_id": str(repo_workflow.org_repo_id),
+            "job_full_name": repo_workflow.provider_workflow_id,
+            "repo_name": org_repo.name,
+        }
+        for repo_workflow, org_repo in mappings
+    ]
+
+
 # CLUSTOX: maps a Jenkins job to a repo as its deployment source. Enforces the
 # one-active-deployment-source-per-repo invariant and reuses the row for an
 # already-known (org_repo_id, provider_workflow_id) pair.

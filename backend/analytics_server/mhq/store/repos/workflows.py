@@ -185,6 +185,33 @@ class WorkflowRepoService:
             .all()
         )
 
+    # CLUSTOX: the workspace's live mappings, for the route that lists them.
+    # Scoped by joining OrgRepo rather than by filtering ids the caller supplies:
+    # RepoWorkflow has no org column, so the join is the only thing standing
+    # between an admin and another workspace's mappings, and doing it in SQL
+    # means there is no path where the filter is forgotten. Returns OrgRepo
+    # alongside because the mapping table shows repo names, and fetching them
+    # one by one afterwards is a query per row.
+    @rollback_on_exc
+    def get_active_repo_workflows_by_org_id_and_provider(
+        self,
+        org_id: str,
+        provider: RepoWorkflowProviders,
+        type: RepoWorkflowType,
+    ) -> List[Tuple[RepoWorkflow, OrgRepo]]:
+        return (
+            self._db.session.query(RepoWorkflow, OrgRepo)
+            .options(defer(RepoWorkflow.meta))
+            .join(OrgRepo, RepoWorkflow.org_repo_id == OrgRepo.id)
+            .filter(
+                OrgRepo.org_id == org_id,
+                RepoWorkflow.provider == provider,
+                RepoWorkflow.type == type,
+                RepoWorkflow.is_active.is_(True),
+            )
+            .all()
+        )
+
     # CLUSTOX: writes the Jenkins mapping, the deactivation of the repo's other
     # deployment workflows and the TeamRepos.deployment_type switch in a single
     # commit. If any part applied on its own, a repo could be left with two
