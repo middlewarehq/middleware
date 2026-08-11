@@ -120,9 +120,18 @@ GET  /settings/global?setting_type=BENCHMARK_SETTING
 PUT  /settings/global
 ```
 
-Superadmin only, enforced with `assertRole(session, 'SUPERADMIN')` at the BFF.
-The Flask layer has no notion of who is calling — it trusts the internal
-token — so the check cannot live there.
+**`PUT` is superadmin only**, enforced with `assertRole(session, 'SUPERADMIN')`
+at the BFF. The Flask layer has no notion of who is calling — it trusts the
+internal token — so the check cannot live there.
+
+**`GET` requires only an authenticated session.** Gating the read on superadmin
+was the original design and it was wrong: the team configuration form shows the
+inherited value as a placeholder, and a workspace admin loading that form would
+get a 403 and see a generic "not set" instead. The baseline is four numbers that
+already appear on that admin's own dashboard as target lines, resolved
+server-side — hiding them from the form that explains where a target came from
+protects nothing and makes the inheritance invisible. Writing stays locked,
+because one superadmin's numbers become every unset team's targets.
 
 **Resolved benchmarks ride on the existing metrics response** rather than
 getting their own endpoint. The dashboard already makes one call for all four

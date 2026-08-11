@@ -214,13 +214,14 @@ export const BenchmarkSettingsForm: FC<{
   }, [scope, teamId]);
 
   // CLUSTOX: the placeholder wants to show what clearing a field reverts to.
-  // For a team, that's the global baseline -- but `/clustox/benchmarks/global`
-  // is superadmin-only, and the person editing a team's benchmarks is
-  // ordinarily a workspace admin/EM, not the platform superadmin. This fetch
-  // is best-effort: on any failure (403, most of the time, in practice) the
-  // placeholder just falls back to a generic hint instead of a figure,
-  // rather than the form breaking or an error surfacing for something that
-  // isn't the user's fault.
+  // For a team, that's the global baseline. `GET /clustox/benchmarks/global`
+  // is readable by any authenticated admin (see the CLUSTOX comment on that
+  // route) specifically so this call succeeds for the workspace admin/EM who
+  // ordinarily opens this form, not just for the platform superadmin. Still
+  // wrapped as best-effort -- on any failure (a logged-out session, a
+  // network error) the placeholder falls back to a generic hint instead of a
+  // figure, rather than the form breaking over something that isn't the
+  // user's fault.
   useEffect(() => {
     if (scope !== 'team') return;
     let cancelled = false;
