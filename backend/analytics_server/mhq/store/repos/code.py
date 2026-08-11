@@ -530,6 +530,11 @@ class CodeRepoService:
                 PullRequest.repo_id.in_(repo_ids),
                 PullRequest.author.isnot(None),
                 PullRequest.state_changed_at.between(from_time, to_time),
+                # Merged only, matching _filter_prs_merged_in_interval. Every
+                # metric this dropdown filters counts merged PRs, so counting
+                # anything else here inflates the numbers next to each name
+                # and can offer someone whose Lead Time card comes back empty.
+                PullRequest.state == PullRequestState.MERGED,
             )
             .group_by(PullRequest.author)
             .order_by(func.count(PullRequest.id).desc())
