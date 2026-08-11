@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, TypedDict, Literal
+from typing import List, TypedDict, Literal, Optional
 
 from mhq.store.models import EntityType
 from mhq.store.models.incidents.enums import IncidentSource, IncidentType
@@ -55,6 +55,16 @@ class IncidentPRFilter(TypedDict):
 class IncidentPRsSetting(BaseSetting):
     include_revert_prs: bool
     filters: List[IncidentPRFilter]
+
+
+# CLUSTOX: every field is optional so fallback is per metric, not
+# all-or-nothing -- a team may set a lead-time target and inherit the rest.
+@dataclass
+class BenchmarkSetting(BaseSetting):
+    lead_time: Optional[float] = None
+    deployment_frequency: Optional[float] = None
+    change_failure_rate: Optional[float] = None
+    mean_time_to_recovery: Optional[float] = None
 
 
 # ADD NEW SETTING CLASS HERE

@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, List
 
 from mhq.service.settings.default_settings_data import get_default_setting_data
 from mhq.service.settings.models import (
+    BenchmarkSetting,
     ConfigurationSettings,
     DefaultSyncDaysSetting,
     ExcludedPRsSetting,
@@ -73,6 +74,17 @@ class SettingsService:
             filters=data.get("filters", []),
         )
 
+    # CLUSTOX: `data.get(key)` rather than `data.get(key, 0)` -- absent means
+    # inherit, and 0 is a deliberate target. Collapsing them would make every
+    # unset metric read as a target of zero.
+    def _adapt_benchmark_setting_from_setting_data(self, data: Dict[str, any]):
+        return BenchmarkSetting(
+            lead_time=data.get("lead_time"),
+            deployment_frequency=data.get("deployment_frequency"),
+            change_failure_rate=data.get("change_failure_rate"),
+            mean_time_to_recovery=data.get("mean_time_to_recovery"),
+        )
+
     # ADD NEW DICT TO DATACLASS ADAPTERS HERE
 
     def _handle_config_setting_from_db_setting(
@@ -97,6 +109,9 @@ class SettingsService:
 
         if setting_type == SettingType.INCIDENT_PRS_SETTING:
             return self._adapt_incident_prs_setting_from_setting_data(setting_data)
+
+        if setting_type == SettingType.BENCHMARK_SETTING:
+            return self._adapt_benchmark_setting_from_setting_data(setting_data)
 
         # ADD NEW HANDLE FROM DB SETTINGS HERE
 
@@ -198,6 +213,17 @@ class SettingsService:
             filters=data.get("filters", []),
         )
 
+    # CLUSTOX: `data.get(key)` rather than `data.get(key, 0)` -- absent means
+    # inherit, and 0 is a deliberate target. Collapsing them would make every
+    # unset metric read as a target of zero.
+    def _adapt_benchmark_setting_from_json(self, data: Dict[str, any]):
+        return BenchmarkSetting(
+            lead_time=data.get("lead_time"),
+            deployment_frequency=data.get("deployment_frequency"),
+            change_failure_rate=data.get("change_failure_rate"),
+            mean_time_to_recovery=data.get("mean_time_to_recovery"),
+        )
+
     # ADD NEW DICT TO API ADAPTERS HERE
 
     def _handle_config_setting_from_json_data(
@@ -222,6 +248,9 @@ class SettingsService:
 
         if setting_type == SettingType.INCIDENT_PRS_SETTING:
             return self._adapt_incident_prs_setting_from_json(setting_data)
+
+        if setting_type == SettingType.BENCHMARK_SETTING:
+            return self._adapt_benchmark_setting_from_json(setting_data)
 
         # ADD NEW HANDLE FROM JSON DATA HERE
 
@@ -269,6 +298,16 @@ class SettingsService:
             "filters": specific_setting.filters,
         }
 
+    def _adapt_benchmark_setting_json_data(
+        self, specific_setting: BenchmarkSetting
+    ) -> Dict:
+        return {
+            "lead_time": specific_setting.lead_time,
+            "deployment_frequency": specific_setting.deployment_frequency,
+            "change_failure_rate": specific_setting.change_failure_rate,
+            "mean_time_to_recovery": specific_setting.mean_time_to_recovery,
+        }
+
     # ADD NEW DATACLASS TO JSON DATA ADAPTERS HERE
 
     def _handle_config_setting_to_db_setting(
@@ -304,6 +343,11 @@ class SettingsService:
             specific_setting, IncidentPRsSetting
         ):
             return self._adapt_incident_prs_setting_json_data(specific_setting)
+
+        if setting_type == SettingType.BENCHMARK_SETTING and isinstance(
+            specific_setting, BenchmarkSetting
+        ):
+            return self._adapt_benchmark_setting_json_data(specific_setting)
 
         # ADD NEW HANDLE TO DB SETTINGS HERE
 
