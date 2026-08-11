@@ -14,6 +14,16 @@ import { Errors, ResponseError } from '@/constants/error';
 import { db } from '@/utils/db';
 import { sendInviteEmail } from '@/utils/mailer';
 
+// CLUSTOX: hardcoded on purpose. This was built from NEXTAUTH_URL, which the
+// server's .env still sets to http://localhost:3333 -- so every invite email
+// carried a link only the server itself could open. Nothing else caught it,
+// because every other reader of that variable is same-origin.
+//
+// Set NEXTAUTH_URL to the public domain on the server and this can go back to
+// reading it. Note that local invites now also point at production; the token
+// is still valid, so swap the host by hand when testing on localhost.
+const APP_URL = 'https://middleware.theclustox.com';
+
 const postSchema = yup.object().shape({
   name: yup.string().required(),
   email: yup.string().email().required(),
@@ -45,7 +55,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     createdBy: session.userId
   });
 
-  const inviteUrl = `${process.env.NEXTAUTH_URL}/accept-invite?token=${token}`;
+  const inviteUrl = `${APP_URL}/accept-invite?token=${token}`;
 
   // Adopting an existing workspace is the only case where a name is known
   // up front -- a brand-new one is created (and named) on acceptance, so
