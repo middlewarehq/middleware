@@ -2,6 +2,7 @@ from mhq.service.code import sync_code_repos
 from mhq.service.incidents import sync_org_incidents
 from mhq.service.merge_to_deploy_broker import process_merge_to_deploy_cache
 from mhq.service.project import sync_project_issues
+from mhq.service.ticket_matching import match_tickets_to_prs
 from mhq.service.workflows import sync_org_workflows
 from mhq.utils.log import LOG
 
@@ -10,10 +11,13 @@ sync_sequence = [
     sync_org_workflows,
     process_merge_to_deploy_cache,
     sync_org_incidents,
-    # CLUSTOX: Jira integration, Phase 2 (issue sync) -- no-ops for an org
-    # with no project-tracking integration linked. See
-    # docs/JIRA_INTEGRATION_PROPOSAL.md.
+    # CLUSTOX: Jira integration, Phase 2/3 (issue sync, then ticket-PR
+    # matching) -- no-ops for an org with no project-tracking integration
+    # linked. match_tickets_to_prs must run after sync_code_repos AND
+    # sync_project_issues, since it only links rows both of those have
+    # already written this cycle. See docs/JIRA_INTEGRATION_PROPOSAL.md.
     sync_project_issues,
+    match_tickets_to_prs,
 ]
 
 
