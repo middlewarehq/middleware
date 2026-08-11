@@ -22,7 +22,14 @@ import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import { ROUTES } from '@/constants/routes';
 import { isRoleLessThanEM } from '@/constants/useRoute';
-import { usePrChangeTimePipeline } from '@/content/PullRequests/useChangeTimePipeline';
+import {
+  ClipPathEnum,
+  usePrChangeTimePipeline
+} from '@/content/PullRequests/useChangeTimePipeline';
+import {
+  TicketLeadTimeComparison,
+  TicketLeadTimeSegment
+} from '@/content/PullRequests/useTicketLeadTimeSegment';
 import { useAuth } from '@/hooks/useAuth';
 import { useSelector } from '@/store';
 import { ChangeTimeSegment } from '@/types/resources';
@@ -40,13 +47,36 @@ export const LeadTimeStatsCore: FC<
     cycle?: number;
     changeTimeSegments: ChangeTimeSegment[];
     showTotal?: boolean;
+    // CLUSTOX: Jira integration -- the extended Lead Time breakdown's
+    // leading "ticket created -> first commit" segment (docs/
+    // JIRA_INTEGRATION_PROPOSAL.md §6A). Both undefined for an org
+    // without Jira linked (or with no ticket-matched PRs this period),
+    // in which case this renders exactly the original 5-segment bar --
+    // see ticketSegment's every usage below, each guarded by its
+    // presence.
+    ticketSegment?: TicketLeadTimeSegment;
+    comparison?: TicketLeadTimeComparison;
   } & BoxProps
-> = ({ cycle = 0, changeTimeSegments, showTotal, ...props }) => {
+> = ({
+  cycle = 0,
+  changeTimeSegments,
+  showTotal,
+  ticketSegment,
+  comparison,
+  ...props
+}) => {
   const theme = useTheme();
   const { role } = useAuth();
   const isEng = isRoleLessThanEM(role);
   const { addPage } = useOverlayPage();
   const [initiation, response, rework, merge, deployment] = changeTimeSegments;
+  // The existing 5 segments' own math (calcCycleTime/calcLeadTime/the
+  // "Total" footer below) is untouched -- ticketSegment is purely
+  // prepended visually, never folded into that total, since it's the
+  // org-wide, unmodified lead_time this card has always shown.
+  const initiationClipPath = ticketSegment
+    ? ClipPathEnum.DEFAULT
+    : ClipPathEnum.FIRST;
 
   const allAssignedRepos = useSelector(
     (s) => s.doraMetrics.allReposAssignedToTeam
@@ -86,6 +116,26 @@ export const LeadTimeStatsCore: FC<
 
   return (
     <FlexBox col gap1>
+      {comparison && (
+        <FlexBox alignCenter gap={1 / 2} mb={1 / 2}>
+          <Line small secondary>
+            Idea to production:
+          </Line>
+          <Line small bold white>
+            {getDurationString(comparison.extendedSeconds, { segments: 2 })}
+          </Line>
+          <Line small secondary>
+            avg, up from{' '}
+            <Line component="span" small bold>
+              {getDurationString(comparison.commitOnlySeconds, {
+                segments: 2
+              })}
+            </Line>{' '}
+            commit-only, over {comparison.matchedPrCount} ticket-matched PR
+            {comparison.matchedPrCount === 1 ? '' : 's'}
+          </Line>
+        </FlexBox>
+      )}
       <Box
         display="flex"
         borderRadius={1}
@@ -95,15 +145,38 @@ export const LeadTimeStatsCore: FC<
         {...props}
         onMouseEnter={() => track('HOVER_ON_CHANGE_TIME_QUICK_STATS_CHART')}
       >
+        {ticketSegment && (
+          <Box
+            bgcolor={ticketSegment.bgColor}
+            color={ticketSegment.color}
+            {...commonSegmentProps}
+            ml={0}
+            flex={ticketSegment.duration || defaultFlex}
+            sx={{
+              ...ChangeTypeStatBoxStyles,
+              clipPath: ClipPathEnum.FIRST
+            }}
+          >
+            <Box>{ticketSegment.title}</Box>
+            <FlexBox fontWeight="bold" fontSize="1.1em" alignCenter gap={1 / 2}>
+              {getDurationString(ticketSegment.duration, {
+                segments: 1
+              }) || '-'}{' '}
+              <DarkTooltip arrow title={ticketSegment.description}>
+                <InfoOutlined fontSize="inherit" />
+              </DarkTooltip>
+            </FlexBox>
+          </Box>
+        )}
         <Box
           bgcolor={initiation.bgColor}
           color={initiation.color}
           {...commonSegmentProps}
-          ml={0}
+          ml={ticketSegment ? -1 : 0}
           flex={initiation.duration || defaultFlex}
           sx={{
             ...ChangeTypeStatBoxStyles,
-            clipPath: initiation.clipPath
+            clipPath: initiationClipPath
           }}
           onClick={triggerPrPageOverlay}
         >

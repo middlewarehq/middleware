@@ -16,7 +16,11 @@ from mhq.api.resources.ticket_insights_resources import (
     adapt_ticket_insights,
     adapt_unlinked_prs,
 )
+from mhq.api.resources.ticket_lead_time_resources import (
+    adapt_ticket_lead_time_metrics,
+)
 from mhq.service.code.repository_service import get_repository_service
+from mhq.service.code.ticket_lead_time import get_ticket_lead_time_service
 from mhq.service.project.repository_service import get_project_service
 from mhq.service.ticket_insights import get_ticket_insights_service
 from mhq.api.resources.core_resources import adapt_team
@@ -261,3 +265,34 @@ def get_team_unlinked_prs(team_id: str, from_time: datetime, to_time: datetime):
     prs = ticket_insights_service.get_team_unlinked_prs(team, interval)
 
     return adapt_unlinked_prs(prs)
+
+
+# CLUSTOX: Jira integration -- the extended Lead Time breakdown's
+# "ticket created -> first commit" leading phase (docs/
+# JIRA_INTEGRATION_PROPOSAL.md §6A). Its own route, not a change to
+# /teams/<team_id>/lead_time above: that one's response and the plain
+# DORA "Lead Time for Changes" card that depends on it stay exactly as
+# they are. See TicketLeadTimeMetrics for why this is a separate,
+# matched-subset-only average rather than a new field mixed into the
+# org-wide one.
+@app.route("/teams/<team_id>/ticket_lead_time", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_ticket_lead_time(team_id: str, from_time: datetime, to_time: datetime):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+    interval = query_validator.interval_validator(from_time, to_time)
+
+    ticket_lead_time_service = get_ticket_lead_time_service()
+    metrics = ticket_lead_time_service.get_team_ticket_lead_time_metrics(
+        team, interval
+    )
+
+    return adapt_ticket_lead_time_metrics(metrics)

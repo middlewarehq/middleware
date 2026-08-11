@@ -27,6 +27,7 @@ import { Line } from '@/components/Text';
 import { TrendsLineChart } from '@/components/TrendsLineChart';
 import { track } from '@/constants/events';
 import { ClipPathEnum } from '@/content/PullRequests/useChangeTimePipeline';
+import { useTicketLeadTimeSegment } from '@/content/PullRequests/useTicketLeadTimeSegment';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
 import { useBoolState } from '@/hooks/useEasyState';
 import { usePageRefreshCallback } from '@/hooks/usePageRefreshCallback';
@@ -172,6 +173,12 @@ export const PrBreakdownAndInsights: FC<{
   prs: PR[];
 }> = ({ prs }) => {
   const { changeTimeDetailsArray } = useComputedPrChangeTime(prs);
+  // CLUSTOX: Jira integration -- the extended Lead Time breakdown's
+  // leading "ticket created -> first commit" segment (docs/
+  // JIRA_INTEGRATION_PROPOSAL.md §6A). Both null for an org without
+  // Jira linked (or with no ticket-matched PRs this period) -- see
+  // useTicketLeadTimeSegment.
+  const { ticketSegment, comparison } = useTicketLeadTimeSegment();
 
   if (!prs.length) return null;
 
@@ -183,13 +190,17 @@ export const PrBreakdownAndInsights: FC<{
             <Line white bold>
               Average LT breakdown
             </Line>
-            <Line small>Commit to deploy</Line>
+            <Line small>
+              {ticketSegment ? 'Idea to deploy' : 'Commit to deploy'}
+            </Line>
           </FlexBox>
         </FlexBox>
 
         <Box sx={{ borderRadius: 1 }}>
           <LeadTimeStatsCore
             changeTimeSegments={changeTimeDetailsArray}
+            ticketSegment={ticketSegment}
+            comparison={comparison}
             showTotal
           />
         </Box>
