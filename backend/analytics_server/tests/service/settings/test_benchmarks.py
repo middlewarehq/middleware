@@ -88,3 +88,31 @@ def test_validation_accepts_a_partial_payload():
     cleaned = validate_benchmark_payload({"lead_time": 3600})
 
     assert cleaned == {"lead_time": 3600}
+
+
+def test_resolution_asks_for_the_team_row_and_the_global_row():
+    from mhq.service.settings.benchmarks import GLOBAL_BENCHMARK_ENTITY_ID
+    from mhq.store.models.settings import SettingType
+    from mhq.store.models.settings.enums import EntityType
+
+    asked = []
+
+    class FakeSettingsService:
+        def get_settings(self, setting_type, entity_type, entity_id):
+            asked.append((setting_type, entity_type, entity_id))
+            return None
+
+    from mhq.api.deployment_analytics import get_resolved_benchmarks_for_team
+
+    get_resolved_benchmarks_for_team("team-1", settings_service=FakeSettingsService())
+
+    assert (
+        SettingType.BENCHMARK_SETTING,
+        EntityType.TEAM,
+        "team-1",
+    ) in asked
+    assert (
+        SettingType.BENCHMARK_SETTING,
+        EntityType.GLOBAL,
+        GLOBAL_BENCHMARK_ENTITY_ID,
+    ) in asked

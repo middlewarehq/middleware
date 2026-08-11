@@ -35,6 +35,32 @@ from mhq.service.deployments.models.models import (
 app = Blueprint("deployment_analytics", __name__)
 
 
+# CLUSTOX: resolve a team's benchmarks for the metrics response. Injectable
+# settings_service so the resolution order can be tested without a database.
+def get_resolved_benchmarks_for_team(team_id: str, settings_service=None):
+    from mhq.service.settings.benchmarks import (
+        GLOBAL_BENCHMARK_ENTITY_ID,
+        resolve_benchmarks,
+    )
+    from mhq.service.settings.configuration_settings import get_settings_service
+    from mhq.store.models.settings import SettingType
+    from mhq.store.models.settings.enums import EntityType
+
+    settings_service = settings_service or get_settings_service()
+
+    team_setting = settings_service.get_settings(
+        SettingType.BENCHMARK_SETTING, EntityType.TEAM, team_id
+    )
+    global_setting = settings_service.get_settings(
+        SettingType.BENCHMARK_SETTING, EntityType.GLOBAL, GLOBAL_BENCHMARK_ENTITY_ID
+    )
+
+    return resolve_benchmarks(
+        getattr(team_setting, "specific_settings", None),
+        getattr(global_setting, "specific_settings", None),
+    )
+
+
 @app.route("/teams/<team_id>/deployment_analytics", methods={"GET"})
 @queryschema(
     Schema(
@@ -97,6 +123,7 @@ def get_team_deployment_analytics(
             }
             for repo in org_repos
         },
+        "benchmarks": get_resolved_benchmarks_for_team(team_id),
     }
 
 
