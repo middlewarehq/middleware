@@ -82,16 +82,71 @@ def test_validation_rejects_unknown_keys():
         validate_benchmark_payload({"leadtime": 3600})
 
 
-def test_validation_keeps_zero_and_omits_nothing_else():
+def test_validation_rejects_booleans():
+    # `False is not None`, so a boolean surviving validation would reach
+    # resolve_benchmarks and be emitted as {"target": false} -- a target the
+    # cards would then try to draw a line at.
+    with pytest.raises(BadRequest):
+        validate_benchmark_payload({"deployment_frequency": True})
+
+    with pytest.raises(BadRequest):
+        validate_benchmark_payload({"deployment_frequency": False})
+
+
+def test_validation_keeps_zero_and_nulls_the_rest():
     cleaned = validate_benchmark_payload({"change_failure_rate": 0})
 
-    assert cleaned == {"change_failure_rate": 0}
+    # 0 survives as a real target; the untouched metrics come back as
+    # explicit Nones rather than absent keys.
+    assert cleaned == {
+        "lead_time": None,
+        "deployment_frequency": None,
+        "change_failure_rate": 0,
+        "mean_time_to_recovery": None,
+    }
 
 
 def test_validation_accepts_a_partial_payload():
     cleaned = validate_benchmark_payload({"lead_time": 3600})
 
-    assert cleaned == {"lead_time": 3600}
+    assert cleaned["lead_time"] == 3600
+    assert set(cleaned.keys()) == set(BENCHMARK_METRICS)
+
+
+def test_clearing_every_field_is_a_truthy_all_none_payload():
+    # The form omits empty fields, so clearing all four posts `{}`.
+    # save_settings substitutes get_default_setting_data() for a *falsy*
+    # setting_data, so an empty dict here would write defaults instead of
+    # clearing -- "clear everything to go back to inheriting" has to survive
+    # this function as something truthy that means "no target anywhere".
+    cleaned = validate_benchmark_payload({})
+
+    assert cleaned == {metric: None for metric in BENCHMARK_METRICS}
+    assert cleaned, "an all-None payload must stay truthy for save_settings"
+
+
+def test_the_shipped_default_sets_no_target_at_any_scope():
+    # Zero-config: nothing may invent a benchmark. A default with numbers in
+    # it gave every card a target line and a "the default benchmark" caption
+    # the first time any settings form was opened.
+    from mhq.service.settings.default_settings_data import get_default_setting_data
+    from mhq.store.models.settings import SettingType
+
+    default = get_default_setting_data(SettingType.BENCHMARK_SETTING)
+
+    assert default == {metric: None for metric in BENCHMARK_METRICS}
+
+
+def test_an_unsaved_benchmark_setting_is_all_none_and_not_persisted():
+    from mhq.service.settings.benchmarks import empty_benchmark_settings
+    from mhq.store.models.settings.enums import EntityType
+
+    settings = empty_benchmark_settings(EntityType.TEAM, "team-1")
+
+    response = adapt_configuration_settings_response(settings)
+
+    assert response["setting"] == {metric: None for metric in BENCHMARK_METRICS}
+    assert response["team_id"] == "team-1"
 
 
 def test_resolution_asks_for_the_team_row_and_the_global_row():
@@ -106,7 +161,7 @@ def test_resolution_asks_for_the_team_row_and_the_global_row():
             asked.append((setting_type, entity_type, entity_id))
             return None
 
-    from mhq.api.deployment_analytics import get_resolved_benchmarks_for_team
+    from mhq.service.settings.benchmarks import get_resolved_benchmarks_for_team
 
     get_resolved_benchmarks_for_team("team-1", settings_service=FakeSettingsService())
 

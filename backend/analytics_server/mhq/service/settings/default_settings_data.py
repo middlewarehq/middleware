@@ -34,15 +34,21 @@ def get_default_setting_data(setting_type: SettingType):
             "filters": [],
         }
 
-    # CLUSTOX: the baseline a workspace sees before a superadmin edits it.
-    # Values are the DORA "High" band, in the same units the metrics API
-    # returns: seconds, deployments per week, percent.
+    # CLUSTOX: deliberately empty, not the DORA "High" band. The spec's
+    # zero-config guarantee -- "no benchmark at any level means no line, no
+    # caption, and the card renders exactly as it does today" -- is only
+    # reachable if nothing materialises a target nobody asked for. Shipping
+    # numbers here made every card in every workspace sprout a target line
+    # and a "the default benchmark" caption the first time any admin opened
+    # any settings form, and made a team that had never set a benchmark
+    # report source: "team" for all four metrics. A superadmin types the
+    # baseline in; the code does not guess it.
     if setting_type == SettingType.BENCHMARK_SETTING:
         return {
-            "lead_time": 86400,
-            "deployment_frequency": 5,
-            "change_failure_rate": 15,
-            "mean_time_to_recovery": 3600,
+            "lead_time": None,
+            "deployment_frequency": None,
+            "change_failure_rate": None,
+            "mean_time_to_recovery": None,
         }
 
     # ADD NEW DEFAULT SETTING HERE

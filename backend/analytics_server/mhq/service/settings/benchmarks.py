@@ -5,11 +5,14 @@
 # disagree; the response can report WHICH benchmark applied, so an admin who
 # thinks they set a target can see that they did not; and a fifth metric later
 # is one more key here rather than one more reimplementation.
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from werkzeug.exceptions import BadRequest
 
-from mhq.service.settings.models import BenchmarkSetting
+from mhq.service.settings.models import BenchmarkSetting, ConfigurationSettings
+from mhq.store.models.settings.enums import EntityType
+from mhq.utils.time import time_now
 
 # The global baseline belongs to no team and no workspace, but Settings.
 # entity_id is NOT NULL. A fixed sentinel is the documented cost of reusing
@@ -70,4 +73,60 @@ def validate_benchmark_payload(data: Dict) -> Dict:
 
         cleaned[metric] = value
 
-    return cleaned
+    # CLUSTOX: always all four keys, None for the ones the form cleared.
+    # The form omits empty fields, so clearing every field posts `{}` -- and
+    # `save_settings` treats a falsy setting_data as "no data supplied" and
+    # substitutes get_default_setting_data(). "Clear everything to go back to
+    # inheriting" therefore used to *write* whatever the defaults were. A
+    # dict of four Nones is truthy, round-trips through
+    # _adapt_benchmark_setting_from_json unchanged, and resolve_benchmarks'
+    # `is not None` check then falls back per metric, which is the point.
+    return {metric: cleaned.get(metric) for metric in BENCHMARK_METRICS}
+
+
+def empty_benchmark_settings(
+    entity_type: EntityType, entity_id: str
+) -> ConfigurationSettings:
+    """An all-`None` benchmark setting that is NOT persisted.
+
+    CLUSTOX: a GET must never materialise a row. Reading the config form for
+    a team that has never set a benchmark used to write a TEAM-scoped row,
+    which permanently killed that team's per-metric inheritance -- and the
+    same on the global route meant one admin opening one form created the
+    installation-wide baseline. Returning this instead keeps "nothing
+    configured anywhere" reachable, which is the state the spec requires
+    every card to render unchanged in.
+    """
+    now: datetime = time_now()
+    return ConfigurationSettings(
+        entity_id=entity_id,
+        entity_type=entity_type,
+        specific_settings=BenchmarkSetting(),
+        updated_by=None,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+def get_resolved_benchmarks_for_team(team_id: str, settings_service=None) -> Dict:
+    """Resolve a team's benchmarks against the global baseline.
+
+    CLUSTOX: `settings_service` is injectable so the resolution order can be
+    tested without a database.
+    """
+    from mhq.service.settings.configuration_settings import get_settings_service
+    from mhq.store.models.settings import SettingType
+
+    settings_service = settings_service or get_settings_service()
+
+    team_setting = settings_service.get_settings(
+        SettingType.BENCHMARK_SETTING, EntityType.TEAM, team_id
+    )
+    global_setting = settings_service.get_settings(
+        SettingType.BENCHMARK_SETTING, EntityType.GLOBAL, GLOBAL_BENCHMARK_ENTITY_ID
+    )
+
+    return resolve_benchmarks(
+        getattr(team_setting, "specific_settings", None),
+        getattr(global_setting, "specific_settings", None),
+    )
