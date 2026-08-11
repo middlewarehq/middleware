@@ -16,6 +16,8 @@ import {
   fetchMeanTimeToRestoreStats,
   fetchDeploymentFrequencyStats
 } from '@/utils/cockpitMetricUtils';
+// CLUSTOX: contributor filter.
+import { stripContributorFilters } from '@/utils/contributorFilters';
 import { isoDateString, getAggregateAndTrendsIntervalTime } from '@/utils/date';
 import {
   getBranchesAndRepoFilter,
@@ -33,7 +35,10 @@ const getSchema = yup.object().shape({
   branches: yup.string().optional().nullable(),
   from_date: yup.date().required(),
   to_date: yup.date().required(),
-  branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required()
+  branch_mode: yup.string().oneOf(Object.values(ActiveBranchMode)).required(),
+  // CLUSTOX: contributor filter -- git usernames, optional so an unfiltered
+  // dashboard sends exactly what it always did.
+  authors: yup.array().of(yup.string()).optional()
 });
 
 const endpoint = new Endpoint(pathSchema);
@@ -49,7 +54,9 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     from_date: rawFromDate,
     to_date: rawToDate,
     branches,
-    branch_mode
+    branch_mode,
+    // CLUSTOX: contributor filter.
+    authors
   } = req.payload;
 
   const from_date = isoDateString(startOfDay(new Date(rawFromDate)));
@@ -64,16 +71,32 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     getUnsyncedRepos(teamId)
   ]);
   const [prFilters, workflowFilters] = await Promise.all([
-    updatePrFilterParams(teamId, {}, branchAndRepoFilters).then(
+    // CLUSTOX: contributor filter -- `authors` narrows Lead Time by PR author,
+    // `eventActors` narrows Deployment Frequency by the actor who triggered the
+    // run. Both are no-ops when the selection is empty.
+    updatePrFilterParams(teamId, {}, { ...branchAndRepoFilters, authors }).then(
       ({ pr_filter }) => ({
         pr_filter
       })
     ),
     getWorkFlowFiltersAsPayloadForSingleTeam({
       orgId: org_id,
-      teamId: teamId
+      teamId: teamId,
+      eventActors: authors
     })
+    // END CLUSTOX
   ]);
+
+  // CLUSTOX: contributor filter -- Change Failure Rate and MTTR stay team-wide
+  // (no defensible per-contributor definition until Jira incident ownership
+  // lands), so they get a copy of the filters with the contributor keys
+  // removed. With nothing selected these are identical to the originals, which
+  // is what keeps unfiltered dashboards byte-for-byte unchanged.
+  const {
+    prFilter: prFilterWithoutAuthors,
+    workflowFilter: workflowFilterWithoutEventActors
+  } = stripContributorFilters(prFilters, workflowFilters);
+  // END CLUSTOX
 
   const {
     currTrendsTimeObject,
@@ -118,7 +141,7 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      prFilter: prFilters
+      prFilter: prFilterWithoutAuthors
     }),
     fetchChangeFailureRateStats({
       teamId,
@@ -132,8 +155,8 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       },
       currTrendsTimeObject,
       prevTrendsTimeObject,
-      prFilter: prFilters,
-      workflowFilter: workflowFilters
+      prFilter: prFilterWithoutAuthors,
+      workflowFilter: workflowFilterWithoutEventActors
     }),
     fetchDeploymentFrequencyStats({
       teamId,
@@ -150,7 +173,16 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       workflowFilter: workflowFilters,
       prFilter: prFilters
     }),
-    getTeamLeadTimePRs(teamId, from_date, to_date, prFilters).then(
+    // CLUSTOX: deliberately the *unfiltered* pr filter. This list lands in
+    // redux as `summary_prs`, which has a second consumer: the Change Failure
+    // Rate "See details" overlay (content/DoraMetrics/Incidents.tsx) uses it
+    // as the denominator in `percent(revertedPrCount, prs.length)` against an
+    // unfiltered revert count. Narrowing it to one contributor there reports
+    // e.g. 12 reverts over 8 PRs = 150% on a card labelled team-wide.
+    // TeamInsightsBody reads the same slice. One slice cannot be both
+    // per-contributor and team-wide, so it stays team-wide; the lead time
+    // *metric* above is still filtered.
+    getTeamLeadTimePRs(teamId, from_date, to_date, prFilterWithoutAuthors).then(
       (r) => r.data
     ),
     getTeamRepos(teamId)

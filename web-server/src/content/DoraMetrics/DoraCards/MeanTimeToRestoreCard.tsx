@@ -4,6 +4,7 @@ import { head } from 'ramda';
 import { useMemo } from 'react';
 
 import { Chart2, ChartOptions } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
@@ -50,6 +51,7 @@ const chartOptions = {
 export const MeanTimeToRestoreCard = () => {
   const { isNoDataAvailable, ...meanTimeToRestoreProps } =
     useMeanTimeToRestoreProps();
+  const selectedContributors = useSelectedContributors();
 
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isIncidentProviderIntegrationEnabled = true;
@@ -144,6 +146,13 @@ export const MeanTimeToRestoreCard = () => {
             )}
           </FlexBox>
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: see the matching note on ChangeFailureRateCard -- MTTR
+          // has no per-contributor breakdown yet either.
+          <Line small secondary paddingX={2} mt={-1}>
+            team-wide — per-contributor arrives with Jira
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowMTRData ? (

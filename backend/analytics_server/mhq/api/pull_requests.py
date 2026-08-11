@@ -20,6 +20,7 @@ from mhq.api.resources.code_resouces import (
     get_non_paginated_pr_response,
 )
 from mhq.store.models.code.pull_requests import PullRequest
+from mhq.store.repos.code import CodeRepoService
 from mhq.service.code.pr_analytics import get_pr_analytics_service
 from mhq.service.settings.models import ExcludedPRsSetting
 
@@ -167,3 +168,31 @@ def get_team_lead_time_trends(
         week.isoformat(): adapt_lead_time_metrics(average_lead_time_metrics)
         for week, average_lead_time_metrics in weekly_lead_time_metrics_avg_map.items()
     }
+
+
+# CLUSTOX: contributor list backing the DORA metrics filter. Scoped to the
+# team's repos and the window on screen, so the dropdown cannot offer someone
+# with no data in view.
+@app.route("/teams/<team_id>/contributors", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_contributors(team_id: str, from_time: datetime, to_time: datetime):
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    repos = CodeRepoService().get_team_repos(str(team.id))
+    repo_ids = [str(repo.id) for repo in repos]
+
+    contributors = CodeRepoService().get_contributors_for_repos(
+        repo_ids, from_time, to_time
+    )
+    return [
+        {"username": username, "pr_count": pr_count}
+        for username, pr_count in contributors
+    ]

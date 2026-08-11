@@ -1,6 +1,8 @@
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
 import { Authenticated } from '@/components/Authenticated';
+// CLUSTOX: contributor filter.
+import { ContributorFilter } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import Loader from '@/components/Loader';
 import { FetchState } from '@/constants/ui-states';
@@ -17,6 +19,12 @@ function Page() {
   );
   const { integrationList } = useAuth();
 
+  // CLUSTOX: contributor filter -- rendered alongside the team/date selectors
+  // through PageWrapper's existing `additionalFilters` seam, so no upstream
+  // layout component is edited.
+  const additionalFilters = [<ContributorFilter key="contributor-filter" />];
+  // END CLUSTOX
+
   return (
     <PageWrapper
       title={
@@ -27,6 +35,7 @@ function Page() {
       pageTitle="DORA metrics"
       isLoading={isLoading}
       teamDateSelectorMode="single"
+      additionalFilters={additionalFilters}
     >
       {integrationList.length > 0 ? <DoraMetricsBody /> : <Loader />}
     </PageWrapper>

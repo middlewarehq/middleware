@@ -1,9 +1,9 @@
 from datetime import datetime
 from operator import and_
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from mhq.store.models.code.enums import CodeProvider
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from sqlalchemy.orm import defer
 from mhq.store.models.core import Team
 
@@ -21,6 +21,7 @@ from mhq.store.models.code import (
     BookmarkMergeToDeployBroker,
     CodeBookmarkType,
 )
+from mhq.utils.string import is_bot_author
 from mhq.utils.time import Interval
 
 
@@ -526,3 +527,33 @@ class CodeRepoService:
             ]
             return query.filter(or_(*conditions))
         return query
+
+    # CLUSTOX: distinct authors for the contributor filter, scoped to the
+    # repos and window currently on screen so the dropdown can never offer
+    # someone with no data in view.
+    def get_contributors_for_repos(
+        self, repo_ids: List[str], from_time: datetime, to_time: datetime
+    ) -> List[Tuple[str, int]]:
+        if not repo_ids:
+            return []
+
+        rows = (
+            self._db.session.query(
+                PullRequest.author, func.count(PullRequest.id).label("pr_count")
+            )
+            .filter(
+                PullRequest.repo_id.in_(repo_ids),
+                PullRequest.author.isnot(None),
+                PullRequest.state_changed_at.between(from_time, to_time),
+                # Merged only, matching _filter_prs_merged_in_interval. Every
+                # metric this dropdown filters counts merged PRs, so counting
+                # anything else here inflates the numbers next to each name
+                # and can offer someone whose Lead Time card comes back empty.
+                PullRequest.state == PullRequestState.MERGED,
+            )
+            .group_by(PullRequest.author)
+            .order_by(func.count(PullRequest.id).desc())
+            .all()
+        )
+
+        return [(author, count) for author, count in rows if not is_bot_author(author)]

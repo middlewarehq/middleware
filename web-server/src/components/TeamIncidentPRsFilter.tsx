@@ -19,7 +19,8 @@ import { FC, useEffect } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
-import { useAuth } from '@/hooks/useAuth';
+// CLUSTOX: contributor filter -- shared fetch arguments, see the hook's note.
+import { useDoraMetricsFetchArgs } from '@/hooks/useDoraMetricsFetchArgs';
 import { useEasyState } from '@/hooks/useEasyState';
 import {
   useSingleTeamConfig,
@@ -90,8 +91,8 @@ export const TeamIncidentPRsFilter: FC<{
   onClose: () => void;
 }> = ({ onClose }) => {
   const dispatch = useDispatch();
-  const { orgId } = useAuth();
-  const { singleTeamId, dates } = useSingleTeamConfig();
+  const { singleTeamId } = useSingleTeamConfig();
+  const doraMetricsFetchArgs = useDoraMetricsFetchArgs();
   const branches = useStateBranchConfig();
   const isSaving = useEasyState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
@@ -138,11 +139,11 @@ export const TeamIncidentPRsFilter: FC<{
     await dispatch(updateTeamIncidentPRsFilter(updateConfArgs)).then(
       async (response) => {
         if (response.meta.requestStatus === 'fulfilled') {
+          // CLUSTOX: contributor filter -- saving the incident PR filter
+          // refetches DORA, and the selection has to survive that. Shared
+          // hook, so a future argument can't be missed here again.
           const fetchDoraArgs = {
-            orgId: orgId,
-            teamId: singleTeamId,
-            fromDate: dates.start,
-            toDate: dates.end,
+            ...doraMetricsFetchArgs,
             branches:
               activeBranchMode === ActiveBranchMode.PROD ? null : branches
           };

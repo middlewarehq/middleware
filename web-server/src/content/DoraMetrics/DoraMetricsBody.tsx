@@ -17,6 +17,8 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useDoraStats } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
+// CLUSTOX: contributor filter -- shared fetch arguments, see the hook's note.
+import { useDoraMetricsFetchArgs } from '@/hooks/useDoraMetricsFetchArgs';
 import { useBoolState } from '@/hooks/useEasyState';
 import { usePageRefreshCallback } from '@/hooks/usePageRefreshCallback';
 import {
@@ -37,13 +39,15 @@ import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
 export const DoraMetricsBody = () => {
   const dispatch = useDispatch();
-  const { orgId, integrationList } = useAuth();
+  const { integrationList } = useAuth();
   const isCodeProviderIntegrated = useMemo(
     () => integrationList.length > 0,
     [integrationList.length]
   );
-  const { singleTeamId, dates } = useSingleTeamConfig();
   const branchPayloadForPrFilters = useBranchesForPrFilters();
+  // CLUSTOX: contributor filter -- org/team/date/contributor arguments come
+  // from one shared hook so every refetch path carries the selection.
+  const doraMetricsFetchArgs = useDoraMetricsFetchArgs();
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.metrics_summary === FetchState.REQUEST
   );
@@ -69,19 +73,13 @@ export const DoraMetricsBody = () => {
   useEffect(() => {
     dispatch(
       fetchTeamDoraMetrics({
-        orgId,
-        teamId: singleTeamId,
-        fromDate: dates.start,
-        toDate: dates.end,
+        ...doraMetricsFetchArgs,
         ...branchPayloadForPrFilters
       })
     );
   }, [
-    dates.end,
-    dates.start,
     dispatch,
-    orgId,
-    singleTeamId,
+    doraMetricsFetchArgs,
     isCodeProviderIntegrated,
     branchPayloadForPrFilters
   ]);

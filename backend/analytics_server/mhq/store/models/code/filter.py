@@ -53,6 +53,15 @@ class PRFilter:
 
     @property
     def filter_query(self) -> List:
+        # CLUSTOX: authors was declared on PRFilter and parsed from the request
+        # payload upstream, but never added to the conditions dict below -- so
+        # sending it raised KeyError rather than filtering. This applies it.
+        def _authors_query():
+            if not self.authors:
+                return None
+
+            return PullRequest.author.in_(self.authors)
+
         def _base_branch_query():
             if not self.base_branches:
                 return None
@@ -95,6 +104,7 @@ class PRFilter:
             )
 
         conditions = {
+            "authors": _authors_query(),
             "base_branches": _base_branch_query(),
             "repo_filters": _repo_filters_query(),
             "excluded_pr_ids": _excluded_pr_ids_query(),
