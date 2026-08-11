@@ -2,6 +2,7 @@ import { alpha, Chip } from '@mui/material';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
+import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -19,6 +20,7 @@ import {
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
+import { benchmarkCaption } from '@/utils/benchmarks';
 import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
 import { useAvgIntervalBasedDeploymentFrequency } from './sharedHooks';
@@ -84,6 +86,21 @@ export const WeeklyDeliveryVolumeCard = () => {
         .total_deployments || 0
   );
 
+  const deploymentFrequencyBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.deployment_frequency
+  );
+
+  // CLUSTOX: the benchmark target is always "deployments/week" (see
+  // task-5-brief), but the card's headline count adapts to the selected
+  // interval (day/week/month) via useAvgIntervalBasedDeploymentFrequency.
+  // Comparing against that would silently mix units, so the weekly-specific
+  // stat is used here instead, regardless of which interval is displayed.
+  const avgWeeklyDeploymentFrequency = useSelector(
+    (s) =>
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
+        .avg_weekly_deployment_frequency
+  );
+
   const series = useMemo(
     () => [
       {
@@ -98,6 +115,27 @@ export const WeeklyDeliveryVolumeCard = () => {
       }
     ],
     [deploymentFrequencyProps?.backgroundColor, weekDeliveryVolumeData]
+  );
+
+  // CLUSTOX: gated on isCodeProviderIntegrationEnabled -- the same guard the
+  // card uses to decide between the chart and NoDataImg. Zero deployments is
+  // still a meaningful comparison against a weekly target (it's the "below
+  // target" case), so no additional zero-count guard here.
+  const deploymentFrequencyBenchmarkCaption = useMemo(
+    () =>
+      isCodeProviderIntegrationEnabled && deploymentFrequencyBenchmark
+        ? benchmarkCaption(
+            'deployment_frequency',
+            avgWeeklyDeploymentFrequency || 0,
+            deploymentFrequencyBenchmark.target,
+            deploymentFrequencyBenchmark.source
+          )
+        : null,
+    [
+      isCodeProviderIntegrationEnabled,
+      deploymentFrequencyBenchmark,
+      avgWeeklyDeploymentFrequency
+    ]
   );
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
@@ -181,6 +219,20 @@ export const WeeklyDeliveryVolumeCard = () => {
             deployed by {selectedContributors.join(', ')}
           </Line>
         )}
+        {deploymentFrequencyBenchmarkCaption && (
+          <Line
+            small
+            paddingX={2}
+            mt={-1}
+            color={
+              deploymentFrequencyBenchmarkCaption.tone === 'good'
+                ? 'success'
+                : 'warning'
+            }
+          >
+            {deploymentFrequencyBenchmarkCaption.text}
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isCodeProviderIntegrationEnabled ? (
@@ -194,6 +246,13 @@ export const WeeklyDeliveryVolumeCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
+          {isCodeProviderIntegrationEnabled &&
+            deploymentFrequencyBenchmark?.target != null && (
+              <BenchmarkTargetLine
+                target={deploymentFrequencyBenchmark.target}
+                values={series[0].data}
+              />
+            )}
           {isCodeProviderIntegrationEnabled ? (
             <FlexBox
               position="absolute"

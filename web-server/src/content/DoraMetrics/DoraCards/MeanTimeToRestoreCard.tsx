@@ -3,6 +3,7 @@ import { Chip } from '@mui/material';
 import { head } from 'ramda';
 import { useMemo } from 'react';
 
+import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -15,6 +16,8 @@ import {
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
+import { useSelector } from '@/store';
+import { benchmarkCaption } from '@/utils/benchmarks';
 import { getDurationString } from '@/utils/date';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
@@ -80,6 +83,25 @@ export const MeanTimeToRestoreCard = () => {
   );
 
   const meanTimeToRestoreCount = useCountUp(meanTimeToRestoreProps.count || 0);
+
+  const meanTimeToRecoveryBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.mean_time_to_recovery
+  );
+
+  // CLUSTOX: gated on canShowMTRData -- the same guard the card uses to
+  // decide between real data and the "No incidents reported" state.
+  const meanTimeToRecoveryBenchmarkCaption = useMemo(
+    () =>
+      canShowMTRData && meanTimeToRecoveryBenchmark
+        ? benchmarkCaption(
+            'mean_time_to_recovery',
+            meanTimeToRestoreProps.count,
+            meanTimeToRecoveryBenchmark.target,
+            meanTimeToRecoveryBenchmark.source
+          )
+        : null,
+    [canShowMTRData, meanTimeToRecoveryBenchmark, meanTimeToRestoreProps.count]
+  );
 
   const { addPage } = useOverlayPage();
 
@@ -153,6 +175,20 @@ export const MeanTimeToRestoreCard = () => {
             team-wide — per-contributor arrives with Jira
           </Line>
         )}
+        {meanTimeToRecoveryBenchmarkCaption && (
+          <Line
+            small
+            paddingX={2}
+            mt={-1}
+            color={
+              meanTimeToRecoveryBenchmarkCaption.tone === 'good'
+                ? 'success'
+                : 'warning'
+            }
+          >
+            {meanTimeToRecoveryBenchmarkCaption.text}
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowMTRData ? (
@@ -166,6 +202,12 @@ export const MeanTimeToRestoreCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
+          {canShowMTRData && meanTimeToRecoveryBenchmark?.target != null && (
+            <BenchmarkTargetLine
+              target={meanTimeToRecoveryBenchmark.target}
+              values={series[0].data}
+            />
+          )}
           <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
             {canShowMTRData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>

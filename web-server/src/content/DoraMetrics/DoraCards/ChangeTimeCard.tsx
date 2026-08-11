@@ -6,6 +6,7 @@ import Link from 'next/link';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
+import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -23,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useSelector } from '@/store';
 import { ChangeTimeModes } from '@/types/resources';
+import { benchmarkCaption } from '@/utils/benchmarks';
 import { merge } from '@/utils/datatype';
 import { getDurationString, getSortedDatesAsArrayFromMap } from '@/utils/date';
 
@@ -77,6 +79,10 @@ export const ChangeTimeCard = () => {
     ]
   );
 
+  const leadTimeBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.lead_time
+  );
+
   const isCodeProviderIntegrationEnabled = true;
 
   const showClassificationBadge =
@@ -104,6 +110,23 @@ export const ChangeTimeCard = () => {
   );
 
   const leadTimeDuration = useCountUp(activeModeProps.count || 0);
+
+  // CLUSTOX: gated on isSufficientDataAvailable -- same guard the card
+  // already uses to decide between the chart and "Insufficient data". A
+  // target line/caption over a placeholder state would compare a real
+  // benchmark against a meaningless zero.
+  const leadTimeBenchmarkCaption = useMemo(
+    () =>
+      isSufficientDataAvailable && leadTimeBenchmark
+        ? benchmarkCaption(
+            'lead_time',
+            activeModeProps.count,
+            leadTimeBenchmark.target,
+            leadTimeBenchmark.source
+          )
+        : null,
+    [isSufficientDataAvailable, leadTimeBenchmark, activeModeProps.count]
+  );
 
   return (
     <CardRoot
@@ -281,6 +304,18 @@ export const ChangeTimeCard = () => {
             authored by {selectedContributors.join(', ')}
           </Line>
         )}
+        {leadTimeBenchmarkCaption && (
+          <Line
+            small
+            paddingX={2}
+            mt={-1}
+            color={
+              leadTimeBenchmarkCaption.tone === 'good' ? 'success' : 'warning'
+            }
+          >
+            {leadTimeBenchmarkCaption.text}
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isSufficientDataAvailable ? (
@@ -294,6 +329,13 @@ export const ChangeTimeCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
+
+          {isSufficientDataAvailable && leadTimeBenchmark?.target != null && (
+            <BenchmarkTargetLine
+              target={leadTimeBenchmark.target}
+              values={series[0].data}
+            />
+          )}
 
           <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
             {isSufficientDataAvailable ? (

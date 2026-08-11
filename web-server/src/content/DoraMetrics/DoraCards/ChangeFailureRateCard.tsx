@@ -3,6 +3,7 @@ import pluralize from 'pluralize';
 import { head } from 'ramda';
 import { useMemo } from 'react';
 
+import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -22,6 +23,7 @@ import {
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
+import { benchmarkCaption } from '@/utils/benchmarks';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
 import { useChangeFailureRateProps } from './sharedHooks';
@@ -85,6 +87,10 @@ export const ChangeFailureRateCard = () => {
 
   const changeFailureRateCount = useCountUp(changeFailureRateProps.count || 0);
 
+  const changeFailureRateBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.change_failure_rate
+  );
+
   const series = useMemo(
     () => [
       {
@@ -107,6 +113,27 @@ export const ChangeFailureRateCard = () => {
   const isCfrDataAvailable = Boolean(
     changeFailureRateProps.avgWeeklyDeploymentFrequency &&
       (changeFailureRateProps.count || prevChangeFailureRate)
+  );
+
+  // CLUSTOX: gated on the same canShowIncidentsData/isCfrDataAvailable pair
+  // the card already uses to decide whether real data (vs NoIncidentsLabel
+  // or a missing-provider link) is on screen.
+  const changeFailureRateBenchmarkCaption = useMemo(
+    () =>
+      canShowIncidentsData && isCfrDataAvailable && changeFailureRateBenchmark
+        ? benchmarkCaption(
+            'change_failure_rate',
+            changeFailureRateProps.count,
+            changeFailureRateBenchmark.target,
+            changeFailureRateBenchmark.source
+          )
+        : null,
+    [
+      canShowIncidentsData,
+      isCfrDataAvailable,
+      changeFailureRateBenchmark,
+      changeFailureRateProps.count
+    ]
   );
 
   const { addPage } = useOverlayPage();
@@ -181,6 +208,20 @@ export const ChangeFailureRateCard = () => {
             team-wide — per-contributor arrives with Jira
           </Line>
         )}
+        {changeFailureRateBenchmarkCaption && (
+          <Line
+            small
+            paddingX={2}
+            mt={-1}
+            color={
+              changeFailureRateBenchmarkCaption.tone === 'good'
+                ? 'success'
+                : 'warning'
+            }
+          >
+            {changeFailureRateBenchmarkCaption.text}
+          </Line>
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowIncidentsData ? (
@@ -194,6 +235,14 @@ export const ChangeFailureRateCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
+          {canShowIncidentsData &&
+            isCfrDataAvailable &&
+            changeFailureRateBenchmark?.target != null && (
+              <BenchmarkTargetLine
+                target={changeFailureRateBenchmark.target}
+                values={series[0].data}
+              />
+            )}
           <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
             {canShowIncidentsData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>

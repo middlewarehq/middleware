@@ -5,6 +5,7 @@ import { ReactChild, ReactFragment, ReactPortal } from 'react';
 import { Row } from '@/constants/db';
 import { CIProvider, Integration } from '@/constants/integrations';
 import { Team } from '@/types/api/teams';
+import { Benchmarks } from '@/utils/benchmarks';
 
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
@@ -592,6 +593,11 @@ export type TeamDoraMetricsApiResponseType = {
   lead_time_prs: PR[];
   assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
   unsynced_repos: ID[];
+  // CLUSTOX: optional -- older responses (and this BFF route today, until
+  // it's wired to the resolved-benchmarks helper) simply omit the key. The
+  // four cards must treat a missing `benchmarks` exactly like every target
+  // being null: no line, no caption, unchanged from before this feature.
+  benchmarks?: Benchmarks;
 };
 
 export enum ActiveBranchMode {
