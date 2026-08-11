@@ -10,8 +10,17 @@ import { useSnackbar } from 'notistack';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
-import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
-import { FetchTeamSettingsAPIResponse } from '@/types/resources';
+import { useDoraMetricsFetchArgs } from '@/hooks/useDoraMetricsFetchArgs';
+import {
+  useSingleTeamConfig,
+  useStateBranchConfig
+} from '@/hooks/useStateTeamConfig';
+import { fetchTeamDoraMetrics } from '@/slices/dora_metrics';
+import { useDispatch, useSelector } from '@/store';
+import {
+  ActiveBranchMode,
+  FetchTeamSettingsAPIResponse
+} from '@/types/resources';
 import { BenchmarkMetric } from '@/utils/benchmarks';
 
 import { FlexBox } from './FlexBox';
@@ -159,6 +168,10 @@ export const BenchmarkSettingsForm: FC<{
   const { enqueueSnackbar } = useSnackbar();
   const { singleTeamId } = useSingleTeamConfig();
   const teamId = scope === 'team' ? singleTeamId : null;
+  const dispatch = useDispatch();
+  const doraMetricsFetchArgs = useDoraMetricsFetchArgs();
+  const branches = useStateBranchConfig();
+  const activeBranchMode = useSelector((s) => s.app.branchMode);
 
   const [values, setValues] = useState<FormValues | null>(null);
   const [initialValues, setInitialValues] = useState<FormValues | null>(null);
@@ -295,6 +308,24 @@ export const BenchmarkSettingsForm: FC<{
       }
 
       setInitialValues(values);
+
+      // CLUSTOX: the targets ride on the dora_metrics response, so without
+      // this the cards keep drawing the OLD target line until a full page
+      // reload -- the admin saves, the modal closes, and nothing on screen
+      // changes. Both sibling modals in the same menu
+      // (TeamProductionBranchSelector, TeamIncidentPRsFilter) already refetch
+      // on save; this matches them. Team scope only: the global form lives on
+      // the Workspaces page, where no DORA state is mounted to refresh.
+      if (scope === 'team') {
+        await dispatch(
+          fetchTeamDoraMetrics({
+            ...doraMetricsFetchArgs,
+            branches:
+              activeBranchMode === ActiveBranchMode.PROD ? null : branches
+          })
+        );
+      }
+
       enqueueSnackbar('Benchmarks updated', {
         variant: 'success',
         autoHideDuration: 3000
@@ -315,7 +346,17 @@ export const BenchmarkSettingsForm: FC<{
     } finally {
       setSaving(false);
     }
-  }, [values, scope, teamId, enqueueSnackbar, onClose]);
+  }, [
+    values,
+    scope,
+    teamId,
+    enqueueSnackbar,
+    onClose,
+    dispatch,
+    doraMetricsFetchArgs,
+    activeBranchMode,
+    branches
+  ]);
 
   if (scope === 'team' && !teamId) {
     return (

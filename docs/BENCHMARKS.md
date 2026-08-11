@@ -251,8 +251,14 @@ invisible; cleaning it up means touching team deletion for no user-facing gain.
 **A superadmin viewing another workspace** sees that workspace's team
 benchmarks. Resolution keys on the team being viewed, not on who is looking.
 
-**A benchmark changed while the dashboard is open** does not appear until
-reload — the same as every other filter on that page.
+**Saving a team benchmark refetches the dashboard**, so the new target line
+appears immediately. This was originally specified as "does not appear until
+reload — the same as every other filter on that page", which was wrong on both
+counts: the form is *on* that page, so the admin saves and watches nothing
+happen, and the two sibling modals in the same menu already refetch on save.
+
+**A benchmark changed elsewhere** — another admin, another tab, or the global
+baseline — still does not appear until reload.
 
 **Zero deployments against a frequency target** still shows the line and
 `5/week below target`, which is more useful than hiding the line because the
