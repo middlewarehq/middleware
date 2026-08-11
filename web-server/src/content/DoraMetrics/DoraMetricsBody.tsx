@@ -33,6 +33,7 @@ import { getRandomLoadMsg } from '@/utils/loading-messages';
 import { ClassificationPills } from './ClassificationPills';
 import { ChangeFailureRateCard } from './DoraCards/ChangeFailureRateCard';
 import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
+import { LeadTimeBreakdownCard } from './DoraCards/LeadTimeBreakdownCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { DataStillSyncing } from './DoraCards/SkeletalCard';
 import { TicketCycleTimeCard } from './DoraCards/TicketCycleTimeCard';
@@ -160,6 +161,7 @@ export const DoraMetricsBody = () => {
           touch the 4 cards above. Renders nothing of its own accord when
           Jira isn't linked or there's no ticket data for this
           team/period. See docs/JIRA_INTEGRATION_PROPOSAL.md. */}
+      <LeadTimeBreakdownCard />
       <TicketCycleTimeCard />
       <FlexBox col gap1 flexGrow={1}>
         <FlexBox gap={4}>
