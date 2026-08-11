@@ -3,6 +3,7 @@ import { Session } from 'next-auth';
 import { FC, createContext, useEffect, useCallback } from 'react';
 import { useMemo } from 'react';
 
+import { CODE_PROVIDER_INTEGRATIONS_MAP } from '@/constants/api';
 import { Integration } from '@/constants/integrations';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { useRefMounted } from '@/hooks/useRefMounted';
@@ -129,22 +130,39 @@ export const AuthProvider: FC = (props) => {
     [integrations.github, integrations.gitlab]
   );
 
+  // CLUSTOX: consumers of integrationList/activeCodeProvider (DORA metrics
+  // gating, the team repo search, the sidebar's onboarding check) all assume
+  // every entry is a code host whose repos can be listed. `integrations` now
+  // also carries deployment-only providers like Jenkins, which are stored in
+  // the same table -- without this filter, linking only Jenkins would make a
+  // workspace with zero code providers look onboarded, and 'jenkins' would
+  // leak into API calls that expect a git host name.
+  const isCodeProvider = useCallback(
+    (name: string) =>
+      Object.prototype.hasOwnProperty.call(
+        CODE_PROVIDER_INTEGRATIONS_MAP,
+        name
+      ),
+    []
+  );
+
   const integrationList = useMemo(
     () =>
       Object.entries(integrations)
-        .filter(([_, value]) => value.integrated)
+        .filter(([key, value]) => value.integrated && isCodeProvider(key))
         .map(([key, _]) => key) as Integration[],
-    [integrations]
+    [integrations, isCodeProvider]
   );
 
   const activeCodeProvider = useMemo(
     () =>
       Object.keys(state?.org?.integrations || {}).find(
         (integrationName) =>
+          isCodeProvider(integrationName) &&
           state?.org?.integrations[integrationName as keyof IntegrationsMap]
             ?.integrated
       ) as CodeProviderIntegrations | null,
-    [state?.org?.integrations]
+    [isCodeProvider, state?.org?.integrations]
   );
 
   return (

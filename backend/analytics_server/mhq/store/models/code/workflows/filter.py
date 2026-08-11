@@ -55,10 +55,17 @@ class WorkflowFilter:
             if not self.head_branches:
                 return None
 
-            return or_(
-                RepoWorkflowRuns.head_branch.op("~")(term)
-                for term in self.head_branches
-            )
+            # CLUSTOX: drop None entries, matching RepoWorkflowFilter above.
+            # A repo whose prod_branches is null arrives here as [None], and
+            # `head_branch ~ NULL` is NULL in Postgres -- never true -- so every
+            # deployment was filtered out and the dashboard read "No
+            # Deployments" with no error. Absent branch config must mean "do not
+            # filter", not "match nothing".
+            terms = [term for term in self.head_branches if term is not None]
+            if not terms:
+                return None
+
+            return or_(RepoWorkflowRuns.head_branch.op("~")(term) for term in terms)
 
         def _repo_filters_query():
             if not self.repo_filters:

@@ -4,6 +4,8 @@ from enum import Enum
 class UserIdentityProvider(Enum):
     GITHUB = "github"
     GITLAB = "gitlab"
+    # CLUSTOX: Jenkins credentials live in Integration like any other provider.
+    JENKINS = "jenkins"
 
     @classmethod
     def get_enum(self, provider: str):
