@@ -159,7 +159,16 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       workflowFilter: workflowFilters,
       prFilter: prFilters
     }),
-    getTeamLeadTimePRs(teamId, from_date, to_date, prFilters).then(
+    // CLUSTOX: deliberately the *unfiltered* pr filter. This list lands in
+    // redux as `summary_prs`, which has a second consumer: the Change Failure
+    // Rate "See details" overlay (content/DoraMetrics/Incidents.tsx) uses it
+    // as the denominator in `percent(revertedPrCount, prs.length)` against an
+    // unfiltered revert count. Narrowing it to one contributor there reports
+    // e.g. 12 reverts over 8 PRs = 150% on a card labelled team-wide.
+    // TeamInsightsBody reads the same slice. One slice cannot be both
+    // per-contributor and team-wide, so it stays team-wide; the lead time
+    // *metric* above is still filtered.
+    getTeamLeadTimePRs(teamId, from_date, to_date, prFilterWithoutAuthors).then(
       (r) => r.data
     ),
     getTeamRepos(teamId)
