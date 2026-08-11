@@ -7,6 +7,7 @@ from typing import Dict, List
 from voluptuous import Required, Schema, Coerce, All, Optional
 from mhq.service.code.models.lead_time import LeadTimeMetrics
 from mhq.service.code.lead_time import get_lead_time_service
+from mhq.service.code.loc import LOCMetrics, get_loc_service
 from mhq.service.code.pr_filter import apply_pr_filter
 
 from mhq.store.models.code import PRFilter
@@ -16,6 +17,7 @@ from mhq.service.query_validator import get_query_validator
 from mhq.api.request_utils import queryschema
 from mhq.api.resources.code_resouces import (
     adapt_lead_time_metrics,
+    adapt_loc_metrics,
     adapt_pull_request,
     get_non_paginated_pr_response,
 )
@@ -167,6 +169,78 @@ def get_team_lead_time_trends(
     return {
         week.isoformat(): adapt_lead_time_metrics(average_lead_time_metrics)
         for week, average_lead_time_metrics in weekly_lead_time_metrics_avg_map.items()
+    }
+
+
+# CLUSTOX: lines of code is a fifth metric on the same dashboard as the four
+# DORA metrics, so it goes through the same filter path -- the contributor
+# filter, branch mode and the excluded-PRs setting then apply to it for free.
+@app.route("/teams/<team_id>/loc", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
+        }
+    ),
+)
+def get_team_loc(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: Dict = None,
+):
+
+    query_validator = get_query_validator()
+
+    interval: Interval = query_validator.interval_validator(from_time, to_time)
+    team: Team = query_validator.team_validator(team_id)
+
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
+    loc_metrics: LOCMetrics = get_loc_service().get_team_loc_metrics(
+        str(team.id), interval, pr_filter
+    )
+
+    return adapt_loc_metrics(loc_metrics)
+
+
+@app.route("/teams/<team_id>/loc/trends", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+            Optional("pr_filter"): All(str, Coerce(json.loads)),
+        }
+    ),
+)
+def get_team_loc_trends(
+    team_id: str,
+    from_time: datetime,
+    to_time: datetime,
+    pr_filter: Dict = None,
+):
+
+    query_validator = get_query_validator()
+
+    interval: Interval = query_validator.interval_validator(from_time, to_time)
+    team: Team = query_validator.team_validator(team_id)
+
+    pr_filter: PRFilter = apply_pr_filter(
+        pr_filter, EntityType.TEAM, team_id, [SettingType.EXCLUDED_PRS_SETTING]
+    )
+
+    weekly_loc_metrics_map: Dict[datetime, LOCMetrics] = (
+        get_loc_service().get_team_loc_trends(str(team.id), interval, pr_filter)
+    )
+
+    return {
+        week.isoformat(): adapt_loc_metrics(loc_metrics)
+        for week, loc_metrics in weekly_loc_metrics_map.items()
     }
 
 
