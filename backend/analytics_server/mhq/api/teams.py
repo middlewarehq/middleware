@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import Blueprint
 from typing import Any, Dict, List
 from voluptuous import Required, Schema, Optional, All, Coerce
@@ -10,8 +12,10 @@ from mhq.api.resources.code_resouces import (
     adapt_team_repo_and_org_repo,
 )
 from mhq.api.resources.project_resources import adapt_org_projects
+from mhq.api.resources.ticket_insights_resources import adapt_ticket_insights
 from mhq.service.code.repository_service import get_repository_service
 from mhq.service.project.repository_service import get_project_service
+from mhq.service.ticket_insights import get_ticket_insights_service
 from mhq.api.resources.core_resources import adapt_team
 from mhq.store.models.core.teams import Team
 from mhq.store.models.projects import OrgProject
@@ -22,6 +26,7 @@ from mhq.api.request_utils import (
     coerce_org_projects,
     coerce_team_repos,
     dataschema,
+    queryschema,
 )
 from mhq.service.query_validator import get_query_validator
 
@@ -200,3 +205,30 @@ def update_team_projects(team_id: str, projects: List[RawTeamOrgProject]):
     updated_org_projects = project_service.update_team_projects(team, projects)
 
     return adapt_org_projects(updated_org_projects)
+
+
+# CLUSTOX: Jira integration, Phase 4 (§6C/§6E) -- the DORA Metrics page's
+# ticket-cycle-time widget and "N PRs merged with no linked ticket"
+# callout. Deliberately its own read-only endpoint, not folded into the
+# existing dora_metrics/deployment_analytics ones -- keeps this additive
+# to the 4 existing DORA cards rather than touching their code. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md.
+@app.route("/teams/<team_id>/ticket_insights", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_ticket_insights(team_id: str, from_time: datetime, to_time: datetime):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+    interval = query_validator.interval_validator(from_time, to_time)
+
+    ticket_insights_service = get_ticket_insights_service()
+    insights = ticket_insights_service.get_team_ticket_insights(team, interval)
+
+    return adapt_ticket_insights(insights)

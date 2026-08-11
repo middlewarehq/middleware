@@ -1,9 +1,10 @@
+from datetime import datetime
 from typing import Dict, List
 
 from sqlalchemy.orm import defer
 
 from mhq.store import db, rollback_on_exc
-from mhq.store.models.code import OrgRepo, PullRequest
+from mhq.store.models.code import OrgRepo, PullRequest, PullRequestState
 from mhq.store.models.projects import OrgProject, Ticket
 from mhq.store.models.ticket_matching import PullRequestTicketMapping
 
@@ -64,3 +65,31 @@ class TicketMatchingRepoService:
     def save_mappings(self, mappings: List[PullRequestTicketMapping]):
         [self._db.session.merge(mapping) for mapping in mappings]
         self._db.session.commit()
+
+    @rollback_on_exc
+    def get_unlinked_merged_pr_count(
+        self, repo_ids: List[str], from_time: datetime, to_time: datetime
+    ) -> int:
+        """
+        How many PRs merged in [from_time, to_time] across these repos
+        have no PullRequestTicketMapping row -- the data-hygiene callout
+        in docs/JIRA_INTEGRATION_PROPOSAL.md §6E. A single count query,
+        not "fetch all merged PRs and count client-side".
+        """
+        if not repo_ids:
+            return 0
+
+        return (
+            self._db.session.query(PullRequest)
+            .outerjoin(
+                PullRequestTicketMapping,
+                PullRequestTicketMapping.pr_id == PullRequest.id,
+            )
+            .filter(
+                PullRequest.repo_id.in_(repo_ids),
+                PullRequest.state == PullRequestState.MERGED,
+                PullRequest.state_changed_at.between(from_time, to_time),
+                PullRequestTicketMapping.pr_id.is_(None),
+            )
+            .count()
+        )
