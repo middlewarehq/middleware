@@ -1,4 +1,10 @@
-from typing import List
+# CLUSTOX: no typing.Optional here on purpose -- voluptuous.Optional is imported
+# below and shadows it, and an annotation that reads Optional[...] resolves to
+# voluptuous's marker class, which is not subscriptable. Under Python 3.9,
+# where annotations are evaluated at def time, that is a TypeError on import of
+# this module, taking every route in it down. Default arguments say "optional"
+# here instead.
+from typing import Dict, List, Tuple
 from flask import Blueprint, jsonify
 from github import GithubException
 
@@ -15,6 +21,7 @@ from mhq.service.external_integrations_service import get_external_integrations_
 from mhq.service.query_validator import get_query_validator
 from mhq.store.models import UserIdentityProvider
 from mhq.store.models.code import RepoWorkflowProviders, RepoWorkflowType
+from mhq.store.models.code.enums import TeamReposDeploymentType
 from mhq.store.models.code.workflows.workflows import RepoWorkflow
 from mhq.store.repos.code import CodeRepoService
 from mhq.store.repos.workflows import WorkflowRepoService
@@ -32,6 +39,17 @@ STATUS_TOO_MANY_REQUESTS = 429
 # read on unmapping. Without it an unmapping has no way to tell a workflow it
 # displaced from one that was already inactive for an unrelated reason.
 DISPLACED_WORKFLOW_IDS_KEY = "jenkins_displaced_workflow_ids"
+
+# CLUSTOX: second key on the same blob, holding the TeamRepos.deployment_type
+# values this mapping overwrote, keyed by team id. Mapping a job is useless
+# without the switch it records: DeploymentsService splits a team's repos on
+# that column and only consults RepoWorkflowRuns for the WORKFLOW side, so a
+# repo left on PR_MERGE ingests Jenkins builds and counts none of them --
+# mapping appears to work, changes nothing, and reports no error. Recorded for
+# the same reason the displaced workflow ids are: unmapping has to put back
+# exactly what mapping changed, and "everything is PR_MERGE now" would demote a
+# repo the admin had deliberately configured as WORKFLOW.
+PREVIOUS_DEPLOYMENT_TYPES_KEY = "jenkins_previous_deployment_types"
 
 
 # CLUSTOX: JSONB columns on this model default to the string "{}" rather than a
@@ -86,6 +104,52 @@ def reactivate_github_actions_workflows_for_repo(
             workflow.is_active = True
             reactivated.append(workflow)
     return reactivated
+
+
+# CLUSTOX: points every team that tracks this repo at its workflow runs, which
+# is what actually makes a Jenkins build count as a deployment. Returns the rows
+# it changed together with the values it overwrote; rows already on WORKFLOW are
+# neither changed nor recorded, so unmapping leaves them alone rather than
+# demoting a repo the admin configured that way himself.
+def switch_team_repos_to_workflow_deployments(
+    team_repos: List,
+) -> Tuple[List, Dict[str, str]]:
+    switched = []
+    previous_deployment_types: Dict[str, str] = {}
+    for team_repo in team_repos:
+        if team_repo.deployment_type == TeamReposDeploymentType.WORKFLOW:
+            continue
+        # A null deployment_type is recorded as PR_MERGE -- the column default,
+        # and the only value that restores to something DeploymentsService can
+        # read, since it dereferences .value without a null check.
+        previous_deployment_types[str(team_repo.team_id)] = (
+            team_repo.deployment_type.value
+            if team_repo.deployment_type
+            else TeamReposDeploymentType.PR_MERGE.value
+        )
+        team_repo.deployment_type = TeamReposDeploymentType.WORKFLOW
+        switched.append(team_repo)
+    return switched, previous_deployment_types
+
+
+# CLUSTOX: the other half of the switch above, and the same restraint as
+# reactivate_github_actions_workflows_for_repo: restore only the rows this
+# mapping recorded, and only while they still hold the value the mapping wrote.
+# A row the admin has since changed by hand is his decision, not ours to undo.
+def restore_team_repo_deployment_types(
+    team_repos: List, previous_deployment_types: Dict[str, str] = None
+) -> List:
+    recorded = previous_deployment_types or {}
+    restored = []
+    for team_repo in team_repos:
+        previous = recorded.get(str(team_repo.team_id))
+        if not previous:
+            continue
+        if team_repo.deployment_type != TeamReposDeploymentType.WORKFLOW:
+            continue
+        team_repo.deployment_type = TeamReposDeploymentType(previous)
+        restored.append(team_repo)
+    return restored
 
 
 @app.route("/orgs/<org_id>/integrations/github/orgs", methods={"GET"})
@@ -330,7 +394,8 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
     query_validator = get_query_validator()
     query_validator.org_validator(org_id)
 
-    org_repo = CodeRepoService().get_repo_by_id(org_repo_id)
+    code_repo_service = CodeRepoService()
+    org_repo = code_repo_service.get_repo_by_id(org_repo_id)
     if org_repo is None or str(org_repo.org_id) != str(org_id):
         return jsonify({"error": f"Repo {org_repo_id} not found in org {org_id}"}), 404
 
@@ -385,6 +450,24 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
     # Jenkins row below, in one commit.
     deactivated = deactivate_deployment_workflows_for_repo(workflows_to_deactivate)
 
+    # Mutated in place like the workflows above, and written in the same commit.
+    team_repos = code_repo_service.get_active_team_repos_by_repo_id(org_repo_id)
+    switched_team_repos, previous_deployment_types = (
+        switch_team_repos_to_workflow_deployments(team_repos)
+    )
+    # A Jenkins mapping this one displaces already switched these rows, so this
+    # mapping records nothing for them and the values it is overwriting sit on
+    # the displaced row's meta. Carrying them forward is what keeps the last
+    # unmapping in a chain of remappings able to restore the repo; dropping them
+    # strands it on WORKFLOW with no workflow behind it -- zero deployments,
+    # silently.
+    for workflow in deactivated:
+        if workflow.provider != RepoWorkflowProviders.JENKINS:
+            continue
+        carried = _workflow_meta(workflow).get(PREVIOUS_DEPLOYMENT_TYPES_KEY) or {}
+        for team_id, deployment_type in carried.items():
+            previous_deployment_types.setdefault(team_id, deployment_type)
+
     if existing_jenkins_workflow is not None:
         existing_jenkins_workflow.is_active = True
         existing_jenkins_workflow.name = job_full_name
@@ -405,12 +488,17 @@ def create_jenkins_mapping(org_id: str, org_repo_id: str, job_full_name: str):
     jenkins_workflow.meta = {
         **_workflow_meta(jenkins_workflow),
         DISPLACED_WORKFLOW_IDS_KEY: [str(workflow.id) for workflow in deactivated],
+        PREVIOUS_DEPLOYMENT_TYPES_KEY: previous_deployment_types,
     }
     workflow_repo_service.create_jenkins_repo_workflow(
-        jenkins_workflow, workflows_to_deactivate
+        jenkins_workflow, workflows_to_deactivate, switched_team_repos
     )
 
-    return {"ok": True, "deactivated_workflows": len(deactivated)}
+    return {
+        "ok": True,
+        "deactivated_workflows": len(deactivated),
+        "switched_team_repos": len(switched_team_repos),
+    }
 
 
 # CLUSTOX: removes a Jenkins mapping and restores the GitHub Actions workflows
@@ -432,7 +520,8 @@ def delete_jenkins_mapping(org_id: str, repo_workflow_id: str):
     if repo_workflow is None:
         return jsonify({"error": f"Workflow {repo_workflow_id} not found"}), 404
 
-    org_repo = CodeRepoService().get_repo_by_id(repo_workflow.org_repo_id)
+    code_repo_service = CodeRepoService()
+    org_repo = code_repo_service.get_repo_by_id(repo_workflow.org_repo_id)
     if org_repo is None or str(org_repo.org_id) != str(org_id):
         return (
             jsonify(
@@ -465,15 +554,31 @@ def delete_jenkins_mapping(org_id: str, repo_workflow_id: str):
     reactivated = reactivate_github_actions_workflows_for_repo(
         github_workflows, meta.get(DISPLACED_WORKFLOW_IDS_KEY)
     )
+    # The deployment_type switch is undone on the same terms: only the team rows
+    # this mapping recorded. A repo already on WORKFLOW when it was mapped was
+    # never recorded, so it stays on WORKFLOW here.
+    team_repos = code_repo_service.get_active_team_repos_by_repo_id(
+        str(repo_workflow.org_repo_id)
+    )
+    restored_team_repos = restore_team_repo_deployment_types(
+        team_repos, meta.get(PREVIOUS_DEPLOYMENT_TYPES_KEY)
+    )
     # Drop the record in the same commit that acts on it, so a second unmapping
     # -- or one that follows a team-config edit that deselected these same
     # workflows -- does not restore them a second time.
+    dropped_keys = {DISPLACED_WORKFLOW_IDS_KEY, PREVIOUS_DEPLOYMENT_TYPES_KEY}
     repo_workflow.meta = {
-        key: value for key, value in meta.items() if key != DISPLACED_WORKFLOW_IDS_KEY
+        key: value for key, value in meta.items() if key not in dropped_keys
     }
-    workflow_repo_service.deactivate_repo_workflow(repo_workflow, reactivated)
+    workflow_repo_service.deactivate_repo_workflow(
+        repo_workflow, reactivated, restored_team_repos
+    )
 
-    return {"ok": True, "reactivated_github_workflows": len(reactivated)}
+    return {
+        "ok": True,
+        "reactivated_github_workflows": len(reactivated),
+        "restored_team_repos": len(restored_team_repos),
+    }
 
 
 @app.route("/orgs/<org_id>/integrations/gitlab/user/repos", methods={"GET"})

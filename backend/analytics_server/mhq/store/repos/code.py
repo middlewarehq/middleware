@@ -275,6 +275,21 @@ class CodeRepoService:
             .all()
         )
 
+    # CLUSTOX: every team that tracks this repo, not just one. DeploymentsService
+    # splits a *team's* repos on TeamRepos.deployment_type, so a repo shared by
+    # three teams has three rows and a Jenkins mapping that switched only one of
+    # them would report deployments to one team and nothing to the other two.
+    @rollback_on_exc
+    def get_active_team_repos_by_repo_id(self, repo_id: str) -> List[TeamRepos]:
+        return (
+            self._db.session.query(TeamRepos)
+            .filter(
+                TeamRepos.org_repo_id == repo_id,
+                TeamRepos.is_active.is_(True),
+            )
+            .all()
+        )
+
     @rollback_on_exc
     def get_active_org_repos_by_ids(self, repo_ids: List[str]) -> List[OrgRepo]:
         return (

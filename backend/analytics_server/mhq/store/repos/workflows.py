@@ -16,7 +16,10 @@ from mhq.store.models.code.workflows.workflows import (
     RepoWorkflowRuns,
     RepoWorkflowRunsBookmark,
 )
-from mhq.store.models.code.repository import OrgRepo
+
+# CLUSTOX: TeamRepos is written here so the deployment_type switch shares a
+# commit with the Jenkins mapping -- see create_jenkins_repo_workflow.
+from mhq.store.models.code.repository import OrgRepo, TeamRepos
 from mhq.utils.time import Interval
 
 
@@ -182,16 +185,24 @@ class WorkflowRepoService:
             .all()
         )
 
-    # CLUSTOX: writes the Jenkins mapping and the deactivation of the repo's
-    # other deployment workflows in a single commit. If either half failed on
-    # its own, a repo could be left with two active deployment sources,
-    # silently double-counting deployments -- see
-    # deactivate_deployment_workflows_for_repo in mhq/api/integrations.py.
+    # CLUSTOX: writes the Jenkins mapping, the deactivation of the repo's other
+    # deployment workflows and the TeamRepos.deployment_type switch in a single
+    # commit. If any part applied on its own, a repo could be left with two
+    # active deployment sources -- silently double-counting deployments, see
+    # deactivate_deployment_workflows_for_repo in mhq/api/integrations.py -- or
+    # switched to WORKFLOW with no workflow behind it, which reads as zero
+    # deployments.
+    #
+    # TeamRepos is written from here rather than through CodeRepoService because
+    # both services share one db.session and only one of them can own the
+    # commit; splitting the write across two commits is the partial-failure this
+    # method exists to prevent.
     @rollback_on_exc
     def create_jenkins_repo_workflow(
         self,
         jenkins_workflow: RepoWorkflow,
         workflows_to_deactivate: List[RepoWorkflow],
+        team_repos_to_update: List[TeamRepos] = None,
     ) -> RepoWorkflow:
         # add() on an instance already loaded in this session is a no-op, so
         # this covers both a brand new mapping and the reactivation of a row
@@ -199,23 +210,29 @@ class WorkflowRepoService:
         self._db.session.add(jenkins_workflow)
         for workflow in workflows_to_deactivate:
             self._db.session.merge(workflow)
+        for team_repo in team_repos_to_update or []:
+            self._db.session.merge(team_repo)
         self._db.session.commit()
         return jenkins_workflow
 
-    # CLUSTOX: removing a Jenkins mapping and restoring the GitHub Actions rows
-    # it displaced happen in one commit. Half of this applied on its own would
-    # leave the repo with no active deployment source at all, and its
-    # Deployment Frequency at zero.
+    # CLUSTOX: removing a Jenkins mapping, restoring the GitHub Actions rows it
+    # displaced and restoring the TeamRepos.deployment_type values it overwrote
+    # happen in one commit. Half of this applied on its own would leave the repo
+    # with no active deployment source at all, and its Deployment Frequency at
+    # zero.
     @rollback_on_exc
     def deactivate_repo_workflow(
         self,
         repo_workflow: RepoWorkflow,
         workflows_to_reactivate: List[RepoWorkflow] = None,
+        team_repos_to_update: List[TeamRepos] = None,
     ) -> RepoWorkflow:
         repo_workflow.is_active = False
         self._db.session.merge(repo_workflow)
         for workflow in workflows_to_reactivate or []:
             self._db.session.merge(workflow)
+        for team_repo in team_repos_to_update or []:
+            self._db.session.merge(team_repo)
         self._db.session.commit()
         return repo_workflow
 
