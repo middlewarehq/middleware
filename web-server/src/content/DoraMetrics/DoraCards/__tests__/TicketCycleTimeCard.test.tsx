@@ -137,8 +137,13 @@ describe('TicketCycleTimeCard', () => {
 
     expect(await screen.findByText('Data Hygiene')).toBeInTheDocument();
     expect(
-      screen.getByText(/PRs merged this period with no linked Jira ticket/)
+      screen.getByText(/PRs merged this period with/)
     ).toBeInTheDocument();
+    expect(screen.getByText('no linked ticket')).toBeInTheDocument();
+    // Real project key, not a hardcoded placeholder -- matches the
+    // design reference's own "check branch naming against PAY-123"
+    // convention hint, just with this team's actual key.
+    expect(screen.getByText(/PZDA-123 convention/)).toBeInTheDocument();
   });
 
   it('opens the unlinked-PRs drill-down modal, scoped to the current team and date range, on "View PRs"', async () => {

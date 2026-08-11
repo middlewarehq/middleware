@@ -140,12 +140,13 @@ export const TicketCycleTimeCard: FC = () => {
   if (!insights?.cycle_time_by_project.length) return null;
 
   return (
-    <FlexBox gap={2} flexWrap="wrap">
+    <FlexBox col gap={2}>
       <ProjectCycleTimeCard projects={insights.cycle_time_by_project} />
       <DataHygieneCard
         count={insights.prs_without_ticket_count}
         teamId={singleTeamId}
         dates={dates}
+        projectKeys={insights.cycle_time_by_project.map((p) => p.project_key)}
       />
     </FlexBox>
   );
@@ -154,7 +155,7 @@ export const TicketCycleTimeCard: FC = () => {
 const ProjectCycleTimeCard: FC<{ projects: ProjectCycleTime[] }> = ({
   projects
 }) => (
-  <CardRoot sx={{ cursor: 'default', p: 2, minWidth: '360px' }} gap2 flex={2}>
+  <CardRoot sx={{ cursor: 'default', p: 2 }} gap2>
     <FlexBox col>
       <Line big semibold white>
         Ticket Cycle Time
@@ -220,7 +221,8 @@ const DataHygieneCard: FC<{
   count: number;
   teamId: ID;
   dates: { start: Date; end: Date };
-}> = ({ count, teamId, dates }) => {
+  projectKeys: string[];
+}> = ({ count, teamId, dates, projectKeys }) => {
   const { addModal } = useModal();
 
   if (!count) return null;
@@ -233,24 +235,34 @@ const DataHygieneCard: FC<{
     });
   };
 
+  // Matches the design reference's own example ("...against the PAY-123
+  // convention") but with this team's real project key, not a
+  // placeholder -- a hint is only useful if it's the actual convention
+  // to check against.
+  const exampleKey = `${projectKeys[0] ?? 'PROJ'}-123`;
+
   return (
-    <CardRoot
-      sx={{ cursor: 'default', p: 2, bgcolor: 'warning.light' }}
-      gap1
-      flex={1}
-      minWidth="260px"
-    >
-      <Line big semibold white>
-        Data Hygiene
-      </Line>
-      <FlexBox gap2 alignCenter mt="auto">
+    <CardRoot sx={{ cursor: 'default', p: 2, bgcolor: 'warning.light' }} gap1>
+      <FlexBox col>
+        <Line big semibold white>
+          Data Hygiene
+        </Line>
+        <Line tiny secondary>
+          Surfaces process gaps rather than silently excluding unmatched PRs
+          from ticket-aware metrics.
+        </Line>
+      </FlexBox>
+      <FlexBox gap2 alignCenter mt={1}>
         <WarningAmberRounded color="warning" sx={{ fontSize: '28px' }} />
         <Line tiny>
           <Line component="span" big semibold white>
             {count}
           </Line>{' '}
-          PR{count === 1 ? '' : 's'} merged this period with no linked Jira
-          ticket
+          PR{count === 1 ? '' : 's'} merged this period with{' '}
+          <Line component="span" semibold white>
+            no linked ticket
+          </Line>{' '}
+          — check branch naming against the {exampleKey} convention.
         </Line>
       </FlexBox>
       <Button
