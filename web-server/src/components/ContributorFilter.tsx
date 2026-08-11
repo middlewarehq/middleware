@@ -130,12 +130,24 @@ export const ContributorFilter = () => {
   }, [notice]);
 
   const isEmpty = settled && contributors.length === 0;
-  const disabled = !singleTeamId || loading || failed || isEmpty;
+  // Whatever else is going on, a selection must stay removable. Disabling the
+  // control on a failed fetch left chips that could not be deleted while the
+  // dashboard carried on sending `authors`, and the cards carried on saying
+  // "authored by alice" -- the only way out was hand-editing the URL. With
+  // nothing selected this is exactly the old behaviour.
+  const disabled =
+    !singleTeamId || (!selected.length && (loading || failed || isEmpty));
 
-  const value = useMemo(
-    () => contributors.filter((c) => selected.includes(c.username)),
-    [contributors, selected]
-  );
+  // Rendered from the selection, not from an intersection with the fetched
+  // list, so chips survive a fetch that failed or has not landed yet. Stale
+  // selections are still dropped -- but only by the effect above, which runs
+  // on a *successful* fetch and says so in a notice.
+  const value = useMemo(() => {
+    const fetched = new Map(contributors.map((c) => [c.username, c]));
+    return selected.map(
+      (username) => fetched.get(username) || { username, pr_count: 0 }
+    );
+  }, [contributors, selected]);
 
   const helperText = notice
     ? notice
