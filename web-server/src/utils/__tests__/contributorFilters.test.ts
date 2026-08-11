@@ -28,10 +28,18 @@ describe('stripContributorFilters', () => {
     expect(prFilter.pr_filter).not.toHaveProperty('authors');
   });
 
-  it('drops only `event_actors` from the workflow filter, keeping everything else', () => {
+  // The shape below is the one the backend actually parses: `event_actors`
+  // lives *inside* the `workflow_filter` blob, alongside `head_branches`,
+  // because ParseWorkflowFilterProcessor.apply
+  // (mhq/service/workflows/workflow_filter.py) reads
+  // `workflow_filter.get("event_actors")` off the parsed blob. Stripping the
+  // top level would leave the key in place and CFR would stay filtered.
+  it('drops only `event_actors` from inside workflow_filter, keeping everything else', () => {
     const workflowFilters = {
-      event_actors: ['alice'],
-      'repo-1': { base_branches: ['main'] }
+      workflow_filter: {
+        head_branches: ['^main$'],
+        event_actors: ['alice']
+      }
     };
 
     const { workflowFilter } = stripContributorFilters(
@@ -40,9 +48,9 @@ describe('stripContributorFilters', () => {
     );
 
     expect(workflowFilter).toEqual({
-      'repo-1': { base_branches: ['main'] }
+      workflow_filter: { head_branches: ['^main$'] }
     });
-    expect(workflowFilter).not.toHaveProperty('event_actors');
+    expect(workflowFilter.workflow_filter).not.toHaveProperty('event_actors');
   });
 
   it('leaves a null pr_filter as-is when no other filters are set', () => {
@@ -68,7 +76,9 @@ describe('stripContributorFilters', () => {
     const prFilters = {
       pr_filter: { base_branches: ['main'] }
     };
-    const workflowFilters = { 'repo-1': { base_branches: ['main'] } };
+    const workflowFilters = {
+      workflow_filter: { head_branches: ['^main$'] }
+    };
 
     const { prFilter, workflowFilter } = stripContributorFilters(
       prFilters,

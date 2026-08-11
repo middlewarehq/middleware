@@ -24,7 +24,14 @@ export const stripContributorFilters = <
   prFilter: prFilters.pr_filter
     ? { pr_filter: omit(['authors'], prFilters.pr_filter) }
     : prFilters,
-  workflowFilter: workflowFilters
-    ? omit(['event_actors'], workflowFilters)
+  // `event_actors` sits inside the `workflow_filter` blob, because that is the
+  // level the backend parses it at (ParseWorkflowFilterProcessor.apply reads
+  // `workflow_filter.get("event_actors")`). So it has to be stripped from
+  // there too -- stripping the top level would silently do nothing.
+  workflowFilter: workflowFilters?.workflow_filter
+    ? {
+        ...workflowFilters,
+        workflow_filter: omit(['event_actors'], workflowFilters.workflow_filter)
+      }
     : workflowFilters
 });

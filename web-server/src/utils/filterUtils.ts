@@ -96,5 +96,16 @@ export const getWorkFlowFiltersAsPayloadForSingleTeam = async (params: {
   )[teamId];
 
   if (!eventActors?.length) return filter;
-  return { ...filter, event_actors: eventActors };
+  // CLUSTOX: `event_actors` belongs *inside* the workflow_filter blob, next to
+  // `head_branches`. The backend reads it at that level -- see
+  // ParseWorkflowFilterProcessor.apply in
+  // mhq/service/workflows/workflow_filter.py, which does
+  // `workflow_filter.get("event_actors")` on the parsed blob. Hanging it off
+  // the top level instead makes it a sibling query param, and the
+  // PREVENT_EXTRA voluptuous schema on /teams/<team_id>/deployment_frequency
+  // rejects the whole request.
+  return {
+    ...filter,
+    workflow_filter: { ...filter?.workflow_filter, event_actors: eventActors }
+  };
 };
