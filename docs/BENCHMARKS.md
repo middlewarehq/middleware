@@ -1,6 +1,6 @@
 # Per-team DORA benchmarks — design
 
-**Status:** approved, not implemented
+**Status:** implemented
 **Date:** 2026-08-11
 **Estimate:** 3–4 days
 
@@ -139,11 +139,32 @@ metrics; a second call for targets would let the numbers and the lines drawn
 against them disagree, and would add a round trip to a page that is already
 the slowest in the product.
 
+In Flask this is a second route:
+
+```
+GET  /teams/<team_id>/benchmarks
+```
+
+but the BFF folds it into the existing `Promise.all` behind
+`/api/internal/team/<team_id>/dora_metrics`, so the browser still makes one
+call and the targets still arrive with the numbers they are drawn against.
+The route that serves them has to be on this path and no other: the cards read
+`metrics_summary.benchmarks`, and that redux slice is written **only** by the
+`dora_metrics` response. Benchmarks attached to any other endpoint land in a
+slice no card reads and render nothing.
+
 ### Already exists — not being built
 
 `SettingsService.get_settings`, `save_settings`, `get_settings_map`; `GET`/`PUT`
-on `/teams/<team_id>/settings`; and `get_default_setting_data`, which is where
-the shipped global baseline lives before anyone edits it.
+on `/teams/<team_id>/settings`; and `get_default_setting_data`.
+
+**There is no shipped global baseline.** `get_default_setting_data` returns all
+four benchmark keys as `None`, and no `GET` at any scope creates a row. This is
+what makes the zero-config state below reachable: a default with numbers in it
+gave every card in every workspace a target line and a "the default benchmark"
+caption the moment any admin opened any settings form, and gave a team that had
+never set a benchmark `source: "team"` on all four metrics. A superadmin types
+the baseline in; the code does not guess it.
 
 ---
 
@@ -189,9 +210,13 @@ implied by the code.
 Server-side on `PUT`. The browser is not a trust boundary and these numbers
 feed a shared dashboard.
 
+Server-side on **both** the team and global `PUT`. The team route is the one
+every workspace admin's form actually writes to, so validating only the global
+route validates the route nobody uses.
+
 | Rule | Why |
 |---|---|
-| Positive numbers only | A negative or zero lead-time target is unachievable; a zero deployment target is meaningless |
+| Non-negative numbers only | A negative target is unachievable |
 | CFR is 0–100 | It is a percentage |
 | Unknown keys rejected | A typo like `leadtime` would store silently and inherit forever |
 | Absent is not zero | Omitting a key means inherit; `0` is deliberate and must be preserved |
@@ -200,6 +225,18 @@ The last rule is the trap. A form sending `0` for empty fields would turn
 "inherit" into "target zero" on every save, and the dashboard would show every
 team failing everything. The UI omits empty fields rather than sending zero,
 and the API distinguishes the two.
+
+`0` is therefore **accepted**, not rejected — an earlier draft of the first
+rule said "positive numbers only… a zero deployment target is meaningless",
+which contradicted the last rule. A team targeting zero failed deployments has
+said something meaningful and must not be silently switched back to inheriting.
+
+**A benchmark `PUT` is a full-state write.** Validation normalises the payload
+to all four keys, `None` for the ones the form left empty, because the form
+omits empty fields and clearing every field would otherwise post `{}` —
+which `save_settings` treats as "no data supplied" and replaces with the
+defaults. Without the normalisation, "clear everything to go back to
+inheriting" saves targets.
 
 ## Edge cases
 
@@ -235,7 +272,15 @@ Resolution is where the bugs will be, so that is where the tests concentrate:
 - **`0` is preserved, not treated as absent**
 
 **Validation:** negatives rejected, CFR above 100 rejected, unknown keys
-rejected, omitted keys left untouched rather than nulled.
+rejected, booleans rejected, `0` preserved, and an empty payload normalised to
+four explicit `None`s rather than falling through to the defaults.
+
+**The seam, not just the function.** Resolution and validation are pure
+functions with thorough unit tests, and every defect this feature shipped was
+still in the seam between one of them and its caller — targets attached to the
+wrong response, a `GET` that wrote a row, a cleared form that saved defaults.
+So the benchmark routes are tested through Flask's test client, asserting the
+body a caller actually receives.
 
 **Isolation, request-level e2e:** an admin cannot read or write another
 workspace's team benchmark → 403. A non-superadmin cannot `PUT` the global
