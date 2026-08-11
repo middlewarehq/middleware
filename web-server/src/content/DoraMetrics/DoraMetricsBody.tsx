@@ -163,8 +163,21 @@ export const DoraMetricsBody = () => {
           Jira isn't linked or there's no ticket data for this
           team/period. See docs/JIRA_INTEGRATION_PROPOSAL.md. */}
       <LeadTimeBreakdownCard />
-      <SprintRollupCard />
-      <TicketCycleTimeCard />
+      {/* Side by side, not stacked -- matches the design reference's own
+          two-col layout for these two, just with Sprint rollup in front
+          of (to the left of) Ticket Cycle Time per request. Each wrapped
+          in its own flex-sized FlexBox rather than passing a prop into
+          either card: both already independently render null on their
+          own gating, and neither needed a props-API change for a
+          purely external layout concern. */}
+      <FlexBox gap={2} flexWrap="wrap">
+        <FlexBox flex={1} minWidth="320px">
+          <SprintRollupCard />
+        </FlexBox>
+        <FlexBox col flex="1.3" minWidth="360px">
+          <TicketCycleTimeCard />
+        </FlexBox>
+      </FlexBox>
       <FlexBox col gap1 flexGrow={1}>
         <FlexBox gap={4}>
           <FlexBox col width="150px">

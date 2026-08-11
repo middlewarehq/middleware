@@ -71,7 +71,17 @@ export const SprintRollupCard: FC = () => {
           Planned vs. shipped, per sprint.
         </Line>
       </FlexBox>
-      <FlexBox gap={3} alignItems="flex-end" flexWrap="wrap">
+      {/* alignItems="flex-start", not flex-end -- every SprintColumn's
+          bar area is the same fixed BAR_MAX_HEIGHT_PX, but a longer
+          sprint name (e.g. "PZDA Sprint 3 &4") wraps to 2 lines while a
+          shorter one stays on 1, making that whole column taller.
+          Aligning by the bottom edge would push the taller column's
+          bars upward relative to the others, so their baselines
+          (0 count) wouldn't line up even though the bar heights
+          themselves are correct -- aligning by the top instead keeps
+          every column's fixed-height bar area starting at the same Y,
+          regardless of how its label wraps below it. */}
+      <FlexBox gap={3} alignItems="flex-start" flexWrap="wrap">
         {sprints.map((sprint) => (
           <SprintColumn key={sprint.name} sprint={sprint} maxCount={maxCount} />
         ))}
