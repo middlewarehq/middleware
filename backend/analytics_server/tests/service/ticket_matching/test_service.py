@@ -9,8 +9,13 @@ from mhq.store.models.code import PullRequest
 ORG_ID = "org-1"
 
 
-def _pr(pr_id="pr-1", title="", head_branch=""):
-    return PullRequest(id=pr_id, title=title, head_branch=head_branch)
+def _pr(pr_id="pr-1", title="", head_branch="", body=None):
+    return PullRequest(
+        id=pr_id,
+        title=title,
+        head_branch=head_branch,
+        data={"body": body} if body else None,
+    )
 
 
 def _service(repo=None) -> TicketMatchingService:
@@ -73,6 +78,47 @@ class TestMatchOrgPrsToTickets:
         repo.get_org_tickets_key_map.return_value = {"PZDA-543": "ticket-1"}
         repo.get_unmatched_prs_for_org.return_value = [
             _pr("pr-1", title="chore: note the ISO-27001 audit date")
+        ]
+
+        _service(repo).match_org_prs_to_tickets(ORG_ID)
+
+        repo.save_mappings.assert_not_called()
+
+    def test_matches_a_pr_to_a_ticket_referenced_only_in_its_body(self):
+        # Real data: about half of this org's "unmatched" PRs turned
+        # out to reference a real ticket only in the body -- e.g. under
+        # a "Linked Issue(s)" section -- never in the title or branch.
+        repo = MagicMock()
+        repo.get_org_tickets_key_map.return_value = {"PZDA-689": "ticket-689"}
+        repo.get_unmatched_prs_for_org.return_value = [
+            _pr(
+                "pr-1",
+                title="fix(charges): dispute never created",
+                head_branch="fix/charge-dispute",
+                body="## Linked Issue(s)\r\nCloses PZDA-689",
+            )
+        ]
+
+        _service(repo).match_org_prs_to_tickets(ORG_ID)
+
+        mappings = repo.save_mappings.call_args[0][0]
+        assert len(mappings) == 1
+        assert mappings[0].ticket_id == "ticket-689"
+
+    def test_does_not_match_a_key_shaped_string_in_the_body_that_is_not_a_real_ticket(
+        self,
+    ):
+        # A long PR description referencing e.g. "SHA-256" or "RELEASE-2"
+        # must not become a false match, same guarantee as for
+        # title/branch.
+        repo = MagicMock()
+        repo.get_org_tickets_key_map.return_value = {"PZDA-543": "ticket-1"}
+        repo.get_unmatched_prs_for_org.return_value = [
+            _pr(
+                "pr-1",
+                title="chore: rotate secrets",
+                body="Switched hashing to SHA-256 per RELEASE-2 notes",
+            )
         ]
 
         _service(repo).match_org_prs_to_tickets(ORG_ID)

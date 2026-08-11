@@ -31,10 +31,19 @@ class TicketMatchingService:
         if not unmatched_prs:
             return
 
+        # Real data: ~half of this org's "unmatched" PRs actually
+        # reference a real, valid ticket key -- just in the PR body
+        # (e.g. under a "Linked Issue(s)" section), never in the title
+        # or branch that this used to check alone. extract_ticket_keys'
+        # own filter-against-real-keys step (the `if key in
+        # ticket_id_by_key` below) is what keeps something merely
+        # key-shaped in a long description (a version string, a spec
+        # reference) from becoming a false match -- scanning more text
+        # doesn't weaken that guarantee.
         mappings = [
             PullRequestTicketMapping(pr_id=pr.id, ticket_id=ticket_id_by_key[key])
             for pr in unmatched_prs
-            for key in extract_ticket_keys(pr.title, pr.head_branch)
+            for key in extract_ticket_keys(pr.title, pr.head_branch, pr.description)
             if key in ticket_id_by_key
         ]
         if not mappings:

@@ -35,12 +35,19 @@ class TicketMatchingRepoService:
         PRs for this org with no PullRequestTicketMapping row yet. Not
         "not yet closed" or "recently updated" -- a PR that genuinely
         references no ticket gets re-scanned every cycle (cheap: no API
-        calls, just a regex against two already-fetched strings), but a
-        PR whose match was already found never gets re-queried.
+        calls, just a regex against a few already-fetched strings), but
+        a PR whose match was already found never gets re-queried.
+
+        data is NOT deferred here (unlike get_unlinked_merged_prs below)
+        -- the matcher needs PullRequest.description (real data: ~half
+        of this org's "unmatched" PRs turned out to reference a real
+        ticket only in the PR body, e.g. under a "Linked Issue(s)"
+        section, never in the title or branch). Bounded to the unmatched
+        set, not every PR, and only during the periodic sync job, not a
+        hot path -- an acceptable cost for a real, verified match rate.
         """
         return (
             self._db.session.query(PullRequest)
-            .options(defer(PullRequest.data))
             .join(OrgRepo, PullRequest.repo_id == OrgRepo.id)
             .outerjoin(
                 PullRequestTicketMapping,
