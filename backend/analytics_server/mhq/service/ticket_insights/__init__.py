@@ -1,2 +1,2 @@
-from .cycle_time import compute_average_seconds_by_status, StatusCycleTime
+from .cycle_time import compute_cycle_time_by_project, ProjectCycleTime
 from .service import get_ticket_insights_service, TicketInsightsService

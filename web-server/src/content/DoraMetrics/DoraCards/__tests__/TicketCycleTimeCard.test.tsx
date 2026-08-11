@@ -15,8 +15,24 @@ import { TicketCycleTimeCard } from '../TicketCycleTimeCard';
 
 const TEAM_ID = 'team-1';
 
+const project = (overrides = {}) => ({
+  project_key: 'PZDA',
+  project_name: 'Project Zero Deposit Africa',
+  ticket_count: 222,
+  avg_total_seconds: 1128947,
+  avg_seconds_by_category: {
+    'To Do': 495562,
+    'In Progress': 631158,
+    Done: 2227
+  },
+  ...overrides
+});
+
 // CLUSTOX: Jira integration, Phase 4 (§6C/§6E). See
-// docs/JIRA_INTEGRATION_PROPOSAL.md.
+// docs/JIRA_INTEGRATION_PROPOSAL.md. One fetch backs two visually
+// separate cards (Ticket Cycle Time, Data Hygiene) -- see the
+// "fetches ticket insights exactly once" test below for why that
+// matters (avoiding a duplicate network call for the same data).
 describe('TicketCycleTimeCard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -48,12 +64,12 @@ describe('TicketCycleTimeCard', () => {
     expect(axios).not.toHaveBeenCalled();
   });
 
-  it('renders nothing when the team has no ticket data for this period', async () => {
+  it('renders nothing when no project has ticket data for this period', async () => {
     (useAuth as jest.Mock).mockReturnValue({
       integrations: { jira: { integrated: true } }
     });
     (axios as unknown as jest.Mock).mockResolvedValue({
-      data: { cycle_time_by_status: [], ticket_count: 0, prs_without_ticket_count: 0 }
+      data: { cycle_time_by_project: [], prs_without_ticket_count: 0 }
     });
     const { container } = render(<TicketCycleTimeCard />);
 
@@ -61,84 +77,72 @@ describe('TicketCycleTimeCard', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renders each status sorted by longest average time first', async () => {
+  it('fetches ticket insights exactly once, for both cards combined', async () => {
     (useAuth as jest.Mock).mockReturnValue({
       integrations: { jira: { integrated: true } }
     });
     (axios as unknown as jest.Mock).mockResolvedValue({
       data: {
-        cycle_time_by_status: [
-          { status: 'In Progress', avg_seconds: 3600, ticket_count: 5 },
-          { status: 'To Do', avg_seconds: 864000, ticket_count: 10 }
-        ],
-        avg_total_cycle_seconds: 950400,
-        ticket_count: 15,
-        prs_without_ticket_count: 0
+        cycle_time_by_project: [project()],
+        prs_without_ticket_count: 5
       }
     });
     render(<TicketCycleTimeCard />);
 
     await screen.findByText('Ticket Cycle Time');
-    const rows = screen.getAllByText(/To Do|In Progress/);
-    expect(rows[0]).toHaveTextContent('To Do');
-    expect(rows[1]).toHaveTextContent('In Progress');
+    await screen.findByText('Data Hygiene');
+    expect(axios).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the overall average cycle time as a headline figure', async () => {
+  it('renders one row per tracked project, with its own key, name, and avg', async () => {
     (useAuth as jest.Mock).mockReturnValue({
       integrations: { jira: { integrated: true } }
     });
     (axios as unknown as jest.Mock).mockResolvedValue({
       data: {
-        cycle_time_by_status: [
-          { status: 'Done', avg_seconds: 3600, ticket_count: 1 }
+        cycle_time_by_project: [
+          project({ project_key: 'PZDA', avg_total_seconds: 1128947 }),
+          project({
+            project_key: 'PAY',
+            project_name: 'Payments',
+            avg_total_seconds: 86400
+          })
         ],
-        avg_total_cycle_seconds: 950400, // 11 days
-        ticket_count: 1,
         prs_without_ticket_count: 0
       }
     });
     render(<TicketCycleTimeCard />);
 
-    expect(await screen.findByText('avg, creation to done')).toBeInTheDocument();
+    expect(await screen.findByText('PZDA')).toBeInTheDocument();
+    expect(screen.getByText('PAY')).toBeInTheDocument();
+    expect(screen.getByText(/Payments/)).toBeInTheDocument();
   });
 
-  it('shows the data-hygiene callout only when there are unlinked merged PRs', async () => {
+  it('shows the Data Hygiene card only when there are unlinked merged PRs', async () => {
     (useAuth as jest.Mock).mockReturnValue({
       integrations: { jira: { integrated: true } }
     });
     (axios as unknown as jest.Mock).mockResolvedValue({
-      data: {
-        cycle_time_by_status: [
-          { status: 'Done', avg_seconds: 3600, ticket_count: 1 }
-        ],
-        ticket_count: 1,
-        prs_without_ticket_count: 4
-      }
+      data: { cycle_time_by_project: [project()], prs_without_ticket_count: 4 }
     });
     render(<TicketCycleTimeCard />);
 
+    expect(await screen.findByText('Data Hygiene')).toBeInTheDocument();
     expect(
-      await screen.findByText(/4 PRs merged this period with no linked Jira ticket/)
+      screen.getByText(/PRs merged this period with no linked Jira ticket/)
     ).toBeInTheDocument();
   });
 
-  it('omits the data-hygiene callout when every merged PR is linked', async () => {
+  it('omits the Data Hygiene card entirely when every merged PR is linked', async () => {
     (useAuth as jest.Mock).mockReturnValue({
       integrations: { jira: { integrated: true } }
     });
     (axios as unknown as jest.Mock).mockResolvedValue({
-      data: {
-        cycle_time_by_status: [
-          { status: 'Done', avg_seconds: 3600, ticket_count: 1 }
-        ],
-        ticket_count: 1,
-        prs_without_ticket_count: 0
-      }
+      data: { cycle_time_by_project: [project()], prs_without_ticket_count: 0 }
     });
     render(<TicketCycleTimeCard />);
 
     await screen.findByText('Ticket Cycle Time');
-    expect(screen.queryByText(/no linked Jira ticket/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Data Hygiene')).not.toBeInTheDocument();
   });
 });

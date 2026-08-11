@@ -1,102 +1,136 @@
 from collections import defaultdict
-from dataclasses import dataclass
-from typing import Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Dict, List, Tuple
 
-from mhq.store.models.projects import Ticket, TicketState
+from mhq.store.models.projects import OrgProject, Ticket, TicketState
+
+# Jira Cloud's 3 status categories are fixed platform-wide, not
+# customizable per workflow -- unlike individual status names, which
+# vary per team (see docs/JIRA_INTEGRATION_PROPOSAL.md's design
+# reference: this groups by these 3 categories, one segmented bar per
+# project, not a flat list of a team's own literal status names).
+CATEGORIES = ("To Do", "In Progress", "Done")
 
 
 @dataclass
-class StatusCycleTime:
-    avg_seconds: float
+class ProjectCycleTime:
+    project_key: str
+    project_name: str
     ticket_count: int
+    avg_total_seconds: float
+    avg_seconds_by_category: Dict[str, float] = field(default_factory=dict)
 
 
-def compute_average_seconds_by_status(
-    tickets: List[Ticket], ticket_states: List[TicketState]
-) -> Dict[str, StatusCycleTime]:
+def compute_cycle_time_by_project(
+    tickets: List[Ticket],
+    ticket_states: List[TicketState],
+    projects_by_id: Dict[str, OrgProject],
+) -> List[ProjectCycleTime]:
     """
-    Average time *completed* tickets spent in each status, across the
-    given tickets -- docs/JIRA_INTEGRATION_PROPOSAL.md §6C.
+    Average cycle time per project, each broken into the 3 status
+    categories -- docs/JIRA_INTEGRATION_PROPOSAL.md §6C.
 
     Callers must only pass tickets that have actually reached a
     "Done"-category status (ProjectRepoService.get_tickets_with_states_
     for_projects already filters for this). A ticket still open has no
-    bounded end time -- an early version of this function measured every
-    ticket up to "now", and a single item that had been sitting untouched
-    in the backlog for months dominated the "To Do" average with a
-    duration that had nothing to do with how long finished work actually
-    took. Every segment's end boundary here is a ticket's own last
-    recorded activity (updated_at) or its next real transition, never
-    live time -- this keeps the function pure (no wall-clock dependency)
-    and keeps every duration bounded by data Jira actually recorded.
+    bounded end time -- an early version of this measured every ticket up
+    to "now", and a single item sitting untouched in a backlog for
+    months dominated the average with a duration that had nothing to do
+    with how long finished work actually took. Every segment's end
+    boundary here is a ticket's own last recorded activity, never live
+    time.
 
-    Grouped by the literal status name, not Jira's 3-bucket status
-    category: a real team already knows their own workflow's status
-    names, and a bucket alone would hide the actual bottleneck ("stuck in
-    Code Review" reads very differently from a generic "In Progress").
-
-    A ticket that revisits the same status more than once (e.g. reopened
-    from Done back to To Do, then redone) contributes one *combined*
-    duration for that status, not one sample per visit -- otherwise
-    ticket_count stops meaning "how many tickets", and a single
-    frequently-reopened ticket would silently outweigh every ticket that
-    only passed through once.
+    Every category average is computed over the *same* ticket set (a
+    ticket that never had an "In Progress" segment counts as 0 seconds
+    there, not excluded), so the 3 category averages always sum to
+    avg_total_seconds -- needed for a stacked bar whose segment widths
+    are supposed to add up to the whole bar.
     """
     states_by_ticket: Dict[str, List[TicketState]] = defaultdict(list)
     for state in ticket_states:
         states_by_ticket[str(state.ticket_id)].append(state)
 
-    seconds_by_ticket_and_status: Dict[str, Dict[str, float]] = defaultdict(
-        lambda: defaultdict(float)
-    )
-
+    tickets_by_project: Dict[str, List[Ticket]] = defaultdict(list)
     for ticket in tickets:
-        states = sorted(
-            states_by_ticket.get(str(ticket.id), []), key=lambda s: s.changed_at
+        tickets_by_project[str(ticket.org_project_id)].append(ticket)
+
+    results: List[ProjectCycleTime] = []
+    for project_id, project_tickets in tickets_by_project.items():
+        project = projects_by_id.get(project_id)
+        if not project:
+            continue
+
+        per_ticket_totals: List[float] = []
+        category_sums = {category: 0.0 for category in CATEGORIES}
+
+        for ticket in project_tickets:
+            states = sorted(
+                states_by_ticket.get(str(ticket.id), []), key=lambda s: s.changed_at
+            )
+            segments = [
+                (status, seconds)
+                for status, seconds in _status_segments(ticket, states)
+                if seconds >= 0
+            ]
+            if not segments:
+                continue
+
+            for category, seconds in _bucket_by_category(segments).items():
+                category_sums[category] += seconds
+            per_ticket_totals.append(sum(seconds for _, seconds in segments))
+
+        ticket_count = len(per_ticket_totals)
+        if not ticket_count:
+            continue
+
+        results.append(
+            ProjectCycleTime(
+                project_key=project.key,
+                project_name=project.name,
+                ticket_count=ticket_count,
+                avg_total_seconds=sum(per_ticket_totals) / ticket_count,
+                avg_seconds_by_category={
+                    category: category_sums[category] / ticket_count
+                    for category in CATEGORIES
+                },
+            )
         )
-        for status, seconds in _status_segments(ticket, states):
-            if seconds >= 0:
-                seconds_by_ticket_and_status[str(ticket.id)][status] += seconds
 
-    durations_by_status: Dict[str, List[float]] = defaultdict(list)
-    for status_seconds in seconds_by_ticket_and_status.values():
-        for status, seconds in status_seconds.items():
-            durations_by_status[status].append(seconds)
-
-    return {
-        status: StatusCycleTime(
-            avg_seconds=sum(durations) / len(durations),
-            ticket_count=len(durations),
-        )
-        for status, durations in durations_by_status.items()
-    }
+    return sorted(results, key=lambda p: p.project_key)
 
 
-def compute_average_total_cycle_seconds(
-    tickets: List[Ticket],
-) -> Optional[StatusCycleTime]:
+def _bucket_by_category(segments: List[Tuple[str, float]]) -> Dict[str, float]:
     """
-    Average creation-to-last-update time across the given (completed)
-    tickets -- the single "N days avg" headline figure the per-status
-    breakdown above adds up to. A separate function, not folded into the
-    one above, so each has exactly one job: this reads only
-    Ticket.created_at/updated_at and doesn't care about status history
-    at all.
+    First segment -> To Do (the status a ticket is created in), last
+    segment -> Done (guaranteed -- callers only pass completed tickets,
+    so a ticket's final recorded status is always Done-category),
+    everything in between -> In Progress.
+
+    Positional, not a literal-status-name lookup: the changelog data this
+    integration syncs only has the literal from/to status strings, not
+    each one's category (that would need a separate call to Jira's
+    /rest/api/3/status to build a name -> category map, which nothing
+    else needs yet). Every real Jira workflow's first status is To Do
+    category and last is Done category by definition, so position is a
+    reliable enough proxy without that extra call.
+
+    Known, accepted limitation: only the very first and very last
+    segments get special treatment. A ticket reopened *after* reaching
+    Done (Done -> In Progress -> Done again) has its middle Done period
+    counted as "In Progress", since this function has no way to
+    recognize a middle segment as Done on its own -- see
+    test_a_reopened_ticket_puts_its_middle_done_period_into_in_progress
+    for the documented, deliberate behavior this produces.
     """
-    if not tickets:
-        return None
+    if len(segments) == 1:
+        return {"Done": segments[0][1]}
 
-    durations = [
-        (ticket.updated_at - ticket.created_at).total_seconds() for ticket in tickets
-    ]
-    durations = [seconds for seconds in durations if seconds >= 0]
-    if not durations:
-        return None
-
-    return StatusCycleTime(
-        avg_seconds=sum(durations) / len(durations),
-        ticket_count=len(durations),
-    )
+    result: Dict[str, float] = defaultdict(float)
+    result["To Do"] += segments[0][1]
+    for _, seconds in segments[1:-1]:
+        result["In Progress"] += seconds
+    result["Done"] += segments[-1][1]
+    return dict(result)
 
 
 def _status_segments(ticket: Ticket, states: List[TicketState]):

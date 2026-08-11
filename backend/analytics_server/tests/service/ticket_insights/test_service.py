@@ -65,10 +65,11 @@ class TestGetTeamTicketInsights:
         assert looked_up_repo_ids == ["repo-1"]
         assert result["prs_without_ticket_count"] == 3
 
-    def test_returns_ticket_count_and_cycle_time_together(self):
+    def test_returns_cycle_time_grouped_by_project(self):
+        project = MagicMock(id="proj-1", key="PZDA", name="Project Zero Deposit Africa")
         project_repo = MagicMock()
-        project_repo.get_team_projects.return_value = [MagicMock(id="proj-1")]
-        ticket = MagicMock(id="t1", status="Done")
+        project_repo.get_team_projects.return_value = [project]
+        ticket = MagicMock(id="t1", status="Done", org_project_id="proj-1")
         ticket.updated_at = time_now()
         ticket.created_at = ticket.updated_at - timedelta(days=3)
         project_repo.get_tickets_with_states_for_projects.return_value = (
@@ -85,6 +86,7 @@ class TestGetTeamTicketInsights:
             project_repo, code_repo, ticket_matching_repo
         ).get_team_ticket_insights(team, _interval())
 
-        assert result["ticket_count"] == 1
-        assert "Done" in result["cycle_time_by_status"]
-        assert result["avg_total_cycle_time"].avg_seconds == timedelta(days=3).total_seconds()
+        [project_result] = result["cycle_time_by_project"]
+        assert project_result.project_key == "PZDA"
+        assert project_result.ticket_count == 1
+        assert project_result.avg_total_seconds == timedelta(days=3).total_seconds()

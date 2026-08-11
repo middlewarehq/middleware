@@ -10,13 +10,13 @@ import { isoDateString } from '@/utils/date';
 // cards' own calls) -- keeps this additive to that endpoint rather than
 // risking a regression in it. See docs/JIRA_INTEGRATION_PROPOSAL.md.
 export type TicketInsights = {
-  cycle_time_by_status: {
-    status: string;
-    avg_seconds: number;
+  cycle_time_by_project: {
+    project_key: string;
+    project_name: string;
     ticket_count: number;
+    avg_total_seconds: number;
+    avg_seconds_by_category: Record<string, number>;
   }[];
-  avg_total_cycle_seconds: number | null;
-  ticket_count: number;
   prs_without_ticket_count: number;
 };
 

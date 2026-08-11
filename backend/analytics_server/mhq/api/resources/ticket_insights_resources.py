@@ -2,20 +2,19 @@ from typing import Dict
 
 
 def adapt_ticket_insights(insights: Dict) -> Dict:
-    avg_total_cycle_time = insights.get("avg_total_cycle_time")
-
     return {
-        "cycle_time_by_status": [
+        "cycle_time_by_project": [
             {
-                "status": status,
-                "avg_seconds": round(cycle_time.avg_seconds),
-                "ticket_count": cycle_time.ticket_count,
+                "project_key": project.project_key,
+                "project_name": project.project_name,
+                "ticket_count": project.ticket_count,
+                "avg_total_seconds": round(project.avg_total_seconds),
+                "avg_seconds_by_category": {
+                    category: round(seconds)
+                    for category, seconds in project.avg_seconds_by_category.items()
+                },
             }
-            for status, cycle_time in insights["cycle_time_by_status"].items()
+            for project in insights["cycle_time_by_project"]
         ],
-        "avg_total_cycle_seconds": (
-            round(avg_total_cycle_time.avg_seconds) if avg_total_cycle_time else None
-        ),
-        "ticket_count": insights["ticket_count"],
         "prs_without_ticket_count": insights["prs_without_ticket_count"],
     }

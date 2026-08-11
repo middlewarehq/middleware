@@ -251,7 +251,7 @@ class ProjectRepoService:
         and including it would let a single item sitting untouched in a
         backlog for months dominate a cycle-time average with a duration
         that has nothing to do with how long finished work actually took
-        -- see compute_average_seconds_by_status's own docstring for the
+        -- see compute_cycle_time_by_project's own docstring for the
         concrete case that surfaced this.
         """
         if not org_project_ids:

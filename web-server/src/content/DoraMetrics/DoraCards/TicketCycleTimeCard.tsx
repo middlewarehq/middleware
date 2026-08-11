@@ -1,6 +1,6 @@
 import { WarningAmberRounded } from '@mui/icons-material';
 import axios from 'axios';
-import { FC, useEffect, useMemo } from 'react';
+import { FC, useEffect } from 'react';
 
 import { CardRoot } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { FlexBox } from '@/components/FlexBox';
@@ -17,18 +17,33 @@ import { depFn } from '@/utils/fn';
 // the 4 existing cards share -- this is purely additive to the DORA
 // Metrics page, not a change to any of the existing 4 cards' own data
 // or code.
-type TicketInsights = {
-  cycle_time_by_status: {
-    status: string;
-    avg_seconds: number;
-    ticket_count: number;
-  }[];
-  avg_total_cycle_seconds: number | null;
+//
+// One fetch, two visually separate cards (Ticket Cycle Time and Data
+// Hygiene, matching the design reference) -- this component is the
+// shared orchestrator so DoraMetricsBody only needs the one
+// <TicketCycleTimeCard /> line it already has, and the two cards below
+// never issue a second, duplicate request for the same data.
+const CATEGORY_COLOR: Record<string, string> = {
+  'To Do': 'info.main',
+  'In Progress': 'warning.main',
+  Done: 'success.main'
+};
+const CATEGORY_ORDER = ['To Do', 'In Progress', 'Done'];
+
+type ProjectCycleTime = {
+  project_key: string;
+  project_name: string;
   ticket_count: number;
+  avg_total_seconds: number;
+  avg_seconds_by_category: Record<string, number>;
+};
+
+type TicketInsights = {
+  cycle_time_by_project: ProjectCycleTime[];
   prs_without_ticket_count: number;
 };
 
-export const TicketCycleTimeCard: FC = () => {
+const useTicketInsights = () => {
   const { integrations } = useAuth();
   const isJiraLinked = Boolean(integrations?.jira?.integrated);
   const { singleTeamId, dates } = useSingleTeamConfig();
@@ -51,63 +66,113 @@ export const TicketCycleTimeCard: FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isJiraLinked, singleTeamId, dates.start, dates.end]);
 
-  const sortedStatuses = useMemo(
-    () =>
-      [...(insights.value?.cycle_time_by_status || [])].sort(
-        (a, b) => b.avg_seconds - a.avg_seconds
-      ),
-    [insights.value]
-  );
+  return { isJiraLinked, isLoading: isLoading.value, insights: insights.value };
+};
 
-  if (!isJiraLinked || isLoading.value) return null;
-  if (!insights.value?.ticket_count) return null;
+export const TicketCycleTimeCard: FC = () => {
+  const { isJiraLinked, isLoading, insights } = useTicketInsights();
+
+  if (!isJiraLinked || isLoading) return null;
+  if (!insights?.cycle_time_by_project.length) return null;
 
   return (
-    <CardRoot sx={{ cursor: 'default', p: 2 }} gap2>
-      <FlexBox justifyBetween alignCenter gap2>
-        <FlexBox col>
-          <Line big semibold white>
-            Ticket Cycle Time
-          </Line>
+    <FlexBox gap={2} flexWrap="wrap">
+      <ProjectCycleTimeCard projects={insights.cycle_time_by_project} />
+      <DataHygieneCard count={insights.prs_without_ticket_count} />
+    </FlexBox>
+  );
+};
+
+const ProjectCycleTimeCard: FC<{ projects: ProjectCycleTime[] }> = ({
+  projects
+}) => (
+  <CardRoot sx={{ cursor: 'default', p: 2, minWidth: '360px' }} gap2 flex={2}>
+    <FlexBox col>
+      <Line big semibold white>
+        Ticket Cycle Time
+      </Line>
+      <Line tiny secondary>
+        Time in each status, for tickets completed this period
+      </Line>
+    </FlexBox>
+    <FlexBox col gap2>
+      {projects.map((project) => (
+        <ProjectCycleTimeRow key={project.project_key} project={project} />
+      ))}
+    </FlexBox>
+    <FlexBox gap2 flexWrap="wrap">
+      {CATEGORY_ORDER.map((category) => (
+        <FlexBox key={category} gap1 alignCenter>
+          <FlexBox
+            width="9px"
+            height="9px"
+            borderRadius="2px"
+            bgcolor={CATEGORY_COLOR[category]}
+          />
           <Line tiny secondary>
-            Average time in each status, for tickets completed this
-            period
+            {category}
           </Line>
         </FlexBox>
-        {Boolean(insights.value.avg_total_cycle_seconds) && (
-          <FlexBox col alignItems="flex-end" flexShrink={0}>
-            <Line big semibold white>
-              {getDurationString(insights.value.avg_total_cycle_seconds)}
-            </Line>
-            <Line tiny secondary>
-              avg, creation to done
-            </Line>
-          </FlexBox>
-        )}
+      ))}
+    </FlexBox>
+  </CardRoot>
+);
+
+const ProjectCycleTimeRow: FC<{ project: ProjectCycleTime }> = ({ project }) => (
+  <FlexBox col gap1>
+    <FlexBox justifyBetween alignCenter gap2>
+      <Line tiny>
+        <Line component="span" semibold white>
+          {project.project_key}
+        </Line>{' '}
+        — {project.project_name}
+      </Line>
+      <Line tiny secondary flexShrink={0}>
+        {getDurationString(project.avg_total_seconds)} avg
+      </Line>
+    </FlexBox>
+    <FlexBox height="20px" borderRadius="5px" overflow="hidden">
+      {CATEGORY_ORDER.map((category) => {
+        const seconds = project.avg_seconds_by_category[category] || 0;
+        if (!seconds) return null;
+        const widthPct = (seconds / project.avg_total_seconds) * 100;
+        return (
+          <FlexBox
+            key={category}
+            height="100%"
+            width={`${widthPct}%`}
+            bgcolor={CATEGORY_COLOR[category]}
+            title={`${category}: ${getDurationString(seconds)}`}
+          />
+        );
+      })}
+    </FlexBox>
+  </FlexBox>
+);
+
+const DataHygieneCard: FC<{ count: number }> = ({ count }) => {
+  if (!count) return null;
+
+  return (
+    <CardRoot
+      sx={{ cursor: 'default', p: 2, bgcolor: 'warning.light' }}
+      gap1
+      flex={1}
+      minWidth="260px"
+    >
+      <Line big semibold white>
+        Data Hygiene
+      </Line>
+      <FlexBox gap2 alignCenter mt="auto">
+        <WarningAmberRounded color="warning" sx={{ fontSize: '28px' }} />
+        <Line tiny>
+          <Line component="span" big semibold white>
+            {count}
+          </Line>{' '}
+          PR{count === 1 ? '' : 's'} merged this period with no linked Jira
+          ticket
+        </Line>
       </FlexBox>
-      <FlexBox col gap1>
-        {sortedStatuses.map((row) => (
-          <FlexBox key={row.status} justifyBetween alignCenter>
-            <Line>{row.status}</Line>
-            <FlexBox gap1 alignCenter>
-              <Line secondary tiny>
-                {row.ticket_count} ticket{row.ticket_count === 1 ? '' : 's'}
-              </Line>
-              <Line semibold>{getDurationString(row.avg_seconds)}</Line>
-            </FlexBox>
-          </FlexBox>
-        ))}
-      </FlexBox>
-      {Boolean(insights.value.prs_without_ticket_count) && (
-        <FlexBox alignCenter gap1 mt="auto">
-          <WarningAmberRounded fontSize="small" color="warning" />
-          <Line tiny secondary>
-            {insights.value.prs_without_ticket_count} PR
-            {insights.value.prs_without_ticket_count === 1 ? '' : 's'} merged
-            this period with no linked Jira ticket
-          </Line>
-        </FlexBox>
-      )}
     </CardRoot>
   );
 };

@@ -36,8 +36,7 @@ describe('GET /api/internal/team/[team_id]/ticket_insights', () => {
 
   it('proxies to the backend with isoDateString-formatted timestamps, not toISOString', async () => {
     (handleRequest as jest.Mock).mockResolvedValue({
-      cycle_time_by_status: [],
-      ticket_count: 0,
+      cycle_time_by_project: [],
       prs_without_ticket_count: 0
     });
     const res = mockRes();
@@ -63,10 +62,15 @@ describe('GET /api/internal/team/[team_id]/ticket_insights', () => {
 
   it('sends back whatever the backend returned', async () => {
     const payload = {
-      cycle_time_by_status: [
-        { status: 'In Progress', avg_seconds: 3600, ticket_count: 5 }
+      cycle_time_by_project: [
+        {
+          project_key: 'PZDA',
+          project_name: 'Project Zero Deposit Africa',
+          ticket_count: 5,
+          avg_total_seconds: 3600,
+          avg_seconds_by_category: { 'In Progress': 3600 }
+        }
       ],
-      ticket_count: 5,
       prs_without_ticket_count: 2
     };
     (handleRequest as jest.Mock).mockResolvedValue(payload);
