@@ -75,7 +75,15 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     // below, not on any other route: `metrics_summary` -- the only slice the
     // four cards read `benchmarks` from -- is written solely by whatever this
     // handler returns.
-    fetchTeamBenchmarks(teamId)
+    //
+    // The `catch` is load-bearing. Inside a Promise.all, a rejection here
+    // would take down the entire DORA response and blank all four cards over
+    // an optional decoration. That is not hypothetical: an unrelated 400 on a
+    // sibling call in this same Promise.all rendered "something went wrong"
+    // across the whole dashboard during the contributor-filter work. Targets
+    // are already optional, and every card treats `undefined` as "no target",
+    // so degrading to an unbenchmarked dashboard is the correct failure.
+    fetchTeamBenchmarks(teamId).catch(() => undefined)
   ]);
   const [prFilters, workflowFilters] = await Promise.all([
     // CLUSTOX: contributor filter -- `authors` narrows Lead Time by PR author,
