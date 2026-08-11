@@ -22,7 +22,14 @@ export const BenchmarkTargetLine: FC<BenchmarkTargetLineProps> = ({
   target,
   values = []
 }) => {
-  const max = Math.max(target, 0, ...values) * 1.1 || 1;
+  // CLUSTOX: filter to finite numbers first. The Change Failure Rate series
+  // is built from an optional-chained `head(...)?.data.map(...)`, so a
+  // `undefined`/`NaN` entry is reachable -- and one of those makes `max`
+  // `NaN`, which `NaN || 1` quietly turns into `1`, clamping any target to 1
+  // and pinning the line at 100% of the card. A wrong line is worse than no
+  // line, so the bad values are dropped rather than propagated.
+  const finiteValues = values.filter((value) => Number.isFinite(value));
+  const max = Math.max(target, 0, ...finiteValues) * 1.1 || 1;
   const clampedTarget = Math.min(Math.max(target, 0), max);
   const fromBottomPct = (clampedTarget / max) * 100;
 

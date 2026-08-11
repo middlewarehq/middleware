@@ -14,6 +14,19 @@ describe('benchmarkCaption', () => {
     expect(r.text).toContain('below target');
   });
 
+  it('treats being under target as good for CFR and MTTR too', () => {
+    // The other two members of LOWER_IS_BETTER. Deployment frequency is the
+    // single metric in the set where the direction inverts, so an entry
+    // wrongly added to or dropped from that set would silently reverse the
+    // meaning of a card with nothing else to catch it.
+    expect(benchmarkCaption('change_failure_rate', 5, 15, 'team').tone).toBe(
+      'good'
+    );
+    expect(
+      benchmarkCaption('mean_time_to_recovery', 900, 3600, 'team').tone
+    ).toBe('good');
+  });
+
   it('names the source so a team can see its setting did not save', () => {
     expect(benchmarkCaption('lead_time', 3600, 7200, 'global').text).toContain(
       'default'

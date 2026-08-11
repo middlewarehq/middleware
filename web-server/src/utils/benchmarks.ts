@@ -50,6 +50,13 @@ const formatDuration = (seconds: number): string => {
   return `${Math.round((seconds / 86400) * 10) / 10}d`;
 };
 
+// CLUSTOX: two decimals, matching what useChangeFailureRateProps already does
+// to the *actual* value. Targets go in through a number input and come back
+// as stored, so a baseline entered as 15 can arrive as 15.000000000000002 and
+// would otherwise render verbatim next to a tidily rounded actual.
+const roundForDisplay = (value: number): number =>
+  Math.round(value * 100) / 100;
+
 const formatBenchmarkValue = (
   metric: BenchmarkMetric,
   value: number
@@ -59,9 +66,11 @@ const formatBenchmarkValue = (
     case 'mean_time_to_recovery':
       return formatDuration(value);
     case 'change_failure_rate':
-      return `${value}%`;
-    case 'deployment_frequency':
-      return `${value} ${value === 1 ? 'deployment' : 'deployments'}/week`;
+      return `${roundForDisplay(value)}%`;
+    case 'deployment_frequency': {
+      const rounded = roundForDisplay(value);
+      return `${rounded} ${rounded === 1 ? 'deployment' : 'deployments'}/week`;
+    }
   }
 };
 
@@ -80,7 +89,11 @@ export const benchmarkCaption = (
   target: number | null,
   source: BenchmarkSource
 ): BenchmarkCaption | null => {
-  if (target === null) return null;
+  // CLUSTOX: `== null`, so `undefined` is treated as "no target" too. Every
+  // call site gates on the parent object today, but a `target: undefined`
+  // slipping through would otherwise build a caption comparing against
+  // `undefined` -- "3h is over target (NaN)".
+  if (target == null) return null;
 
   const lowerIsBetter = LOWER_IS_BETTER.has(metric);
   // CLUSTOX: `<=`/`>=` so hitting the target exactly reads as "good", not as
