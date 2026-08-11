@@ -31,6 +31,7 @@ const segment = (overrides = {}) => ({
   clipPath: 'polygon(0 0)',
   title: 'Segment',
   description: 'A segment',
+  legendLabel: 'A segment',
   ...overrides
 });
 
@@ -40,6 +41,8 @@ const ticketSegment = (overrides = {}) => ({
   color: '#eee',
   title: 'Idea',
   description: 'Ticket to first commit',
+  legendLabel: 'Ticket created → first commit',
+  isNew: true,
   ...overrides
 });
 
@@ -56,11 +59,11 @@ describe('LeadTimeStatsCore', () => {
   });
 
   const segments = [
-    segment({ title: 'Commit' }),
-    segment({ title: 'Response' }),
-    segment({ title: 'Rework' }),
-    segment({ title: 'Merge' }),
-    segment({ title: 'Deploy' })
+    segment({ title: 'Commit', legendLabel: 'First commit → PR opened' }),
+    segment({ title: 'Response', legendLabel: 'First response' }),
+    segment({ title: 'Rework', legendLabel: 'Rework' }),
+    segment({ title: 'Merge', legendLabel: 'Merge' }),
+    segment({ title: 'Deploy', legendLabel: 'Merge → deploy' })
   ];
 
   it('renders exactly the original 5 segments when no ticket data is given', () => {
@@ -137,5 +140,75 @@ describe('LeadTimeStatsCore', () => {
     // The "Total" footer sums only the original 5 segments (3600 * 3 +
     // 3600 + 3600 = 5h) -- ticketSegment's 7200s must not leak into it.
     expect(screen.getByText(/^Total:/)).toBeInTheDocument();
+  });
+
+  // CLUSTOX: LeadTimeBreakdownCard's rendering, matching the design
+  // reference exactly -- full phase names in a legend below a plain
+  // bar, not the short in-bar titles ("Commit"/"Idea") the default mode
+  // above uses. showLegend is opt-in and unused by every existing
+  // caller (TeamInsightsBody's drill-down), so the tests above must
+  // keep passing unchanged -- these are additional, not replacements.
+  describe('showLegend mode', () => {
+    it('shows the full legend label, not the short in-bar title', () => {
+      render(<LeadTimeStatsCore changeTimeSegments={segments} showLegend />);
+
+      expect(screen.getByText('First commit → PR opened')).toBeInTheDocument();
+      expect(screen.getByText('Merge → deploy')).toBeInTheDocument();
+      expect(screen.queryByText('Commit')).not.toBeInTheDocument();
+      expect(screen.queryByText('Deploy')).not.toBeInTheDocument();
+    });
+
+    it('prepends the ticket segment\'s legend label and a "New" pill when present', () => {
+      render(
+        <LeadTimeStatsCore
+          changeTimeSegments={segments}
+          ticketSegment={ticketSegment()}
+          showLegend
+        />
+      );
+
+      expect(
+        screen.getByText('Ticket created → first commit')
+      ).toBeInTheDocument();
+      expect(screen.getByText('New')).toBeInTheDocument();
+    });
+
+    it('does not show a "New" pill on any of the original 5 segments', () => {
+      render(<LeadTimeStatsCore changeTimeSegments={segments} showLegend />);
+
+      expect(screen.queryByText('New')).not.toBeInTheDocument();
+    });
+
+    it('still shows the comparison line above the bar when given', () => {
+      render(
+        <LeadTimeStatsCore
+          changeTimeSegments={segments}
+          ticketSegment={ticketSegment()}
+          comparison={{
+            extendedSeconds: 10800,
+            commitOnlySeconds: 3600,
+            matchedPrCount: 42
+          }}
+          showLegend
+        />
+      );
+
+      expect(screen.getByText(/Idea to production/)).toBeInTheDocument();
+      expect(screen.getByText(/42 ticket-matched PRs/)).toBeInTheDocument();
+    });
+
+    it('never renders the "Total" footer, even when showTotal is set', () => {
+      // showLegend's own comparison line is the total; the plain-mode
+      // "Total:" footer would be a second, redundant total.
+      render(
+        <LeadTimeStatsCore
+          changeTimeSegments={segments}
+          showLegend
+          showTotal
+        />
+      );
+
+      expect(screen.queryByText(/^Total:/)).not.toBeInTheDocument();
+    });
   });
 });

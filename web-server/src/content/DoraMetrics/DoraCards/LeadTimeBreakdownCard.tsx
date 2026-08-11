@@ -51,6 +51,7 @@ export const LeadTimeBreakdownCard: FC = () => {
         changeTimeSegments={leadTimeDetailsArray}
         ticketSegment={ticketSegment}
         comparison={comparison}
+        showLegend
       />
     </CardRoot>
   );

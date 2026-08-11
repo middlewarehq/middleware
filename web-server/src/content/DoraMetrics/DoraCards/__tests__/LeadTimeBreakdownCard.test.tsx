@@ -30,11 +30,11 @@ import { LeadTimeBreakdownCard } from '../LeadTimeBreakdownCard';
 // promoted to its own always-visible card on the main DORA Metrics
 // page. See docs/JIRA_INTEGRATION_PROPOSAL.md §6A.
 const fiveSegments = () => [
-  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Commit', description: '' },
-  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Response', description: '' },
-  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Rework', description: '' },
-  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Merge', description: '' },
-  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Deploy', description: '' }
+  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Commit', description: '', legendLabel: 'First commit → PR opened' },
+  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Response', description: '', legendLabel: 'First response' },
+  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Rework', description: '', legendLabel: 'Rework' },
+  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Merge', description: '', legendLabel: 'Merge' },
+  { duration: 3600, bgColor: '#000', color: '#fff', clipPath: '', title: 'Deploy', description: '', legendLabel: 'Merge → deploy' }
 ];
 
 describe('LeadTimeBreakdownCard', () => {
@@ -88,7 +88,9 @@ describe('LeadTimeBreakdownCard', () => {
         bgColor: '#111',
         color: '#eee',
         title: 'Idea',
-        description: 'Ticket to first commit'
+        description: 'Ticket to first commit',
+        legendLabel: 'Ticket created → first commit',
+        isNew: true
       },
       comparison: {
         extendedSeconds: 190800,
@@ -100,8 +102,14 @@ describe('LeadTimeBreakdownCard', () => {
     render(<LeadTimeBreakdownCard />);
 
     expect(screen.getByText('Lead Time for Changes')).toBeInTheDocument();
-    expect(screen.getByText('Idea')).toBeInTheDocument();
-    expect(screen.getByText('Commit')).toBeInTheDocument();
+    // Full design-reference labels in the legend, not the short in-bar
+    // titles ("Idea"/"Commit") LeadTimeStatsCore uses in its default,
+    // non-legend mode.
+    expect(
+      screen.getByText('Ticket created → first commit')
+    ).toBeInTheDocument();
+    expect(screen.getByText('First commit → PR opened')).toBeInTheDocument();
+    expect(screen.getByText('New')).toBeInTheDocument();
     expect(screen.getByText(/Idea to production/)).toBeInTheDocument();
     expect(screen.getByText(/200 ticket-matched PRs/)).toBeInTheDocument();
   });
@@ -116,7 +124,9 @@ describe('LeadTimeBreakdownCard', () => {
         bgColor: '#111',
         color: '#eee',
         title: 'Idea',
-        description: ''
+        description: '',
+        legendLabel: 'Ticket created → first commit',
+        isNew: true
       },
       comparison: {
         extendedSeconds: 190800,

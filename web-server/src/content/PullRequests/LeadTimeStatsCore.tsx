@@ -56,6 +56,15 @@ export const LeadTimeStatsCore: FC<
     // presence.
     ticketSegment?: TicketLeadTimeSegment;
     comparison?: TicketLeadTimeComparison;
+    // CLUSTOX: Jira integration -- LeadTimeBreakdownCard's rendering,
+    // matching the design reference: a plain color bar (hover for
+    // detail) plus a full-label legend below, instead of this
+    // component's original title/duration text baked into each
+    // segment. False/undefined leaves every existing caller (the
+    // TeamInsightsBody drill-down) rendering exactly as it always has
+    // -- see the branch below, which returns before any of the
+    // original JSX runs.
+    showLegend?: boolean;
   } & BoxProps
 > = ({
   cycle = 0,
@@ -63,6 +72,7 @@ export const LeadTimeStatsCore: FC<
   showTotal,
   ticketSegment,
   comparison,
+  showLegend,
   ...props
 }) => {
   const theme = useTheme();
@@ -113,6 +123,99 @@ export const LeadTimeStatsCore: FC<
       }
     });
   }, [addPage]);
+
+  if (showLegend) {
+    const legendSegments = [
+      ...(ticketSegment ? [ticketSegment] : []),
+      initiation,
+      response,
+      rework,
+      merge,
+      deployment
+    ];
+
+    return (
+      <FlexBox col gap2>
+        {comparison && (
+          <FlexBox alignCenter gap={1 / 2} flexWrap="wrap">
+            <Line small secondary>
+              Idea to production:
+            </Line>
+            <Line small bold white>
+              {getDurationString(comparison.extendedSeconds, { segments: 2 })}
+            </Line>
+            <Line small secondary>
+              avg, up from{' '}
+              <Line component="span" small bold>
+                {getDurationString(comparison.commitOnlySeconds, {
+                  segments: 2
+                })}
+              </Line>{' '}
+              commit-only, over {comparison.matchedPrCount} ticket-matched PR
+              {comparison.matchedPrCount === 1 ? '' : 's'}
+            </Line>
+          </FlexBox>
+        )}
+        <Box
+          display="flex"
+          borderRadius={1}
+          overflow="hidden"
+          height="34px"
+          {...props}
+        >
+          {legendSegments.map((segment) => (
+            <DarkTooltip
+              key={segment.legendLabel}
+              arrow
+              title={`${segment.legendLabel}: ${
+                getDurationString(segment.duration, { segments: 2 }) || '-'
+              }`}
+            >
+              <Box
+                height="100%"
+                flex={segment.duration || defaultFlex}
+                bgcolor={segment.bgColor}
+                sx={{ cursor: 'pointer' }}
+              />
+            </DarkTooltip>
+          ))}
+        </Box>
+        <FlexBox gap2 flexWrap="wrap">
+          {legendSegments.map((segment) => (
+            <FlexBox key={segment.legendLabel} gap1 alignCenter>
+              <FlexBox
+                width="9px"
+                height="9px"
+                borderRadius="2px"
+                bgcolor={segment.bgColor}
+              />
+              <Line tiny secondary={!segment.isNew} semibold={segment.isNew} white={segment.isNew}>
+                {segment.legendLabel}
+              </Line>
+              {segment.isNew && (
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    px: 1,
+                    py: 0.2,
+                    borderRadius: '999px',
+                    bgcolor: 'primary.light',
+                    color: 'primary.dark'
+                  }}
+                >
+                  New
+                </Box>
+              )}
+            </FlexBox>
+          ))}
+        </FlexBox>
+      </FlexBox>
+    );
+  }
 
   return (
     <FlexBox col gap1>

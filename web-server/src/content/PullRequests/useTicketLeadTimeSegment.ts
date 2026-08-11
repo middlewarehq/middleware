@@ -21,6 +21,13 @@ export type TicketLeadTimeSegment = {
   color: string;
   title: string;
   description: string;
+  legendLabel: string;
+  // Always true in practice (this segment only ever exists because
+  // it's the new one) -- typed as `boolean`, not the literal `true`,
+  // so object-literal-returning helpers (including this file's own
+  // return value, and every test fixture) don't get inference-widened
+  // into a type error.
+  isNew: boolean;
 };
 
 export type TicketLeadTimeComparison = {
@@ -80,7 +87,9 @@ export const useTicketLeadTimeSegment = (): {
       color: darken(brandColors.ticketState.default, 0.9),
       title: 'Idea',
       description:
-        'Time from the Jira ticket being created to the first commit against it, averaged over merged PRs matched to a ticket this period'
+        'Time from the Jira ticket being created to the first commit against it, averaged over merged PRs matched to a ticket this period',
+      legendLabel: 'Ticket created → first commit',
+      isNew: true
     },
     comparison: {
       extendedSeconds: m.avg_extended_lead_time_seconds,

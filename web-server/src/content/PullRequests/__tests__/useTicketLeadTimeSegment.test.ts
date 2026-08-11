@@ -89,6 +89,12 @@ describe('useTicketLeadTimeSegment', () => {
 
     expect(result.current.ticketSegment.duration).toBe(759519);
     expect(result.current.ticketSegment.title).toBe('Idea');
+    // Full design-reference phase name + the "New" pill flag, for
+    // LeadTimeStatsCore's legend-mode rendering.
+    expect(result.current.ticketSegment.legendLabel).toBe(
+      'Ticket created → first commit'
+    );
+    expect(result.current.ticketSegment.isNew).toBe(true);
     expect(result.current.comparison).toEqual({
       extendedSeconds: 772372,
       commitOnlySeconds: 12853,

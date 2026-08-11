@@ -40,7 +40,8 @@ export const useLeadTimePipeline = () => {
       color: darken(brandColors.ticketState.todo, 0.9),
       clipPath: ClipPathEnum.FIRST,
       title: 'Commit',
-      description: 'Time taken to create PR since the first commit'
+      description: 'Time taken to create PR since the first commit',
+      legendLabel: 'First commit → PR opened'
     }),
     [averageSummary.first_commit_to_open]
   );
@@ -52,7 +53,8 @@ export const useLeadTimePipeline = () => {
       color: darken(brandColors.pr.firstResponseTime, 0.9),
       clipPath: ClipPathEnum.DEFAULT,
       title: 'Response',
-      description: 'Time taken to submit the first review on a PR'
+      description: 'Time taken to submit the first review on a PR',
+      legendLabel: 'First response'
     }),
     [averageSummary.first_response_time]
   );
@@ -64,7 +66,8 @@ export const useLeadTimePipeline = () => {
       color: darken(brandColors.pr.reworkTime, 0.9),
       clipPath: ClipPathEnum.DEFAULT,
       title: 'Rework',
-      description: 'Time spent in reviewing the PR, and making changes (if any)'
+      description: 'Time spent in reviewing the PR, and making changes (if any)',
+      legendLabel: 'Rework'
     }),
     [averageSummary.rework_time]
   );
@@ -77,7 +80,8 @@ export const useLeadTimePipeline = () => {
       clipPath: ClipPathEnum.DEFAULT,
       title: 'Merge',
       description:
-        'Time waited to finally merge the PR after approval was provided'
+        'Time waited to finally merge the PR after approval was provided',
+      legendLabel: 'Merge'
     }),
     [averageSummary.merge_time]
   );
@@ -89,7 +93,8 @@ export const useLeadTimePipeline = () => {
       color: darken(brandColors.ticketState.done, 0.9),
       clipPath: ClipPathEnum.LAST,
       title: 'Deploy',
-      description: 'Time taken to deploy the PR once its merged'
+      description: 'Time taken to deploy the PR once its merged',
+      legendLabel: 'Merge → deploy'
     }),
     [averageSummary.merge_to_deploy]
   );

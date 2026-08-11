@@ -57,4 +57,23 @@ describe('useLeadTimePipeline', () => {
       100, 200, 300, 400, 500
     ]);
   });
+
+  // CLUSTOX: LeadTimeStatsCore's legend-mode rendering (LeadTimeBreakdownCard)
+  // needs the design reference's own full phase names, distinct from
+  // each segment's short in-bar `title`.
+  it('includes the design reference\'s full phase name on every segment', () => {
+    (useSelector as jest.Mock).mockImplementation((selector) =>
+      selector({ doraMetrics: { metrics_summary: null } })
+    );
+
+    const { result } = renderHook(() => useLeadTimePipeline());
+
+    expect(result.current.leadTimeDetailsArray.map((s) => s.legendLabel)).toEqual([
+      'First commit → PR opened',
+      'First response',
+      'Rework',
+      'Merge',
+      'Merge → deploy'
+    ]);
+  });
 });
