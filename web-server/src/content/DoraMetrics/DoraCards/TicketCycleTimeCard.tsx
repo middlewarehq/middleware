@@ -30,6 +30,60 @@ const CATEGORY_COLOR: Record<string, string> = {
 };
 const CATEGORY_ORDER = ['To Do', 'In Progress', 'Done'];
 
+// A category that took a genuinely tiny share of a ticket's total life
+// (e.g. real data: a project closed its "Done" segment in ~37 minutes
+// against a ~13 day total -- 0.2%) rounds to a sub-pixel sliver at its
+// true percentage, which reads as missing data rather than "this really
+// happened, it was just fast". Every category below this floor is
+// bumped up to it; the tooltip and the numbers everywhere else stay the
+// real, unadjusted values -- only the rendered width is touched.
+const MIN_SEGMENT_PCT = 4;
+
+/**
+ * Segment widths as percentages that always sum to 100 across every
+ * category with real (nonzero) time in it, each at least
+ * MIN_SEGMENT_PCT wide. Categories with room above the floor donate
+ * width proportionally to the ones below it, so the bar never overflows
+ * (or underfills) its container.
+ */
+export const segmentWidths = (
+  avgSecondsByCategory: Record<string, number>,
+  avgTotalSeconds: number
+): { category: string; seconds: number; pct: number }[] => {
+  const present = CATEGORY_ORDER.filter(
+    (category) => (avgSecondsByCategory[category] || 0) > 0
+  );
+  if (!present.length || !avgTotalSeconds) return [];
+
+  const rawPct = present.map(
+    (category) => (avgSecondsByCategory[category] / avgTotalSeconds) * 100
+  );
+  const deficit = rawPct.reduce(
+    (sum, pct) => sum + Math.max(0, MIN_SEGMENT_PCT - pct),
+    0
+  );
+  const donorPool = rawPct.reduce(
+    (sum, pct) => sum + Math.max(0, pct - MIN_SEGMENT_PCT),
+    0
+  );
+
+  return present.map((category, i) => {
+    const pct = rawPct[i];
+    let flooredPct = pct;
+    if (deficit > 0) {
+      flooredPct =
+        pct <= MIN_SEGMENT_PCT
+          ? MIN_SEGMENT_PCT
+          : pct - ((pct - MIN_SEGMENT_PCT) / donorPool) * deficit;
+    }
+    return {
+      category,
+      seconds: avgSecondsByCategory[category],
+      pct: flooredPct
+    };
+  });
+};
+
 type ProjectCycleTime = {
   project_key: string;
   project_name: string;
@@ -132,20 +186,18 @@ const ProjectCycleTimeRow: FC<{ project: ProjectCycleTime }> = ({ project }) => 
       </Line>
     </FlexBox>
     <FlexBox height="20px" borderRadius="5px" overflow="hidden">
-      {CATEGORY_ORDER.map((category) => {
-        const seconds = project.avg_seconds_by_category[category] || 0;
-        if (!seconds) return null;
-        const widthPct = (seconds / project.avg_total_seconds) * 100;
-        return (
+      {segmentWidths(project.avg_seconds_by_category, project.avg_total_seconds).map(
+        ({ category, seconds, pct }) => (
           <FlexBox
             key={category}
             height="100%"
-            width={`${widthPct}%`}
+            width={`${pct}%`}
+            noShrink
             bgcolor={CATEGORY_COLOR[category]}
             title={`${category}: ${getDurationString(seconds)}`}
           />
-        );
-      })}
+        )
+      )}
     </FlexBox>
   </FlexBox>
 );

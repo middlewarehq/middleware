@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSingleTeamConfig } from '@/hooks/useStateTeamConfig';
 import { renderWithTheme as render } from '@/utils/testUtils';
 
-import { TicketCycleTimeCard } from '../TicketCycleTimeCard';
+import { segmentWidths, TicketCycleTimeCard } from '../TicketCycleTimeCard';
 
 const TEAM_ID = 'team-1';
 
@@ -144,5 +144,91 @@ describe('TicketCycleTimeCard', () => {
 
     await screen.findByText('Ticket Cycle Time');
     expect(screen.queryByText('Data Hygiene')).not.toBeInTheDocument();
+  });
+
+  it('still renders a tiny-but-real category as a visible segment, not a sub-pixel sliver', async () => {
+    // Real production data: "Done" was ~0.2% of the total (closed in
+    // ~37 minutes against a ~13 day ticket life) -- at that literal
+    // percentage the bar rendered no visible green at all, reading as
+    // missing data. This is the regression the Done segment must not
+    // repeat.
+    (useAuth as jest.Mock).mockReturnValue({
+      integrations: { jira: { integrated: true } }
+    });
+    (axios as unknown as jest.Mock).mockResolvedValue({
+      data: {
+        cycle_time_by_project: [
+          project({
+            avg_total_seconds: 1128947,
+            avg_seconds_by_category: {
+              'To Do': 495562,
+              'In Progress': 631158,
+              Done: 2227
+            }
+          })
+        ],
+        prs_without_ticket_count: 0
+      }
+    });
+    render(<TicketCycleTimeCard />);
+
+    // FlexBox's `title` prop renders a MUI Tooltip, not a native `title`
+    // attribute -- MUI clones the child with an `aria-label` mirroring
+    // the tooltip text instead, which is what's actually queryable
+    // without opening the tooltip. Before the fix, the old
+    // `if (!seconds) return null` pattern didn't apply here (Done is
+    // genuinely nonzero) -- the bug was a real-but-tiny width rounding
+    // away, covered precisely by the segmentWidths unit tests below;
+    // this only needs to prove the real Done data still reaches its own
+    // rendered segment (labeled with its real, unadjusted duration) at
+    // all, which findByLabelText already does by not throwing.
+    await screen.findByLabelText(/Done: 37m 7s/);
+  });
+});
+
+// CLUSTOX: covers the visual bug found comparing the live-rendered
+// widget against real data -- a category real enough to have its own
+// tooltip could still render with ~0 width. segmentWidths is the pure
+// function behind ProjectCycleTimeRow's bar, tested in isolation so the
+// floor/donation math doesn't need a full render to verify.
+describe('segmentWidths', () => {
+  it('returns each category at its true percentage when none needs flooring', () => {
+    const widths = segmentWidths(
+      { 'To Do': 100, 'In Progress': 100, Done: 100 },
+      300
+    );
+
+    // toBeCloseTo, not toEqual -- (100/300)*100 and 100/3 are the same
+    // value mathematically but land a ULP apart as IEEE-754 floats.
+    widths.forEach((w) => expect(w.pct).toBeCloseTo(100 / 3, 10));
+  });
+
+  it('floors a near-zero category to the minimum and still sums to 100', () => {
+    const widths = segmentWidths(
+      { 'To Do': 495562, 'In Progress': 631158, Done: 2227 },
+      1128947
+    );
+
+    const done = widths.find((w) => w.category === 'Done');
+    expect(done.pct).toBeGreaterThanOrEqual(4);
+    expect(widths.reduce((sum, w) => sum + w.pct, 0)).toBeCloseTo(100, 5);
+  });
+
+  it('excludes a category with zero seconds entirely', () => {
+    const widths = segmentWidths({ 'To Do': 100, Done: 100 }, 200);
+    expect(widths.map((w) => w.category)).toEqual(['To Do', 'Done']);
+  });
+
+  it('returns an empty list when the total is zero, instead of dividing by it', () => {
+    expect(segmentWidths({ 'To Do': 0 }, 0)).toEqual([]);
+  });
+
+  it('preserves each segment\'s real seconds for the tooltip, unadjusted', () => {
+    const widths = segmentWidths(
+      { 'To Do': 495562, 'In Progress': 631158, Done: 2227 },
+      1128947
+    );
+
+    expect(widths.find((w) => w.category === 'Done').seconds).toBe(2227);
   });
 });
