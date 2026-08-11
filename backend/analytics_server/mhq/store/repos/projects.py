@@ -1,10 +1,16 @@
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import and_
 
 from mhq.store import db, rollback_on_exc
 from mhq.store.models.core import Team
-from mhq.store.models.projects import OrgProject, TeamProjects
+from mhq.store.models.projects import (
+    OrgProject,
+    ProjectIssuesBookmark,
+    TeamProjects,
+    Ticket,
+    TicketState,
+)
 
 
 class ProjectRepoService:
@@ -124,3 +130,100 @@ class ProjectRepoService:
             )
             .all()
         )
+
+    @rollback_on_exc
+    def get_active_org_projects_for_provider(
+        self, org_id: str, provider: str
+    ) -> List[OrgProject]:
+        return (
+            self._db.session.query(OrgProject)
+            .filter(
+                OrgProject.org_id == org_id,
+                OrgProject.is_active.is_(True),
+                OrgProject.provider == provider,
+            )
+            .all()
+        )
+
+    # -- Tickets ------------------------------------------------------
+
+    @rollback_on_exc
+    def get_tickets_by_idempotency_keys(
+        self, idempotency_keys: List[str]
+    ) -> List[Ticket]:
+        if not idempotency_keys:
+            return []
+
+        return (
+            self._db.session.query(Ticket)
+            .filter(Ticket.idempotency_key.in_(idempotency_keys))
+            .all()
+        )
+
+    @rollback_on_exc
+    def get_ticket_states_by_idempotency_keys(
+        self, idempotency_keys: List[str]
+    ) -> List[TicketState]:
+        if not idempotency_keys:
+            return []
+
+        return (
+            self._db.session.query(TicketState)
+            .filter(TicketState.idempotency_key.in_(idempotency_keys))
+            .all()
+        )
+
+    @rollback_on_exc
+    def save_tickets_data(
+        self, tickets: List[Ticket], ticket_states: List[TicketState]
+    ):
+        # One merge loop per table, one commit -- mirrors
+        # CodeRepoService.save_pull_requests_data. Callers are responsible
+        # for id reconciliation (reusing an existing row's id when its
+        # idempotency_key already exists) before this is called -- see
+        # JiraETLHandler, which does that via a single batch lookup per
+        # table rather than a per-ticket query.
+        [self._db.session.merge(ticket) for ticket in tickets]
+        [self._db.session.merge(ticket_state) for ticket_state in ticket_states]
+        self._db.session.commit()
+
+    # -- Issue-sync bookmark -------------------------------------------
+
+    @rollback_on_exc
+    def get_project_issues_bookmark(
+        self, org_project_id: str, provider: str
+    ) -> Optional[ProjectIssuesBookmark]:
+        return (
+            self._db.session.query(ProjectIssuesBookmark)
+            .filter(
+                and_(
+                    ProjectIssuesBookmark.org_project_id == org_project_id,
+                    ProjectIssuesBookmark.provider == provider,
+                )
+            )
+            .one_or_none()
+        )
+
+    @rollback_on_exc
+    def update_project_issues_bookmark(self, bookmark: ProjectIssuesBookmark):
+        self._db.session.merge(bookmark)
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def get_all_org_project_issues_bookmarks(
+        self, org_id: str
+    ) -> List[ProjectIssuesBookmark]:
+        return (
+            self._db.session.query(ProjectIssuesBookmark)
+            .join(OrgProject, OrgProject.id == ProjectIssuesBookmark.org_project_id)
+            .filter(OrgProject.org_id == org_id)
+            .all()
+        )
+
+    @rollback_on_exc
+    def update_project_issues_bookmarks(
+        self, bookmarks: List[ProjectIssuesBookmark]
+    ):
+        for bookmark in bookmarks:
+            self._db.session.merge(bookmark)
+        self._db.session.commit()

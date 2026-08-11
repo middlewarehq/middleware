@@ -48,3 +48,25 @@ class TeamProjects(db.Model):
     updated_at = db.Column(
         db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class ProjectIssuesBookmark(db.Model):
+    """
+    Incremental-sync watermark for a project's issue sync, one per
+    (project, provider) -- mirrors Bookmark (org repos), just scoped to
+    OrgProject instead of OrgRepo. Not reusing Bookmark itself: its
+    repo_id column has a real FK to OrgRepo at the DB level, so an
+    OrgProject id would be rejected by that constraint.
+    """
+
+    __tablename__ = "ProjectIssuesBookmark"
+
+    org_project_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("OrgProject.id"), primary_key=True
+    )
+    provider = db.Column(db.String, primary_key=True)
+    bookmark = db.Column(db.String)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(
+        db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
