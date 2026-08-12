@@ -8,9 +8,12 @@
  *     payload carries a team_id (here, taken from the URL path).
  *   - the global baseline:
  *       GET/PUT /api/clustox/benchmarks/global
- *     GET is open to any authenticated admin (the four numbers already appear
+ *     GET is open to any authenticated admin (the five numbers already appear
  *     on every team's own dashboard as target lines); PUT is SUPERADMIN-only,
  *     because one superadmin's numbers become every unset team's targets.
+ *
+ * All five benchmarked metrics are covered -- the four DORA ones plus
+ * lines_of_code, which shares these exact routes.
  *
  * Running:
  *   docker compose up -d
@@ -86,12 +89,32 @@ const deleteUsers = async (su: APIRequestContext, userIds: string[]) => {
 // reasoning about live data.
 const FOREIGN_TEAM_ID = '00000000-0000-4000-8000-0000000000ff';
 
+// CLUSTOX: all five benchmarked metrics, lines_of_code included. It is a full
+// benchmark metric on the same routes as the original four -- same team
+// setting, same global fallback -- so an isolation suite that only carried the
+// four would leave the newest one unproven on exactly the endpoints where a
+// missing key is silently dropped rather than rejected.
+//
+// The value is in *lines* (average gross lines per merged PR), not seconds or
+// a percentage, and it has no upper bound. 200 is a plausible target rather
+// than a shape-only placeholder.
 const BENCHMARK_PAYLOAD = {
   lead_time: 24,
   deployment_frequency: 3,
   change_failure_rate: 10,
-  mean_time_to_recovery: 12
+  mean_time_to_recovery: 12,
+  lines_of_code: 200
 };
+
+/**
+ * Every metric cleared, for restoring the shared global row when it had no
+ * value before. Derived from the payload above so a sixth metric added there
+ * cannot be left behind set to a test value on the one row every workspace
+ * inherits from.
+ */
+const CLEARED_PAYLOAD = Object.fromEntries(
+  Object.keys(BENCHMARK_PAYLOAD).map((metric) => [metric, null])
+);
 
 test.describe('benchmarks workspace isolation', () => {
   test.skip(!SUPERADMIN.password, 'SUPERADMIN_PASSWORD not set');
@@ -173,7 +196,7 @@ test.describe('benchmarks workspace isolation', () => {
   });
 
   test('a non-superadmin GET of the global baseline is allowed', async () => {
-    // CLUSTOX: deliberately not a 403. The four global numbers already
+    // CLUSTOX: deliberately not a 403. The five global numbers already
     // appear on every admin's own dashboard as resolved target lines, so
     // reading them is open to any authenticated admin; only writing is
     // superadmin-only. Asserting 403 here would assert the opposite of the
@@ -229,20 +252,70 @@ test.describe('benchmarks workspace isolation', () => {
       });
       expect(getRes.status()).toBe(200);
       const body = await getRes.json();
-      expect(body.setting).toMatchObject({
-        lead_time: BENCHMARK_PAYLOAD.lead_time
-      });
+      // CLUSTOX: was `lead_time` alone. Asserting the whole payload is what
+      // makes a metric that the route quietly drops -- rather than rejects --
+      // fail here, which is the failure mode a fifth metric added to an
+      // existing schema is most likely to hit.
+      expect(body.setting).toMatchObject(BENCHMARK_PAYLOAD);
     } finally {
       await su.fetch('/api/clustox/benchmarks/global', {
         method: 'PUT',
-        data: original ?? {
-          lead_time: null,
-          deployment_frequency: null,
-          change_failure_rate: null,
-          mean_time_to_recovery: null
-        },
+        data: original ?? CLEARED_PAYLOAD,
         failOnStatusCode: false
       });
     }
+  });
+
+  test('a team lines_of_code target round-trips in its own workspace', async () => {
+    // CLUSTOX: the isolation cases above only ever assert 403, so nothing in
+    // this file proved the settings route stores what it was given. A route
+    // that rejected every write would pass all of them. Beta writes to beta's
+    // own team, which is the allowed direction of the same call alpha is
+    // refused.
+    const put = await betaCtx.fetch(
+      `/api/internal/team/${betaTeamId}/settings`,
+      {
+        method: 'PUT',
+        data: {
+          setting_type: 'BENCHMARK_SETTING',
+          setting_data: BENCHMARK_PAYLOAD
+        },
+        failOnStatusCode: false
+      }
+    );
+    expect(put.status()).toBe(200);
+
+    const read = await betaCtx.get(
+      `/api/internal/team/${betaTeamId}/settings`,
+      {
+        params: { setting_type: 'BENCHMARK_SETTING' },
+        failOnStatusCode: false
+      }
+    );
+    expect(read.status()).toBe(200);
+
+    const setting = (await read.json()).setting;
+    expect(setting).toMatchObject(BENCHMARK_PAYLOAD);
+    // Named explicitly as well as via the payload above, so the assertion
+    // that matters cannot be weakened by editing one shared constant.
+    expect(setting.lines_of_code).toBe(200);
+
+    // CLUSTOX: no cleanup. The team belongs to beta's workspace, which
+    // afterAll deletes along with beta -- unlike the global row, which is
+    // shared and is restored in place.
+  });
+
+  test('a lines_of_code target does not leak across workspaces', async () => {
+    // The isolation guarantee, restated for the fifth metric specifically:
+    // beta's 200 lines/PR target must not be readable by alpha.
+    const res = await alphaCtx.get(
+      `/api/internal/team/${betaTeamId}/settings`,
+      {
+        params: { setting_type: 'BENCHMARK_SETTING' },
+        failOnStatusCode: false
+      }
+    );
+    expect(res.status()).toBe(403);
+    expect(await res.text()).not.toContain('lines_of_code');
   });
 });
