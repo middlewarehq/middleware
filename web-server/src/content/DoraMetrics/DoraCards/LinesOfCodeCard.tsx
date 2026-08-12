@@ -22,10 +22,17 @@ import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 // CLUSTOX: lines of code has no DORA classification -- there is no
 // elite/high/medium/low threshold table for it, and there should not be one.
 // So the card borrows no `commonProps` entry and shows no classification chip;
-// a "Medium" badge here would be an invented judgement. The accent is a fixed
-// neutral instead, and the only colour that carries meaning on this card is
-// the benchmark caption's, exactly as on the other four.
-const LOC_ACCENT = '#a4d3d3';
+// a "Medium" badge here would be an invented judgement. The only colour that
+// carries meaning on this card is the benchmark caption's, exactly as on the
+// other four.
+//
+// It must also not be any of the four classification colours. This was
+// `#a4d3d3`, which is character-for-character `commonProps.medium.color` --
+// and `<ClassificationPills />` renders as a legend directly beneath this same
+// grid, so the headline would have silently read as a "Medium" rating: the
+// exact judgement the omitted chip was avoiding. `info` is outside that
+// palette.
+const LOC_ACCENT = '#33C2FF';
 
 const { format: compact } = Intl.NumberFormat('en', {
   notation: 'compact',
@@ -221,7 +228,16 @@ export const LinesOfCodeCard = () => {
                       is unambiguously lower-is-better, hence `positive={false}`.
                       The headline's previous-period figure is in its tooltip,
                       uncoloured. */}
-                  {Boolean(model.avgPrSize || model.prevAvgPrSize) && (
+                  {/* CLUSTOX: `canComparePrSize` is in this gate, not just on
+                      the band and caption. Without it, a team that merged
+                      nothing this period (avg_pr_size 0) against 640 last
+                      period computes -100% and, because `positive={false}`
+                      inverts the tone, renders it GREEN -- congratulating them
+                      for shipping nothing. Same trap as the change failure
+                      rate card, which reads 0% as a perfect score unless a
+                      denominator exists. */}
+                  {model.canComparePrSize &&
+                    Boolean(model.avgPrSize || model.prevAvgPrSize) && (
                     <DoraMetricsComparisonPill
                       val={model.avgPrSize}
                       against={model.prevAvgPrSize}

@@ -39,8 +39,11 @@ module.exports = {
     // (`benchmarks.ts`, `benchmarkBand.ts`) were deliberately written
     // import-free to dodge it. Pointing at the CJS build it already ships
     // fixes the cause instead.
-    '^@faker-js/faker$':
-      '<rootDir>/node_modules/@faker-js/faker/dist/cjs/index.js'
+    // `require.resolve` from this CJS config selects faker's `require`
+    // condition, which is the CJS build -- the whole point of the entry --
+    // without hardcoding a dist path that a faker major would move and that
+    // would fail at config load with a bare "Cannot find module".
+    '^@faker-js/faker$': require.resolve('@faker-js/faker')
   },
   moduleDirectories: ['node_modules', 'src']
 };

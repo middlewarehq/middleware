@@ -188,4 +188,42 @@ describe('LinesOfCodeCard', () => {
     expect(html).not.toContain('under target');
     expect(chartCalls[0].options.options.plugins?.annotation).toBeUndefined();
   });
+
+  it('shows no comparison pill when this period merged nothing', () => {
+    // CLUSTOX: the zero case above uses 0 for BOTH periods, so the pill is
+    // hidden by its own `avgPrSize || prevAvgPrSize` guard and this path never
+    // ran. With 0 now against 640 previously, the pill computes -100% and --
+    // because PR size is lower-is-better, so `positive={false}` inverts the
+    // tone -- would render that drop GREEN. A team that merged nothing must
+    // not be told it improved.
+    const previous = {
+      additions: 60000,
+      deletions: 4000,
+      total: 64000,
+      avg_pr_size: 640
+    };
+    const benchmarks = { lines_of_code: { target: 200, source: 'team' } };
+
+    // Control: a real current period DOES render the pill, so the assertion
+    // below is about this case and not about the marker having moved.
+    metricsSummary = {
+      loc_stats: {
+        current: { additions: 500, deletions: 100, total: 600, avg_pr_size: 300 },
+        previous
+      },
+      loc_trends: { current: {}, previous: {} },
+      benchmarks
+    } as any;
+    expect(render()).toContain('[pill 300 vs 640]');
+
+    metricsSummary = {
+      loc_stats: {
+        current: { additions: 0, deletions: 0, total: 0, avg_pr_size: 0 },
+        previous
+      },
+      loc_trends: { current: {}, previous: {} },
+      benchmarks
+    } as any;
+    expect(render()).not.toContain('[pill');
+  });
 });
