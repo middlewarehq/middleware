@@ -33,6 +33,7 @@ import { getRandomLoadMsg } from '@/utils/loading-messages';
 import { ClassificationPills } from './ClassificationPills';
 import { ChangeFailureRateCard } from './DoraCards/ChangeFailureRateCard';
 import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
+import { LinesOfCodeCard } from './DoraCards/LinesOfCodeCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { DataStillSyncing } from './DoraCards/SkeletalCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
@@ -152,6 +153,13 @@ export const DoraMetricsBody = () => {
         </Grid>
         <Grid item xs={12} md={6} order={4}>
           <MeanTimeToRestoreCard />
+        </Grid>
+        {/* CLUSTOX: slot five. Slot six is deliberately left empty -- an empty
+            cell reads as room for more, whereas a "coming soon" tile reads as
+            unfinished. At `md` and below the container is already
+            single-column, so nothing above this reflows. */}
+        <Grid item xs={12} md={6} order={5}>
+          <LinesOfCodeCard />
         </Grid>
       </Grid>
       <Divider />
