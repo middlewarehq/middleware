@@ -37,7 +37,11 @@ import { LeadTimeBreakdownCard } from './DoraCards/LeadTimeBreakdownCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { DataStillSyncing } from './DoraCards/SkeletalCard';
 import { SprintRollupCard } from './DoraCards/SprintRollupCard';
-import { TicketCycleTimeCard } from './DoraCards/TicketCycleTimeCard';
+import {
+  DataHygieneCard,
+  TicketCycleTimeCard,
+  useTicketInsights
+} from './DoraCards/TicketCycleTimeCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
 export const DoraMetricsBody = () => {
@@ -90,6 +94,12 @@ export const DoraMetricsBody = () => {
   const stats = useDoraStats();
 
   const { isSyncing } = useSyncedRepos();
+
+  // CLUSTOX: Jira integration -- one fetch, shared as props between
+  // TicketCycleTimeCard and DataHygieneCard, which now live in
+  // different spots on the page (see the layout below) instead of one
+  // stacked inside the other. See TicketCycleTimeCard.tsx's own note.
+  const ticketInsights = useTicketInsights();
 
   if (isErrored)
     return (
@@ -164,12 +174,12 @@ export const DoraMetricsBody = () => {
           team/period. See docs/JIRA_INTEGRATION_PROPOSAL.md. */}
       <LeadTimeBreakdownCard />
       {/* Side by side, not stacked -- matches the design reference's own
-          two-col layout for these two, just with Sprint rollup in front
-          of (to the left of) Ticket Cycle Time per request. Each wrapped
-          in its own flex-sized FlexBox rather than passing a prop into
-          either card: both already independently render null on their
-          own gating, and neither needed a props-API change for a
-          purely external layout concern.
+          two-col layout: Ticket Cycle Time on the left, Sprint rollup on
+          the right. Each wrapped in its own flex-sized FlexBox rather
+          than passing a prop into either card: both already
+          independently render null on their own gating, and neither
+          needed a props-API change for a purely external layout
+          concern.
 
           alignItems="flex-start", not the default stretch: CardRoot
           (shared by every DORA card) is height="100%" of its immediate
@@ -178,13 +188,27 @@ export const DoraMetricsBody = () => {
           card's CardRoot fills the extra height with blank space at the
           bottom instead of ending where its own content does. */}
       <FlexBox gap={2} flexWrap="wrap" alignItems="flex-start">
+        <FlexBox flex="1.3" minWidth="360px">
+          <TicketCycleTimeCard
+            isJiraLinked={ticketInsights.isJiraLinked}
+            isLoading={ticketInsights.isLoading}
+            insights={ticketInsights.insights}
+          />
+        </FlexBox>
         <FlexBox flex={1} minWidth="320px">
           <SprintRollupCard />
         </FlexBox>
-        <FlexBox col flex="1.3" minWidth="360px">
-          <TicketCycleTimeCard />
-        </FlexBox>
       </FlexBox>
+      {/* Its own full-width row, not stacked inside Ticket Cycle Time's
+          column above -- matches the design reference. Renders nothing
+          of its own accord when every merged PR is linked. */}
+      <DataHygieneCard
+        isJiraLinked={ticketInsights.isJiraLinked}
+        isLoading={ticketInsights.isLoading}
+        insights={ticketInsights.insights}
+        teamId={ticketInsights.singleTeamId}
+        dates={ticketInsights.dates}
+      />
       <FlexBox col gap1 flexGrow={1}>
         <FlexBox gap={4}>
           <FlexBox col width="150px">

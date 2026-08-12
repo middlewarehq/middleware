@@ -1,3 +1,4 @@
+import { Chip } from '@mui/material';
 import { FC } from 'react';
 
 import { FlexBox } from '@/components/FlexBox';
@@ -7,6 +8,7 @@ import { useLeadTimePipeline } from '@/content/PullRequests/useChangeTimePipelin
 import { LeadTimeStatsCore } from '@/content/PullRequests/LeadTimeStatsCore';
 import { useTicketLeadTimeSegment } from '@/content/PullRequests/useTicketLeadTimeSegment';
 import { useAuth } from '@/hooks/useAuth';
+import { getDurationString } from '@/utils/date';
 
 // CLUSTOX: Jira integration -- the extended Lead Time breakdown,
 // promoted from a click-through-only drill-down to its own
@@ -37,15 +39,38 @@ export const LeadTimeBreakdownCard: FC = () => {
 
   return (
     <CardRoot sx={{ cursor: 'default', p: 2 }} gap2>
-      <FlexBox col>
-        <Line big semibold white>
-          Lead Time for Changes
-        </Line>
-        <Line tiny secondary>
-          Extended with a leading phase from Jira — ticket creation to
-          first commit — so the number reflects idea-to-production, not
-          just commit-to-production.
-        </Line>
+      <FlexBox justifyBetween gap2 flexWrap="wrap">
+        <FlexBox col>
+          <Line big semibold white>
+            Lead Time for Changes
+          </Line>
+          <Line tiny secondary>
+            Extended with a leading phase from Jira — ticket creation to
+            first commit — so the number reflects idea-to-production, not
+            just commit-to-production.
+          </Line>
+        </FlexBox>
+        {/* CLUSTOX: matches the design reference -- the "idea to
+            production vs. commit-only" comparison as a single header
+            badge, not an inline line above the bar (LeadTimeStatsCore no
+            longer renders that line itself, see its own note). */}
+        {comparison && (
+          <Chip
+            sx={{ bgcolor: 'warning.light', flexShrink: 0 }}
+            label={
+              <Line bold white>
+                {getDurationString(comparison.extendedSeconds, {
+                  segments: 2
+                })}{' '}
+                avg, up from{' '}
+                {getDurationString(comparison.commitOnlySeconds, {
+                  segments: 2
+                })}{' '}
+                commit-only
+              </Line>
+            }
+          />
+        )}
       </FlexBox>
       <LeadTimeStatsCore
         changeTimeSegments={leadTimeDetailsArray}

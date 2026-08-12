@@ -110,8 +110,12 @@ describe('LeadTimeBreakdownCard', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('First commit → PR opened')).toBeInTheDocument();
     expect(screen.getByText('New')).toBeInTheDocument();
-    expect(screen.getByText(/Idea to production/)).toBeInTheDocument();
-    expect(screen.getByText(/200 ticket-matched PRs/)).toBeInTheDocument();
+    // The comparison now renders once, as its own header badge (design
+    // reference), not as an inline line above the bar -- see
+    // LeadTimeStatsCore's own test for the assertion that it no longer
+    // renders that line itself.
+    expect(screen.getByText(/avg, up from/)).toBeInTheDocument();
+    expect(screen.getByText(/commit-only/)).toBeInTheDocument();
   });
 
   it('does not render a redundant "Total" footer -- the comparison line already covers it', () => {

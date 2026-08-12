@@ -179,7 +179,7 @@ describe('LeadTimeStatsCore', () => {
       expect(screen.queryByText('New')).not.toBeInTheDocument();
     });
 
-    it('still shows the comparison line above the bar when given', () => {
+    it('accepts a comparison prop without rendering it -- LeadTimeBreakdownCard shows it as its own header badge now', () => {
       render(
         <LeadTimeStatsCore
           changeTimeSegments={segments}
@@ -193,8 +193,8 @@ describe('LeadTimeStatsCore', () => {
         />
       );
 
-      expect(screen.getByText(/Idea to production/)).toBeInTheDocument();
-      expect(screen.getByText(/42 ticket-matched PRs/)).toBeInTheDocument();
+      expect(screen.queryByText(/Idea to production/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/commit-only/)).not.toBeInTheDocument();
     });
 
     it('never renders the "Total" footer, even when showTotal is set', () => {

@@ -136,26 +136,13 @@ export const LeadTimeStatsCore: FC<
 
     return (
       <FlexBox col gap2>
-        {comparison && (
-          <FlexBox alignCenter gap={1 / 2} flexWrap="wrap">
-            <Line small secondary>
-              Idea to production:
-            </Line>
-            <Line small bold white>
-              {getDurationString(comparison.extendedSeconds, { segments: 2 })}
-            </Line>
-            <Line small secondary>
-              avg, up from{' '}
-              <Line component="span" small bold>
-                {getDurationString(comparison.commitOnlySeconds, {
-                  segments: 2
-                })}
-              </Line>{' '}
-              commit-only, over {comparison.matchedPrCount} ticket-matched PR
-              {comparison.matchedPrCount === 1 ? '' : 's'}
-            </Line>
-          </FlexBox>
-        )}
+        {/* CLUSTOX: the comparison line used to render here, inline
+            above the bar. It's now LeadTimeBreakdownCard's own header
+            badge instead (matching the design reference, which shows it
+            once, top-right of the card title) -- comparison is still
+            accepted as a prop so that caller can size/format it here if
+            it ever needs to, but this component no longer renders it
+            itself. */}
         <Box
           display="flex"
           borderRadius={1}
