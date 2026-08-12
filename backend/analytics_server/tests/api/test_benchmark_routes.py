@@ -66,6 +66,7 @@ def _settings_row(entity_type, entity_id, data):
             deployment_frequency=data.get("deployment_frequency"),
             change_failure_rate=data.get("change_failure_rate"),
             mean_time_to_recovery=data.get("mean_time_to_recovery"),
+            lines_of_code=data.get("lines_of_code"),
         ),
         updated_by=None,
         created_at=now,
@@ -121,7 +122,36 @@ def test_the_benchmarks_route_serves_resolved_targets_over_http(routes):
         "deployment_frequency": {"target": 5, "source": "global"},
         "change_failure_rate": {"target": None, "source": None},
         "mean_time_to_recovery": {"target": None, "source": None},
+        "lines_of_code": {"target": None, "source": None},
     }
+
+
+def test_a_team_put_of_only_lines_of_code_round_trips_as_a_team_target(routes):
+    # CLUSTOX: the fifth metric has to survive the same PUT -> store -> GET
+    # path as the original four. Every previous regression here was an
+    # adapter that silently dropped the new key, which no unit test on
+    # resolve_benchmarks could see: the value went in, came back absent, and
+    # the metric quietly reverted to the global baseline.
+    client, service = routes
+    _global_row(service, lead_time=86400)
+
+    put = client.put(
+        f"/teams/{TEAM_ID}/settings",
+        json={
+            "setting_type": "BENCHMARK_SETTING",
+            "setting_data": {"lines_of_code": 250},
+        },
+    )
+
+    assert put.status_code == 200
+    assert put.json["setting"]["lines_of_code"] == 250
+
+    resolved = client.get(f"/teams/{TEAM_ID}/benchmarks")
+
+    assert resolved.status_code == 200
+    assert resolved.json["lines_of_code"] == {"target": 250, "source": "team"}
+    assert resolved.json["lead_time"] == {"target": 86400, "source": "global"}
+    assert resolved.json["change_failure_rate"] == {"target": None, "source": None}
 
 
 def test_the_benchmarks_route_is_all_null_when_nothing_is_configured(routes):

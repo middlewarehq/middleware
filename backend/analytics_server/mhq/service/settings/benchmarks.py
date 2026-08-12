@@ -24,6 +24,7 @@ BENCHMARK_METRICS: List[str] = [
     "deployment_frequency",
     "change_failure_rate",
     "mean_time_to_recovery",
+    "lines_of_code",
 ]
 
 # Percent, so it has an upper bound the others do not.

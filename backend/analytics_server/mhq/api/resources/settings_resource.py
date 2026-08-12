@@ -80,6 +80,7 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
                 "deployment_frequency": config_settings.specific_settings.deployment_frequency,
                 "change_failure_rate": config_settings.specific_settings.change_failure_rate,
                 "mean_time_to_recovery": config_settings.specific_settings.mean_time_to_recovery,
+                "lines_of_code": config_settings.specific_settings.lines_of_code,
             }
 
         # ADD NEW API ADAPTER HERE

@@ -65,6 +65,11 @@ class BenchmarkSetting(BaseSetting):
     deployment_frequency: Optional[float] = None
     change_failure_rate: Optional[float] = None
     mean_time_to_recovery: Optional[float] = None
+    # CLUSTOX: average gross lines (additions + deletions) per merged PR --
+    # NOT weekly volume. Its unit is lines, so unlike lead_time and
+    # mean_time_to_recovery it is stored exactly as the admin typed it, with
+    # no seconds/hours conversion at any boundary.
+    lines_of_code: Optional[float] = None
 
 
 # ADD NEW SETTING CLASS HERE

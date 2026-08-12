@@ -83,6 +83,7 @@ class SettingsService:
             deployment_frequency=data.get("deployment_frequency"),
             change_failure_rate=data.get("change_failure_rate"),
             mean_time_to_recovery=data.get("mean_time_to_recovery"),
+            lines_of_code=data.get("lines_of_code"),
         )
 
     # ADD NEW DICT TO DATACLASS ADAPTERS HERE
@@ -222,6 +223,7 @@ class SettingsService:
             deployment_frequency=data.get("deployment_frequency"),
             change_failure_rate=data.get("change_failure_rate"),
             mean_time_to_recovery=data.get("mean_time_to_recovery"),
+            lines_of_code=data.get("lines_of_code"),
         )
 
     # ADD NEW DICT TO API ADAPTERS HERE
@@ -306,6 +308,7 @@ class SettingsService:
             "deployment_frequency": specific_setting.deployment_frequency,
             "change_failure_rate": specific_setting.change_failure_rate,
             "mean_time_to_recovery": specific_setting.mean_time_to_recovery,
+            "lines_of_code": specific_setting.lines_of_code,
         }
 
     # ADD NEW DATACLASS TO JSON DATA ADAPTERS HERE

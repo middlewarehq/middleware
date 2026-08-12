@@ -18,7 +18,7 @@ def test_validator_accepts_the_new_type():
     assert settings_type_validator("BENCHMARK_SETTING") == SettingType.BENCHMARK_SETTING
 
 
-def test_default_baseline_has_all_four_metrics():
+def test_default_baseline_has_every_benchmark_metric():
     data = get_default_setting_data(SettingType.BENCHMARK_SETTING)
 
     assert set(data.keys()) == {
@@ -26,6 +26,7 @@ def test_default_baseline_has_all_four_metrics():
         "deployment_frequency",
         "change_failure_rate",
         "mean_time_to_recovery",
+        "lines_of_code",
     }
 
 
@@ -37,3 +38,4 @@ def test_benchmark_setting_fields_default_to_none():
     assert setting.deployment_frequency is None
     assert setting.change_failure_rate is None
     assert setting.mean_time_to_recovery is None
+    assert setting.lines_of_code is None

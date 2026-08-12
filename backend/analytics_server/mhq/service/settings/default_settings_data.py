@@ -49,6 +49,7 @@ def get_default_setting_data(setting_type: SettingType):
             "deployment_frequency": None,
             "change_failure_rate": None,
             "mean_time_to_recovery": None,
+            "lines_of_code": None,
         }
 
     # ADD NEW DEFAULT SETTING HERE

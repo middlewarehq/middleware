@@ -66,6 +66,31 @@ def test_missing_settings_are_treated_as_empty():
     assert all(v["target"] is None for v in resolved.values())
 
 
+def test_lines_of_code_resolves_like_every_other_metric():
+    resolved = resolve_benchmarks(
+        BenchmarkSetting(lines_of_code=200),
+        BenchmarkSetting(lines_of_code=400, lead_time=86400),
+    )
+
+    assert resolved["lines_of_code"] == {"target": 200, "source": "team"}
+    assert resolved["lead_time"] == {"target": 86400, "source": "global"}
+
+
+def test_zero_lines_of_code_is_a_real_target():
+    resolved = resolve_benchmarks(BenchmarkSetting(lines_of_code=0), None)
+
+    assert resolved["lines_of_code"] == {"target": 0, "source": "team"}
+
+
+def test_lines_of_code_has_no_upper_bound():
+    # Percent is the only metric with a ceiling. A 5,000-line average PR is
+    # awful, not invalid -- rejecting it would stop an admin recording where
+    # the team actually is before setting a target to climb down from.
+    cleaned = validate_benchmark_payload({"lines_of_code": 5000})
+
+    assert cleaned["lines_of_code"] == 5000
+
+
 def test_validation_rejects_negatives():
     with pytest.raises(BadRequest):
         validate_benchmark_payload({"lead_time": -1})
@@ -103,6 +128,7 @@ def test_validation_keeps_zero_and_nulls_the_rest():
         "deployment_frequency": None,
         "change_failure_rate": 0,
         "mean_time_to_recovery": None,
+        "lines_of_code": None,
     }
 
 
@@ -177,7 +203,7 @@ def test_resolution_asks_for_the_team_row_and_the_global_row():
     ) in asked
 
 
-def test_benchmark_setting_response_always_has_all_four_keys():
+def test_benchmark_setting_response_always_has_every_metric_key():
     # Set, zero, and unset must all round-trip distinctly: a dropped or
     # zero-coerced key would make the config form unable to tell "inherit"
     # apart from "target of 0".
@@ -197,6 +223,7 @@ def test_benchmark_setting_response_always_has_all_four_keys():
         "deployment_frequency": None,
         "change_failure_rate": 0,
         "mean_time_to_recovery": None,
+        "lines_of_code": None,
     }
 
 
