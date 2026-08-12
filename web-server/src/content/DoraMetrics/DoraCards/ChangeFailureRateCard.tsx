@@ -97,18 +97,30 @@ export const ChangeFailureRateCard = () => {
       (changeFailureRateProps.count || prevChangeFailureRate)
   );
 
-  // CLUSTOX: zero incidents is a genuine 0% change failure rate -- the best
-  // possible result -- not absent data. Gating this on isCfrDataAvailable
-  // meant a perfect score displayed as an empty card.
+  // CLUSTOX: change failure rate is incidents / deployments, so the two ways
+  // of having "no data" are not the same thing and must not be treated alike:
+  //
+  //   deployments, no incidents -> a genuine 0%, the best possible result,
+  //                                and it beats every target
+  //   no deployments at all     -> no denominator, so the rate is undefined
+  //
+  // Only the first is a score. Reporting 0% for a team that shipped nothing
+  // would congratulate them for it, which is worse than showing nothing --
+  // the card already says "Due to no deployments" in that state.
+  const hasDeployments = Boolean(
+    changeFailureRateProps.avgWeeklyDeploymentFrequency
+  );
   const cfrActual = isCfrDataAvailable ? changeFailureRateProps.count : 0;
 
-  // CLUSTOX: gated on the *target* existing rather than on incidents
-  // existing, for the reason above. canShowIncidentsData stays in the gate
-  // because without it the card shows a missing-provider link instead of a
-  // chart, and 0% there would be a claim about a team we have no data for.
+  // CLUSTOX: gated on the *target* existing rather than on incidents existing,
+  // for the reason above. canShowIncidentsData stays in the gate because
+  // without it the card shows a missing-provider link instead of a chart, and
+  // 0% there would be a claim about a team we have no data for.
+  const canCompareCfr = canShowIncidentsData && hasDeployments;
+
   const changeFailureRateBenchmarkCaption = useMemo(
     () =>
-      canShowIncidentsData && changeFailureRateBenchmark?.target != null
+      canCompareCfr && changeFailureRateBenchmark?.target != null
         ? benchmarkCaption(
             'change_failure_rate',
             cfrActual,
@@ -116,11 +128,11 @@ export const ChangeFailureRateCard = () => {
             changeFailureRateBenchmark.source
           )
         : null,
-    [canShowIncidentsData, changeFailureRateBenchmark, cfrActual]
+    [canCompareCfr, changeFailureRateBenchmark, cfrActual]
   );
 
   const changeFailureRateChartOptions = useDoraCardChartOptions(
-    canShowIncidentsData
+    canCompareCfr
       ? {
           metric: 'change_failure_rate',
           target: changeFailureRateBenchmark?.target,
