@@ -2,7 +2,7 @@ import { alpha, Chip } from '@mui/material';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
@@ -22,35 +22,15 @@ import { IntegrationGroup } from '@/types/resources';
 import { benchmarkCaption } from '@/utils/benchmarks';
 import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
-import { useAvgIntervalBasedDeploymentFrequency } from './sharedHooks';
+import {
+  useAvgIntervalBasedDeploymentFrequency,
+  useDoraCardChartOptions
+} from './sharedHooks';
 
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
-
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
 
 export const WeeklyDeliveryVolumeCard = () => {
   const { integrationSet } = useAuth();
@@ -100,20 +80,31 @@ export const WeeklyDeliveryVolumeCard = () => {
         .avg_weekly_deployment_frequency
   );
 
+  // CLUSTOX: these buckets are weekly counts -- the trends endpoint is
+  // `get_weekly_deployment_frequency_trends`, which buckets deployments
+  // "weekly" regardless of the interval the headline is displayed in. That is
+  // what makes it safe to draw a deployments/week target in this chart's own
+  // data space.
+  const weeklyDeploymentCounts = useMemo(
+    () =>
+      getSortedDatesAsArrayFromMap(weekDeliveryVolumeData).map(
+        (date) => weekDeliveryVolumeData[date].count
+      ),
+    [weekDeliveryVolumeData]
+  );
+
   const series = useMemo(
     () => [
       {
         label: 'Deployments',
         fill: 'start',
-        data: getSortedDatesAsArrayFromMap(weekDeliveryVolumeData).map(
-          (date) => weekDeliveryVolumeData[date].count
-        ),
+        data: weeklyDeploymentCounts,
         backgroundColor: deploymentFrequencyProps?.backgroundColor,
         borderColor: alpha(deploymentFrequencyProps?.backgroundColor, 0.5),
         lineTension: 0.2
       }
     ],
-    [deploymentFrequencyProps?.backgroundColor, weekDeliveryVolumeData]
+    [deploymentFrequencyProps?.backgroundColor, weeklyDeploymentCounts]
   );
 
   // CLUSTOX: gated on isCodeProviderIntegrationEnabled -- the same guard the
@@ -135,6 +126,27 @@ export const WeeklyDeliveryVolumeCard = () => {
       deploymentFrequencyBenchmark,
       avgWeeklyDeploymentFrequency
     ]
+  );
+
+  // CLUSTOX: `avgWeeklyDeploymentFrequency`, never
+  // `deploymentFrequencyProps.count`. The headline switches unit on its own --
+  // getBadgeDetails picks day / week / month by which average first clears 1 --
+  // so an active team's headline is a *per-day* figure while the target is
+  // per week. Feeding the headline in would compare 2.5/day against a 5/week
+  // target and paint the band warning for a team deploying 17 times a week.
+  //
+  // This is also the only card whose band covers *upward*: deployment
+  // frequency is absent from LOWER_IS_BETTER, so benchmarkBandOptions shades
+  // target -> top of the axis rather than target -> 0.
+  const deploymentFrequencyChartOptions = useDoraCardChartOptions(
+    isCodeProviderIntegrationEnabled
+      ? {
+          metric: 'deployment_frequency',
+          target: deploymentFrequencyBenchmark?.target,
+          actual: avgWeeklyDeploymentFrequency || 0,
+          values: weeklyDeploymentCounts
+        }
+      : null
   );
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
@@ -239,7 +251,7 @@ export const WeeklyDeliveryVolumeCard = () => {
                 id="weekly-delivery-frequency"
                 type="line"
                 series={series}
-                options={chartOptions}
+                options={deploymentFrequencyChartOptions}
               />
             ) : (
               <NoDataImg />
