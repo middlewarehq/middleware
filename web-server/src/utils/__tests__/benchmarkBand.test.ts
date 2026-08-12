@@ -201,12 +201,16 @@ describe('benchmarkBandOptions', () => {
   it('draws the band behind the series, not over it', () => {
     // A box drawn at the default draw time paints on top of the line it is
     // meant to sit behind.
-    expect(boxOf(bandOptions({
-      metric: 'lead_time',
-      target: 100,
-      actual: 20,
-      values: [10, 20, 30]
-    })).drawTime).toBe('beforeDatasetsDraw');
+    expect(
+      boxOf(
+        bandOptions({
+          metric: 'lead_time',
+          target: 100,
+          actual: 20,
+          values: [10, 20, 30]
+        })
+      ).drawTime
+    ).toBe('beforeDatasetsDraw');
   });
 
   it('marks the target itself with a line at the target value', () => {
