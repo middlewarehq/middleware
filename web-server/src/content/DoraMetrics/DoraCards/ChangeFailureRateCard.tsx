@@ -110,7 +110,11 @@ export const ChangeFailureRateCard = () => {
   const hasDeployments = Boolean(
     changeFailureRateProps.avgWeeklyDeploymentFrequency
   );
-  const cfrActual = isCfrDataAvailable ? changeFailureRateProps.count : 0;
+  // CLUSTOX: `count` is already `Number((cfr || 0).toFixed(2))`, so it is 0
+  // rather than undefined when nothing failed. No substitution needed -- an
+  // earlier `isCfrDataAvailable ? count : 0` here implied one that could
+  // never happen.
+  const cfrActual = changeFailureRateProps.count;
 
   // CLUSTOX: gated on the *target* existing rather than on incidents existing,
   // for the reason above. canShowIncidentsData stays in the gate because

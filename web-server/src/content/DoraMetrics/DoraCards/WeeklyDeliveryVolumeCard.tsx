@@ -113,7 +113,8 @@ export const WeeklyDeliveryVolumeCard = () => {
   // target" case), so no additional zero-count guard here.
   const deploymentFrequencyBenchmarkCaption = useMemo(
     () =>
-      isCodeProviderIntegrationEnabled && deploymentFrequencyBenchmark
+      isCodeProviderIntegrationEnabled &&
+      deploymentFrequencyBenchmark?.target != null
         ? benchmarkCaption(
             'deployment_frequency',
             avgWeeklyDeploymentFrequency || 0,
