@@ -3,7 +3,7 @@ import { Chip } from '@mui/material';
 import { head } from 'ramda';
 import { useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
@@ -16,39 +16,23 @@ import {
 import { useCountUp } from '@/hooks/useCountUp';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
 import { useSelector } from '@/store';
-import { benchmarkCaption } from '@/utils/benchmarks';
+import {
+  benchmarkCaption,
+  benchmarkSourceLabel,
+  formatBenchmarkValue
+} from '@/utils/benchmarks';
 import { getDurationString } from '@/utils/date';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
-import { useMeanTimeToRestoreProps } from './sharedHooks';
+import {
+  useDoraCardChartOptions,
+  useMeanTimeToRestoreProps
+} from './sharedHooks';
 
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
-
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
 
 export const MeanTimeToRestoreCard = () => {
   const { isNoDataAvailable, ...meanTimeToRestoreProps } =
@@ -64,21 +48,24 @@ export const MeanTimeToRestoreCard = () => {
   const showClassificationBadge =
     isIncidentProviderIntegrationEnabled && !isNoDataAvailable;
 
+  const meanTimeToRestoreValues = useMemo(
+    () =>
+      head(trendsSeriesMap?.meanTimeToRestoreTrends || [])?.data.map(
+        (s) => s.y
+      ) || [],
+    [trendsSeriesMap?.meanTimeToRestoreTrends]
+  );
+
   const series = useMemo(
     () => [
       {
         label: 'Mean time to restore',
         fill: 'start',
-        data: head(trendsSeriesMap?.meanTimeToRestoreTrends || [])?.data.map(
-          (s) => s.y
-        ),
+        data: meanTimeToRestoreValues,
         backgroundColor: meanTimeToRestoreProps.backgroundColor
       }
     ],
-    [
-      trendsSeriesMap?.meanTimeToRestoreTrends,
-      meanTimeToRestoreProps.backgroundColor
-    ]
+    [meanTimeToRestoreValues, meanTimeToRestoreProps.backgroundColor]
   );
 
   const meanTimeToRestoreCount = useCountUp(meanTimeToRestoreProps.count || 0);
@@ -100,6 +87,24 @@ export const MeanTimeToRestoreCard = () => {
           )
         : null,
     [canShowMTRData, meanTimeToRecoveryBenchmark, meanTimeToRestoreProps.count]
+  );
+
+  // CLUSTOX: the opposite call to Change Failure Rate's, deliberately. Zero
+  // incidents there is a real 0% -- here it means there is no recovery time to
+  // measure at all, so there is nothing to shade a band against and no side of
+  // the target the team can be said to be on. The card names the target
+  // instead (below), so an admin can still see one is configured.
+  const meanTimeToRestoreChartOptions = useDoraCardChartOptions(
+    canShowMTRData
+      ? {
+          metric: 'mean_time_to_recovery',
+          target: meanTimeToRecoveryBenchmark?.target,
+          // CLUSTOX: seconds throughout -- the stat, the plotted trend and the
+          // stored target are all raw seconds.
+          actual: meanTimeToRestoreProps.count,
+          values: meanTimeToRestoreValues
+        }
+      : null
   );
 
   const { addPage } = useOverlayPage();
@@ -195,7 +200,7 @@ export const MeanTimeToRestoreCard = () => {
                 id="mttr-frequency"
                 type="line"
                 series={series}
-                options={chartOptions}
+                options={meanTimeToRestoreChartOptions}
               />
             ) : (
               <NoDataImg />
@@ -261,6 +266,21 @@ export const MeanTimeToRestoreCard = () => {
                 <FlexBox col width={'50%'}>
                   <Line huge>No incidents reported</Line>
                   <Line small>Hence Time to Recovery is unavailable </Line>
+                  {/* CLUSTOX: grey and target-only -- it states that a
+                      benchmark exists without claiming the team met or missed
+                      it. There is no measurement here to compare against, so
+                      any tone at all would be inventing a verdict. */}
+                  {meanTimeToRecoveryBenchmark?.target != null && (
+                    <Line tiny secondary>
+                      target{' '}
+                      {formatBenchmarkValue(
+                        'mean_time_to_recovery',
+                        meanTimeToRecoveryBenchmark.target
+                      )}
+                      {' — '}
+                      {benchmarkSourceLabel(meanTimeToRecoveryBenchmark.source)}
+                    </Line>
+                  )}
                 </FlexBox>
               </FlexBox>
             ) : (

@@ -3,7 +3,7 @@ import pluralize from 'pluralize';
 import { head } from 'ramda';
 import { useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
@@ -25,35 +25,15 @@ import { IntegrationGroup } from '@/types/resources';
 import { benchmarkCaption } from '@/utils/benchmarks';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
-import { useChangeFailureRateProps } from './sharedHooks';
+import {
+  useChangeFailureRateProps,
+  useDoraCardChartOptions
+} from './sharedHooks';
 
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
-
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
 
 export const ChangeFailureRateCard = () => {
   const { integrationSet } = useAuth();
@@ -90,22 +70,25 @@ export const ChangeFailureRateCard = () => {
     (s) => s.doraMetrics.metrics_summary?.benchmarks?.change_failure_rate
   );
 
+  const changeFailureRateValues = useMemo(
+    () =>
+      head(trendsSeriesMap?.changeFailureRateTrends || [])?.data.map(
+        (s) => s.y
+      ) || [],
+    [trendsSeriesMap?.changeFailureRateTrends]
+  );
+
   const series = useMemo(
     () => [
       {
         label: 'Change Failure rate',
         fill: 'start',
-        data: head(trendsSeriesMap?.changeFailureRateTrends || [])?.data.map(
-          (s) => s.y
-        ),
+        data: changeFailureRateValues,
         backgroundColor: alpha(changeFailureRateProps.backgroundColor, 0.2),
         lineTension: 0.2
       }
     ],
-    [
-      changeFailureRateProps.backgroundColor,
-      trendsSeriesMap?.changeFailureRateTrends
-    ]
+    [changeFailureRateProps.backgroundColor, changeFailureRateValues]
   );
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
@@ -114,25 +97,37 @@ export const ChangeFailureRateCard = () => {
       (changeFailureRateProps.count || prevChangeFailureRate)
   );
 
-  // CLUSTOX: gated on the same canShowIncidentsData/isCfrDataAvailable pair
-  // the card already uses to decide whether real data (vs NoIncidentsLabel
-  // or a missing-provider link) is on screen.
+  // CLUSTOX: zero incidents is a genuine 0% change failure rate -- the best
+  // possible result -- not absent data. Gating this on isCfrDataAvailable
+  // meant a perfect score displayed as an empty card.
+  const cfrActual = isCfrDataAvailable ? changeFailureRateProps.count : 0;
+
+  // CLUSTOX: gated on the *target* existing rather than on incidents
+  // existing, for the reason above. canShowIncidentsData stays in the gate
+  // because without it the card shows a missing-provider link instead of a
+  // chart, and 0% there would be a claim about a team we have no data for.
   const changeFailureRateBenchmarkCaption = useMemo(
     () =>
-      canShowIncidentsData && isCfrDataAvailable && changeFailureRateBenchmark
+      canShowIncidentsData && changeFailureRateBenchmark?.target != null
         ? benchmarkCaption(
             'change_failure_rate',
-            changeFailureRateProps.count,
+            cfrActual,
             changeFailureRateBenchmark.target,
             changeFailureRateBenchmark.source
           )
         : null,
-    [
-      canShowIncidentsData,
-      isCfrDataAvailable,
-      changeFailureRateBenchmark,
-      changeFailureRateProps.count
-    ]
+    [canShowIncidentsData, changeFailureRateBenchmark, cfrActual]
+  );
+
+  const changeFailureRateChartOptions = useDoraCardChartOptions(
+    canShowIncidentsData
+      ? {
+          metric: 'change_failure_rate',
+          target: changeFailureRateBenchmark?.target,
+          actual: cfrActual,
+          values: changeFailureRateValues
+        }
+      : null
   );
 
   const { addPage } = useOverlayPage();
@@ -228,7 +223,7 @@ export const ChangeFailureRateCard = () => {
                 id="cfr-frequency"
                 type="line"
                 series={series}
-                options={chartOptions}
+                options={changeFailureRateChartOptions}
               />
             ) : (
               <NoDataImg />
