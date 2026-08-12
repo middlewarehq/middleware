@@ -6,7 +6,7 @@ import Link from 'next/link';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
@@ -18,11 +18,15 @@ import {
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import { usePropsForChangeTimeCard } from '@/content/DoraMetrics/DoraCards/sharedHooks';
+import {
+  useDoraCardChartOptions,
+  usePropsForChangeTimeCard
+} from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useSelector } from '@/store';
 import { ChangeTimeModes } from '@/types/resources';
+import { benchmarkCaption } from '@/utils/benchmarks';
 import { merge } from '@/utils/datatype';
 import { getDurationString, getSortedDatesAsArrayFromMap } from '@/utils/date';
 
@@ -30,29 +34,6 @@ import { getDoraLink } from '../../PullRequests/DeploymentFrequencyGraph';
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
-
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
 
 export const ChangeTimeCard = () => {
   const { addPage } = useOverlayPage();
@@ -77,6 +58,10 @@ export const ChangeTimeCard = () => {
     ]
   );
 
+  const leadTimeBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.lead_time
+  );
+
   const isCodeProviderIntegrationEnabled = true;
 
   const showClassificationBadge =
@@ -87,23 +72,64 @@ export const ChangeTimeCard = () => {
     prevLeadTimeTrendsData
   );
 
+  const leadTimeValues = useMemo(
+    () =>
+      getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map(
+        (key) => mergedLeadTimeTrends[key].lead_time
+      ),
+    [mergedLeadTimeTrends]
+  );
+
   const series = useMemo(
     () => [
       {
         label: 'Lead Time',
         fill: 'start',
-        data: getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map(
-          (key) => mergedLeadTimeTrends[key].lead_time
-        ),
+        data: leadTimeValues,
         backgroundColor: activeModeProps.backgroundColor,
         borderColor: alpha(activeModeProps.backgroundColor, 0.5),
         lineTension: 0.2
       }
     ],
-    [activeModeProps.backgroundColor, mergedLeadTimeTrends]
+    [activeModeProps.backgroundColor, leadTimeValues]
+  );
+
+  // CLUSTOX: the band is only built when the chart itself is on screen. With
+  // insufficient data the card renders NoDataImg instead, and a band drawn
+  // over a placeholder would be comparing a real target against nothing.
+  const chartOptions = useDoraCardChartOptions(
+    isSufficientDataAvailable
+      ? {
+          metric: 'lead_time',
+          target: leadTimeBenchmark?.target,
+          // CLUSTOX: seconds on both sides -- `activeModeProps.count` and the
+          // plotted `lead_time` trend are both raw seconds, and the target is
+          // stored in seconds too. Nothing to convert here, unlike
+          // Deployment Frequency.
+          actual: activeModeProps.count,
+          values: leadTimeValues
+        }
+      : null
   );
 
   const leadTimeDuration = useCountUp(activeModeProps.count || 0);
+
+  // CLUSTOX: gated on isSufficientDataAvailable -- same guard the card
+  // already uses to decide between the chart and "Insufficient data". A
+  // target line/caption over a placeholder state would compare a real
+  // benchmark against a meaningless zero.
+  const leadTimeBenchmarkCaption = useMemo(
+    () =>
+      isSufficientDataAvailable && leadTimeBenchmark
+        ? benchmarkCaption(
+            'lead_time',
+            activeModeProps.count,
+            leadTimeBenchmark.target,
+            leadTimeBenchmark.source
+          )
+        : null,
+    [isSufficientDataAvailable, leadTimeBenchmark, activeModeProps.count]
+  );
 
   return (
     <CardRoot
@@ -279,6 +305,18 @@ export const ChangeTimeCard = () => {
           // the two cards disagreeing from reading as a bug.
           <Line small secondary paddingX={2} mt={-1}>
             authored by {selectedContributors.join(', ')}
+          </Line>
+        )}
+        {leadTimeBenchmarkCaption && (
+          <Line
+            small
+            paddingX={2}
+            mt={-1}
+            color={
+              leadTimeBenchmarkCaption.tone === 'good' ? 'success' : 'warning'
+            }
+          >
+            {leadTimeBenchmarkCaption.text}
           </Line>
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>

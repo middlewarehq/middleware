@@ -1,7 +1,6 @@
 from mhq.store.models.incidents import IncidentSource, IncidentType
 from mhq.store.models.settings import SettingType
 
-
 MIN_CYCLE_TIME_THRESHOLD = 3600
 
 
@@ -33,6 +32,24 @@ def get_default_setting_data(setting_type: SettingType):
         return {
             "include_revert_prs": True,
             "filters": [],
+        }
+
+    # CLUSTOX: deliberately empty, not the DORA "High" band. The spec's
+    # zero-config guarantee -- "no benchmark at any level means no line, no
+    # caption, and the card renders exactly as it does today" -- is only
+    # reachable if nothing materialises a target nobody asked for. Shipping
+    # numbers here made every card in every workspace sprout a target line
+    # and a "the default benchmark" caption the first time any admin opened
+    # any settings form, and made a team that had never set a benchmark
+    # report source: "team" for every metric. A superadmin types the
+    # baseline in; the code does not guess it.
+    if setting_type == SettingType.BENCHMARK_SETTING:
+        return {
+            "lead_time": None,
+            "deployment_frequency": None,
+            "change_failure_rate": None,
+            "mean_time_to_recovery": None,
+            "lines_of_code": None,
         }
 
     # ADD NEW DEFAULT SETTING HERE
