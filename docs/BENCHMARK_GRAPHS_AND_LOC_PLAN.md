@@ -296,6 +296,14 @@ describe('benchmarkBandOptions', () => {
     expect(opts.scales.y.suggestedMax).toBeGreaterThanOrEqual(100);
   });
 
+  it('refuses to stretch the axis more than 2x past the data', () => {
+    // A fat-fingered target must not flatten the real series into a hairline.
+    const opts = benchmarkBandOptions({
+      metric: 'lines_of_code', target: 20000, actual: 200, values: [180, 200, 220]
+    });
+    expect(opts.scales.y.suggestedMax).toBeLessThan(1000);
+  });
+
   it('covers target down to zero when lower is better', () => {
     const { yMin, yMax } = boxOf(benchmarkBandOptions({
       metric: 'lead_time', target: 100, actual: 20, values: [10, 20, 30]
@@ -342,8 +350,19 @@ Run: `docker exec middleware-dev sh -lc 'cd /app/web-server && npx jest src/util
 export const benchmarkBandOptions = ({ metric, target, actual, values, theme }) => {
   const lowerIsBetter = LOWER_IS_BETTER.has(metric);
   const dataMax = Math.max(0, ...values.filter(Number.isFinite));
-  // The target must be inside the scale or the band is clipped off-canvas.
-  const suggestedMax = Math.max(dataMax, target) * 1.1;
+  // CLUSTOX: two opposite failures to avoid at once. Clamp the axis to the
+  // data and a target above it is clipped off-canvas, so the card looks
+  // exactly as it did before and the feature appears not to work. Extend the
+  // axis to the target unconditionally and a typo'd 20000-line target against
+  // a 200-line actual flattens the real series into a hairline at the bottom.
+  // So: include the target, but never stretch more than 2x past the data.
+  // Beyond that the band runs to the edge and the caption carries the number,
+  // because a scale nobody can read is worse than one that admits it is
+  // truncated.
+  const AXIS_STRETCH_LIMIT = 2;
+  const suggestedMax =
+    Math.min(Math.max(dataMax, target), Math.max(dataMax, 1) * AXIS_STRETCH_LIMIT) * 1.1;
+  const targetIsOffScale = target > suggestedMax;
   const onGoodSide = lowerIsBetter ? actual <= target : actual >= target;
   // Never red: a missed internal goal is not an error (spec, "The graph").
   const tone = onGoodSide ? theme.colors.success : theme.colors.warning;
