@@ -2,7 +2,6 @@ import { alpha, Chip } from '@mui/material';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
-import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -246,13 +245,6 @@ export const WeeklyDeliveryVolumeCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
-          {isCodeProviderIntegrationEnabled &&
-            deploymentFrequencyBenchmark?.target != null && (
-              <BenchmarkTargetLine
-                target={deploymentFrequencyBenchmark.target}
-                values={series[0].data}
-              />
-            )}
           {isCodeProviderIntegrationEnabled ? (
             <FlexBox
               position="absolute"

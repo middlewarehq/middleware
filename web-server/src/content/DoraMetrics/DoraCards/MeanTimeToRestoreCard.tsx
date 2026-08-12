@@ -3,7 +3,6 @@ import { Chip } from '@mui/material';
 import { head } from 'ramda';
 import { useMemo } from 'react';
 
-import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -202,12 +201,6 @@ export const MeanTimeToRestoreCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
-          {canShowMTRData && meanTimeToRecoveryBenchmark?.target != null && (
-            <BenchmarkTargetLine
-              target={meanTimeToRecoveryBenchmark.target}
-              values={series[0].data}
-            />
-          )}
           <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
             {canShowMTRData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>

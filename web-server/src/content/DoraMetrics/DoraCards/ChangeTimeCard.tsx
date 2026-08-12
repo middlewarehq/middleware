@@ -6,7 +6,6 @@ import Link from 'next/link';
 import pluralize from 'pluralize';
 import { useMemo } from 'react';
 
-import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -329,13 +328,6 @@ export const ChangeTimeCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
-
-          {isSufficientDataAvailable && leadTimeBenchmark?.target != null && (
-            <BenchmarkTargetLine
-              target={leadTimeBenchmark.target}
-              values={series[0].data}
-            />
-          )}
 
           <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
             {isSufficientDataAvailable ? (

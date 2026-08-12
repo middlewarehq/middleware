@@ -3,7 +3,6 @@ import pluralize from 'pluralize';
 import { head } from 'ramda';
 import { useMemo } from 'react';
 
-import { BenchmarkTargetLine } from '@/components/BenchmarkTargetLine';
 import { Chart2, ChartOptions } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
@@ -235,14 +234,6 @@ export const ChangeFailureRateCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
-          {canShowIncidentsData &&
-            isCfrDataAvailable &&
-            changeFailureRateBenchmark?.target != null && (
-              <BenchmarkTargetLine
-                target={changeFailureRateBenchmark.target}
-                values={series[0].data}
-              />
-            )}
           <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
             {canShowIncidentsData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>
