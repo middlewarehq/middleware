@@ -1,7 +1,11 @@
+import re
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from mhq.service.code.loc import LOCMetrics, LOCService, aggregate_loc
+from mhq.store.models.code import PRFilter, PullRequestState
 from mhq.utils.time import Interval
+from tests.factories.models.code import get_pull_request
 
 
 def _pr(additions, deletions, state="MERGED", state_changed_at=None):
@@ -116,3 +120,231 @@ def test_a_team_with_no_active_repos_reports_zero_rather_than_querying():
 
     assert result == LOCMetrics()
     assert code_repo_service.merged_in_interval_calls == []
+
+
+# ---------------------------------------------------------------------------
+# Filter inheritance.
+#
+# CLUSTOX: the tests above assert the PRFilter is handed over unmodified. That
+# is necessary but not sufficient: it passes just as happily against a
+# LOCService that forwards the object and then ignores what comes back, or that
+# swaps in an unfiltered fetch. The only thing that catches those is asserting
+# the numbers MOVE when a filter is applied, so every case below pins the
+# unfiltered total as well as the narrowed one.
+#
+# The suite has no database, so the real WHERE clause cannot run. The fake
+# below mirrors it in Python -- merged-only, inside the interval, plus each
+# PRFilter condition -- and narrows using nothing but the filter it is handed.
+# Drop the filter anywhere between get_team_loc_metrics and the fetch and the
+# narrowed assertions collapse back onto the unfiltered ones.
+# ---------------------------------------------------------------------------
+
+REPO_ID = "11111111-1111-4111-8111-111111111111"
+OTHER_REPO_ID = "22222222-2222-4222-8222-222222222222"
+INTERVAL = Interval(datetime(2024, 1, 1), datetime(2024, 1, 15))
+
+
+def _pull_request(
+    additions,
+    deletions,
+    author="alice",
+    base_branch="main",
+    state=PullRequestState.MERGED,
+    repo_id=REPO_ID,
+    pr_id=None,
+    state_changed_at=None,
+):
+    # CLUSTOX: a real PullRequest, not the FakePR above, because `additions`
+    # and `deletions` are properties reading `meta["code_stats"]` -- a fake with
+    # plain attributes would not notice the aggregator reading the wrong key.
+    return get_pull_request(
+        id=pr_id or uuid4(),
+        repo_id=repo_id,
+        author=author,
+        base_branch=base_branch,
+        state=state,
+        state_changed_at=state_changed_at or datetime(2024, 1, 3),
+        meta={"code_stats": {"additions": additions, "deletions": deletions}},
+    )
+
+
+def _matches_any(value, patterns):
+    # Postgres `~` is an unanchored regex match, which is `re.search`.
+    return any(re.search(p, value or "") for p in patterns or [] if p is not None)
+
+
+class FilteringCodeRepoService:
+    """Stands in for CodeRepoService, narrowing the way its SQL does."""
+
+    def __init__(self, prs, team_repos=None):
+        self._prs = prs
+        self._team_repos = (
+            team_repos if team_repos is not None else [FakeTeamRepo(REPO_ID)]
+        )
+
+    def get_active_team_repos_by_team_id(self, team_id):
+        return self._team_repos
+
+    def get_prs_merged_in_interval(self, repo_ids, interval, pr_filter=None):
+        prs = [
+            pr
+            for pr in self._prs
+            if str(pr.repo_id) in repo_ids
+            # Mirrors _filter_prs_merged_in_interval: merged, and merged in
+            # window. An abandoned 5,000-line PR is not delivered work.
+            and pr.state == PullRequestState.MERGED
+            and interval.from_time <= pr.state_changed_at <= interval.to_time
+        ]
+        return [pr for pr in prs if self._passes(pr, pr_filter)]
+
+    @staticmethod
+    def _passes(pr, pr_filter: PRFilter):
+        if pr_filter is None:
+            return True
+
+        if pr_filter.authors and pr.author not in pr_filter.authors:
+            return False
+
+        if pr_filter.base_branches and not _matches_any(
+            pr.base_branch, pr_filter.base_branches
+        ):
+            return False
+
+        if pr_filter.repo_filters and not any(
+            str(pr.repo_id) == repo_id
+            and _matches_any(pr.base_branch, (config or {}).get("base_branches"))
+            for repo_id, config in pr_filter.repo_filters.items()
+        ):
+            return False
+
+        excluded = [str(pr_id) for pr_id in pr_filter.excluded_pr_ids or []]
+        if str(pr.id) in excluded:
+            return False
+
+        return True
+
+
+def _loc(prs, pr_filter=None):
+    return LOCService(FilteringCodeRepoService(prs)).get_team_loc_metrics(
+        "team-1", INTERVAL, pr_filter
+    )
+
+
+def test_the_contributor_filter_narrows_the_loc_totals():
+    prs = [
+        _pull_request(100, 10, author="alice"),
+        _pull_request(20, 2, author="bob"),
+    ]
+
+    # (100+10 + 20+2) / 2 == 66
+    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    # Only alice's PR survives, and the average is hers alone -- not the
+    # team-wide 66 that a card ignoring the contributor filter would show.
+    assert _loc(prs, PRFilter(authors=["alice"])) == LOCMetrics(
+        additions=100, deletions=10, avg_pr_size=110
+    )
+
+
+def test_a_base_branches_filter_narrows_the_loc_totals():
+    prs = [
+        _pull_request(100, 10, base_branch="release/1.0"),
+        _pull_request(20, 2, base_branch="main"),
+    ]
+
+    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert _loc(prs, PRFilter(base_branches=["^release/"])) == LOCMetrics(
+        additions=100, deletions=10, avg_pr_size=110
+    )
+
+
+def test_prod_branch_mode_narrows_the_loc_totals():
+    # CLUSTOX: PROD branch mode arrives as per-repo `repo_filters`, not as the
+    # flat `base_branches` above -- the dashboard builds it from each repo's
+    # configured prod branches. Two different shapes of the same setting, and
+    # only the flat one is exercised elsewhere.
+    prs = [
+        _pull_request(100, 10, base_branch="main"),
+        _pull_request(20, 2, base_branch="feature/x"),
+    ]
+    prod_mode = PRFilter(repo_filters={REPO_ID: {"base_branches": ["^main$"]}})
+
+    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert _loc(prs, prod_mode) == LOCMetrics(
+        additions=100, deletions=10, avg_pr_size=110
+    )
+
+
+def test_the_excluded_prs_setting_narrows_the_loc_totals():
+    excluded_id = "33333333-3333-4333-8333-333333333333"
+    prs = [
+        _pull_request(100, 10, pr_id=excluded_id),
+        _pull_request(20, 2),
+    ]
+
+    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    # A generated-code PR an admin excluded must not drag the average up.
+    assert _loc(prs, PRFilter(excluded_pr_ids=[excluded_id])) == LOCMetrics(
+        additions=20, deletions=2, avg_pr_size=22
+    )
+
+
+def test_an_unmerged_pull_request_is_never_counted():
+    # CLUSTOX: no filter at all here. Merged-only is not something the caller
+    # opts into -- it comes from LOC choosing the merged-in-interval fetch, so
+    # a future rewrite reaching for an unfiltered "all PRs" query would show a
+    # 5,000-line abandoned PR as delivered work.
+    prs = [
+        _pull_request(10, 5),
+        _pull_request(5000, 4000, state=PullRequestState.OPEN),
+    ]
+
+    assert _loc(prs) == LOCMetrics(additions=10, deletions=5, avg_pr_size=15)
+
+
+def test_a_pr_merged_outside_the_window_is_never_counted():
+    prs = [
+        _pull_request(10, 5),
+        _pull_request(5000, 4000, state_changed_at=datetime(2023, 12, 20)),
+    ]
+
+    assert _loc(prs) == LOCMetrics(additions=10, deletions=5, avg_pr_size=15)
+
+
+def test_a_repo_outside_the_team_is_never_counted():
+    prs = [
+        _pull_request(10, 5),
+        _pull_request(5000, 4000, repo_id=OTHER_REPO_ID),
+    ]
+
+    assert _loc(prs) == LOCMetrics(additions=10, deletions=5, avg_pr_size=15)
+
+
+def test_the_same_filter_narrows_the_loc_trend_buckets():
+    # CLUSTOX: trends are a second public entry point, and the card draws the
+    # headline and the trend line together. If only one of them honoured the
+    # contributor filter the two would disagree on screen, which reads as a
+    # data bug rather than a filtering one. 2024-01-01 is a Monday.
+    prs = [
+        _pull_request(100, 10, author="alice", state_changed_at=datetime(2024, 1, 3)),
+        _pull_request(20, 2, author="bob", state_changed_at=datetime(2024, 1, 4)),
+    ]
+    week = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    def trends(pr_filter):
+        return LOCService(FilteringCodeRepoService(prs)).get_team_loc_trends(
+            "team-1", INTERVAL, pr_filter
+        )
+
+    assert trends(None)[week] == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert trends(PRFilter(authors=["alice"]))[week] == LOCMetrics(
+        additions=100, deletions=10, avg_pr_size=110
+    )
+
+
+def test_a_filter_that_matches_nothing_reports_zero_rather_than_the_team_total():
+    # CLUSTOX: the empty result has to come back as a measured zero, not fall
+    # back to unfiltered numbers -- picking a contributor who merged nothing
+    # this period must empty the card, not quietly show everyone's totals.
+    prs = [_pull_request(100, 10, author="alice")]
+
+    assert _loc(prs, PRFilter(authors=["nobody"])) == LOCMetrics()
