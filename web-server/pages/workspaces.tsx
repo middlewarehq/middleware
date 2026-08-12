@@ -29,6 +29,7 @@ import { useSnackbar } from 'notistack';
 import { useCallback, useEffect, useState } from 'react';
 import ExtendedSidebarLayout from 'src/layouts/ExtendedSidebarLayout';
 
+import { BenchmarkSettingsForm } from '@/components/BenchmarkSettingsForm';
 import { ClustoxWorkspaceMetrics } from '@/components/ClustoxWorkspaceMetrics';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
@@ -82,7 +83,7 @@ function WorkspacesPage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [tab, setTab] = useState<'health' | 'metrics'>('health');
+  const [tab, setTab] = useState<'health' | 'metrics' | 'benchmarks'>('health');
 
   const load = useCallback(async () => {
     const res = await fetch('/api/clustox/workspace-status');
@@ -231,69 +232,74 @@ function WorkspacesPage() {
           >
             <Tab value="health" label="Sync health" />
             <Tab value="metrics" label="DORA comparison" />
+            <Tab value="benchmarks" label="Global benchmarks" />
           </Tabs>
         )}
 
         {isSuperadmin && tab === 'metrics' && <ClustoxWorkspaceMetrics />}
 
+        {isSuperadmin && tab === 'benchmarks' && (
+          <BenchmarkSettingsForm scope="global" />
+        )}
+
         {(!isSuperadmin || tab === 'health') && (
-        <TableContainer
-          sx={{
-            border: `1px solid ${theme.colors.alpha.trueWhite[10]}`,
-            borderRadius: 1.5,
-            overflow: 'hidden'
-          }}
-        >
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Workspace</TableCell>
-                <TableCell width={150}>Last sync</TableCell>
-                <TableCell width={150}>When</TableCell>
-                <TableCell width={110} align="right">
-                  Repos
-                </TableCell>
-                <TableCell width={110} align="right">
-                  Teams
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {workspaces.map((w) => (
-                <TableRow key={w.id} hover>
-                  <TableCell>
-                    <FlexBox alignCenter gap={1.5}>
-                      <WorkspacesTwoTone
-                        fontSize="small"
-                        sx={{ color: theme.colors.alpha.trueWhite[50] }}
-                      />
-                      <FlexBox col>
-                        <Line medium>{w.name}</Line>
-                        <Line small secondary>
-                          <Mono>{w.ownerEmail ?? 'no owner'}</Mono>
-                        </Line>
-                      </FlexBox>
-                    </FlexBox>
+          <TableContainer
+            sx={{
+              border: `1px solid ${theme.colors.alpha.trueWhite[10]}`,
+              borderRadius: 1.5,
+              overflow: 'hidden'
+            }}
+          >
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Workspace</TableCell>
+                  <TableCell width={150}>Last sync</TableCell>
+                  <TableCell width={150}>When</TableCell>
+                  <TableCell width={110} align="right">
+                    Repos
                   </TableCell>
-                  <TableCell>{statusChip(w)}</TableCell>
-                  <TableCell>
-                    <Line small secondary>
-                      {w.hasIntegration
-                        ? relative(w.lastSync?.finished_at ?? null)
-                        : '—'}
-                    </Line>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Mono>{w.repoCount}</Mono>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Mono>{w.teamCount}</Mono>
+                  <TableCell width={110} align="right">
+                    Teams
                   </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {workspaces.map((w) => (
+                  <TableRow key={w.id} hover>
+                    <TableCell>
+                      <FlexBox alignCenter gap={1.5}>
+                        <WorkspacesTwoTone
+                          fontSize="small"
+                          sx={{ color: theme.colors.alpha.trueWhite[50] }}
+                        />
+                        <FlexBox col>
+                          <Line medium>{w.name}</Line>
+                          <Line small secondary>
+                            <Mono>{w.ownerEmail ?? 'no owner'}</Mono>
+                          </Line>
+                        </FlexBox>
+                      </FlexBox>
+                    </TableCell>
+                    <TableCell>{statusChip(w)}</TableCell>
+                    <TableCell>
+                      <Line small secondary>
+                        {w.hasIntegration
+                          ? relative(w.lastSync?.finished_at ?? null)
+                          : '—'}
+                      </Line>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Mono>{w.repoCount}</Mono>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Mono>{w.teamCount}</Mono>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
 
         {(!isSuperadmin || tab === 'health') && (
