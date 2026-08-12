@@ -14,7 +14,11 @@ import {
   fetchLeadTimeStats,
   fetchChangeFailureRateStats,
   fetchMeanTimeToRestoreStats,
-  fetchDeploymentFrequencyStats
+  fetchDeploymentFrequencyStats,
+  // CLUSTOX: per-team DORA benchmarks.
+  fetchTeamBenchmarks,
+  // CLUSTOX: lines of code.
+  fetchLocStats
 } from '@/utils/cockpitMetricUtils';
 // CLUSTOX: contributor filter.
 import { stripContributorFilters } from '@/utils/contributorFilters';
@@ -61,14 +65,27 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 
   const from_date = isoDateString(startOfDay(new Date(rawFromDate)));
   const to_date = isoDateString(endOfDay(new Date(rawToDate)));
-  const [branchAndRepoFilters, unsyncedRepos] = await Promise.all([
+  const [branchAndRepoFilters, unsyncedRepos, benchmarks] = await Promise.all([
     getBranchesAndRepoFilter({
       orgId: org_id,
       teamId,
       branchMode: branch_mode as ActiveBranchMode,
       branches
     }),
-    getUnsyncedRepos(teamId)
+    getUnsyncedRepos(teamId),
+    // CLUSTOX: per-team DORA benchmarks. Deliberately fetched here and sent
+    // below, not on any other route: `metrics_summary` -- the only slice the
+    // four cards read `benchmarks` from -- is written solely by whatever this
+    // handler returns.
+    //
+    // The `catch` is load-bearing. Inside a Promise.all, a rejection here
+    // would take down the entire DORA response and blank all four cards over
+    // an optional decoration. That is not hypothetical: an unrelated 400 on a
+    // sibling call in this same Promise.all rendered "something went wrong"
+    // across the whole dashboard during the contributor-filter work. Targets
+    // are already optional, and every card treats `undefined` as "no target",
+    // so degrading to an unbenchmarked dashboard is the correct failure.
+    fetchTeamBenchmarks(teamId).catch(() => undefined)
   ]);
   const [prFilters, workflowFilters] = await Promise.all([
     // CLUSTOX: contributor filter -- `authors` narrows Lead Time by PR author,
@@ -113,7 +130,8 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     changeFailureRateResponse,
     deploymentFrequencyResponse,
     leadtimePrs,
-    teamRepos
+    teamRepos,
+    locResponse
   ] = await Promise.all([
     fetchLeadTimeStats({
       teamId,
@@ -185,7 +203,35 @@ endpoint.handle.GET(getSchema, async (req, res) => {
     getTeamLeadTimePRs(teamId, from_date, to_date, prFilterWithoutAuthors).then(
       (r) => r.data
     ),
-    getTeamRepos(teamId)
+    getTeamRepos(teamId),
+    // CLUSTOX: lines of code. Sits here rather than in the earlier Promise.all
+    // because it needs `prFilters` -- the same filtered object lead time gets,
+    // so the contributor filter and branch mode narrow LOC identically instead
+    // of leaving one card on the dashboard reporting team-wide numbers.
+    //
+    // The `catch` carries the same soft-failure contract as `fetchTeamBenchmarks`
+    // above, and for the same reason: inside a Promise.all an unhandled
+    // rejection here would take down the whole DORA response and blank all five
+    // cards over one optional metric. That is not hypothetical on this project
+    // -- a payload key nested one level too deep made the analytics server 400
+    // and the entire dashboard went blank on a single click. `loc_stats` and
+    // `loc_trends` are optional on the response type and every consumer must
+    // treat their absence as "not measured", so degrading to a dashboard
+    // without the LOC card is the correct failure.
+    fetchLocStats({
+      teamId,
+      currStatsTimeObject: {
+        from_time: isoDateString(currentCycleStartDay),
+        to_time: isoDateString(currentCycleEndDay)
+      },
+      prevStatsTimeObject: {
+        from_time: isoDateString(prevCycleStartDay),
+        to_time: isoDateString(prevCycleEndDay)
+      },
+      currTrendsTimeObject,
+      prevTrendsTimeObject,
+      prFilter: prFilters
+    }).catch(() => undefined)
   ]);
 
   return res.send({
@@ -205,7 +251,18 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       deploymentFrequencyResponse.deployment_frequency_trends,
     lead_time_prs: leadtimePrs,
     assigned_repos: teamRepos,
-    unsynced_repos: unsyncedRepos
+    unsynced_repos: unsyncedRepos,
+    // CLUSTOX: read by all four DORA cards as
+    // `metrics_summary.benchmarks.<metric>.target` / `.source`.
+    benchmarks,
+    // CLUSTOX: lines of code. The dora_metrics payload is written wholesale
+    // into the `metrics_summary` slice, so these land as
+    // `metrics_summary.loc_stats` / `.loc_trends`, which is where the LOC card
+    // reads them. Spread flat like every other metric rather than nested under
+    // one key -- a card reading `loc_stats.current.avg_pr_size` must not have
+    // to know which fetcher produced it.
+    loc_stats: locResponse?.loc_stats,
+    loc_trends: locResponse?.loc_trends
   } as TeamDoraMetricsApiResponseType);
 });
 

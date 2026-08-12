@@ -1,5 +1,8 @@
+import { useTheme } from '@mui/material';
+import { mergeDeepRight } from 'ramda';
 import { useCallback, useEffect, useMemo } from 'react';
 
+import { ChartOptions } from '@/components/Chart2';
 import { Row } from '@/constants/db';
 import {
   changeTimeThresholds,
@@ -9,6 +12,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { doraMetricsSlice } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { ChangeTimeModes, IntegrationGroup } from '@/types/resources';
+import {
+  BenchmarkBandInput,
+  benchmarkBandOptions
+} from '@/utils/benchmarkBand';
 import { getDoraScore } from '@/utils/dora';
 
 import {
@@ -294,4 +301,65 @@ export const useChangeFailureRateProps = () => {
       ...cfrProps
     };
   }, [cfrProps, changeFailureRate]);
+};
+
+// CLUSTOX: all four DORA cards declared this same object as a module-level
+// `chartOptions` constant. The benchmark band depends on props, so the
+// constant has to become a memo -- and rather than copy that memo into four
+// files where the four copies can silently drift apart, the shared base and
+// the merge live here once.
+const BASE_DORA_CARD_CHART_OPTIONS = {
+  options: {
+    scales: {
+      x: {
+        display: false
+      },
+      y: {
+        display: false
+      }
+    },
+    events: [],
+    plugins: {
+      zoom: {
+        zoom: {
+          drag: {
+            enabled: false
+          }
+        }
+      }
+    }
+  }
+} as ChartOptions;
+
+/**
+ * The chart options for a DORA card, with the benchmark target band merged in
+ * when there is a target to draw.
+ *
+ * Pass `null` when the card should show no band at all -- distinct from
+ * passing an input whose `target` is null, though both render the card exactly
+ * as it looked before this feature.
+ */
+export const useDoraCardChartOptions = (
+  band: Omit<BenchmarkBandInput, 'theme'> | null
+): ChartOptions => {
+  // CLUSTOX: the tone colours come from the live theme rather than from
+  // benchmarkBand's hex fallbacks; those exist only so the util stays
+  // importable from a unit test that can't load MUI.
+  const theme = useTheme();
+
+  return useMemo(() => {
+    const bandOptions = band ? benchmarkBandOptions({ ...band, theme }) : null;
+    // CLUSTOX: no target configured is the state every card is in until an
+    // admin sets one -- return the base untouched so the card renders exactly
+    // as it did before, rather than an empty annotation block.
+    if (!bandOptions) return BASE_DORA_CARD_CHART_OPTIONS;
+
+    // CLUSTOX: the band goes on the *right* of the merge. Both sides define
+    // `scales.y`, and it is the band's `suggestedMax` that has to survive --
+    // the base only sets `display: false`, which mergeDeepRight preserves from
+    // the left because the keys don't collide.
+    return mergeDeepRight(BASE_DORA_CARD_CHART_OPTIONS, {
+      options: bandOptions
+    }) as ChartOptions;
+  }, [band, theme]);
 };

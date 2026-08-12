@@ -33,6 +33,7 @@ import { getRandomLoadMsg } from '@/utils/loading-messages';
 import { ClassificationPills } from './ClassificationPills';
 import { ChangeFailureRateCard } from './DoraCards/ChangeFailureRateCard';
 import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
+import { LinesOfCodeCard } from './DoraCards/LinesOfCodeCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { DataStillSyncing } from './DoraCards/SkeletalCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
@@ -65,7 +66,16 @@ export const DoraMetricsBody = () => {
         .incident_count &&
       !s.doraMetrics.metrics_summary?.lead_time_stats.current.lead_time &&
       !s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
-        .avg_deployment_frequency
+        .avg_deployment_frequency &&
+      // CLUSTOX: lines of code counts as insight too. A team that merges PRs
+      // but has no deployment or incident provider wired up has real, non-zero
+      // LOC and would otherwise have the whole grid -- including its own
+      // populated card -- replaced by "nothing to show yet".
+      //
+      // Additive: one more `&&` can only make this predicate FALSE more often,
+      // so it can only show the grid where it was previously hidden. No team
+      // that sees the dashboard today can start seeing the empty state.
+      !s.doraMetrics.metrics_summary?.loc_stats?.current.total
   );
 
   const { addPage } = useOverlayPage();
@@ -152,6 +162,13 @@ export const DoraMetricsBody = () => {
         </Grid>
         <Grid item xs={12} md={6} order={4}>
           <MeanTimeToRestoreCard />
+        </Grid>
+        {/* CLUSTOX: slot five. Slot six is deliberately left empty -- an empty
+            cell reads as room for more, whereas a "coming soon" tile reads as
+            unfinished. At `md` and below the container is already
+            single-column, so nothing above this reflows. */}
+        <Grid item xs={12} md={6} order={5}>
+          <LinesOfCodeCard />
         </Grid>
       </Grid>
       <Divider />
