@@ -319,3 +319,56 @@ describe('a target of zero is still a target', () => {
     expect(html).toContain('target (0%)');
   });
 });
+
+describe('no incidents this period is not a fast recovery', () => {
+  // CLUSTOX: the mixed-period fixture. `isNoDataAvailable` is
+  // `!incidents && !prevAvgTimeToRestore && !currAvgTimeToRestore`, so a team
+  // with zero incidents THIS period but a recovery time LAST period does not
+  // trip it -- the card takes its data-available branch with a null count.
+  // `null <= target` is true in JS and `Math.round(null)` is 0, so the card
+  // rendered a green "0s is under target" and a success-tinted band beside its
+  // own "No incidents reported" headline. Nothing was recovered quickly; there
+  // was nothing to recover.
+  const MIXED_PERIOD = {
+    current: { mean_time_to_recovery: null as number | null, incident_count: 0 },
+    previous: { mean_time_to_recovery: 5400, incident_count: 4 }
+  };
+
+  it('shows no band, no caption and no comparison pill', () => {
+    metricsSummary = {
+      ...MEASURED_SUMMARY,
+      mean_time_to_restore_stats: MIXED_PERIOD,
+      benchmarks: {
+        mean_time_to_recovery: { target: 3600, source: 'global' }
+      }
+    };
+
+    const html = renderCard('Mean Time to Recovery', MeanTimeToRestoreCard);
+
+    expect(html).not.toContain('under target');
+    expect(html).not.toContain('over target');
+    const [options] = optionsFor('Mean Time to Recovery');
+    expect(options.options.plugins?.annotation).toBeUndefined();
+  });
+
+  it('still names the target, without claiming a verdict', () => {
+    metricsSummary = {
+      ...MEASURED_SUMMARY,
+      mean_time_to_restore_stats: MIXED_PERIOD,
+      benchmarks: {
+        mean_time_to_recovery: { target: 3600, source: 'global' }
+      }
+    };
+
+    // The grey target-only line used to live solely in the `!canShowMTRData`
+    // branch, which this state never reaches -- so the one state that most
+    // needs "a target exists, but nothing to compare" showed nothing at all.
+    const html = renderCard('Mean Time to Recovery', MeanTimeToRestoreCard);
+
+    // `toContain('target')` alone would be vacuous: the buggy caption
+    // ("0s is under target (1h)") contains it too. The grey line reads
+    // "target 1h"; the caption reads "target (1h)". Only the first matches.
+    expect(html).toContain('target 1h');
+    expect(html).not.toContain('under target');
+  });
+});
