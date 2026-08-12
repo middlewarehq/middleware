@@ -11,7 +11,10 @@ import {
   DeploymentFrequencyTrends,
   MeanTimeToRestoreApiTrendsResponse,
   ChangeFailureRateTrendsApiResponse,
-  UpdatedDeploymentFrequencyAnalyticsResponseV2
+  UpdatedDeploymentFrequencyAnalyticsResponseV2,
+  // CLUSTOX: lines of code.
+  LOCApiResponse,
+  LOCTrendsApiResponse
 } from '@/types/resources';
 import { Benchmarks } from '@/utils/benchmarks';
 
@@ -96,6 +99,68 @@ export const fetchLeadTimeStats = async (params: {
     lead_time_trends: {
       current: currIntervalLeadTimeTrends,
       previous: prevIntervalLeadTimeTrends
+    }
+  };
+};
+
+// CLUSTOX: lines of code, the fifth card on the same dashboard. Deliberately
+// built as a mirror of `fetchLeadTimeStats` above -- same four calls (current
+// and previous aggregate, current and previous trends), same time objects, same
+// `pr_filter`. Two consequences that matter:
+//
+//   1. The previous-period call is what makes the card able to show a delta at
+//      all. A single aggregate call would leave nothing to compare against and
+//      the card would silently lose the up/down arrow the other four have.
+//   2. Passing the same `prFilter` the lead time metric gets is what makes the
+//      contributor filter, branch mode and the excluded-PRs setting apply to
+//      LOC too -- the analytics route already honours `pr_filter`, so this is
+//      free, and omitting it would give a filtered dashboard one card quietly
+//      reporting team-wide numbers next to four filtered ones.
+//
+// The time objects come from the caller already formatted by `isoDateString`,
+// which emits an offset (`...+00:00`). That is load-bearing: `/teams/<id>/loc`
+// rejects a naive timestamp with 400 `Timestamp passed without tz info`.
+export const fetchLocStats = async (params: {
+  teamId: ID;
+  currStatsTimeObject: IntervalTimeMap;
+  prevStatsTimeObject: IntervalTimeMap;
+  prFilter: ReturnType<typeof getFilters>;
+  currTrendsTimeObject: IntervalTimeMap;
+  prevTrendsTimeObject: IntervalTimeMap;
+}) => {
+  const {
+    teamId,
+    currStatsTimeObject,
+    prevStatsTimeObject,
+    prFilter,
+    currTrendsTimeObject,
+    prevTrendsTimeObject
+  } = params;
+
+  const [currLocResponse, prevLocResponse, currLocTrends, prevLocTrends] =
+    await Promise.all([
+      handleRequest<LOCApiResponse>(`/teams/${teamId}/loc`, {
+        params: { ...currStatsTimeObject, ...prFilter }
+      }),
+      handleRequest<LOCApiResponse>(`/teams/${teamId}/loc`, {
+        params: { ...prevStatsTimeObject, ...prFilter }
+      }),
+      handleRequest<LOCTrendsApiResponse>(`/teams/${teamId}/loc/trends`, {
+        params: { ...currTrendsTimeObject, ...prFilter }
+      }),
+      handleRequest<LOCTrendsApiResponse>(`/teams/${teamId}/loc/trends`, {
+        params: { ...prevTrendsTimeObject, ...prFilter }
+      })
+    ]);
+
+  return {
+    loc_stats: {
+      current: currLocResponse,
+      previous: prevLocResponse
+    },
+    loc_trends: {
+      current: currLocTrends,
+      previous: prevLocTrends
     }
   };
 };
