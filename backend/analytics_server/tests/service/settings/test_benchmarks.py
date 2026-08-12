@@ -66,6 +66,47 @@ def test_missing_settings_are_treated_as_empty():
     assert all(v["target"] is None for v in resolved.values())
 
 
+def test_every_metric_is_registered_at_every_extension_point():
+    # CLUSTOX: adding a metric means editing a dataclass, a list, three
+    # adapters, the API resource and the shipped default -- and missing one
+    # of them fails somewhere unrelated, or not at all. Pinning them to each
+    # other means the next metric fails HERE, by name, instead of silently
+    # vanishing from a response.
+    import dataclasses
+
+    from mhq.service.settings.configuration_settings import SettingsService
+    from mhq.service.settings.default_settings_data import get_default_setting_data
+    from mhq.store.models.settings import SettingType
+
+    metrics = set(BENCHMARK_METRICS)
+
+    assert {f.name for f in dataclasses.fields(BenchmarkSetting)} == metrics
+    assert set(get_default_setting_data(SettingType.BENCHMARK_SETTING)) == metrics
+
+    populated = BenchmarkSetting(**{metric: 1 for metric in metrics})
+
+    # Every adapter must carry every metric, in both directions.
+    to_json = SettingsService._adapt_benchmark_setting_json_data(None, populated)
+    assert to_json == {metric: 1 for metric in metrics}
+
+    from_db = SettingsService._adapt_benchmark_setting_from_setting_data(None, to_json)
+    from_api = SettingsService._adapt_benchmark_setting_from_json(None, to_json)
+    assert from_db == populated
+    assert from_api == populated
+
+    api_response = adapt_configuration_settings_response(
+        ConfigurationSettings(
+            entity_id="team-1",
+            entity_type=EntityType.TEAM,
+            specific_settings=populated,
+            updated_by=None,
+            created_at=datetime(2026, 1, 1),
+            updated_at=datetime(2026, 1, 1),
+        )
+    )
+    assert set(api_response["setting"]) == metrics
+
+
 def test_lines_of_code_resolves_like_every_other_metric():
     resolved = resolve_benchmarks(
         BenchmarkSetting(lines_of_code=200),
