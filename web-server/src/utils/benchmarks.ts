@@ -66,7 +66,11 @@ const formatDuration = (seconds: number): string => {
 const roundForDisplay = (value: number): number =>
   Math.round(value * 100) / 100;
 
-const formatBenchmarkValue = (
+// CLUSTOX: exported so a card can name a target on its own, without a
+// comparison. Mean Time to Recovery with zero incidents is the case that needs
+// it: there is no actual value to compare, but an admin still has to be able
+// to see that a target exists.
+export const formatBenchmarkValue = (
   metric: BenchmarkMetric,
   value: number
 ): string => {
@@ -84,6 +88,18 @@ const formatBenchmarkValue = (
       return `${roundForDisplay(value)} lines`;
   }
 };
+
+/**
+ * Names which benchmark applied, so a team that set a target but is being
+ * shown the org-wide default can tell that their setting didn't save rather
+ * than silently comparing against the wrong number.
+ *
+ * Exported for the same reason `formatBenchmarkValue` is -- the target-only
+ * line on a card with no measurement has to carry the same wording as the
+ * caption it stands in for.
+ */
+export const benchmarkSourceLabel = (source: BenchmarkSource): string =>
+  source === 'team' ? "your team's benchmark" : 'the default benchmark';
 
 /**
  * Compares `actual` against `target` for `metric` and returns a caption
@@ -120,11 +136,7 @@ export const benchmarkCaption = (
     direction = actual > target ? 'above' : 'below';
   }
 
-  // CLUSTOX: names which benchmark applied so a team that set a target but
-  // sees the org-wide default knows their setting didn't save, rather than
-  // silently comparing against the wrong number.
-  const sourceClause =
-    source === 'team' ? "your team's benchmark" : 'the default benchmark';
+  const sourceClause = benchmarkSourceLabel(source);
 
   const text = `${formatBenchmarkValue(
     metric,
