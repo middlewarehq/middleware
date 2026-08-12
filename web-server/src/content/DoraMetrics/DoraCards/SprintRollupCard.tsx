@@ -80,8 +80,21 @@ export const SprintRollupCard: FC = () => {
           (0 count) wouldn't line up even though the bar heights
           themselves are correct -- aligning by the top instead keeps
           every column's fixed-height bar area starting at the same Y,
-          regardless of how its label wraps below it. */}
-      <FlexBox gap={3} alignItems="flex-start" flexWrap="wrap">
+          regardless of how its label wraps below it.
+
+          flexWrap="nowrap" + overflowX="auto", not "wrap": a team with
+          more than a handful of sprints wrapping to a second row left a
+          lone last column stranded far below the others, under a mostly
+          empty row -- same "wide content scrolls in its own container"
+          treatment as TicketCycleTimeCard's list, rather than reflowing
+          the whole card's height around however many sprints exist. */}
+      <FlexBox
+        gap={3}
+        alignItems="flex-start"
+        flexWrap="nowrap"
+        pb={1}
+        sx={{ overflowX: 'auto' }}
+      >
         {sprints.map((sprint) => (
           <SprintColumn key={sprint.name} sprint={sprint} maxCount={maxCount} />
         ))}
@@ -114,7 +127,7 @@ const SprintColumn: FC<{ sprint: Sprint; maxCount: number }> = ({
   sprint,
   maxCount
 }) => (
-  <FlexBox col alignCenter gap1>
+  <FlexBox col alignCenter gap1 flexShrink={0}>
     <FlexBox
       gap={1 / 2}
       alignItems="flex-end"
