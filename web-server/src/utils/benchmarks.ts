@@ -13,7 +13,11 @@ export type BenchmarkMetric =
   | 'lead_time'
   | 'deployment_frequency'
   | 'change_failure_rate'
-  | 'mean_time_to_recovery';
+  | 'mean_time_to_recovery'
+  // CLUSTOX: average gross lines per merged PR, measured as `avg_pr_size` on
+  // the LOC response. Not weekly volume, and not a duration -- its unit is
+  // lines, entered and stored verbatim.
+  | 'lines_of_code';
 
 export type BenchmarkSource = 'team' | 'global' | null;
 
@@ -32,14 +36,19 @@ export type BenchmarkCaption = {
 };
 
 // CLUSTOX: direction is per metric, not global. Lead time, change failure
-// rate and MTTR are all "smaller is better" -- deployment frequency is the
-// one metric in the set where "smaller is better" is exactly backwards.
-// Getting this list wrong silently inverts the whole feature's meaning, so
-// it's the one thing under direct test coverage (see benchmarks.test.ts).
+// rate, MTTR and average PR size are all "smaller is better" -- deployment
+// frequency is the one metric in the set where "smaller is better" is exactly
+// backwards. Getting this list wrong silently inverts the whole feature's
+// meaning, so it's the one thing under direct test coverage (see
+// benchmarks.test.ts).
+//
+// Average PR size belongs here because small PRs get reviewed faster and
+// merge sooner; a team beating a 200-line target is doing well, not badly.
 const LOWER_IS_BETTER: ReadonlySet<BenchmarkMetric> = new Set([
   'lead_time',
   'change_failure_rate',
-  'mean_time_to_recovery'
+  'mean_time_to_recovery',
+  'lines_of_code'
 ]);
 
 const formatDuration = (seconds: number): string => {
@@ -71,6 +80,8 @@ const formatBenchmarkValue = (
       const rounded = roundForDisplay(value);
       return `${rounded} ${rounded === 1 ? 'deployment' : 'deployments'}/week`;
     }
+    case 'lines_of_code':
+      return `${roundForDisplay(value)} lines`;
   }
 };
 

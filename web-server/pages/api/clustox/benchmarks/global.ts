@@ -12,7 +12,11 @@ const putSchema = yup.object().shape({
   lead_time: yup.number().min(0).nullable().optional(),
   deployment_frequency: yup.number().min(0).nullable().optional(),
   change_failure_rate: yup.number().min(0).max(100).nullable().optional(),
-  mean_time_to_recovery: yup.number().min(0).nullable().optional()
+  mean_time_to_recovery: yup.number().min(0).nullable().optional(),
+  // CLUSTOX: no `.max()`. Percent is the only bounded metric; an average PR
+  // of 5,000 lines is a bad number, not an invalid one, and the baseline has
+  // to be able to record where teams actually are.
+  lines_of_code: yup.number().min(0).nullable().optional()
 });
 
 const endpoint = new Endpoint(nullSchema);

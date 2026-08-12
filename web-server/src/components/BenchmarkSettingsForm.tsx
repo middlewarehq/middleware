@@ -32,6 +32,10 @@ import { Line } from './Text';
 // dirty-checking, payload building) never has to know which unit a metric is
 // really in.
 const SECONDS_PER_HOUR = 3600;
+// CLUSTOX: `lines_of_code` is deliberately NOT in here. Its unit is lines,
+// not hours -- adding it would multiply every target the admin types by 3600
+// on save and divide it back on load, so a 200-line target would be stored
+// as 720000 and compared against an actual measured in lines.
 const DURATION_METRICS: ReadonlySet<BenchmarkMetric> = new Set([
   'lead_time',
   'mean_time_to_recovery'
@@ -41,21 +45,27 @@ const METRICS: BenchmarkMetric[] = [
   'lead_time',
   'deployment_frequency',
   'change_failure_rate',
-  'mean_time_to_recovery'
+  'mean_time_to_recovery',
+  'lines_of_code'
 ];
 
 const METRIC_LABEL: Record<BenchmarkMetric, string> = {
   lead_time: 'Lead time',
   deployment_frequency: 'Deployment frequency',
   change_failure_rate: 'Change failure rate',
-  mean_time_to_recovery: 'Mean time to recovery'
+  mean_time_to_recovery: 'Mean time to recovery',
+  // CLUSTOX: "Average PR size" rather than "Lines of code" -- the target is
+  // per merged PR, and an admin reading the raw metric name would reasonably
+  // type a weekly total into it.
+  lines_of_code: 'Average PR size'
 };
 
 const UNIT_LABEL: Record<BenchmarkMetric, string> = {
   lead_time: 'hours',
   deployment_frequency: 'per week',
   change_failure_rate: '%',
-  mean_time_to_recovery: 'hours'
+  mean_time_to_recovery: 'hours',
+  lines_of_code: 'lines'
 };
 
 type BenchmarkSettingValues = Record<BenchmarkMetric, number | null>;
@@ -65,7 +75,8 @@ const EMPTY_FORM_VALUES: FormValues = {
   lead_time: '',
   deployment_frequency: '',
   change_failure_rate: '',
-  mean_time_to_recovery: ''
+  mean_time_to_recovery: '',
+  lines_of_code: ''
 };
 
 /** seconds/percent/deployments-per-week -> the string shown in the input. */
@@ -116,6 +127,8 @@ const formatInheritedPlaceholder = (
       return `${n}/week (default)`;
     case 'change_failure_rate':
       return `${n}% (default)`;
+    case 'lines_of_code':
+      return `${n} lines (default)`;
   }
 };
 
