@@ -169,8 +169,15 @@ export const DoraMetricsBody = () => {
           in its own flex-sized FlexBox rather than passing a prop into
           either card: both already independently render null on their
           own gating, and neither needed a props-API change for a
-          purely external layout concern. */}
-      <FlexBox gap={2} flexWrap="wrap">
+          purely external layout concern.
+
+          alignItems="flex-start", not the default stretch: CardRoot
+          (shared by every DORA card) is height="100%" of its immediate
+          wrapper, so without this, whichever column is naturally taller
+          stretches the other one's wrapper to match, and that shorter
+          card's CardRoot fills the extra height with blank space at the
+          bottom instead of ending where its own content does. */}
+      <FlexBox gap={2} flexWrap="wrap" alignItems="flex-start">
         <FlexBox flex={1} minWidth="320px">
           <SprintRollupCard />
         </FlexBox>
