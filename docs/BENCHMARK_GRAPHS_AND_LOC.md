@@ -139,14 +139,19 @@ Response shape, matching the other stats blocks:
 
 ```json
 "loc_stats": {
-  "current":  {"additions": 12043, "deletions": 4110, "avg_pr_size": 214},
-  "previous": {"additions": 9800,  "deletions": 3050, "avg_pr_size": 187}
+  "current":  {"additions": 12043, "deletions": 4110, "total": 16153, "avg_pr_size": 214},
+  "previous": {"additions": 9800,  "deletions": 3050, "total": 12850, "avg_pr_size": 187}
 }
 ```
 
 `avg_pr_size` is `(additions + deletions) / merged PR count`, `0` when there
 are no merged PRs — never a division by zero, and never `null`, so the card
 does not need a third empty state.
+
+`total` is `additions + deletions`, the card's headline figure. It is
+derivable, and is sent anyway so that the headline and the benchmarked
+`avg_pr_size` come from one place — a browser recomputing it would eventually
+disagree with the trend series drawn beside it.
 
 ### Frontend
 
