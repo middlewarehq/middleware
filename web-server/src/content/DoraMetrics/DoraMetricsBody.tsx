@@ -66,7 +66,16 @@ export const DoraMetricsBody = () => {
         .incident_count &&
       !s.doraMetrics.metrics_summary?.lead_time_stats.current.lead_time &&
       !s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
-        .avg_deployment_frequency
+        .avg_deployment_frequency &&
+      // CLUSTOX: lines of code counts as insight too. A team that merges PRs
+      // but has no deployment or incident provider wired up has real, non-zero
+      // LOC and would otherwise have the whole grid -- including its own
+      // populated card -- replaced by "nothing to show yet".
+      //
+      // Additive: one more `&&` can only make this predicate FALSE more often,
+      // so it can only show the grid where it was previously hidden. No team
+      // that sees the dashboard today can start seeing the empty state.
+      !s.doraMetrics.metrics_summary?.loc_stats?.current.total
   );
 
   const { addPage } = useOverlayPage();
