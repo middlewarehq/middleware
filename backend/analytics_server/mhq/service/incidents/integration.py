@@ -7,6 +7,7 @@ from mhq.store.models.incidents import IncidentProvider, IncidentSource
 from mhq.store.repos.core import CoreRepoService
 
 GIT_INCIDENT_INTEGRATION_BUCKET = [IncidentProvider.GITHUB.value]
+JIRA_INCIDENT_INTEGRATION_BUCKET = [IncidentProvider.JIRA.value]
 
 
 class IncidentsIntegrationService:
@@ -36,6 +37,9 @@ class IncidentsIntegrationService:
 
         if IncidentSource.GIT_REPO in incident_source_setting.incident_sources:
             valid_integration_types += GIT_INCIDENT_INTEGRATION_BUCKET
+
+        if IncidentSource.JIRA_ISSUE in incident_source_setting.incident_sources:
+            valid_integration_types += JIRA_INCIDENT_INTEGRATION_BUCKET
 
         return valid_integration_types
 

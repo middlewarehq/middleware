@@ -57,6 +57,11 @@ class IncidentPRsSetting(BaseSetting):
     filters: List[IncidentPRFilter]
 
 
+@dataclass
+class JiraIncidentIssueTypesSetting(BaseSetting):
+    issue_types: List[str]
+
+
 # ADD NEW SETTING CLASS HERE
 
 # Sample Future Settings

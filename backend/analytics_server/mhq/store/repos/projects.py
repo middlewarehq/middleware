@@ -134,6 +134,28 @@ class ProjectRepoService:
         )
 
     @rollback_on_exc
+    def get_team_ids_for_org_project(self, org_project_id: str) -> List[str]:
+        """
+        Every non-deleted team that has this project actively selected --
+        the reverse of get_org_projects_used_across_teams. Powers
+        JiraIncidentsETLHandler's team-linking: a team's existing MID-3
+        Jira project selection is the one source of truth for "which
+        Jira project's issues feed this team's incidents," rather than a
+        second, separate config surface for the same choice.
+        """
+        return [
+            str(team_id)
+            for (team_id,) in self._db.session.query(TeamProjects.team_id)
+            .join(Team, TeamProjects.team_id == Team.id)
+            .filter(
+                TeamProjects.org_project_id == org_project_id,
+                TeamProjects.is_active.is_(True),
+                Team.is_deleted.is_(False),
+            )
+            .all()
+        ]
+
+    @rollback_on_exc
     def get_active_org_projects_for_provider(
         self, org_id: str, provider: str
     ) -> List[OrgProject]:
@@ -263,6 +285,52 @@ class ProjectRepoService:
             .filter(
                 Ticket.org_project_id.in_(org_project_ids),
                 Ticket.status_category == "Done",
+                Ticket.updated_at.between(from_time, to_time),
+            )
+            .all()
+        )
+        if not tickets:
+            return [], []
+
+        ticket_ids = [ticket.id for ticket in tickets]
+        ticket_states = (
+            self._db.session.query(TicketState)
+            .filter(TicketState.ticket_id.in_(ticket_ids))
+            .order_by(TicketState.changed_at.asc())
+            .all()
+        )
+        return tickets, ticket_states
+
+    @rollback_on_exc
+    def get_tickets_by_issue_types_for_project(
+        self,
+        org_project_id: str,
+        issue_types: List[str],
+        from_time: datetime,
+        to_time: datetime,
+    ) -> Tuple[List[Ticket], List[TicketState]]:
+        """
+        Tickets of the given issue type(s) (open or done -- unlike
+        get_tickets_with_states_for_projects above, this is for incident
+        tracking, where an as-yet-unresolved ticket is a real, ongoing
+        incident, not something to exclude) updated within
+        [from_time, to_time] for one project, plus every TicketState for
+        those tickets. Powers JiraIncidentsETLHandler -- see
+        docs/JIRA_INTEGRATION_PROPOSAL.md.
+
+        issue_type lives in Ticket.data (a JSONB property, not its own
+        column -- same reasoning as Ticket.issue_type's docstring), so
+        this filters via the JSONB accessor directly rather than the
+        Python property.
+        """
+        if not issue_types:
+            return [], []
+
+        tickets = (
+            self._db.session.query(Ticket)
+            .filter(
+                Ticket.org_project_id == org_project_id,
+                Ticket.data["issue_type"].astext.in_(issue_types),
                 Ticket.updated_at.between(from_time, to_time),
             )
             .all()

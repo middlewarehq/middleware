@@ -13,7 +13,16 @@ def get_default_setting_data(setting_type: SettingType):
         return {"excluded_pr_ids": []}
 
     if setting_type == SettingType.INCIDENT_SOURCES_SETTING:
-        incident_sources = list(IncidentSource)
+        # CLUSTOX: deliberately NOT `list(IncidentSource)` -- that would
+        # silently opt every org with no saved setting into any new source
+        # value added to the enum. JIRA_ISSUE is opt-in only; an org has to
+        # explicitly save this setting with it included. Adding a new
+        # non-opt-in source in the future should extend this literal list.
+        incident_sources = [
+            IncidentSource.INCIDENT_SERVICE,
+            IncidentSource.INCIDENT_TEAM,
+            IncidentSource.GIT_REPO,
+        ]
         return {
             "incident_sources": [
                 incident_source.value for incident_source in incident_sources
@@ -34,6 +43,12 @@ def get_default_setting_data(setting_type: SettingType):
             "include_revert_prs": True,
             "filters": [],
         }
+
+    if setting_type == SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING:
+        # CLUSTOX: which Jira issue types count as an incident when
+        # IncidentSource.JIRA_ISSUE is enabled -- see
+        # docs/JIRA_INTEGRATION_PROPOSAL.md.
+        return {"issue_types": ["Bug"]}
 
     # ADD NEW DEFAULT SETTING HERE
 
