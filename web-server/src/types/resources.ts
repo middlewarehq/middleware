@@ -5,6 +5,7 @@ import { ReactChild, ReactFragment, ReactPortal } from 'react';
 import { Row } from '@/constants/db';
 import { CIProvider, Integration } from '@/constants/integrations';
 import { Team } from '@/types/api/teams';
+import { Benchmarks } from '@/utils/benchmarks';
 
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
@@ -556,6 +557,21 @@ export type ChangeFailureRateTrendsApiResponse = Record<
   ChangeFailureRateApiResponse
 >;
 
+// CLUSTOX: lines of code, the fifth metric on the DORA dashboard. Shape is
+// `GET /teams/<id>/loc` verbatim. Every field is always a number -- the
+// analytics server sends `0`, never null, for a window with no merged PRs, so
+// a consumer must render `0` as the real measurement it is and not as
+// "no data". `total` is `additions + deletions`; `avg_pr_size` is those gross
+// lines per merged PR and is the figure a benchmark target is compared against.
+export type LOCApiResponse = {
+  additions: number;
+  deletions: number;
+  total: number;
+  avg_pr_size: number;
+};
+
+export type LOCTrendsApiResponse = Record<DateString, LOCApiResponse>;
+
 export type TeamDoraMetricsApiResponseType = {
   lead_time_stats: {
     current: LeadTimeApiResponse;
@@ -592,6 +608,26 @@ export type TeamDoraMetricsApiResponseType = {
   lead_time_prs: PR[];
   assigned_repos: (Row<'TeamRepos'> & Row<'OrgRepo'>)[];
   unsynced_repos: ID[];
+  // CLUSTOX: populated by the dora_metrics BFF route from
+  // `GET /teams/<id>/benchmarks`. Optional because the mock response and any
+  // cached older response omit the key -- the four cards must treat a missing
+  // `benchmarks` exactly like every target being null: no line, no caption,
+  // unchanged from before this feature.
+  benchmarks?: Benchmarks;
+  // CLUSTOX: populated by the dora_metrics BFF route from Task 1's two LOC
+  // routes. Optional for the same reason `benchmarks` is: the mock response
+  // omits it, and the route degrades these two keys to `undefined` rather than
+  // failing the whole response when the LOC routes are unavailable. `undefined`
+  // here means "could not be measured" and is not the same thing as a measured
+  // zero, which arrives as `{ additions: 0, ... }`.
+  loc_stats?: {
+    current: LOCApiResponse;
+    previous: LOCApiResponse;
+  };
+  loc_trends?: {
+    current: LOCTrendsApiResponse;
+    previous: LOCTrendsApiResponse;
+  };
 };
 
 export enum ActiveBranchMode {

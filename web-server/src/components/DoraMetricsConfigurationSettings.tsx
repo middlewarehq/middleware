@@ -2,6 +2,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Button, Menu, MenuItem } from '@mui/material';
 import { useCallback, useRef, useEffect } from 'react';
 
+import { BenchmarkSettingsForm } from '@/components/BenchmarkSettingsForm';
 import { ConfigureJiraIncidentSourceModalBody } from '@/components/ConfigureJiraIncidentSourceModalBody';
 import { FlexBox } from '@/components/FlexBox';
 import { TeamIncidentPRsFilter } from '@/components/TeamIncidentPRsFilter';
@@ -55,6 +56,22 @@ export const DoraMetricsConfigurationSettings = () => {
       title: `Configure Jira Incident Source`,
       body: (
         <ConfigureJiraIncidentSourceModalBody
+          onClose={() => closeModal(modal.key)}
+        />
+      ),
+      showCloseIcon: true
+    });
+  }, [addModal, closeModal]);
+
+  // CLUSTOX: per-team DORA benchmark targets. Same modal shape as the other
+  // team settings above -- a menu item opens a dedicated form, which closes
+  // itself on save.
+  const openBenchmarkSettingsModal = useCallback(async () => {
+    const modal = addModal({
+      title: `Configure DORA Benchmarks`,
+      body: (
+        <BenchmarkSettingsForm
+          scope="team"
           onClose={() => closeModal(modal.key)}
         />
       ),
@@ -119,6 +136,14 @@ export const DoraMetricsConfigurationSettings = () => {
           }}
         >
           Configure Jira Incident Source
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            open.false();
+            openBenchmarkSettingsModal();
+          }}
+        >
+          Configure DORA Benchmarks
         </MenuItem>
       </Menu>
     </>

@@ -22,6 +22,12 @@ class SettingType(Enum):
     # IncidentSource.JIRA_ISSUE -- see docs/JIRA_INTEGRATION_PROPOSAL.md.
     JIRA_INCIDENT_ISSUE_TYPES_SETTING = "JIRA_INCIDENT_ISSUE_TYPES_SETTING"
 
+    # CLUSTOX: per-team DORA targets. Stored here rather than in a new table
+    # because Settings already has the entity scoping, service and API this
+    # needs, and its JSONB data column means adding a fifth metric later costs
+    # no migration.
+    BENCHMARK_SETTING = "BENCHMARK_SETTING"
+
     # ADD NEW SETTING TYPE ENUM HERE
 
 

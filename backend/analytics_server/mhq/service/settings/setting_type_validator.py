@@ -25,6 +25,9 @@ def settings_type_validator(setting_type: str):
     if setting_type == SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING.value:
         return SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING
 
+    if setting_type == SettingType.BENCHMARK_SETTING.value:
+        return SettingType.BENCHMARK_SETTING
+
     # ADD NEW VALIDATOR HERE
 
     raise BadRequest(f"Invalid Setting Type: {setting_type}")

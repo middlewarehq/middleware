@@ -7,6 +7,7 @@ from mhq.service.settings.models import (
     IncidentSourcesSetting,
     IncidentPRsSetting,
     JiraIncidentIssueTypesSetting,
+    BenchmarkSetting,
 )
 from mhq.store.models import EntityType
 
@@ -22,6 +23,13 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
 
         if config_settings.entity_type == EntityType.ORG:
             response["org_id"] = str(config_settings.entity_id)
+
+        # CLUSTOX: the global row's entity_id is a fixed sentinel, not a real
+        # entity -- echoing it back as an id invites a caller to treat it as
+        # one (e.g. look it up as a team). A "scope" marker says what the row
+        # is without implying it resolves to anything.
+        if config_settings.entity_type == EntityType.GLOBAL:
+            response["scope"] = "global"
 
         return response
 
@@ -66,6 +74,19 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
         if isinstance(config_settings.specific_settings, JiraIncidentIssueTypesSetting):
             response["setting"] = {
                 "issue_types": config_settings.specific_settings.issue_types
+            }
+
+        if isinstance(config_settings.specific_settings, BenchmarkSetting):
+            # CLUSTOX: None means "not set at this scope, inherit" and must
+            # round-trip as null, not be dropped or coerced to 0 -- the
+            # config form distinguishes "no target", "target of 0" and
+            # "target inherited from the global baseline".
+            response["setting"] = {
+                "lead_time": config_settings.specific_settings.lead_time,
+                "deployment_frequency": config_settings.specific_settings.deployment_frequency,
+                "change_failure_rate": config_settings.specific_settings.change_failure_rate,
+                "mean_time_to_recovery": config_settings.specific_settings.mean_time_to_recovery,
+                "lines_of_code": config_settings.specific_settings.lines_of_code,
             }
 
         # ADD NEW API ADAPTER HERE
