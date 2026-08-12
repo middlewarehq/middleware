@@ -15,17 +15,17 @@ import { getDurationString } from '@/utils/date';
 import { depFn } from '@/utils/fn';
 
 // CLUSTOX: Jira integration, Phase 4 (§6C/§6E) -- see
-// docs/JIRA_INTEGRATION_PROPOSAL.md. Deliberately its own card with its
-// own fetch, not wired into useDoraStats/the dora_metrics redux slice
-// the 4 existing cards share -- this is purely additive to the DORA
-// Metrics page, not a change to any of the existing 4 cards' own data
-// or code.
+// docs/JIRA_INTEGRATION_PROPOSAL.md. Deliberately its own fetch, not
+// wired into useDoraStats/the dora_metrics redux slice the 4 existing
+// cards share -- this is purely additive to the DORA Metrics page, not
+// a change to any of the existing 4 cards' own data or code.
 //
-// One fetch, two visually separate cards (Ticket Cycle Time and Data
-// Hygiene, matching the design reference) -- this component is the
-// shared orchestrator so DoraMetricsBody only needs the one
-// <TicketCycleTimeCard /> line it already has, and the two cards below
-// never issue a second, duplicate request for the same data.
+// One fetch backs two cards that now live in different places on the
+// page (Ticket Cycle Time beside Sprint Rollup; Data Hygiene as its
+// own full-width row below both, matching the design reference) --
+// useTicketInsights is exported so DoraMetricsBody can call it once
+// and pass the result into both, rather than each card fetching (and
+// duplicating the request for) the same data independently.
 const CATEGORY_COLOR: Record<string, string> = {
   'To Do': 'info.main',
   'In Progress': 'warning.main',
@@ -95,12 +95,12 @@ type ProjectCycleTime = {
   avg_seconds_by_category: Record<string, number>;
 };
 
-type TicketInsights = {
+export type TicketInsights = {
   cycle_time_by_project: ProjectCycleTime[];
   prs_without_ticket_count: number;
 };
 
-const useTicketInsights = () => {
+export const useTicketInsights = () => {
   const { integrations } = useAuth();
   const isJiraLinked = Boolean(integrations?.jira?.integrated);
   const { singleTeamId, dates } = useSingleTeamConfig();
@@ -132,24 +132,19 @@ const useTicketInsights = () => {
   };
 };
 
-export const TicketCycleTimeCard: FC = () => {
-  const { isJiraLinked, isLoading, insights, singleTeamId, dates } =
-    useTicketInsights();
-
+// CLUSTOX: presentational, not self-fetching -- takes useTicketInsights's
+// result as props so DoraMetricsBody (which now places this card and
+// DataHygieneCard in different spots on the page) can call the hook
+// once and hand the same result to both.
+export const TicketCycleTimeCard: FC<{
+  isJiraLinked: boolean;
+  isLoading: boolean;
+  insights: TicketInsights | null;
+}> = ({ isJiraLinked, isLoading, insights }) => {
   if (!isJiraLinked || isLoading) return null;
   if (!insights?.cycle_time_by_project.length) return null;
 
-  return (
-    <FlexBox col gap={2}>
-      <ProjectCycleTimeCard projects={insights.cycle_time_by_project} />
-      <DataHygieneCard
-        count={insights.prs_without_ticket_count}
-        teamId={singleTeamId}
-        dates={dates}
-        projectKeys={insights.cycle_time_by_project.map((p) => p.project_key)}
-      />
-    </FlexBox>
-  );
+  return <ProjectCycleTimeCard projects={insights.cycle_time_by_project} />;
 };
 
 const ProjectCycleTimeCard: FC<{ projects: ProjectCycleTime[] }> = ({
@@ -161,7 +156,8 @@ const ProjectCycleTimeCard: FC<{ projects: ProjectCycleTime[] }> = ({
         Ticket Cycle Time
       </Line>
       <Line tiny secondary>
-        Time in each status, for tickets completed this period
+        Time in each Jira status, independent of code — useful even before
+        any ticket is matched to a PR.
       </Line>
     </FlexBox>
     <FlexBox col gap2>
@@ -217,15 +213,25 @@ const ProjectCycleTimeRow: FC<{ project: ProjectCycleTime }> = ({ project }) => 
   </FlexBox>
 );
 
-const DataHygieneCard: FC<{
-  count: number;
+// CLUSTOX: its own full-width row on the page now, not stacked below
+// Ticket Cycle Time in the same column -- matches the design reference.
+// Takes useTicketInsights's result as props, same reasoning as
+// TicketCycleTimeCard above -- DoraMetricsBody calls the hook once for
+// both.
+export const DataHygieneCard: FC<{
+  isJiraLinked: boolean;
+  isLoading: boolean;
+  insights: TicketInsights | null;
   teamId: ID;
   dates: { start: Date; end: Date };
-  projectKeys: string[];
-}> = ({ count, teamId, dates, projectKeys }) => {
+}> = ({ isJiraLinked, isLoading, insights, teamId, dates }) => {
   const { addModal } = useModal();
 
-  if (!count) return null;
+  if (!isJiraLinked || isLoading) return null;
+  if (!insights?.prs_without_ticket_count) return null;
+
+  const count = insights.prs_without_ticket_count;
+  const projectKeys = insights.cycle_time_by_project.map((p) => p.project_key);
 
   const openUnlinkedPrsModal = () => {
     addModal({
