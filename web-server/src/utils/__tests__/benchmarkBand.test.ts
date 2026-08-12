@@ -74,6 +74,25 @@ describe('benchmarkBandOptions', () => {
     expect(doesNotFit.benchmarkBand.targetIsOffScale).toBe(true);
   });
 
+  it('keeps a usable band when a higher-is-better target is off scale', () => {
+    // CLUSTOX: the off-scale cases above are all lower-is-better, where the
+    // band runs [0, target] and a clipped target only shortens it. Deployment
+    // frequency runs [target, suggestedMax], so an off-scale target is the one
+    // direction where the two edges can cross and produce an inverted --
+    // therefore invisible -- box. Everything else about this feature can look
+    // right while that one card silently draws nothing.
+    const opts = bandOptions({
+      metric: 'deployment_frequency',
+      target: 900,
+      actual: 5,
+      values: [4, 5, 6]
+    });
+    const { yMin, yMax } = boxOf(opts);
+    expect(opts.benchmarkBand.targetIsOffScale).toBe(true);
+    expect(yMax).toBeGreaterThanOrEqual(yMin);
+    expect(colorOf(opts)).toBe('warning');
+  });
+
   it('covers target down to zero when lower is better', () => {
     const { yMin, yMax } = boxOf(
       bandOptions({
