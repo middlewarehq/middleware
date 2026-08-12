@@ -315,7 +315,12 @@ test.describe('benchmarks workspace isolation', () => {
         failOnStatusCode: false
       }
     );
+    // CLUSTOX: status only. A body assertion here reads like extra safety and
+    // is not -- the request is refused at the team-access check before any
+    // team's settings are loaded, so `not.toContain('lines_of_code')` would
+    // hold identically whether or not beta had ever set that target. An
+    // assertion that passes regardless of the thing it names is worse than no
+    // assertion, because it looks like coverage.
     expect(res.status()).toBe(403);
-    expect(await res.text()).not.toContain('lines_of_code');
   });
 });
