@@ -73,10 +73,12 @@ const EMPTY_MODEL: LocCardModel = {
   canComparePrSize: false
 };
 
-// CLUSTOX: `?? 0`, never `|| 0`. The four LOC fields are always numbers on the
-// wire, so this only ever fires for a malformed payload -- but `||` would also
-// swallow a genuine measured 0, which is the value this whole card has to keep
-// distinguishable from "absent".
+// CLUSTOX: an explicit absence check, never `value || 0`. The four LOC fields
+// are always numbers on the wire, so this only ever substitutes for a
+// malformed payload -- but `||` would also rewrite a genuine measured 0, which
+// is the one value this whole card has to keep distinguishable from "absent".
+// Returns 0 for a number that is not finite too, since NaN in the plotted
+// series makes chart.js drop the whole y scale (see benchmarkBand.ts).
 const num = (value: number | undefined | null): number =>
   typeof value === 'number' && Number.isFinite(value) ? value : 0;
 
