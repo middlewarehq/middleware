@@ -355,11 +355,17 @@ export const benchmarkBandOptions = ({ metric, target, actual, values, theme }) 
   // exactly as it did before and the feature appears not to work. Extend the
   // axis to the target unconditionally and a typo'd 20000-line target against
   // a 200-line actual flattens the real series into a hairline at the bottom.
-  // So: include the target, but never stretch more than 2x past the data.
+  // So: include the target, but never stretch more than 4x past the data.
   // Beyond that the band runs to the edge and the caption carries the number,
   // because a scale nobody can read is worse than one that admits it is
   // truncated.
-  const AXIS_STRETCH_LIMIT = 2;
+  //
+  // 4x, not 2x: a target 3.3x the current value is a perfectly ordinary target
+  // that a team is comfortably beating, and clipping it would hide real good
+  // news. A 100x target is a typo. 4x sits between them and leaves the series
+  // about a quarter of the plot height. (An earlier draft said 2x while its
+  // own first test demanded 3.33x -- the two could not both be satisfied.)
+  const AXIS_STRETCH_LIMIT = 4;
   const suggestedMax =
     Math.min(Math.max(dataMax, target), Math.max(dataMax, 1) * AXIS_STRETCH_LIMIT) * 1.1;
   const targetIsOffScale = target > suggestedMax;
