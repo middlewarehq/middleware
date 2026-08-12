@@ -44,7 +44,7 @@ export type BenchmarkCaption = {
 //
 // Average PR size belongs here because small PRs get reviewed faster and
 // merge sooner; a team beating a 200-line target is doing well, not badly.
-const LOWER_IS_BETTER: ReadonlySet<BenchmarkMetric> = new Set([
+export const LOWER_IS_BETTER: ReadonlySet<BenchmarkMetric> = new Set([
   'lead_time',
   'change_failure_rate',
   'mean_time_to_recovery',
