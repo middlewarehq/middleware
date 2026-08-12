@@ -74,12 +74,13 @@ def validate_benchmark_payload(data: Dict) -> Dict:
 
         cleaned[metric] = value
 
-    # CLUSTOX: always all four keys, None for the ones the form cleared.
+    # CLUSTOX: always every key in BENCHMARK_METRICS, None for the ones the
+    # form cleared.
     # The form omits empty fields, so clearing every field posts `{}` -- and
     # `save_settings` treats a falsy setting_data as "no data supplied" and
     # substitutes get_default_setting_data(). "Clear everything to go back to
     # inheriting" therefore used to *write* whatever the defaults were. A
-    # dict of four Nones is truthy, round-trips through
+    # dict of all-None values is truthy, round-trips through
     # _adapt_benchmark_setting_from_json unchanged, and resolve_benchmarks'
     # `is not None` check then falls back per metric, which is the point.
     return {metric: cleaned.get(metric) for metric in BENCHMARK_METRICS}

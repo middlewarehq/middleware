@@ -41,14 +41,6 @@ const DURATION_METRICS: ReadonlySet<BenchmarkMetric> = new Set([
   'mean_time_to_recovery'
 ]);
 
-const METRICS: BenchmarkMetric[] = [
-  'lead_time',
-  'deployment_frequency',
-  'change_failure_rate',
-  'mean_time_to_recovery',
-  'lines_of_code'
-];
-
 const METRIC_LABEL: Record<BenchmarkMetric, string> = {
   lead_time: 'Lead time',
   deployment_frequency: 'Deployment frequency',
@@ -59,6 +51,13 @@ const METRIC_LABEL: Record<BenchmarkMetric, string> = {
   // type a weekly total into it.
   lines_of_code: 'Average PR size'
 };
+
+// CLUSTOX: derived from METRIC_LABEL rather than written out again, because a
+// `Record<BenchmarkMetric, ...>` is exhaustiveness-checked by tsc and a bare
+// `BenchmarkMetric[]` is not. Spelled as its own array, a sixth metric added
+// to the union but forgotten here would compile clean and simply never render
+// a field -- silently unconfigurable, with no error anywhere to find.
+const METRICS = Object.keys(METRIC_LABEL) as BenchmarkMetric[];
 
 const UNIT_LABEL: Record<BenchmarkMetric, string> = {
   lead_time: 'hours',

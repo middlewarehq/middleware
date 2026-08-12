@@ -22,7 +22,7 @@ const putSchema = yup.object().shape({
 const endpoint = new Endpoint(nullSchema);
 
 // CLUSTOX: reading the global baseline is deliberately NOT superadmin-gated.
-// These four numbers already reach every admin's own dashboard as resolved
+// These numbers already reach every admin's own dashboard as resolved
 // target lines on the metric cards (see resolve_benchmarks / the
 // `benchmarks` field on team DORA metrics) -- they are not a secret, they're
 // the other half of "why did my team's card say this target." Gating the

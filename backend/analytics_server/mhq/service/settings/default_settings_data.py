@@ -41,7 +41,7 @@ def get_default_setting_data(setting_type: SettingType):
     # numbers here made every card in every workspace sprout a target line
     # and a "the default benchmark" caption the first time any admin opened
     # any settings form, and made a team that had never set a benchmark
-    # report source: "team" for all four metrics. A superadmin types the
+    # report source: "team" for every metric. A superadmin types the
     # baseline in; the code does not guess it.
     if setting_type == SettingType.BENCHMARK_SETTING:
         return {
