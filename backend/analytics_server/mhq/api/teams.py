@@ -4,16 +4,25 @@ from voluptuous import Required, Schema, Optional, All, Coerce
 from werkzeug.exceptions import BadRequest
 from mhq.store.models.code.repository import OrgRepo, TeamRepos
 from mhq.service.code.models.org_repo import RawTeamOrgRepo
+from mhq.service.project.models.org_project import RawTeamOrgProject
 from mhq.api.resources.code_resouces import (
     adapt_team_repos,
     adapt_team_repo_and_org_repo,
 )
+from mhq.api.resources.project_resources import adapt_org_projects
 from mhq.service.code.repository_service import get_repository_service
+from mhq.service.project.repository_service import get_project_service
 from mhq.api.resources.core_resources import adapt_team
 from mhq.store.models.core.teams import Team
+from mhq.store.models.projects import OrgProject
 from mhq.service.core.teams import get_team_service
 
-from mhq.api.request_utils import coerce_org_repos, coerce_team_repos, dataschema
+from mhq.api.request_utils import (
+    coerce_org_repos,
+    coerce_org_projects,
+    coerce_team_repos,
+    dataschema,
+)
 from mhq.service.query_validator import get_query_validator
 
 app = Blueprint("teams", __name__)
@@ -156,3 +165,38 @@ def patch_team_repos_mapping(team_id: str, team_repos_data: List[TeamRepos]):
     team_repos_service = get_repository_service()
     team_repos = team_repos_service.patch_team_repos_mapping(team, team_repos_data)
     return adapt_team_repos(team_repos)
+
+
+# CLUSTOX: Jira integration, Phase 2 (project selection) -- a team's chosen
+# Jira project(s), same "GET the current set / PUT the full replacement set"
+# shape as /teams/<team_id>/repos above. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md.
+@app.route("/teams/<team_id>/projects", methods={"GET"})
+def fetch_team_projects(team_id: str):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    project_service = get_project_service()
+    team_org_projects: List[OrgProject] = project_service.get_team_projects(team)
+
+    return adapt_org_projects(team_org_projects)
+
+
+@app.route("/teams/<team_id>/projects", methods={"PUT"})
+@dataschema(
+    Schema(
+        {
+            Required("projects"): All(list, Coerce(coerce_org_projects)),
+        }
+    ),
+)
+def update_team_projects(team_id: str, projects: List[RawTeamOrgProject]):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    project_service = get_project_service()
+    updated_org_projects = project_service.update_team_projects(team, projects)
+
+    return adapt_org_projects(updated_org_projects)

@@ -156,6 +156,35 @@ export const Columns = {
     }
     return Columns;
   }),
+  // CLUSTOX: Jira integration, Phase 2 (project selection). "OrgProject"
+  // and "TeamProjects" were already names in the TableT enum above --
+  // upstream's original Jira support, before this fork's strip-down -- but
+  // neither had a Columns entry, and the actual Postgres tables didn't
+  // exist. See docs/JIRA_INTEGRATION_PROPOSAL.md.
+  [Table.OrgProject]: objectEnumFromFn(() => {
+    enum Columns {
+      id,
+      created_at,
+      updated_at,
+      org_id,
+      key,
+      name,
+      provider,
+      is_active,
+      idempotency_key
+    }
+    return Columns;
+  }),
+  [Table.TeamProjects]: objectEnumFromFn(() => {
+    enum Columns {
+      team_id,
+      created_at,
+      updated_at,
+      is_active,
+      org_project_id
+    }
+    return Columns;
+  }),
   [Table.Action]: objectEnumFromFn(() => {
     enum Columns {
       id,

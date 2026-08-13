@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CircularProgress,
+  Divider,
   MenuItem,
   Select,
   Table,
@@ -24,7 +25,7 @@ import {
   Pagination
 } from '@mui/material';
 import { useSnackbar } from 'notistack';
-import { FC, useCallback, useMemo, useState } from 'react';
+import { FC, ReactNode, useCallback, useMemo, useState } from 'react';
 
 import {
   useTeamCRUD,
@@ -35,10 +36,12 @@ import { Integration } from '@/constants/integrations';
 import { useModal } from '@/contexts/ModalContext';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import GitlabIcon from '@/mocks/icons/gitlab.svg';
+import JiraIcon from '@/mocks/icons/jira-icon.svg';
 import { BaseRepo, DeploymentSources } from '@/types/resources';
 import { trimWithEllipsis } from '@/utils/stringFormatting';
 
 import { BatchImportModal } from './BatchImportModal';
+import { TeamJiraProjects } from './TeamJiraProjects';
 
 import AnimatedInputWrapper from '../AnimatedInputWrapper/AnimatedInputWrapper';
 import { FlexBox } from '../FlexBox';
@@ -65,7 +68,7 @@ export const CreateEditTeams: FC<CRUDProps> = ({
   );
 };
 
-const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
+const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard, teamId }) => {
   const { isPageLoading, editingTeam, isEditing } = useTeamCRUD();
   return (
     <>
@@ -85,9 +88,29 @@ const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
           ) : (
             <>
               <Heading />
-              <TeamName />
-              <TeamRepos />
-              <ActionTray onDiscard={onDiscard} onSave={onSave} />
+              {/* CLUSTOX: two independent data sources, each with its own
+                  save action -- a repo pick and a Jira project pick save
+                  through entirely separate requests (TeamJiraProjects has
+                  its own hook, its own endpoint, its own button), so each
+                  gets its own labeled section rather than looking like
+                  one shared form with two "Save" buttons in it. See
+                  docs/JIRA_INTEGRATION_PROPOSAL.md. */}
+              <DataSourceSection icon={<GitHub />} title="Code repositories">
+                <TeamName />
+                <TeamRepos />
+                <ActionTray onDiscard={onDiscard} onSave={onSave} />
+              </DataSourceSection>
+              {isEditing && (
+                <>
+                  <Divider />
+                  <DataSourceSection
+                    icon={<JiraIcon height={20} width={20} />}
+                    title="Jira integration"
+                  >
+                    <TeamJiraProjects teamId={teamId} />
+                  </DataSourceSection>
+                </>
+              )}
             </>
           )}
         </FlexBox>
@@ -95,6 +118,30 @@ const TeamsCRUD: FC<CRUDProps> = ({ onSave, onDiscard }) => {
     </>
   );
 };
+
+// CLUSTOX: a small eyebrow (icon + uppercase label) above each data-source
+// section, so "Code repositories" and "Jira integration" read as two
+// distinct, independently-saved sources sharing one page -- not one
+// shared form. Deliberately lighter-weight than the h6-style headings
+// each section already renders internally ("Team Name", "Jira
+// Projects"): this labels the section, those label the field.
+const DataSourceSection: FC<{
+  icon: ReactNode;
+  title: string;
+  children: ReactNode;
+}> = ({ icon, title, children }) => (
+  <FlexBox col gap={2}>
+    <FlexBox alignCenter gap={1} color="text.secondary">
+      {icon}
+      <Line tiny bold sx={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {title}
+      </Line>
+    </FlexBox>
+    <FlexBox col gap={3} pl={1}>
+      {children}
+    </FlexBox>
+  </FlexBox>
+);
 
 export const Loader: FC<{ label?: string }> = ({ label = 'Loading...' }) => {
   return (
@@ -385,7 +432,11 @@ const ActionTray: FC<CRUDProps> = ({
             }
           }}
         >
-          {isSaveLoading ? <CircularProgress size={'18px'} /> : 'Save'}
+          {isSaveLoading ? (
+            <CircularProgress size={'18px'} />
+          ) : (
+            'Save repositories'
+          )}
         </Button>
       </FlexBox>
       <Button
