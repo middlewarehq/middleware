@@ -3,6 +3,7 @@ from .repository import (
     ProjectIssuesBookmark,
     TeamProjects,
 )
+from .sprints import Sprint
 from .tickets import (
     Ticket,
     TicketState,

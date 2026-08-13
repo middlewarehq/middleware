@@ -44,6 +44,14 @@ class ProjectETLHandler:
                 )
                 continue
 
+            try:
+                self._sync_project_sprints(org_project)
+            except Exception as e:
+                LOG.error(
+                    f"Error syncing sprints for project {org_project.key}: {str(e)}"
+                )
+                continue
+
     def _sync_project_issues(self, org_project: OrgProject, provider: str) -> None:
         bookmark: datetime = self.bookmark_service.get_bookmark(
             str(org_project.id),
@@ -75,6 +83,14 @@ class ProjectETLHandler:
             provider,
             new_bookmark,
         )
+
+    def _sync_project_sprints(self, org_project: OrgProject) -> None:
+        # No bookmark -- see Sprint's own docstring for why re-fetching
+        # everything each cycle is the right call here, unlike issues.
+        sprints = self.etl_service.get_project_sprints_data(org_project)
+        if not sprints:
+            return
+        self.project_repo_service.save_sprints(sprints)
 
 
 def sync_project_issues(org_id: str) -> None:

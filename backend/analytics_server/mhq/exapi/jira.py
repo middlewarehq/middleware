@@ -1,9 +1,9 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import requests
 from requests.auth import HTTPBasicAuth
 
-from mhq.exapi.models.jira import JiraIssue
+from mhq.exapi.models.jira import JiraBoard, JiraIssue, JiraSprint
 
 # Jira retired GET/POST /rest/api/3/search in favor of /rest/api/3/search/jql
 # (the old endpoint now returns 410 Gone) -- pagination there is cursor-based
@@ -32,6 +32,9 @@ class JiraRateLimitExceeded(JiraApiError):
 class JiraApiService:
     def __init__(self, email: str, api_token: str, site_url: str):
         self.base_url = f"https://{site_url}/rest/api/3"
+        # Sprints/boards live on a different API surface than issues --
+        # /rest/agile/1.0, not /rest/api/3 -- same site, same auth.
+        self.agile_base_url = f"https://{site_url}/rest/agile/1.0"
         self._auth = HTTPBasicAuth(email, api_token)
 
     def check_pat(self) -> bool:
@@ -88,6 +91,85 @@ class JiraApiService:
                 break
 
         return issues
+
+    def get_boards_for_project(self, project_key: str) -> List[JiraBoard]:
+        """
+        CLUSTOX: Jira integration -- the Sprint rollup chart (docs/
+        JIRA_INTEGRATION_PROPOSAL.md §6D). Only scrum boards have
+        sprints -- callers filter on board_type before ever calling the
+        sprint endpoints below, so a Kanban-only project cleanly syncs
+        zero sprints rather than erroring.
+        """
+        boards: List[JiraBoard] = []
+        start_at = 0
+
+        while True:
+            response = requests.get(
+                f"{self.agile_base_url}/board",
+                params={"projectKeyOrId": project_key, "startAt": start_at},
+                auth=self._auth,
+                timeout=8,
+            )
+            self._raise_for_error(response)
+            page = response.json()
+            page_values = page.get("values") or []
+            boards.extend(JiraBoard(board) for board in page_values)
+
+            if page.get("isLast", True) or not page_values:
+                break
+            start_at += len(page_values)
+
+        return boards
+
+    def get_sprints_for_board(self, board_id: int) -> List[JiraSprint]:
+        sprints: List[JiraSprint] = []
+        start_at = 0
+
+        while True:
+            response = requests.get(
+                f"{self.agile_base_url}/board/{board_id}/sprint",
+                params={"startAt": start_at},
+                auth=self._auth,
+                timeout=8,
+            )
+            self._raise_for_error(response)
+            page = response.json()
+            page_values = page.get("values") or []
+            sprints.extend(JiraSprint(sprint) for sprint in page_values)
+
+            if page.get("isLast", True) or not page_values:
+                break
+            start_at += len(page_values)
+
+        return sprints
+
+    def get_sprint_issue_counts(self, sprint_id: int) -> Tuple[int, int]:
+        """
+        (planned_count, completed_count) for one sprint -- two
+        maxResults=0 calls that read only each response's own `total`
+        metadata field, never the issue bodies themselves. A sprint can
+        carry hundreds of issues on a real site (confirmed live against
+        this org's own data), so fetching full issue lists just to count
+        them would be needless -- Jira's sprint-issue endpoint already
+        reports `total` without paginating through the issues at all.
+        """
+        planned = self._sprint_issue_total(sprint_id)
+        completed = self._sprint_issue_total(sprint_id, jql="statusCategory = Done")
+        return planned, completed
+
+    def _sprint_issue_total(self, sprint_id: int, jql: Optional[str] = None) -> int:
+        params = {"maxResults": 0}
+        if jql:
+            params["jql"] = jql
+
+        response = requests.get(
+            f"{self.agile_base_url}/sprint/{sprint_id}/issue",
+            params=params,
+            auth=self._auth,
+            timeout=8,
+        )
+        self._raise_for_error(response)
+        return response.json().get("total", 0)
 
     def _raise_for_error(self, response: requests.Response) -> None:
         if response.status_code == 429:

@@ -1,6 +1,6 @@
 from datetime import datetime
 from operator import and_
-from typing import Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple
 
 from mhq.store.models.code.enums import CodeProvider
 from sqlalchemy import or_, func
@@ -505,6 +505,39 @@ class CodeRepoService:
         )
 
         return query.all()
+
+    @rollback_on_exc
+    def get_first_commit_at_by_pr_ids(
+        self, pr_ids: List[str]
+    ) -> Dict[str, datetime]:
+        """
+        Each PR's own earliest recorded commit timestamp, keyed by pr_id.
+
+        CLUSTOX: Jira integration -- the extended Lead Time breakdown's
+        "ticket created -> first commit" segment (docs/
+        JIRA_INTEGRATION_PROPOSAL.md §6A) needs this real timestamp, not
+        PullRequest.first_commit_to_open (a duration measured to
+        ready-for-review time, which is *not* pr.created_at for a PR
+        that was opened as a draft -- see
+        CodeETLAnalyticsService.get_pr_performance). Deriving "first
+        commit at" as `pr.created_at - first_commit_to_open` would
+        silently be wrong for exactly those draft PRs, so this reads the
+        real PullRequestCommit rows instead. One batched query, not one
+        per PR.
+        """
+        if not pr_ids:
+            return {}
+
+        rows = (
+            self._db.session.query(
+                PullRequestCommit.pull_request_id,
+                func.min(PullRequestCommit.created_at),
+            )
+            .filter(PullRequestCommit.pull_request_id.in_(pr_ids))
+            .group_by(PullRequestCommit.pull_request_id)
+            .all()
+        )
+        return {str(pr_id): first_commit_at for pr_id, first_commit_at in rows}
 
     def _filter_prs_by_repo_ids(self, query, repo_ids: List[str]):
         return query.filter(PullRequest.repo_id.in_(repo_ids))

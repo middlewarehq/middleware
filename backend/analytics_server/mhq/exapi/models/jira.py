@@ -87,3 +87,54 @@ class JiraIssue:
             for entry in (JiraChangelogEntry(h) for h in histories)
             if entry.to_status is not None
         ]
+
+
+@dataclass
+class JiraBoard:
+    """
+    One board from /rest/agile/1.0/board. `board_type` is "scrum",
+    "kanban", or "simple" -- only scrum boards have sprints, so
+    JiraETLHandler filters on this before ever calling the sprint
+    endpoints. See docs/JIRA_INTEGRATION_PROPOSAL.md §6D.
+    """
+
+    id: int
+    name: str
+    board_type: str
+
+    def __init__(self, board: Dict):
+        self.id = board.get("id")
+        self.name = board.get("name")
+        self.board_type = board.get("type")
+
+
+@dataclass
+class JiraSprint:
+    """
+    One sprint from /rest/agile/1.0/board/{boardId}/sprint. Deliberately
+    doesn't carry per-issue detail -- planned_count/completed_count are
+    fetched separately (2 lightweight maxResults=0 calls, not a full
+    issue list) and attached by the caller, since the Sprint rollup
+    chart only ever needs the counts.
+    """
+
+    id: int
+    name: str
+    state: str
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+
+    def __init__(self, sprint: Dict):
+        self.id = sprint.get("id")
+        self.name = sprint.get("name")
+        self.state = sprint.get("state")
+        self.start_date = (
+            dt_from_iso_time_string(sprint["startDate"])
+            if sprint.get("startDate")
+            else None
+        )
+        self.end_date = (
+            dt_from_iso_time_string(sprint["endDate"])
+            if sprint.get("endDate")
+            else None
+        )

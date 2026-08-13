@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Dict, List
 
+from sqlalchemy import func
 from sqlalchemy.orm import defer
 
 from mhq.store import db, rollback_on_exc
@@ -103,6 +104,34 @@ class TicketMatchingRepoService:
             .order_by(PullRequest.state_changed_at.desc())
             .all()
         )
+
+    @rollback_on_exc
+    def get_ticket_created_at_by_pr_ids(
+        self, pr_ids: List[str]
+    ) -> Dict[str, datetime]:
+        """
+        For PRs that already have a PullRequestTicketMapping row, the
+        earliest linked ticket's created_at, keyed by pr_id -- the
+        extended Lead Time breakdown's "idea was written up" anchor
+        (docs/JIRA_INTEGRATION_PROPOSAL.md §6A). A PR can reference more
+        than one ticket (real data: "PZDA-544/546" in one title) -- the
+        *earliest* ticket is the right anchor for an idea-to-production
+        span, not an arbitrary or last one. One batched query, not one
+        per PR.
+        """
+        if not pr_ids:
+            return {}
+
+        rows = (
+            self._db.session.query(
+                PullRequestTicketMapping.pr_id, func.min(Ticket.created_at)
+            )
+            .join(Ticket, Ticket.id == PullRequestTicketMapping.ticket_id)
+            .filter(PullRequestTicketMapping.pr_id.in_(pr_ids))
+            .group_by(PullRequestTicketMapping.pr_id)
+            .all()
+        )
+        return {str(pr_id): created_at for pr_id, created_at in rows}
 
     def _unlinked_merged_prs_query(
         self, repo_ids: List[str], from_time: datetime, to_time: datetime

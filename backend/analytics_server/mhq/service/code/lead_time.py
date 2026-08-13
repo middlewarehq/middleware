@@ -41,6 +41,25 @@ class LeadTimeService:
             self._get_team_repos_lead_time_metrics(team_repos, interval, pr_filter)
         )
 
+    def get_team_pr_lead_time_metrics(
+        self,
+        team: Team,
+        interval: Interval,
+        pr_filter: Dict[str, PRFilter] = None,
+    ) -> List[LeadTimeMetrics]:
+        """
+        The same per-PR LeadTimeMetrics get_team_lead_time_metrics
+        already computes internally before averaging them together --
+        exposed as-is, with no change to that averaging logic, so a
+        caller needing per-PR granularity (CLUSTOX: the extended Lead
+        Time breakdown's ticket-matched subset, docs/
+        JIRA_INTEGRATION_PROPOSAL.md §6A) doesn't have to duplicate this
+        method's deployment-config/workflow-vs-PR branching to get it.
+        """
+        team_repos = self._code_repo_service.get_active_team_repos_by_team_id(team.id)
+
+        return self._get_team_repos_lead_time_metrics(team_repos, interval, pr_filter)
+
     def get_team_lead_time_metrics_trends(
         self,
         team: Team,
