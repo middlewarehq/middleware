@@ -14,13 +14,27 @@ def get_default_setting_data(setting_type: SettingType):
     if setting_type == SettingType.INCIDENT_SOURCES_SETTING:
         # CLUSTOX: deliberately NOT `list(IncidentSource)` -- that would
         # silently opt every org with no saved setting into any new source
-        # value added to the enum. JIRA_ISSUE is opt-in only; an org has to
-        # explicitly save this setting with it included. Adding a new
-        # non-opt-in source in the future should extend this literal list.
+        # value added to the enum sight-unseen. Every value below is
+        # explicitly chosen.
+        #
+        # JIRA_ISSUE used to be the one opt-in exception here (an admin had
+        # to explicitly turn it on via ConfigureJiraIncidentSourceModalBody).
+        # Default flipped to on, matching GIT_REPO's own default: a ticket
+        # reopened after being marked resolved is the same kind of "the fix
+        # didn't hold" signal a revert PR already is, so it shouldn't need
+        # an admin to first discover the switch exists. Unlike GIT_REPO
+        # (which has no toggle at all), the on/off switch for this one
+        # stays in the UI -- an org can still opt back out, this just
+        # changes what a *new* org (or one that hasn't touched this
+        # setting yet) starts with. See
+        # migrations/20260813120000_clustox_jira_incident_source_unconditional.sql
+        # for the counterpart that brings already-saved settings rows for
+        # existing orgs up to this same default.
         incident_sources = [
             IncidentSource.INCIDENT_SERVICE,
             IncidentSource.INCIDENT_TEAM,
             IncidentSource.GIT_REPO,
+            IncidentSource.JIRA_ISSUE,
         ]
         return {
             "incident_sources": [

@@ -14,9 +14,12 @@ class IncidentSource(Enum):
     INCIDENT_SERVICE = "INCIDENT_SERVICE"
     INCIDENT_TEAM = "INCIDENT_TEAM"
     GIT_REPO = "GIT_REPO"
-    # CLUSTOX: opt-in only -- see default_settings_data.py's explicit
-    # INCIDENT_SOURCES_SETTING default, which deliberately does NOT
-    # include this so existing orgs aren't silently affected.
+    # CLUSTOX: on by default, same as GIT_REPO -- see
+    # default_settings_data.py's INCIDENT_SOURCES_SETTING default. A ticket
+    # reopened after being marked resolved is the same kind of "the fix
+    # didn't hold" signal a revert PR is for GIT_REPO. Unlike GIT_REPO,
+    # still has an admin-facing on/off toggle
+    # (ConfigureJiraIncidentSourceModalBody) -- only the *default* changed.
     JIRA_ISSUE = "JIRA_ISSUE"
 
 
