@@ -181,6 +181,52 @@ class IncidentsRepoService:
             .one_or_none()
         )
 
+    @rollback_on_exc
+    def get_incident_by_key_type_provider_and_org(
+        self,
+        org_id: str,
+        key: str,
+        incident_type: IncidentType,
+        provider: IncidentProvider,
+    ) -> Incident:
+        """
+        Same lookup as get_incident_by_key_type_and_provider, scoped to
+        one org via the incident's OrgIncidentService link.
+
+        Incident itself carries no org_id column -- org scoping only
+        exists through IncidentOrgIncidentServiceMap -- and a Jira
+        ticket's key ("PROJ-123") is site-local, not globally unique the
+        way this codebase's other cross-org identifiers are (see
+        OrgProject/OrgRepo/Ticket's own org-scoped idempotency_key, e.g.
+        f"jira:{org_id}:{issue.id}"). Two different orgs' Jira sites can
+        land on the exact same key, and the unscoped lookup either lets
+        one org's sync silently adopt the other's incident row, or --
+        once both rows exist -- makes .one_or_none() raise
+        MultipleResultsFound and kill the sync outright. Use this instead
+        of the unscoped method wherever the key's source (Jira, here) is
+        not already guaranteed globally unique.
+        """
+        return (
+            self._db.session.query(Incident)
+            .join(
+                IncidentOrgIncidentServiceMap,
+                IncidentOrgIncidentServiceMap.incident_id == Incident.id,
+            )
+            .join(
+                OrgIncidentService,
+                OrgIncidentService.id == IncidentOrgIncidentServiceMap.service_id,
+            )
+            .filter(
+                and_(
+                    Incident.key == key,
+                    Incident.incident_type == incident_type,
+                    Incident.provider == provider.value,
+                    OrgIncidentService.org_id == org_id,
+                )
+            )
+            .one_or_none()
+        )
+
     def _get_team_incidents_query(
         self, team_id: str, incident_filter: IncidentFilter = None
     ):

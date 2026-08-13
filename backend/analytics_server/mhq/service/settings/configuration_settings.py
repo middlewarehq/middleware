@@ -11,6 +11,7 @@ from mhq.service.settings.models import (
     IncidentSourcesSetting,
     IncidentTypesSetting,
     IncidentPRsSetting,
+    JiraIncidentIssueTypesSetting,
 )
 from mhq.store.models.core.users import Users
 from mhq.store.models.incidents import IncidentSource, IncidentType
@@ -74,6 +75,14 @@ class SettingsService:
             filters=data.get("filters", []),
         )
 
+    def _adapt_jira_incident_issue_types_setting_from_setting_data(
+        self, data: Dict[str, any]
+    ) -> JiraIncidentIssueTypesSetting:
+        """
+        Adapts the json data in Settings.data to JiraIncidentIssueTypesSetting
+        """
+        return JiraIncidentIssueTypesSetting(issue_types=data.get("issue_types") or [])
+
     # CLUSTOX: `data.get(key)` rather than `data.get(key, 0)` -- absent means
     # inherit, and 0 is a deliberate target. Collapsing them would make every
     # unset metric read as a target of zero.
@@ -110,6 +119,11 @@ class SettingsService:
 
         if setting_type == SettingType.INCIDENT_PRS_SETTING:
             return self._adapt_incident_prs_setting_from_setting_data(setting_data)
+
+        if setting_type == SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING:
+            return self._adapt_jira_incident_issue_types_setting_from_setting_data(
+                setting_data
+            )
 
         if setting_type == SettingType.BENCHMARK_SETTING:
             return self._adapt_benchmark_setting_from_setting_data(setting_data)
@@ -214,6 +228,14 @@ class SettingsService:
             filters=data.get("filters", []),
         )
 
+    def _adapt_jira_incident_issue_types_setting_from_json(
+        self, data: Dict[str, any]
+    ) -> JiraIncidentIssueTypesSetting:
+        """
+        Adapts the json data from API to JiraIncidentIssueTypesSetting
+        """
+        return JiraIncidentIssueTypesSetting(issue_types=data.get("issue_types") or [])
+
     # CLUSTOX: `data.get(key)` rather than `data.get(key, 0)` -- absent means
     # inherit, and 0 is a deliberate target. Collapsing them would make every
     # unset metric read as a target of zero.
@@ -250,6 +272,9 @@ class SettingsService:
 
         if setting_type == SettingType.INCIDENT_PRS_SETTING:
             return self._adapt_incident_prs_setting_from_json(setting_data)
+
+        if setting_type == SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING:
+            return self._adapt_jira_incident_issue_types_setting_from_json(setting_data)
 
         if setting_type == SettingType.BENCHMARK_SETTING:
             return self._adapt_benchmark_setting_from_json(setting_data)
@@ -300,6 +325,11 @@ class SettingsService:
             "filters": specific_setting.filters,
         }
 
+    def _adapt_jira_incident_issue_types_setting_json_data(
+        self, specific_setting: JiraIncidentIssueTypesSetting
+    ) -> Dict:
+        return {"issue_types": specific_setting.issue_types}
+
     def _adapt_benchmark_setting_json_data(
         self, specific_setting: BenchmarkSetting
     ) -> Dict:
@@ -346,6 +376,13 @@ class SettingsService:
             specific_setting, IncidentPRsSetting
         ):
             return self._adapt_incident_prs_setting_json_data(specific_setting)
+
+        if setting_type == SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING and isinstance(
+            specific_setting, JiraIncidentIssueTypesSetting
+        ):
+            return self._adapt_jira_incident_issue_types_setting_json_data(
+                specific_setting
+            )
 
         if setting_type == SettingType.BENCHMARK_SETTING and isinstance(
             specific_setting, BenchmarkSetting
