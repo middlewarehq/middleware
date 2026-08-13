@@ -18,6 +18,7 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/GithubIntegrationCard';
 import { GitlabIntegrationCard } from '@/content/Dashboards/GitlabIntegrationCard';
+import { JiraIntegrationCard } from '@/content/Dashboards/JiraIntegrationCard';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
 import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -64,8 +65,13 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
-  const { orgId, integrations, integrationList } = useAuth();
-  const hasCodeProviderLinked = integrationList.length > 0;
+  const {
+    orgId,
+    integrations,
+    integrationList,
+    codeProviderIntegrationList,
+    hasCodeProviderLinked
+  } = useAuth();
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
   const loadedTeams = useBoolState(false);
@@ -75,7 +81,7 @@ const Content = () => {
     hasCodeProviderLinked && !teamCount && loadedTeams.value;
 
   const lastSyncMap = useMemo(() => {
-    return integrationList
+    return codeProviderIntegrationList
       .map((item) => {
         const linkedAt =
           integrations[item as 'github' | 'gitlab' | 'bitbucket'].linked_at;
@@ -89,7 +95,7 @@ const Content = () => {
         return diff;
       })
       .filter(Boolean);
-  }, [integrationList, integrations]);
+  }, [codeProviderIntegrationList, integrations]);
 
   const showForceSyncBtn = useMemo(() => {
     if (!hasCodeProviderLinked) return false;
@@ -166,9 +172,10 @@ const Content = () => {
       </FlexBox>
 
       <Divider sx={{ mb: '10px' }} />
-      <FlexBox gap={2}>
+      <FlexBox gap={2} flexWrap="wrap">
         <GithubIntegrationCard />
         <GitlabIntegrationCard />
+        <JiraIntegrationCard />
         {/* CLUSTOX: Jenkins as a third deployment-detection provider. */}
         <JenkinsIntegrationCard />
         {/* END CLUSTOX */}

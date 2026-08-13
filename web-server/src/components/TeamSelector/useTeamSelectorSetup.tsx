@@ -21,7 +21,10 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   const dispatch = useDispatch();
   const { dateRange, singleTeam, setRange, partiallyUnselected } =
     useStateTeamConfig();
-  const { orgId, integrationList } = useAuth();
+  // CLUSTOX: hasCodeProviderLinked, not integrationList.length -- a
+  // Jira-only org has no teams/repos for this fetch to be worth firing.
+  // See docs/JIRA_INTEGRATION_PROPOSAL.md.
+  const { orgId, hasCodeProviderLinked } = useAuth();
   const [showAllTeams, setShowAllTeams] = useState(true);
   const activeBranchMode = useSelector((state) => state.app.branchMode);
   const isAllBranchMode = activeBranchMode === ActiveBranchMode.ALL;
@@ -65,8 +68,8 @@ export const useTeamSelectorSetup = ({ mode }: UseTeamSelectorSetupArgs) => {
   useEffect(() => {
     if (!orgId) return;
 
-    if (integrationList.length) fetchAllTeams();
-  }, [fetchAllTeams, integrationList.length, orgId]);
+    if (hasCodeProviderLinked) fetchAllTeams();
+  }, [fetchAllTeams, hasCodeProviderLinked, orgId]);
 
   const dateRangeLabel = !partiallyUnselected
     ? `${format(dateRange[0], 'do MMM')} to ${format(dateRange[1], 'do MMM')}`

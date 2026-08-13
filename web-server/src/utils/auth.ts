@@ -99,3 +99,62 @@ export const getMissingGitLabScopes = (scopes: string[]): string[] => {
   );
   return missingScopes;
 };
+
+// Jira functions
+
+// Reduces any of "mycompany.atlassian.net", "https://mycompany.atlassian.net/",
+// or a full URL copied from the browser while looking at a board
+// ("https://mycompany.atlassian.net/jira/software/projects/ABC/boards/1")
+// to just the hostname. A regex that only stripped a leading protocol and
+// trailing slash left any path/query intact, which broke the very next
+// request (GET https://{that}/rest/api/3/myself 404s) for anyone who
+// pasted a full address rather than typing the bare domain. Mirrors the
+// normalizer in pages/api/integrations/jira/validate.ts -- kept as two
+// small copies rather than a shared import across the client/server
+// boundary, same as this file's other provider helpers.
+export const normalizeJiraSiteUrl = (input: string) => {
+  const trimmed = input.trim();
+  try {
+    const withProtocol = /^https?:\/\//i.test(trimmed)
+      ? trimmed
+      : `https://${trimmed}`;
+    return new URL(withProtocol).hostname;
+  } catch {
+    // Not parseable as a URL at all (e.g. empty string) -- fall through to
+    // the caller's own "fill in all three fields"/validity check rather
+    // than throw here.
+    return trimmed;
+  }
+};
+
+export type JiraValidityResult = {
+  valid: boolean;
+  displayName?: string;
+  reason?: 'unauthorized' | 'unreachable' | 'unknown';
+};
+
+// CLUSTOX: unlike checkGitHubValidity/checkGitLabValidity, this cannot call
+// Jira's API directly from the browser -- Jira Cloud doesn't send CORS
+// headers permissive enough for a third-party origin's Basic-auth request,
+// so it's proxied through our own backend instead (see
+// pages/api/integrations/jira/validate.ts for why).
+export const checkJiraValidity = async (
+  siteUrl: string,
+  email: string,
+  apiToken: string
+): Promise<JiraValidityResult> => {
+  try {
+    const { data } = await axios.post('/api/integrations/jira/validate', {
+      site_url: siteUrl,
+      email,
+      api_token: apiToken
+    });
+    return { valid: data.valid, displayName: data.display_name, reason: data.reason };
+  } catch (error) {
+    return { valid: false, reason: 'unknown' };
+  }
+};
+
+// Jira API tokens inherit the full permissions of the account they belong
+// to -- there's no OAuth-style scope grant to inspect the way there is for
+// a GitHub/GitLab PAT, so there's no getMissingJiraScopes equivalent.
