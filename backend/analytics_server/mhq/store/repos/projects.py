@@ -1,4 +1,5 @@
-from typing import List, Optional
+from datetime import datetime
+from typing import List, Optional, Tuple
 
 from sqlalchemy import and_
 
@@ -227,3 +228,52 @@ class ProjectRepoService:
         for bookmark in bookmarks:
             self._db.session.merge(bookmark)
         self._db.session.commit()
+
+    # -- Ticket cycle time (Phase 4, §6C) ------------------------------
+
+    @rollback_on_exc
+    def get_tickets_with_states_for_projects(
+        self,
+        org_project_ids: List[str],
+        from_time: datetime,
+        to_time: datetime,
+    ) -> Tuple[List[Ticket], List[TicketState]]:
+        """
+        Completed tickets (status_category == "Done" -- Jira Cloud's 3
+        category names are fixed, not customizable per workflow, unlike
+        individual status names) updated within [from_time, to_time] for
+        the given projects, plus every TicketState for those tickets (not
+        clipped to the window -- a ticket's full status history is needed
+        to compute its time-in-status correctly). Two queries total
+        regardless of how many tickets/states exist, not one per ticket.
+
+        Only completed tickets: an open ticket has no bounded end time,
+        and including it would let a single item sitting untouched in a
+        backlog for months dominate a cycle-time average with a duration
+        that has nothing to do with how long finished work actually took
+        -- see compute_cycle_time_by_project's own docstring for the
+        concrete case that surfaced this.
+        """
+        if not org_project_ids:
+            return [], []
+
+        tickets = (
+            self._db.session.query(Ticket)
+            .filter(
+                Ticket.org_project_id.in_(org_project_ids),
+                Ticket.status_category == "Done",
+                Ticket.updated_at.between(from_time, to_time),
+            )
+            .all()
+        )
+        if not tickets:
+            return [], []
+
+        ticket_ids = [ticket.id for ticket in tickets]
+        ticket_states = (
+            self._db.session.query(TicketState)
+            .filter(TicketState.ticket_id.in_(ticket_ids))
+            .order_by(TicketState.changed_at.asc())
+            .all()
+        )
+        return tickets, ticket_states

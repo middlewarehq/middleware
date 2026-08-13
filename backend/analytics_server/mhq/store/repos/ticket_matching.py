@@ -1,9 +1,10 @@
+from datetime import datetime
 from typing import Dict, List
 
 from sqlalchemy.orm import defer
 
 from mhq.store import db, rollback_on_exc
-from mhq.store.models.code import OrgRepo, PullRequest
+from mhq.store.models.code import OrgRepo, PullRequest, PullRequestState
 from mhq.store.models.projects import OrgProject, Ticket
 from mhq.store.models.ticket_matching import PullRequestTicketMapping
 
@@ -64,3 +65,58 @@ class TicketMatchingRepoService:
     def save_mappings(self, mappings: List[PullRequestTicketMapping]):
         [self._db.session.merge(mapping) for mapping in mappings]
         self._db.session.commit()
+
+    @rollback_on_exc
+    def get_unlinked_merged_pr_count(
+        self, repo_ids: List[str], from_time: datetime, to_time: datetime
+    ) -> int:
+        """
+        How many PRs merged in [from_time, to_time] across these repos
+        have no PullRequestTicketMapping row -- the data-hygiene callout
+        in docs/JIRA_INTEGRATION_PROPOSAL.md §6E. A single count query,
+        not "fetch all merged PRs and count client-side".
+        """
+        if not repo_ids:
+            return 0
+
+        return self._unlinked_merged_prs_query(repo_ids, from_time, to_time).count()
+
+    @rollback_on_exc
+    def get_unlinked_merged_prs(
+        self, repo_ids: List[str], from_time: datetime, to_time: datetime
+    ) -> List[PullRequest]:
+        """
+        The actual rows behind get_unlinked_merged_pr_count -- the
+        drill-down a person needs to see *which* PRs fell through the
+        ticket-key regex (a typo, a non-standard branch name, or a PR
+        that genuinely never referenced a ticket) rather than just how
+        many. Same filter, same bounded window; only the projection and
+        `.all()` vs `.count()` differ, so the two can never disagree
+        about which PRs qualify.
+        """
+        if not repo_ids:
+            return []
+
+        return (
+            self._unlinked_merged_prs_query(repo_ids, from_time, to_time)
+            .options(defer(PullRequest.data))
+            .order_by(PullRequest.state_changed_at.desc())
+            .all()
+        )
+
+    def _unlinked_merged_prs_query(
+        self, repo_ids: List[str], from_time: datetime, to_time: datetime
+    ):
+        return (
+            self._db.session.query(PullRequest)
+            .outerjoin(
+                PullRequestTicketMapping,
+                PullRequestTicketMapping.pr_id == PullRequest.id,
+            )
+            .filter(
+                PullRequest.repo_id.in_(repo_ids),
+                PullRequest.state == PullRequestState.MERGED,
+                PullRequest.state_changed_at.between(from_time, to_time),
+                PullRequestTicketMapping.pr_id.is_(None),
+            )
+        )
