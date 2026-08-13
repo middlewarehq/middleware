@@ -85,8 +85,10 @@ class FakeIncidentsRepoService:
         self._existing_incident = existing_incident
         self._existing_team_links = existing_team_links or []
         self.added_team_links = []
+        self.looked_up_with = None
 
-    def get_incident_by_key_type_and_provider(self, *args, **kwargs):
+    def get_incident_by_key_type_provider_and_org(self, *args, **kwargs):
+        self.looked_up_with = args
         return self._existing_incident
 
     def get_team_incident_services(self, team):
@@ -205,6 +207,24 @@ class TestToIncident:
         incident = handler._to_incident(ticket, states=[])
 
         assert incident.resolved_date == ticket.updated_at
+
+    def test_looks_up_the_existing_incident_scoped_to_this_org(self):
+        # Cross-tenant collision regression: ticket.key ("MID-1") is
+        # site-local, not globally unique -- two orgs' Jira sites can
+        # land on the same key, so the lookup must be scoped by org_id,
+        # not just (key, incident_type, provider).
+        ticket = _ticket(key="MID-1")
+        incidents_repo_service = FakeIncidentsRepoService()
+        handler = _handler(incidents_repo_service=incidents_repo_service)
+
+        handler._to_incident(ticket, states=[])
+
+        assert incidents_repo_service.looked_up_with == (
+            ORG_ID,
+            "MID-1",
+            IncidentType.JIRA_ISSUE,
+            IncidentProvider.JIRA,
+        )
 
     def test_upsert_reuses_existing_incident_id_and_created_at(self):
         existing = get_org_incident_service(service_id=uuid4_str())  # unrelated fixture

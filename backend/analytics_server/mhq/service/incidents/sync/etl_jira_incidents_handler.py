@@ -165,9 +165,13 @@ class JiraIncidentsETLHandler(IncidentsProviderETLHandler):
         return setting.issue_types
 
     def _to_incident(self, ticket: Ticket, states: List[TicketState]) -> Incident:
+        # CLUSTOX: org-scoped lookup -- ticket.key ("PROJ-123") is
+        # site-local, not globally unique, so two orgs' Jira sites can
+        # land on the same key. See
+        # get_incident_by_key_type_provider_and_org's own docstring.
         existing_incident: Optional[Incident] = (
-            self._incidents_repo_service.get_incident_by_key_type_and_provider(
-                ticket.key, IncidentType.JIRA_ISSUE, IncidentProvider.JIRA
+            self._incidents_repo_service.get_incident_by_key_type_provider_and_org(
+                self.org_id, ticket.key, IncidentType.JIRA_ISSUE, IncidentProvider.JIRA
             )
         )
         incident_id = existing_incident.id if existing_incident else uuid4_str()
