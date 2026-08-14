@@ -6,6 +6,7 @@ from mhq.service.settings.models import (
     IncidentTypesSetting,
     IncidentSourcesSetting,
     IncidentPRsSetting,
+    JiraIncidentIssueTypesSetting,
     BenchmarkSetting,
 )
 from mhq.store.models import EntityType
@@ -68,6 +69,11 @@ def adapt_configuration_settings_response(config_settings: ConfigurationSettings
             response["setting"] = {
                 "include_revert_prs": config_settings.specific_settings.include_revert_prs,
                 "filters": config_settings.specific_settings.filters,
+            }
+
+        if isinstance(config_settings.specific_settings, JiraIncidentIssueTypesSetting):
+            response["setting"] = {
+                "issue_types": config_settings.specific_settings.issue_types
             }
 
         if isinstance(config_settings.specific_settings, BenchmarkSetting):

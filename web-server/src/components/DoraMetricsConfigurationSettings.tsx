@@ -3,6 +3,7 @@ import { Button, Menu, MenuItem } from '@mui/material';
 import { useCallback, useRef, useEffect } from 'react';
 
 import { BenchmarkSettingsForm } from '@/components/BenchmarkSettingsForm';
+import { ConfigureJiraIncidentSourceModalBody } from '@/components/ConfigureJiraIncidentSourceModalBody';
 import { FlexBox } from '@/components/FlexBox';
 import { TeamIncidentPRsFilter } from '@/components/TeamIncidentPRsFilter';
 import { TeamProductionBranchSelector } from '@/components/TeamProductionBranchSelector';
@@ -42,6 +43,22 @@ export const DoraMetricsConfigurationSettings = () => {
     const modal = addModal({
       title: `Configure Filters for Incident PRs`,
       body: <TeamIncidentPRsFilter onClose={() => closeModal(modal.key)} />,
+      showCloseIcon: true
+    });
+  }, [addModal, closeModal]);
+
+  // CLUSTOX: Jira issues as an incident source (MID-8) -- org-scoped,
+  // unlike the two team-scoped modals above, but surfaced from the same
+  // menu since there's no dedicated org-settings page yet. See
+  // ConfigureJiraIncidentSourceModalBody.
+  const openJiraIncidentSourceModal = useCallback(async () => {
+    const modal = addModal({
+      title: `Configure Jira Incident Source`,
+      body: (
+        <ConfigureJiraIncidentSourceModalBody
+          onClose={() => closeModal(modal.key)}
+        />
+      ),
       showCloseIcon: true
     });
   }, [addModal, closeModal]);
@@ -111,6 +128,14 @@ export const DoraMetricsConfigurationSettings = () => {
           }}
         >
           Configure Filters for Incident PRs
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            open.false();
+            openJiraIncidentSourceModal();
+          }}
+        >
+          Configure Jira Incident Source
         </MenuItem>
         <MenuItem
           onClick={() => {

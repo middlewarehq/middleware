@@ -57,6 +57,11 @@ class IncidentPRsSetting(BaseSetting):
     filters: List[IncidentPRFilter]
 
 
+@dataclass
+class JiraIncidentIssueTypesSetting(BaseSetting):
+    issue_types: List[str]
+
+
 # CLUSTOX: every field is optional so fallback is per metric, not
 # all-or-nothing -- a team may set a lead-time target and inherit the rest.
 @dataclass
