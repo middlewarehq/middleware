@@ -1,0 +1,1 @@
+from .mapping import PullRequestTicketMapping
