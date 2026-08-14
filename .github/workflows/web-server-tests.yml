@@ -1,0 +1,37 @@
+name: Web Server Unit Tests
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'web-server/**'
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'web-server/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+
+    - name: Setup Node.js 22
+      uses: actions/setup-node@v3
+      with:
+        node-version: 22
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+      working-directory: web-server
+
+    - name: Run tests
+      run: npx jest --watchAll=false
+      working-directory: web-server
