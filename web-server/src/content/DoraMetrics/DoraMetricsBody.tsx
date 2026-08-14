@@ -36,6 +36,7 @@ import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
 import { LinesOfCodeCard } from './DoraCards/LinesOfCodeCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { DataStillSyncing } from './DoraCards/SkeletalCard';
+import { TicketCycleTimeCard } from './DoraCards/TicketCycleTimeCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
 export const DoraMetricsBody = () => {
@@ -172,6 +173,11 @@ export const DoraMetricsBody = () => {
         </Grid>
       </Grid>
       <Divider />
+      {/* CLUSTOX: Jira integration, Phase 4 -- additive only, doesn't
+          touch the 4 cards above. Renders nothing of its own accord when
+          Jira isn't linked or there's no ticket data for this
+          team/period. See docs/JIRA_INTEGRATION_PROPOSAL.md. */}
+      <TicketCycleTimeCard />
       <FlexBox col gap1 flexGrow={1}>
         <FlexBox gap={4}>
           <FlexBox col width="150px">
