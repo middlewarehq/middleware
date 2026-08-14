@@ -80,8 +80,8 @@ jest.mock('@/api/internal/[org_id]/utils', () => ({
               pageInfo: { hasNextPage: false, endCursor: null },
               nodes: [
                 {
-                  id: 'p1',
-                  fullPath: 'g/p1',
+                  id: 'gid://gitlab/Project/101',
+                  fullPath: 'gspace/p1',
                   name: 'proj1',
                   webUrl: 'w1',
                   description: 'd1',
@@ -115,7 +115,7 @@ jest.mock('@/api/internal/[org_id]/utils', () => ({
       expect(result.totalCount).toBeNull()
       expect(result.pageInfo).toEqual({ hasNextPage: false, endCursor: null })
       expect(result.repos).toHaveLength(1)
-      expect(result.repos[0]).toMatchObject({ id: 'p1', name: 'proj1', slug: 'p1', web_url: 'w1', branch: 'dev', parent: 'gspace' })
+      expect(result.repos[0]).toMatchObject({ id: 101, name: 'proj1', slug: 'p1', web_url: 'w1', branch: 'dev', parent: 'gspace' })
     })
   })
 

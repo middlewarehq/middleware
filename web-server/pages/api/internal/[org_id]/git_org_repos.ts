@@ -187,7 +187,7 @@ export async function fetchRepos(params: {
         slug: repo.path,
         web_url: repo.webUrl,
         branch: repo.repository?.rootRef || null,
-        parent: repo.fullPath.split('/').slice(0, -1).join('/'),
+        parent: repo.namespace.fullPath,
         provider: Integration.GITLAB,
       }) as BaseRepo
   )
