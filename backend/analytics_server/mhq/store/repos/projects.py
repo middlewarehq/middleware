@@ -8,6 +8,7 @@ from mhq.store.models.core import Team
 from mhq.store.models.projects import (
     OrgProject,
     ProjectIssuesBookmark,
+    Sprint,
     TeamProjects,
     Ticket,
     TicketState,
@@ -277,3 +278,47 @@ class ProjectRepoService:
             .all()
         )
         return tickets, ticket_states
+
+    # -- Sprints (§6D) --------------------------------------------------
+
+    @rollback_on_exc
+    def get_sprints_by_idempotency_keys(
+        self, idempotency_keys: List[str]
+    ) -> List[Sprint]:
+        if not idempotency_keys:
+            return []
+
+        return (
+            self._db.session.query(Sprint)
+            .filter(Sprint.idempotency_key.in_(idempotency_keys))
+            .all()
+        )
+
+    @rollback_on_exc
+    def save_sprints(self, sprints: List[Sprint]):
+        for sprint in sprints:
+            self._db.session.merge(sprint)
+        self._db.session.commit()
+
+    @rollback_on_exc
+    def get_sprints_for_projects(
+        self, org_project_ids: List[str], limit: int
+    ) -> List[Sprint]:
+        """
+        Most recent `limit` sprints (by start_date, nulls last -- a
+        sprint that somehow synced with no start_date shouldn't crowd
+        out real, dated ones) across the given projects, for the Sprint
+        rollup chart. Most-recent-first at the query level so a caller
+        capping to "last N" always gets the N that actually matter, not
+        an arbitrary N out of however many exist.
+        """
+        if not org_project_ids:
+            return []
+
+        return (
+            self._db.session.query(Sprint)
+            .filter(Sprint.org_project_id.in_(org_project_ids))
+            .order_by(Sprint.start_date.desc().nullslast())
+            .limit(limit)
+            .all()
+        )

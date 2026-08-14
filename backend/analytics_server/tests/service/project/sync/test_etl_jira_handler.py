@@ -209,3 +209,94 @@ class TestGetProjectIssuesData:
             f"jira:{ORG_ID}:1:101",
             f"jira:{ORG_ID}:2:200",
         }
+
+
+def _board(board_id=1076, board_type="scrum"):
+    board = MagicMock()
+    board.id = board_id
+    board.board_type = board_type
+    return board
+
+
+def _sprint(sprint_id=299, name="Sprint 1", state="closed"):
+    sprint = MagicMock()
+    sprint.id = sprint_id
+    sprint.name = name
+    sprint.state = state
+    sprint.start_date = datetime(2024, 1, 1)
+    sprint.end_date = datetime(2024, 1, 15)
+    return sprint
+
+
+# CLUSTOX: Jira integration -- the Sprint rollup chart. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md §6D.
+class TestGetProjectSprintsData:
+    def test_returns_empty_list_when_the_project_has_no_scrum_board(self):
+        api = MagicMock()
+        api.get_boards_for_project.return_value = [_board(board_type="kanban")]
+
+        sprints = _handler(api).get_project_sprints_data(_org_project())
+
+        assert sprints == []
+        api.get_sprints_for_board.assert_not_called()
+
+    def test_returns_empty_list_when_the_project_has_no_boards_at_all(self):
+        api = MagicMock()
+        api.get_boards_for_project.return_value = []
+
+        sprints = _handler(api).get_project_sprints_data(_org_project())
+
+        assert sprints == []
+
+    def test_fetches_counts_and_builds_sprints_for_a_scrum_board(self):
+        api = MagicMock()
+        api.get_boards_for_project.return_value = [_board()]
+        api.get_sprints_for_board.return_value = [_sprint()]
+        api.get_sprint_issue_counts.return_value = (355, 272)
+        repo = MagicMock()
+        repo.get_sprints_by_idempotency_keys.return_value = []
+
+        [sprint] = _handler(api, repo).get_project_sprints_data(
+            _org_project("proj-1", "PZDA")
+        )
+
+        assert sprint.name == "Sprint 1"
+        assert sprint.state == "closed"
+        assert sprint.planned_count == 355
+        assert sprint.completed_count == 272
+        assert sprint.org_project_id == "proj-1"
+        assert sprint.idempotency_key == f"jira:{ORG_ID}:sprint:299"
+        api.get_sprint_issue_counts.assert_called_once_with(299)
+
+    def test_reuses_the_existing_row_id_for_an_already_synced_sprint(self):
+        api = MagicMock()
+        api.get_boards_for_project.return_value = [_board()]
+        api.get_sprints_for_board.return_value = [_sprint()]
+        api.get_sprint_issue_counts.return_value = (10, 5)
+        existing = MagicMock()
+        existing.idempotency_key = f"jira:{ORG_ID}:sprint:299"
+        existing.id = "existing-row-id"
+        repo = MagicMock()
+        repo.get_sprints_by_idempotency_keys.return_value = [existing]
+
+        [sprint] = _handler(api, repo).get_project_sprints_data(_org_project())
+
+        assert sprint.id == "existing-row-id"
+
+    def test_pulls_sprints_from_every_scrum_board_when_a_project_has_several(self):
+        api = MagicMock()
+        api.get_boards_for_project.return_value = [
+            _board(board_id=1),
+            _board(board_id=2),
+        ]
+        api.get_sprints_for_board.side_effect = [
+            [_sprint(sprint_id=101)],
+            [_sprint(sprint_id=201)],
+        ]
+        api.get_sprint_issue_counts.return_value = (1, 1)
+        repo = MagicMock()
+        repo.get_sprints_by_idempotency_keys.return_value = []
+
+        sprints = _handler(api, repo).get_project_sprints_data(_org_project())
+
+        assert {s.external_id for s in sprints} == {"101", "201"}

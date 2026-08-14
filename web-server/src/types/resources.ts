@@ -823,6 +823,15 @@ export type ChangeTimeSegment = {
   clipPath: string;
   title: string;
   description: string;
+  // CLUSTOX: Jira integration -- LeadTimeStatsCore's legend-mode
+  // rendering (LeadTimeBreakdownCard) needs the design reference's own
+  // full phase name ("First commit → PR opened"), distinct from
+  // `title`'s short in-bar label ("Commit") and `description`'s
+  // tooltip sentence. Optional and unused by every other consumer of
+  // this type (e.g. useComputedPrChangeTime's segments, which only
+  // feed the existing, unchanged in-bar rendering).
+  legendLabel?: string;
+  isNew?: boolean;
 };
 
 export type CockpitProjectFlows = {
