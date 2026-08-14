@@ -10,6 +10,9 @@ on:
     paths:
       - 'web-server/**'
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,6 +20,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        persist-credentials: false
 
     - name: Setup Node.js 22
       uses: actions/setup-node@v3
@@ -28,5 +33,5 @@ jobs:
       working-directory: web-server
 
     - name: Run tests
-      run: npx jest --watchAll=false --passWithNoTests
+      run: npx jest --watchAll=false
       working-directory: web-server
