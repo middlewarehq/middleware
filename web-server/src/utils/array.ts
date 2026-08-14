@@ -140,6 +140,8 @@ const getStep = (n: number, percentageBased: boolean = false) => {
 };
 
 const readableTimeIntervals = [
+  2,
+  5,
   10,
   15,
   20,
