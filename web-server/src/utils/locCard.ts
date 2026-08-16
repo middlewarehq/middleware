@@ -34,11 +34,22 @@ export type LocCardModel = {
   isMeasured: boolean;
   additions: number;
   deletions: number;
-  /** additions + deletions -- the card's headline figure. */
+  /** additions + deletions over the whole selected range. */
   total: number;
+  /**
+   * Gross lines per calendar day -- the card's headline figure.
+   *
+   * The headline is a rate rather than `total` because a total is not
+   * comparable between two ranges of different lengths: the same pace of work
+   * reads four times "better" over a month than over a week. Computed in the
+   * backend, where the interval is known, rather than re-derived here from a
+   * day count the card would have to guess.
+   */
+  avgDaily: number;
   /** Average gross lines per merged PR -- the benchmarked figure. */
   avgPrSize: number;
   prevTotal: number;
+  prevAvgDaily: number;
   prevAvgPrSize: number;
   /**
    * The weekly average-PR-size series, oldest week first.
@@ -66,8 +77,10 @@ const EMPTY_MODEL: LocCardModel = {
   additions: 0,
   deletions: 0,
   total: 0,
+  avgDaily: 0,
   avgPrSize: 0,
   prevTotal: 0,
+  prevAvgDaily: 0,
   prevAvgPrSize: 0,
   avgPrSizeValues: [],
   canComparePrSize: false
@@ -122,8 +135,10 @@ export const buildLocCardModel = (
     additions: num(current.additions),
     deletions: num(current.deletions),
     total,
+    avgDaily: num(current.avg_daily),
     avgPrSize: num(current.avg_pr_size),
     prevTotal: num(previous?.total),
+    prevAvgDaily: num(previous?.avg_daily),
     prevAvgPrSize: num(previous?.avg_pr_size),
     avgPrSizeValues: sortedWeeks(mergedTrends).map((week) =>
       num(mergedTrends[week]?.avg_pr_size)

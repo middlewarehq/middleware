@@ -111,7 +111,12 @@ export const LinesOfCodeCard = () => {
     [model.canComparePrSize, model.avgPrSize, locBenchmark]
   );
 
-  const linesChanged = useCountUp(model.total);
+  // CLUSTOX: the headline counts up the DAILY RATE, not the period total. A
+  // total is not comparable between two ranges of different lengths -- widen
+  // the date picker and the same pace of work reads as a bigger number. The
+  // total is still on the card, one line below, where it reads as context
+  // rather than as the metric.
+  const linesPerDay = useCountUp(model.avgDaily);
 
   return (
     // CLUSTOX: no `onClick` and no pointer cursor. There is no LOC drill-down
@@ -182,19 +187,26 @@ export const LinesOfCodeCard = () => {
             {model.isMeasured ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={LOC_ACCENT}>
-                  Lines changed
+                  Lines changed / day
                 </Line>
                 <FlexBox
                   alignCenter
                   fit
-                  title={`${exact(model.total)} lines changed — ${exact(
-                    model.prevTotal
+                  title={`${exact(model.avgDaily)} lines per day — ${exact(
+                    model.prevAvgDaily
                   )} in the previous period`}
                 >
                   <Line bold color={LOC_ACCENT} sx={{ fontSize: '3em' }}>
-                    {compact(linesChanged)}
+                    {compact(linesPerDay)}
                   </Line>
                 </FlexBox>
+                {/* CLUSTOX: the period total, kept as context under the rate.
+                    Dropping it would lose the only absolute figure on the card
+                    -- "9 lines/day" alone gives no sense of whether that is 60
+                    lines over a week or 280 over a month. */}
+                <Line tiny secondary>
+                  {exact(model.total)} lines over the selected range
+                </Line>
                 <FlexBox
                   gap={1}
                   alignCenter

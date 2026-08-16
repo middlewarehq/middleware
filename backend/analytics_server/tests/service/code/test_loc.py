@@ -72,7 +72,7 @@ def test_team_loc_metrics_are_fetched_through_the_shared_pr_filter():
         "team-1", interval, pr_filter
     )
 
-    assert result == LOCMetrics(additions=30, deletions=6, avg_pr_size=18)
+    assert result == LOCMetrics(additions=30, deletions=6, avg_pr_size=18, avg_daily=3)
     assert code_repo_service.merged_in_interval_calls == [
         (["repo-1"], interval, pr_filter)
     ]
@@ -91,10 +91,10 @@ def test_team_loc_trends_bucket_prs_into_the_week_they_merged():
     )
 
     assert trends[datetime(2024, 1, 1, tzinfo=timezone.utc)] == LOCMetrics(
-        additions=10, deletions=5, avg_pr_size=15
+        additions=10, deletions=5, avg_pr_size=15, avg_daily=2
     )
     assert trends[datetime(2024, 1, 8, tzinfo=timezone.utc)] == LOCMetrics(
-        additions=20, deletions=1, avg_pr_size=21
+        additions=20, deletions=1, avg_pr_size=21, avg_daily=3
     )
 
 
@@ -237,11 +237,13 @@ def test_the_contributor_filter_narrows_the_loc_totals():
     ]
 
     # (100+10 + 20+2) / 2 == 66
-    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert _loc(prs) == LOCMetrics(
+        additions=120, deletions=12, avg_pr_size=66, avg_daily=9
+    )
     # Only alice's PR survives, and the average is hers alone -- not the
     # team-wide 66 that a card ignoring the contributor filter would show.
     assert _loc(prs, PRFilter(authors=["alice"])) == LOCMetrics(
-        additions=100, deletions=10, avg_pr_size=110
+        additions=100, deletions=10, avg_pr_size=110, avg_daily=8
     )
 
 
@@ -251,9 +253,11 @@ def test_a_base_branches_filter_narrows_the_loc_totals():
         _pull_request(20, 2, base_branch="main"),
     ]
 
-    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert _loc(prs) == LOCMetrics(
+        additions=120, deletions=12, avg_pr_size=66, avg_daily=9
+    )
     assert _loc(prs, PRFilter(base_branches=["^release/"])) == LOCMetrics(
-        additions=100, deletions=10, avg_pr_size=110
+        additions=100, deletions=10, avg_pr_size=110, avg_daily=8
     )
 
 
@@ -268,9 +272,11 @@ def test_prod_branch_mode_narrows_the_loc_totals():
     ]
     prod_mode = PRFilter(repo_filters={REPO_ID: {"base_branches": ["^main$"]}})
 
-    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert _loc(prs) == LOCMetrics(
+        additions=120, deletions=12, avg_pr_size=66, avg_daily=9
+    )
     assert _loc(prs, prod_mode) == LOCMetrics(
-        additions=100, deletions=10, avg_pr_size=110
+        additions=100, deletions=10, avg_pr_size=110, avg_daily=8
     )
 
 
@@ -281,10 +287,12 @@ def test_the_excluded_prs_setting_narrows_the_loc_totals():
         _pull_request(20, 2),
     ]
 
-    assert _loc(prs) == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert _loc(prs) == LOCMetrics(
+        additions=120, deletions=12, avg_pr_size=66, avg_daily=9
+    )
     # A generated-code PR an admin excluded must not drag the average up.
     assert _loc(prs, PRFilter(excluded_pr_ids=[excluded_id])) == LOCMetrics(
-        additions=20, deletions=2, avg_pr_size=22
+        additions=20, deletions=2, avg_pr_size=22, avg_daily=2
     )
 
 
@@ -298,7 +306,9 @@ def test_an_unmerged_pull_request_is_never_counted():
         _pull_request(5000, 4000, state=PullRequestState.OPEN),
     ]
 
-    assert _loc(prs) == LOCMetrics(additions=10, deletions=5, avg_pr_size=15)
+    assert _loc(prs) == LOCMetrics(
+        additions=10, deletions=5, avg_pr_size=15, avg_daily=1
+    )
 
 
 def test_a_pr_merged_outside_the_window_is_never_counted():
@@ -307,7 +317,9 @@ def test_a_pr_merged_outside_the_window_is_never_counted():
         _pull_request(5000, 4000, state_changed_at=datetime(2023, 12, 20)),
     ]
 
-    assert _loc(prs) == LOCMetrics(additions=10, deletions=5, avg_pr_size=15)
+    assert _loc(prs) == LOCMetrics(
+        additions=10, deletions=5, avg_pr_size=15, avg_daily=1
+    )
 
 
 def test_a_repo_outside_the_team_is_never_counted():
@@ -316,7 +328,9 @@ def test_a_repo_outside_the_team_is_never_counted():
         _pull_request(5000, 4000, repo_id=OTHER_REPO_ID),
     ]
 
-    assert _loc(prs) == LOCMetrics(additions=10, deletions=5, avg_pr_size=15)
+    assert _loc(prs) == LOCMetrics(
+        additions=10, deletions=5, avg_pr_size=15, avg_daily=1
+    )
 
 
 def test_the_same_filter_narrows_the_loc_trend_buckets():
@@ -335,9 +349,11 @@ def test_the_same_filter_narrows_the_loc_trend_buckets():
             "team-1", INTERVAL, pr_filter
         )
 
-    assert trends(None)[week] == LOCMetrics(additions=120, deletions=12, avg_pr_size=66)
+    assert trends(None)[week] == LOCMetrics(
+        additions=120, deletions=12, avg_pr_size=66, avg_daily=19
+    )
     assert trends(PRFilter(authors=["alice"]))[week] == LOCMetrics(
-        additions=100, deletions=10, avg_pr_size=110
+        additions=100, deletions=10, avg_pr_size=110, avg_daily=16
     )
 
 
@@ -348,3 +364,39 @@ def test_a_filter_that_matches_nothing_reports_zero_rather_than_the_team_total()
     prs = [_pull_request(100, 10, author="alice")]
 
     assert _loc(prs, PRFilter(authors=["nobody"])) == LOCMetrics()
+
+
+def test_avg_daily_is_the_rate_over_the_selected_range():
+    # CLUSTOX: 700 gross lines over 7 days is 100/day. The headline this
+    # replaces was a period total, which cannot be compared between a week and
+    # a month -- the month always looks four times larger for the same pace.
+    result = aggregate_loc([_pr(600, 100)], days=7)
+    assert result.avg_daily == 100
+
+
+def test_avg_daily_is_zero_without_a_day_count_rather_than_a_guess():
+    # A caller with no interval has no rate. Defaulting to 1 would silently
+    # report the period total as if it were a daily figure.
+    assert aggregate_loc([_pr(600, 100)]).avg_daily == 0
+
+
+def test_avg_daily_never_divides_by_zero_on_a_same_day_range():
+    from datetime import datetime, timezone
+
+    from mhq.service.code.loc import interval_days
+
+    same_day = Interval(
+        datetime(2026, 8, 12, tzinfo=timezone.utc),
+        datetime(2026, 8, 12, tzinfo=timezone.utc),
+    )
+    assert interval_days(same_day) == 1
+    assert aggregate_loc([_pr(60, 40)], days=interval_days(same_day)).avg_daily == 100
+
+
+def test_avg_daily_and_avg_pr_size_are_independent():
+    # CLUSTOX: two PRs of 350 lines each over 7 days -- 350 lines/PR but
+    # 100 lines/day. They are different quantities and a card showing one
+    # while labelling it the other would be plausible and wrong.
+    result = aggregate_loc([_pr(300, 50), _pr(300, 50)], days=7)
+    assert result.avg_pr_size == 350
+    assert result.avg_daily == 100

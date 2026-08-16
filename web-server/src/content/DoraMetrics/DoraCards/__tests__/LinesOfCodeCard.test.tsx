@@ -50,13 +50,15 @@ const LOC_STATS = {
     additions: 149332,
     deletions: 20650,
     total: 169982,
-    avg_pr_size: 654
+    avg_pr_size: 654,
+    avg_daily: 12142
   },
   previous: {
     additions: 63033,
     deletions: 7407,
     total: 70440,
-    avg_pr_size: 640
+    avg_pr_size: 640,
+    avg_daily: 5031
   }
 };
 
@@ -109,9 +111,15 @@ describe('LinesOfCodeCard', () => {
     // from 0 on an interval and so is still 0 in a single server render --
     // exactly as it is on the first painted frame in the browser. Its exact
     // figure is asserted through the tooltip it also renders, which is not
-    // animated, so the real 169,982 is still pinned here.
-    expect(html).toContain('169,982 lines changed');
-    expect(html).toContain('70,440 in the previous period');
+    // animated.
+    //
+    // The headline is the DAILY RATE, not the period total: a total is not
+    // comparable between two date ranges of different lengths. Both numbers
+    // are asserted here precisely because they are easy to swap -- 12,142 and
+    // 169,982 would each look plausible in the other's place.
+    expect(html).toContain('12,142 lines per day');
+    expect(html).toContain('5,031 in the previous period');
+    expect(html).toContain('169,982 lines over the selected range');
     expect(html).toContain('+149.3K');
     expect(html).toContain('20.7K');
     expect(html).toContain('149,332 added, 20,650 deleted');

@@ -568,6 +568,8 @@ export type LOCApiResponse = {
   deletions: number;
   total: number;
   avg_pr_size: number;
+  /** Gross lines per calendar day over the selected range. */
+  avg_daily: number;
 };
 
 export type LOCTrendsApiResponse = Record<DateString, LOCApiResponse>;
