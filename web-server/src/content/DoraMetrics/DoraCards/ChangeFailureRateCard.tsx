@@ -10,6 +10,7 @@ import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -227,18 +228,7 @@ export const ChangeFailureRateCard = () => {
           </Line>
         )}
         {changeFailureRateBenchmarkCaption && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={
-              changeFailureRateBenchmarkCaption.tone === 'good'
-                ? 'success'
-                : 'warning'
-            }
-          >
-            {changeFailureRateBenchmarkCaption.text}
-          </Line>
+          <BenchmarkVerdictPill caption={changeFailureRateBenchmarkCaption} />
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>

@@ -9,6 +9,7 @@ import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -239,18 +240,7 @@ export const WeeklyDeliveryVolumeCard = () => {
           </Line>
         )}
         {deploymentFrequencyBenchmarkCaption && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={
-              deploymentFrequencyBenchmarkCaption.tone === 'good'
-                ? 'success'
-                : 'warning'
-            }
-          >
-            {deploymentFrequencyBenchmarkCaption.text}
-          </Line>
+          <BenchmarkVerdictPill caption={deploymentFrequencyBenchmarkCaption} />
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>

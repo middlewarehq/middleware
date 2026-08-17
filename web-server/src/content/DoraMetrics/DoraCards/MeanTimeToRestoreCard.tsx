@@ -10,6 +10,7 @@ import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -205,18 +206,7 @@ export const MeanTimeToRestoreCard = () => {
           </Line>
         )}
         {meanTimeToRecoveryBenchmarkCaption && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={
-              meanTimeToRecoveryBenchmarkCaption.tone === 'good'
-                ? 'success'
-                : 'warning'
-            }
-          >
-            {meanTimeToRecoveryBenchmarkCaption.text}
-          </Line>
+          <BenchmarkVerdictPill caption={meanTimeToRecoveryBenchmarkCaption} />
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>

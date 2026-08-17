@@ -31,7 +31,16 @@ export type Benchmarks = Record<BenchmarkMetric, ResolvedBenchmark>;
 export type BenchmarkTone = 'good' | 'warn';
 
 export type BenchmarkCaption = {
+  /** The full sentence -- pill tooltip, and anywhere space is not scarce. */
   text: string;
+  /**
+   * The verdict alone, gap first: "43% under target", "5x above target",
+   * "on target". The pill leads with this because the full sentence buries
+   * the verdict in the middle and makes the reader do the subtraction.
+   */
+  headline: string;
+  /** "team benchmark" / "default benchmark" -- the pill's suffix. */
+  sourceShort: string;
   tone: BenchmarkTone;
 };
 
@@ -146,8 +155,31 @@ export const benchmarkCaption = (
     target
   )}) — ${sourceClause}`;
 
+  let headline: string;
+  if (actual === target) {
+    headline = 'on target';
+  } else if (target > 0) {
+    const ratio = actual / target;
+    // CLUSTOX: "5x above target" once the gap passes 2x -- "400% above
+    // target" is technically the same number and nobody parses it. Under a
+    // target the percentage can never exceed 100, so the multiplier form
+    // only ever appears on the over/above side.
+    headline =
+      ratio >= 2
+        ? `${Math.round(ratio * 10) / 10}x ${direction} target`
+        : `${Math.round(
+            (Math.abs(actual - target) / target) * 100
+          )}% ${direction} target`;
+  } else {
+    // CLUSTOX: a target of 0 is legitimate (zero failed changes) and makes a
+    // percentage undefined -- fall back to the absolute value.
+    headline = `${formatBenchmarkValue(metric, actual)} ${direction} target`;
+  }
+
   return {
     text,
+    headline,
+    sourceShort: source === 'team' ? 'team benchmark' : 'default benchmark',
     // CLUSTOX: never 'error'/red -- a missed internal goal isn't a system
     // failure, and colouring it like one makes the dashboard punitive.
     tone: favourable ? 'good' : 'warn'

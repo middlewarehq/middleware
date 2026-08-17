@@ -7,6 +7,7 @@ import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -156,16 +157,7 @@ export const LinesOfCodeCard = () => {
             authored by {selectedContributors.join(', ')}
           </Line>
         )}
-        {benchmarkLine && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={benchmarkLine.tone === 'good' ? 'success' : 'warning'}
-          >
-            {benchmarkLine.text}
-          </Line>
-        )}
+        {benchmarkLine && <BenchmarkVerdictPill caption={benchmarkLine} />}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {model.isMeasured ? (

@@ -15,6 +15,7 @@ import { track } from '@/constants/events';
 import { ROUTES } from '@/constants/routes';
 import { isRoleLessThanEM } from '@/constants/useRoute';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -315,16 +316,7 @@ export const ChangeTimeCard = () => {
           </Line>
         )}
         {leadTimeBenchmarkCaption && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={
-              leadTimeBenchmarkCaption.tone === 'good' ? 'success' : 'warning'
-            }
-          >
-            {leadTimeBenchmarkCaption.text}
-          </Line>
+          <BenchmarkVerdictPill caption={leadTimeBenchmarkCaption} />
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
