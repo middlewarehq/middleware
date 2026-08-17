@@ -1,7 +1,7 @@
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import { Chip } from '@mui/material';
 import { head } from 'ramda';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
@@ -25,6 +25,7 @@ import { getDurationString } from '@/utils/date';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
 import {
+  doraCardTrendSeries,
   useDoraCardChartOptions,
   useMeanTimeToRestoreProps
 } from './sharedHooks';
@@ -57,15 +58,25 @@ export const MeanTimeToRestoreCard = () => {
   );
 
   const series = useMemo(
-    () => [
-      {
-        label: 'Mean time to restore',
-        fill: 'start',
-        data: meanTimeToRestoreValues,
-        backgroundColor: meanTimeToRestoreProps.backgroundColor
-      }
-    ],
+    () =>
+      doraCardTrendSeries(
+        'Mean time to restore',
+        meanTimeToRestoreValues,
+        meanTimeToRestoreProps.backgroundColor
+      ),
     [meanTimeToRestoreValues, meanTimeToRestoreProps.backgroundColor]
+  );
+
+  const weekLabels = useMemo(
+    () =>
+      head(trendsSeriesMap?.meanTimeToRestoreTrends || [])?.data.map((s) =>
+        String(s.x)
+      ) || [],
+    [trendsSeriesMap?.meanTimeToRestoreTrends]
+  );
+  const formatMttr = useCallback(
+    (value: number) => getDurationString(value) || '0s',
+    []
   );
 
   const meanTimeToRestoreCount = useCountUp(meanTimeToRestoreProps.count || 0);
@@ -117,7 +128,8 @@ export const MeanTimeToRestoreCard = () => {
           actual: meanTimeToRestoreProps.count,
           values: meanTimeToRestoreValues
         }
-      : null
+      : null,
+    { labels: weekLabels, format: formatMttr }
   );
 
   const { addPage } = useOverlayPage();
@@ -219,7 +231,19 @@ export const MeanTimeToRestoreCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {canShowMTRData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>
                 <Line bigish medium color={meanTimeToRestoreProps.color}>

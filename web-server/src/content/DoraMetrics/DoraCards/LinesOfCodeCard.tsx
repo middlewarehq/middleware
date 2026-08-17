@@ -1,7 +1,6 @@
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded';
-import { alpha } from '@mui/material';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
@@ -11,7 +10,10 @@ import {
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import { useDoraCardChartOptions } from '@/content/DoraMetrics/DoraCards/sharedHooks';
+import {
+  doraCardTrendSeries,
+  useDoraCardChartOptions
+} from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useSelector } from '@/store';
 import { benchmarkCaption } from '@/utils/benchmarks';
@@ -67,18 +69,12 @@ export const LinesOfCodeCard = () => {
   // put the band on the axis floor of a ~70,000-tall scale: correct
   // arithmetic, and a wrong answer that looks entirely plausible.
   const series = useMemo(
-    () => [
-      {
-        label: 'Avg. PR size',
-        fill: 'start',
-        data: model.avgPrSizeValues,
-        backgroundColor: alpha(LOC_ACCENT, 0.2),
-        borderColor: alpha(LOC_ACCENT, 0.5),
-        lineTension: 0.2
-      }
-    ],
+    () =>
+      doraCardTrendSeries('Avg. PR size', model.avgPrSizeValues, LOC_ACCENT),
     [model.avgPrSizeValues]
   );
+
+  const formatPrSize = useCallback((value: number) => `${value} lines/PR`, []);
 
   // CLUSTOX: gated on `canComparePrSize`, which is false both when LOC was
   // never measured and when nothing was merged. Passing `actual: 0` in the
@@ -95,7 +91,8 @@ export const LinesOfCodeCard = () => {
           actual: model.avgPrSize,
           values: model.avgPrSizeValues
         }
-      : null
+      : null,
+    { labels: model.weeks, format: formatPrSize }
   );
 
   const benchmarkLine = useMemo(
@@ -183,7 +180,19 @@ export const LinesOfCodeCard = () => {
             )}
           </FlexBox>
 
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {model.isMeasured ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={LOC_ACCENT}>
@@ -250,17 +259,19 @@ export const LinesOfCodeCard = () => {
                       denominator exists. */}
                   {model.canComparePrSize &&
                     Boolean(model.avgPrSize || model.prevAvgPrSize) && (
-                    <DoraMetricsComparisonPill
-                      val={model.avgPrSize}
-                      against={model.prevAvgPrSize}
-                      prevFormat={(val) => `${exact(Math.round(val))} lines/PR`}
-                      positive={false}
-                      boxed
-                      light
-                      size="1.2em"
-                      lineProps={{ bold: false, fontWeight: 600 }}
-                    />
-                  )}
+                      <DoraMetricsComparisonPill
+                        val={model.avgPrSize}
+                        against={model.prevAvgPrSize}
+                        prevFormat={(val) =>
+                          `${exact(Math.round(val))} lines/PR`
+                        }
+                        positive={false}
+                        boxed
+                        light
+                        size="1.2em"
+                        lineProps={{ bold: false, fontWeight: 600 }}
+                      />
+                    )}
                 </FlexBox>
               </FlexBox>
             ) : (

@@ -61,6 +61,8 @@ export type LocCardModel = {
    * hairline on the axis floor -- a plausible wrong answer nobody questions.
    */
   avgPrSizeValues: number[];
+  /** ISO week keys for `avgPrSizeValues`, same order -- tooltip titles. */
+  weeks: string[];
   /**
    * Whether average PR size can be compared against a target at all.
    *
@@ -83,6 +85,7 @@ const EMPTY_MODEL: LocCardModel = {
   prevAvgDaily: 0,
   prevAvgPrSize: 0,
   avgPrSizeValues: [],
+  weeks: [],
   canComparePrSize: false
 };
 
@@ -129,6 +132,7 @@ export const buildLocCardModel = (
   const mergedTrends = { ...locTrends?.current, ...locTrends?.previous };
 
   const total = num(current.total);
+  const weeks = sortedWeeks(mergedTrends);
 
   return {
     isMeasured: true,
@@ -140,9 +144,8 @@ export const buildLocCardModel = (
     prevTotal: num(previous?.total),
     prevAvgDaily: num(previous?.avg_daily),
     prevAvgPrSize: num(previous?.avg_pr_size),
-    avgPrSizeValues: sortedWeeks(mergedTrends).map((week) =>
-      num(mergedTrends[week]?.avg_pr_size)
-    ),
+    weeks,
+    avgPrSizeValues: weeks.map((week) => num(mergedTrends[week]?.avg_pr_size)),
     // CLUSTOX: `> 0` is a real numeric predicate here, not an absence check --
     // zero lines changed genuinely means there is no PR size to benchmark.
     canComparePrSize: total > 0

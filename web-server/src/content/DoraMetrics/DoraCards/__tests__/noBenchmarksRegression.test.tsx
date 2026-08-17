@@ -251,18 +251,30 @@ describe('with no benchmark configured anywhere', () => {
     expect(html).not.toContain('NaN');
   });
 
-  it('leaves all four original cards on one shared, identical options object', () => {
-    // CLUSTOX: reference equality, not deep equality. `useDoraCardChartOptions`
-    // returns the module-level base constant untouched when there is no band,
-    // so all four cards must come back with the very same object -- proof that
-    // nothing was merged into the options on the no-target path, which no
-    // structural assertion can give you.
+  it('keeps every no-benchmark chart on the shared base contract', () => {
+    // CLUSTOX: this used to assert reference identity with the module-level
+    // base constant. That contract ended when tooltips arrived: each card now
+    // closes over its own labels and formatter, so identity across cards is
+    // impossible by construction. What the identity assertion was actually
+    // protecting is pinned structurally instead -- nothing benchmark-shaped
+    // on the no-target path, axes hidden, drag-zoom off, and 'click' absent
+    // from the event list so the canvas never competes with CardRoot's own
+    // onClick.
     for (const [name, Card] of CARDS) renderCard(name, Card);
 
     const allOptions = chartCalls.map((call) => call.options);
     expect(allOptions.length).toBeGreaterThanOrEqual(4);
     for (const options of allOptions) {
-      expect(options).toBe(allOptions[0]);
+      const inner = options.options;
+      expect(inner.plugins?.annotation).toBeUndefined();
+      expect(inner.scales?.y?.suggestedMax).toBeUndefined();
+      expect(inner.scales.x.display).toBe(false);
+      expect(inner.scales.y.display).toBe(false);
+      expect(inner.plugins.zoom.zoom.drag.enabled).toBe(false);
+      expect(inner.events).not.toContain('click');
+      // The tooltip is the one deliberate addition on this path -- it
+      // describes measured data, which exists with or without a target.
+      expect(inner.plugins.tooltip.callbacks.label).toBeInstanceOf(Function);
     }
   });
 
@@ -330,7 +342,10 @@ describe('no incidents this period is not a fast recovery', () => {
   // own "No incidents reported" headline. Nothing was recovered quickly; there
   // was nothing to recover.
   const MIXED_PERIOD = {
-    current: { mean_time_to_recovery: null as number | null, incident_count: 0 },
+    current: {
+      mean_time_to_recovery: null as number | null,
+      incident_count: 0
+    },
     previous: { mean_time_to_recovery: 5400, incident_count: 4 }
   };
 
