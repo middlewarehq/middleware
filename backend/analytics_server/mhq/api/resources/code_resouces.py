@@ -128,6 +128,7 @@ def adapt_loc_metrics(loc_metrics: LOCMetrics) -> Dict[str, any]:
         "deletions": loc_metrics.deletions,
         "total": loc_metrics.additions + loc_metrics.deletions,
         "avg_pr_size": loc_metrics.avg_pr_size,
+        "avg_daily": loc_metrics.avg_daily,
     }
 
 

@@ -1,17 +1,20 @@
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import HelpOutlineRounded from '@mui/icons-material/HelpOutlineRounded';
-import { alpha } from '@mui/material';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import { useDoraCardChartOptions } from '@/content/DoraMetrics/DoraCards/sharedHooks';
+import {
+  doraCardTrendSeries,
+  useDoraCardChartOptions
+} from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useSelector } from '@/store';
 import { benchmarkCaption } from '@/utils/benchmarks';
@@ -67,18 +70,12 @@ export const LinesOfCodeCard = () => {
   // put the band on the axis floor of a ~70,000-tall scale: correct
   // arithmetic, and a wrong answer that looks entirely plausible.
   const series = useMemo(
-    () => [
-      {
-        label: 'Avg. PR size',
-        fill: 'start',
-        data: model.avgPrSizeValues,
-        backgroundColor: alpha(LOC_ACCENT, 0.2),
-        borderColor: alpha(LOC_ACCENT, 0.5),
-        lineTension: 0.2
-      }
-    ],
+    () =>
+      doraCardTrendSeries('Avg. PR size', model.avgPrSizeValues, LOC_ACCENT),
     [model.avgPrSizeValues]
   );
+
+  const formatPrSize = useCallback((value: number) => `${value} lines/PR`, []);
 
   // CLUSTOX: gated on `canComparePrSize`, which is false both when LOC was
   // never measured and when nothing was merged. Passing `actual: 0` in the
@@ -95,7 +92,8 @@ export const LinesOfCodeCard = () => {
           actual: model.avgPrSize,
           values: model.avgPrSizeValues
         }
-      : null
+      : null,
+    { labels: model.weeks, format: formatPrSize }
   );
 
   const benchmarkLine = useMemo(
@@ -111,7 +109,12 @@ export const LinesOfCodeCard = () => {
     [model.canComparePrSize, model.avgPrSize, locBenchmark]
   );
 
-  const linesChanged = useCountUp(model.total);
+  // CLUSTOX: the headline counts up the DAILY RATE, not the period total. A
+  // total is not comparable between two ranges of different lengths -- widen
+  // the date picker and the same pace of work reads as a bigger number. The
+  // total is still on the card, one line below, where it reads as context
+  // rather than as the metric.
+  const linesPerDay = useCountUp(model.avgDaily);
 
   return (
     // CLUSTOX: no `onClick` and no pointer cursor. There is no LOC drill-down
@@ -154,16 +157,7 @@ export const LinesOfCodeCard = () => {
             authored by {selectedContributors.join(', ')}
           </Line>
         )}
-        {benchmarkLine && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={benchmarkLine.tone === 'good' ? 'success' : 'warning'}
-          >
-            {benchmarkLine.text}
-          </Line>
-        )}
+        {benchmarkLine && <BenchmarkVerdictPill caption={benchmarkLine} />}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {model.isMeasured ? (
@@ -178,23 +172,42 @@ export const LinesOfCodeCard = () => {
             )}
           </FlexBox>
 
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {model.isMeasured ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={LOC_ACCENT}>
-                  Lines changed
+                  Lines changed / day
                 </Line>
                 <FlexBox
                   alignCenter
                   fit
-                  title={`${exact(model.total)} lines changed — ${exact(
-                    model.prevTotal
+                  title={`${exact(model.avgDaily)} lines per day — ${exact(
+                    model.prevAvgDaily
                   )} in the previous period`}
                 >
                   <Line bold color={LOC_ACCENT} sx={{ fontSize: '3em' }}>
-                    {compact(linesChanged)}
+                    {compact(linesPerDay)}
                   </Line>
                 </FlexBox>
+                {/* CLUSTOX: the period total, kept as context under the rate.
+                    Dropping it would lose the only absolute figure on the card
+                    -- "9 lines/day" alone gives no sense of whether that is 60
+                    lines over a week or 280 over a month. */}
+                <Line tiny secondary>
+                  {exact(model.total)} lines over the selected range
+                </Line>
                 <FlexBox
                   gap={1}
                   alignCenter
@@ -238,17 +251,19 @@ export const LinesOfCodeCard = () => {
                       denominator exists. */}
                   {model.canComparePrSize &&
                     Boolean(model.avgPrSize || model.prevAvgPrSize) && (
-                    <DoraMetricsComparisonPill
-                      val={model.avgPrSize}
-                      against={model.prevAvgPrSize}
-                      prevFormat={(val) => `${exact(Math.round(val))} lines/PR`}
-                      positive={false}
-                      boxed
-                      light
-                      size="1.2em"
-                      lineProps={{ bold: false, fontWeight: 600 }}
-                    />
-                  )}
+                      <DoraMetricsComparisonPill
+                        val={model.avgPrSize}
+                        against={model.prevAvgPrSize}
+                        prevFormat={(val) =>
+                          `${exact(Math.round(val))} lines/PR`
+                        }
+                        positive={false}
+                        boxed
+                        light
+                        size="1.2em"
+                        lineProps={{ bold: false, fontWeight: 600 }}
+                      />
+                    )}
                 </FlexBox>
               </FlexBox>
             ) : (

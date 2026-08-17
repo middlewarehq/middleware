@@ -56,3 +56,34 @@ describe('benchmarkCaption', () => {
     expect(benchmarkCaption('lead_time', 3600, null, null)).toBeNull();
   });
 });
+
+describe('benchmarkCaption headline', () => {
+  it('leads with the gap as a percentage', () => {
+    // Shahzad's own example: 1.2d actual vs 2.1d target. The sentence form
+    // makes the reader do this subtraction; the headline does it for them.
+    const r = benchmarkCaption('lead_time', 103680, 181440, 'team');
+    expect(r.headline).toBe('43% under target');
+    expect(r.sourceShort).toBe('team benchmark');
+  });
+
+  it('switches to a multiplier once the gap passes 2x', () => {
+    // 5/week against a 1/week target: "400% above target" is the same number
+    // and nobody parses it.
+    const r = benchmarkCaption('deployment_frequency', 5, 1, 'global');
+    expect(r.headline).toBe('5x above target');
+    expect(r.tone).toBe('good');
+  });
+
+  it('falls back to the absolute value when the target is 0', () => {
+    // A CFR target of 0 is legitimate and makes a percentage undefined.
+    const r = benchmarkCaption('change_failure_rate', 2.5, 0, 'team');
+    expect(r.headline).toBe('2.5% over target');
+    expect(r.tone).toBe('warn');
+  });
+
+  it('says on target when the target is met exactly', () => {
+    const r = benchmarkCaption('change_failure_rate', 0, 0, 'team');
+    expect(r.headline).toBe('on target');
+    expect(r.tone).toBe('good');
+  });
+});

@@ -1,6 +1,6 @@
-import { alpha, Chip } from '@mui/material';
+import { Chip } from '@mui/material';
 import pluralize from 'pluralize';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
@@ -9,6 +9,7 @@ import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -23,6 +24,7 @@ import { benchmarkCaption } from '@/utils/benchmarks';
 import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
 import {
+  doraCardTrendSeries,
   useAvgIntervalBasedDeploymentFrequency,
   useDoraCardChartOptions
 } from './sharedHooks';
@@ -94,17 +96,22 @@ export const WeeklyDeliveryVolumeCard = () => {
   );
 
   const series = useMemo(
-    () => [
-      {
-        label: 'Deployments',
-        fill: 'start',
-        data: weeklyDeploymentCounts,
-        backgroundColor: deploymentFrequencyProps?.backgroundColor,
-        borderColor: alpha(deploymentFrequencyProps?.backgroundColor, 0.5),
-        lineTension: 0.2
-      }
-    ],
+    () =>
+      doraCardTrendSeries(
+        'Deployments',
+        weeklyDeploymentCounts,
+        deploymentFrequencyProps?.backgroundColor
+      ),
     [deploymentFrequencyProps?.backgroundColor, weeklyDeploymentCounts]
+  );
+
+  const weekLabels = useMemo(
+    () => getSortedDatesAsArrayFromMap(weekDeliveryVolumeData),
+    [weekDeliveryVolumeData]
+  );
+  const formatDeployments = useCallback(
+    (value: number) => `${value} ${value === 1 ? 'deployment' : 'deployments'}`,
+    []
   );
 
   // CLUSTOX: gated on isCodeProviderIntegrationEnabled -- the same guard the
@@ -147,7 +154,8 @@ export const WeeklyDeliveryVolumeCard = () => {
           actual: avgWeeklyDeploymentFrequency || 0,
           values: weeklyDeploymentCounts
         }
-      : null
+      : null,
+    { labels: weekLabels, format: formatDeployments }
   );
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
@@ -232,18 +240,7 @@ export const WeeklyDeliveryVolumeCard = () => {
           </Line>
         )}
         {deploymentFrequencyBenchmarkCaption && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={
-              deploymentFrequencyBenchmarkCaption.tone === 'good'
-                ? 'success'
-                : 'warning'
-            }
-          >
-            {deploymentFrequencyBenchmarkCaption.text}
-          </Line>
+          <BenchmarkVerdictPill caption={deploymentFrequencyBenchmarkCaption} />
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
@@ -266,6 +263,10 @@ export const WeeklyDeliveryVolumeCard = () => {
               paddingX={2}
               gap1
               justifyCenter
+              sx={{
+                pointerEvents: 'none',
+                '& > *': { pointerEvents: 'auto' }
+              }}
             >
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={deploymentFrequencyProps.color}>

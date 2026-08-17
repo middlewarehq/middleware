@@ -1,10 +1,10 @@
 import { ArrowForwardRounded, WarningAmberRounded } from '@mui/icons-material';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
-import { alpha, Button, Chip, darken, List, ListItem } from '@mui/material';
+import { Button, Chip, darken, List, ListItem } from '@mui/material';
 import Link from 'next/link';
 import pluralize from 'pluralize';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
@@ -15,10 +15,12 @@ import { track } from '@/constants/events';
 import { ROUTES } from '@/constants/routes';
 import { isRoleLessThanEM } from '@/constants/useRoute';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import {
+  doraCardTrendSeries,
   useDoraCardChartOptions,
   usePropsForChangeTimeCard
 } from '@/content/DoraMetrics/DoraCards/sharedHooks';
@@ -81,17 +83,22 @@ export const ChangeTimeCard = () => {
   );
 
   const series = useMemo(
-    () => [
-      {
-        label: 'Lead Time',
-        fill: 'start',
-        data: leadTimeValues,
-        backgroundColor: activeModeProps.backgroundColor,
-        borderColor: alpha(activeModeProps.backgroundColor, 0.5),
-        lineTension: 0.2
-      }
-    ],
+    () =>
+      doraCardTrendSeries(
+        'Lead Time',
+        leadTimeValues,
+        activeModeProps.backgroundColor
+      ),
     [activeModeProps.backgroundColor, leadTimeValues]
+  );
+
+  const weekLabels = useMemo(
+    () => getSortedDatesAsArrayFromMap(mergedLeadTimeTrends),
+    [mergedLeadTimeTrends]
+  );
+  const formatLeadTime = useCallback(
+    (value: number) => getDurationString(value) || '0',
+    []
   );
 
   // CLUSTOX: the band is only built when the chart itself is on screen. With
@@ -109,7 +116,8 @@ export const ChangeTimeCard = () => {
           actual: activeModeProps.count,
           values: leadTimeValues
         }
-      : null
+      : null,
+    { labels: weekLabels, format: formatLeadTime }
   );
 
   const leadTimeDuration = useCountUp(activeModeProps.count || 0);
@@ -308,16 +316,7 @@ export const ChangeTimeCard = () => {
           </Line>
         )}
         {leadTimeBenchmarkCaption && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={
-              leadTimeBenchmarkCaption.tone === 'good' ? 'success' : 'warning'
-            }
-          >
-            {leadTimeBenchmarkCaption.text}
-          </Line>
+          <BenchmarkVerdictPill caption={leadTimeBenchmarkCaption} />
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
@@ -333,7 +332,19 @@ export const ChangeTimeCard = () => {
             )}
           </FlexBox>
 
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {isSufficientDataAvailable ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={activeModeProps.color}>

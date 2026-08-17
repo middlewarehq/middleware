@@ -1,7 +1,7 @@
-import { Chip, alpha } from '@mui/material';
+import { Chip } from '@mui/material';
 import pluralize from 'pluralize';
 import { head } from 'ramda';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { Chart2 } from '@/components/Chart2';
 import { useSelectedContributors } from '@/components/ContributorFilter';
@@ -10,6 +10,7 @@ import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -26,6 +27,7 @@ import { benchmarkCaption } from '@/utils/benchmarks';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
 import {
+  doraCardTrendSeries,
   useChangeFailureRateProps,
   useDoraCardChartOptions
 } from './sharedHooks';
@@ -79,17 +81,23 @@ export const ChangeFailureRateCard = () => {
   );
 
   const series = useMemo(
-    () => [
-      {
-        label: 'Change Failure rate',
-        fill: 'start',
-        data: changeFailureRateValues,
-        backgroundColor: alpha(changeFailureRateProps.backgroundColor, 0.2),
-        lineTension: 0.2
-      }
-    ],
+    () =>
+      doraCardTrendSeries(
+        'Change Failure rate',
+        changeFailureRateValues,
+        changeFailureRateProps.backgroundColor
+      ),
     [changeFailureRateProps.backgroundColor, changeFailureRateValues]
   );
+
+  const weekLabels = useMemo(
+    () =>
+      head(trendsSeriesMap?.changeFailureRateTrends || [])?.data.map((s) =>
+        String(s.x)
+      ) || [],
+    [trendsSeriesMap?.changeFailureRateTrends]
+  );
+  const formatCfr = useCallback((value: number) => `${value}%`, []);
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
   const isCfrDataAvailable = Boolean(
@@ -143,7 +151,8 @@ export const ChangeFailureRateCard = () => {
           actual: cfrActual,
           values: changeFailureRateValues
         }
-      : null
+      : null,
+    { labels: weekLabels, format: formatCfr }
   );
 
   const { addPage } = useOverlayPage();
@@ -219,18 +228,7 @@ export const ChangeFailureRateCard = () => {
           </Line>
         )}
         {changeFailureRateBenchmarkCaption && (
-          <Line
-            small
-            paddingX={2}
-            mt={-1}
-            color={
-              changeFailureRateBenchmarkCaption.tone === 'good'
-                ? 'success'
-                : 'warning'
-            }
-          >
-            {changeFailureRateBenchmarkCaption.text}
-          </Line>
+          <BenchmarkVerdictPill caption={changeFailureRateBenchmarkCaption} />
         )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
@@ -245,7 +243,19 @@ export const ChangeFailureRateCard = () => {
               <NoDataImg />
             )}
           </FlexBox>
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {canShowIncidentsData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>
                 <Line bigish medium color={changeFailureRateProps.color}>

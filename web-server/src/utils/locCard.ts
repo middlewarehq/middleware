@@ -34,11 +34,22 @@ export type LocCardModel = {
   isMeasured: boolean;
   additions: number;
   deletions: number;
-  /** additions + deletions -- the card's headline figure. */
+  /** additions + deletions over the whole selected range. */
   total: number;
+  /**
+   * Gross lines per calendar day -- the card's headline figure.
+   *
+   * The headline is a rate rather than `total` because a total is not
+   * comparable between two ranges of different lengths: the same pace of work
+   * reads four times "better" over a month than over a week. Computed in the
+   * backend, where the interval is known, rather than re-derived here from a
+   * day count the card would have to guess.
+   */
+  avgDaily: number;
   /** Average gross lines per merged PR -- the benchmarked figure. */
   avgPrSize: number;
   prevTotal: number;
+  prevAvgDaily: number;
   prevAvgPrSize: number;
   /**
    * The weekly average-PR-size series, oldest week first.
@@ -50,6 +61,8 @@ export type LocCardModel = {
    * hairline on the axis floor -- a plausible wrong answer nobody questions.
    */
   avgPrSizeValues: number[];
+  /** ISO week keys for `avgPrSizeValues`, same order -- tooltip titles. */
+  weeks: string[];
   /**
    * Whether average PR size can be compared against a target at all.
    *
@@ -66,10 +79,13 @@ const EMPTY_MODEL: LocCardModel = {
   additions: 0,
   deletions: 0,
   total: 0,
+  avgDaily: 0,
   avgPrSize: 0,
   prevTotal: 0,
+  prevAvgDaily: 0,
   prevAvgPrSize: 0,
   avgPrSizeValues: [],
+  weeks: [],
   canComparePrSize: false
 };
 
@@ -116,18 +132,20 @@ export const buildLocCardModel = (
   const mergedTrends = { ...locTrends?.current, ...locTrends?.previous };
 
   const total = num(current.total);
+  const weeks = sortedWeeks(mergedTrends);
 
   return {
     isMeasured: true,
     additions: num(current.additions),
     deletions: num(current.deletions),
     total,
+    avgDaily: num(current.avg_daily),
     avgPrSize: num(current.avg_pr_size),
     prevTotal: num(previous?.total),
+    prevAvgDaily: num(previous?.avg_daily),
     prevAvgPrSize: num(previous?.avg_pr_size),
-    avgPrSizeValues: sortedWeeks(mergedTrends).map((week) =>
-      num(mergedTrends[week]?.avg_pr_size)
-    ),
+    weeks,
+    avgPrSizeValues: weeks.map((week) => num(mergedTrends[week]?.avg_pr_size)),
     // CLUSTOX: `> 0` is a real numeric predicate here, not an absence check --
     // zero lines changed genuinely means there is no PR size to benchmark.
     canComparePrSize: total > 0

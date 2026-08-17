@@ -8,14 +8,16 @@ const CURRENT = {
   additions: 149332,
   deletions: 20650,
   total: 169982,
-  avg_pr_size: 654
+  avg_pr_size: 654,
+  avg_daily: 1215
 };
 
 const PREVIOUS = {
   additions: 63033,
   deletions: 7407,
   total: 70440,
-  avg_pr_size: 640
+  avg_pr_size: 640,
+  avg_daily: 1205
 };
 
 const TRENDS = {
@@ -23,25 +25,29 @@ const TRENDS = {
     additions: 63033,
     deletions: 7407,
     total: 70440,
-    avg_pr_size: 640
+    avg_pr_size: 640,
+    avg_daily: 1205
   },
   '2026-07-27T00:00:00+00:00': {
     additions: 65867,
     deletions: 10086,
     total: 75953,
-    avg_pr_size: 575
+    avg_pr_size: 575,
+    avg_daily: 1085
   },
   '2026-08-03T00:00:00+00:00': {
     additions: 20432,
     deletions: 3157,
     total: 23589,
-    avg_pr_size: 1310
+    avg_pr_size: 1310,
+    avg_daily: 337
   },
   '2026-08-10T00:00:00+00:00': {
     additions: 0,
     deletions: 0,
     total: 0,
-    avg_pr_size: 0
+    avg_pr_size: 0,
+    avg_daily: 0
   }
 };
 
@@ -118,7 +124,8 @@ describe('buildLocCardModel', () => {
       additions: 0,
       deletions: 0,
       total: 0,
-      avg_pr_size: 0
+      avg_pr_size: 0,
+      avg_daily: 0
     };
     const model = buildLocCardModel(
       { current: zeroed, previous: zeroed },
