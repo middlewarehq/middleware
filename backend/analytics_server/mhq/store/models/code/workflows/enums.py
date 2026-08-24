@@ -4,6 +4,9 @@ from enum import Enum
 class RepoWorkflowProviders(Enum):
     GITHUB_ACTIONS = "github"
     CIRCLE_CI = "circle_ci"
+    # CLUSTOX: Jenkins as a deployment source. Persisted as varchar, so no
+    # migration is required despite the ENUM() wrapper on the column.
+    JENKINS = "jenkins"
 
     @classmethod
     def get_workflow_providers(cls):

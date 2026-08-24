@@ -1,19 +1,26 @@
-import { AddRounded, InfoRounded } from '@mui/icons-material';
+import { AddRounded, BuildRounded, InfoRounded } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
-import { Button, Card, Divider } from '@mui/material';
+import { Button, Card, Divider, useTheme } from '@mui/material';
 import { differenceInMilliseconds } from 'date-fns';
 import { millisecondsInMinute } from 'date-fns/constants';
 import { useEffect, useMemo } from 'react';
 import { Authenticated } from 'src/components/Authenticated';
 
 import { handleApi } from '@/api-helpers/axios-api-instance';
+// CLUSTOX: the two halves of the Jenkins integration card below -- the
+// credentials form and the job-to-repo mapping table.
+import { ClustoxJenkinsMapping } from '@/components/ClustoxJenkinsMapping';
+import { ClustoxJenkinsSetup } from '@/components/ClustoxJenkinsSetup';
+// END CLUSTOX
 import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/GithubIntegrationCard';
 import { GitlabIntegrationCard } from '@/content/Dashboards/GitlabIntegrationCard';
+import { JiraIntegrationCard } from '@/content/Dashboards/JiraIntegrationCard';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
+import { useModal } from '@/contexts/ModalContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import ExtendedSidebarLayout from '@/layouts/ExtendedSidebarLayout';
@@ -58,8 +65,13 @@ Integrations.getLayout = (page: PageLayout) => (
 export default Integrations;
 
 const Content = () => {
-  const { orgId, integrations, integrationList } = useAuth();
-  const hasCodeProviderLinked = integrationList.length > 0;
+  const {
+    orgId,
+    integrations,
+    integrationList,
+    codeProviderIntegrationList,
+    hasCodeProviderLinked
+  } = useAuth();
   const teamCount = useSelector((s) => s.team.teams?.length);
   const dispatch = useDispatch();
   const loadedTeams = useBoolState(false);
@@ -69,7 +81,7 @@ const Content = () => {
     hasCodeProviderLinked && !teamCount && loadedTeams.value;
 
   const lastSyncMap = useMemo(() => {
-    return integrationList
+    return codeProviderIntegrationList
       .map((item) => {
         const linkedAt =
           integrations[item as 'github' | 'gitlab' | 'bitbucket'].linked_at;
@@ -83,7 +95,7 @@ const Content = () => {
         return diff;
       })
       .filter(Boolean);
-  }, [integrationList, integrations]);
+  }, [codeProviderIntegrationList, integrations]);
 
   const showForceSyncBtn = useMemo(() => {
     if (!hasCodeProviderLinked) return false;
@@ -160,9 +172,13 @@ const Content = () => {
       </FlexBox>
 
       <Divider sx={{ mb: '10px' }} />
-      <FlexBox gap={2}>
+      <FlexBox gap={2} flexWrap="wrap">
         <GithubIntegrationCard />
         <GitlabIntegrationCard />
+        <JiraIntegrationCard />
+        {/* CLUSTOX: Jenkins as a third deployment-detection provider. */}
+        <JenkinsIntegrationCard />
+        {/* END CLUSTOX */}
       </FlexBox>
       {showCreationCTA && (
         <FlexBox mt={'56px'} col fit alignStart>
@@ -233,6 +249,73 @@ const Content = () => {
           </LoadingButton>
         </FlexBox>
       )}
+    </FlexBox>
+  );
+};
+
+/**
+ * CLUSTOX: Jenkins is a deployment provider set up through a credentials
+ * form rather than OAuth, so unlike GithubIntegrationCard/GitlabIntegrationCard
+ * it opens a modal instead of a redirect, and switches between the setup
+ * form and the job-mapping table based on link state.
+ */
+const JenkinsIntegrationCard = () => {
+  const theme = useTheme();
+  const { integrations } = useAuth();
+  const isJenkinsLinked = Boolean(integrations.jenkins?.integrated);
+  const { addModal, closeAllModals } = useModal();
+
+  const openSetup = () =>
+    addModal({
+      title: 'Connect Jenkins',
+      body: <ClustoxJenkinsSetup onLinked={closeAllModals} />,
+      showCloseIcon: true
+    });
+
+  const openMapping = () =>
+    addModal({
+      title: 'Map Jenkins jobs to repositories',
+      body: <ClustoxJenkinsMapping />,
+      showCloseIcon: true
+    });
+
+  return (
+    <FlexBox
+      col
+      justifyBetween
+      height="120px"
+      width="280px"
+      corner="10.5px"
+      p={1.5}
+      relative
+      bgcolor={theme.palette.background.default}
+      border={`1px solid ${theme.colors.alpha.trueWhite[10]}`}
+    >
+      {isJenkinsLinked && (
+        <FlexBox position="absolute" right="12px" top="12px">
+          <Line small success>
+            Linked
+          </Line>
+        </FlexBox>
+      )}
+      <FlexBox alignCenter gap1 fit>
+        <BuildRounded fontSize="large" htmlColor={theme.colors.primary.main} />
+        <Line big medium white>
+          Jenkins
+        </Line>
+      </FlexBox>
+      <Line small secondary>
+        Map deployments from Jenkins jobs
+      </Line>
+      <FlexBox alignCenter gap1 mt="auto">
+        <Button
+          variant={isJenkinsLinked ? 'outlined' : 'contained'}
+          size="small"
+          onClick={isJenkinsLinked ? openMapping : openSetup}
+        >
+          {isJenkinsLinked ? 'Manage mappings' : 'Connect'}
+        </Button>
+      </FlexBox>
     </FlexBox>
   );
 };

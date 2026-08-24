@@ -19,6 +19,8 @@ from mhq.store.models.incidents import (
     IncidentProvider,
 )
 from mhq.store.repos.incidents import IncidentsRepoService
+from mhq.store.models.projects import ProjectIssuesBookmark
+from mhq.store.repos.projects import ProjectRepoService
 
 
 class BookmarkService:
@@ -32,10 +34,12 @@ class BookmarkService:
         code_repo_service: CodeRepoService,
         workflow_repo_service: WorkflowRepoService,
         incident_repo_service: IncidentsRepoService,
+        project_repo_service: ProjectRepoService,
     ):
         self._code_repo_service = code_repo_service
         self._workflow_repo_service = workflow_repo_service
         self._incident_repo_service = incident_repo_service
+        self._project_repo_service = project_repo_service
 
     def get_bookmark(
         self,
@@ -70,6 +74,13 @@ class BookmarkService:
                 else mtd_broker_bookmark
             )
 
+        if bookmark_type == BookmarkType.PROJECT_ISSUES_BOOKMARK:
+            return datetime.fromisoformat(
+                self._get_project_issues_bookmark(
+                    entity_id, provider, default_sync_days
+                ).bookmark
+            )
+
         raise ValueError(f"Unsupported BookmarkType: {bookmark_type}.")
 
     def update_bookmark(
@@ -96,6 +107,11 @@ class BookmarkService:
                 entity_id, bookmark_timestamp
             )
 
+        if bookmark_type == BookmarkType.PROJECT_ISSUES_BOOKMARK:
+            return self._update_project_issues_bookmark(
+                entity_id, provider, bookmark_timestamp
+            )
+
         raise ValueError(f"Unsupported BookmarkType: {bookmark_type}.")
 
     def reset_org_bookmarks(self, org_id: str, bookmark_timestamp: datetime):
@@ -103,6 +119,7 @@ class BookmarkService:
         self._reset_incident_bookmarks(org_id, bookmark_timestamp)
         self._reset_workflow_bookmarks(org_id, bookmark_timestamp)
         self._reset_merge_to_deploy_broker_bookmarks(org_id, bookmark_timestamp)
+        self._reset_project_issues_bookmarks(org_id, bookmark_timestamp)
 
     def _get_org_repo_bookmark(
         self, repo_id: str, default_sync_days: int = DEFAULT_SYNC_DAYS
@@ -258,9 +275,53 @@ class BookmarkService:
             merge_to_deploy_broker_bookmarks
         )
 
+    def _get_project_issues_bookmark(
+        self,
+        org_project_id: str,
+        provider: str,
+        default_sync_days: int = DEFAULT_SYNC_DAYS,
+    ) -> ProjectIssuesBookmark:
+        bookmark = self._project_repo_service.get_project_issues_bookmark(
+            org_project_id, provider
+        )
+        if not bookmark:
+            default_bookmark = time_now() - timedelta(days=default_sync_days)
+            bookmark = ProjectIssuesBookmark(
+                org_project_id=org_project_id,
+                provider=provider,
+                bookmark=default_bookmark.isoformat(),
+            )
+        return bookmark
+
+    def _update_project_issues_bookmark(
+        self, org_project_id: str, provider: str, bookmark_time_stamp: datetime
+    ):
+        bookmark = self._get_project_issues_bookmark(org_project_id, provider)
+        bookmark.bookmark = bookmark_time_stamp.isoformat()
+        bookmark.updated_at = time_now()
+        self._project_repo_service.update_project_issues_bookmark(bookmark)
+
+    def _reset_project_issues_bookmarks(
+        self, org_id: str, bookmark_timestamp: datetime
+    ):
+        project_issues_bookmarks = (
+            self._project_repo_service.get_all_org_project_issues_bookmarks(org_id)
+        )
+
+        for bookmark in project_issues_bookmarks:
+            bookmark.bookmark = bookmark_timestamp.isoformat()
+            bookmark.updated_at = time_now()
+
+        self._project_repo_service.update_project_issues_bookmarks(
+            project_issues_bookmarks
+        )
+
 
 def get_bookmark_service():
 
     return BookmarkService(
-        CodeRepoService(), WorkflowRepoService(), IncidentsRepoService()
+        CodeRepoService(),
+        WorkflowRepoService(),
+        IncidentsRepoService(),
+        ProjectRepoService(),
     )

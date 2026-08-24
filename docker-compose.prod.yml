@@ -1,0 +1,76 @@
+# CLUSTOX: production deployment.
+#
+# docker-compose.yml is upstream's *local development* file: it builds
+# Dockerfile.dev, which never runs `yarn build`, so the container serves the
+# app with `next dev` and compiles every route on first request. That is
+# correct for a laptop with hot reload and wrong for a server, where it costs
+# 7-22s on each page's first visit and holds the webpack compiler in memory.
+#
+# This file builds the production Dockerfile instead, which runs `yarn build`
+# and serves a compiled bundle.
+#
+# Deploy with:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Two things here are deliberate and load-bearing:
+#
+#  1. The volume names match docker-compose.yml exactly. Compose namespaces
+#     volumes by project (directory) name, so `dev_postgres_data` resolves to
+#     the same `middleware_dev_postgres_data` that the running deployment
+#     already uses. Renaming it would silently start against an empty database
+#     and lose every synced metric and integration.
+#
+#  2. ENVIRONMENT is pinned under `environment:` rather than left to `.env`.
+#     `environment:` takes precedence over `env_file:`, and the server's .env
+#     still says ENVIRONMENT=dev. Without this pin the prod image would build
+#     correctly and then start `next dev` anyway, which is the exact bug this
+#     file exists to fix.
+
+volumes:
+  dev_postgres_data:
+    driver: local
+  dev_keys:
+    driver: local
+
+services:
+  # Service and container names match docker-compose.yml so that `up -d`
+  # replaces the existing container rather than starting a second one that
+  # fights it for port 3333.
+  middleware-dev:
+    container_name: middleware-dev
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        ENVIRONMENT: prod
+        POSTGRES_DB_ENABLED: ${POSTGRES_DB_ENABLED:-true}
+        DB_INIT_ENABLED: ${DB_INIT_ENABLED:-true}
+        REDIS_ENABLED: ${REDIS_ENABLED:-true}
+        BACKEND_ENABLED: ${BACKEND_ENABLED:-true}
+        FRONTEND_ENABLED: ${FRONTEND_ENABLED:-true}
+        CRON_ENABLED: ${CRON_ENABLED:-true}
+        DB_PORT: ${DB_PORT:-5434}
+
+    env_file:
+      - .env
+
+    environment:
+      # See note 2 above -- these must win over .env.
+      ENVIRONMENT: prod
+      NEXT_PUBLIC_APP_ENVIRONMENT: prod
+
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:${ANALYTICS_SERVER_PORT:-9696}:${ANALYTICS_SERVER_PORT:-9696}"
+      - "127.0.0.1:${SYNC_SERVER_PORT:-9697}:${SYNC_SERVER_PORT:-9697}"
+      - "127.0.0.1:${PORT:-3333}:${PORT:-3333}"
+      - "127.0.0.1:${DB_PORT:-5434}:${DB_PORT:-5434}"
+      - "127.0.0.1:${REDIS_PORT:-6385}:${REDIS_PORT:-6385}"
+
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      - dev_postgres_data:/var/lib/postgresql/15/main
+      - dev_keys:/app/backend/analytics_server/mhq/config

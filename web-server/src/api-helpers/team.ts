@@ -42,11 +42,17 @@ export const getTeamMembersFilterSettingForOrg = (orgId: ID) =>
 export const updatePrFilterParams = async <T extends {} = {}>(
   _teamId: ID,
   params: T,
-  filters?: Partial<{ branches: string; repo_filters: RepoFilterConfig }>
+  filters?: Partial<{
+    branches: string;
+    repo_filters: RepoFilterConfig;
+    // CLUSTOX: contributor filter -- git usernames, as synced.
+    authors: string[];
+  }>
 ) => {
   const updatedParams = {
     base_branches: filters?.branches?.split(','),
-    repo_filters: filters?.repo_filters
+    repo_filters: filters?.repo_filters,
+    authors: filters?.authors?.length ? filters.authors : undefined
   };
   const reducedParams = reject(isNil, updatedParams);
   const pr_filter = equals({}, reducedParams) ? null : reducedParams;

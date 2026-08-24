@@ -1,19 +1,18 @@
 import { useRouter } from 'next/router';
 
 import { ROUTES } from '@/constants/routes';
-import { useAuth } from '@/hooks/useAuth';
-import {
-  useBranchesForPrFilters,
-  useSingleTeamConfig
-} from '@/hooks/useStateTeamConfig';
+// CLUSTOX: contributor filter -- the refetch this callback triggers (a repo
+// finishing its sync) must keep the selection, so the arguments come from the
+// shared hook instead of being rebuilt here.
+import { useDoraMetricsFetchArgs } from '@/hooks/useDoraMetricsFetchArgs';
+import { useBranchesForPrFilters } from '@/hooks/useStateTeamConfig';
 import { fetchTeamDoraMetrics } from '@/slices/dora_metrics';
 import { useDispatch } from '@/store';
 
 export const usePageRefreshCallback = () => {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { orgId } = useAuth();
-  const { dates, singleTeamId } = useSingleTeamConfig();
+  const doraMetricsFetchArgs = useDoraMetricsFetchArgs();
   const branchPayloadForPrFilters = useBranchesForPrFilters();
 
   switch (router.pathname) {
@@ -21,10 +20,7 @@ export const usePageRefreshCallback = () => {
       return () =>
         dispatch(
           fetchTeamDoraMetrics({
-            orgId,
-            teamId: singleTeamId,
-            fromDate: dates.start,
-            toDate: dates.end,
+            ...doraMetricsFetchArgs,
             ...branchPayloadForPrFilters
           })
         );

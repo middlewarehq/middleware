@@ -18,6 +18,15 @@ class SettingType(Enum):
     EXCLUDED_PRS_SETTING = "EXCLUDED_PRS_SETTING"
     DEFAULT_SYNC_DAYS_SETTING = "DEFAULT_SYNC_DAYS_SETTING"
     INCIDENT_PRS_SETTING = "INCIDENT_PRS_SETTING"
+    # CLUSTOX: which Jira issue types count as an incident, gating
+    # IncidentSource.JIRA_ISSUE -- see docs/JIRA_INTEGRATION_PROPOSAL.md.
+    JIRA_INCIDENT_ISSUE_TYPES_SETTING = "JIRA_INCIDENT_ISSUE_TYPES_SETTING"
+
+    # CLUSTOX: per-team DORA targets. Stored here rather than in a new table
+    # because Settings already has the entity scoping, service and API this
+    # needs, and its JSONB data column means adding a fifth metric later costs
+    # no migration.
+    BENCHMARK_SETTING = "BENCHMARK_SETTING"
 
     # ADD NEW SETTING TYPE ENUM HERE
 

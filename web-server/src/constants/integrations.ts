@@ -9,7 +9,10 @@ export enum Integration {
   PAGERDUTY = 'pagerduty',
   OPSGENIE = 'opsgenie',
   MICROSOFT = 'azure-ad',
-  CIRCLECI = 'circle_ci'
+  CIRCLECI = 'circle_ci',
+  // CLUSTOX: Jenkins is a deployment provider, not a code provider -- it is
+  // deliberately absent from CODE_PROVIDER_INTEGRATIONS_MAP.
+  JENKINS = 'jenkins'
 }
 
 export enum CIProvider {
