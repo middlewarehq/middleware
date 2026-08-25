@@ -74,7 +74,14 @@ class BitbucketApiService:
         return values
 
     def get_workspaces(self) -> List[Dict]:
-        return self._get_paginated(f"{self.base_url}/workspaces")
+        """CLUSTOX: /2.0/workspaces is dead -- it returns 410 "CHANGE-2770 -
+        Functionality has been deprecated" (discovered live; every fixture
+        test passed happily against it). The supported listing is the user's
+        workspace permissions, whose entries wrap the workspace object."""
+        permissions = self._get_paginated(
+            f"{self.base_url}/user/permissions/workspaces"
+        )
+        return [entry["workspace"] for entry in permissions if entry.get("workspace")]
 
     def get_workspace_repos(self, workspace: str) -> List[Dict]:
         return self._get_paginated(f"{self.base_url}/repositories/{workspace}")

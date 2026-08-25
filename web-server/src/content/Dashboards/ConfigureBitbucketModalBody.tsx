@@ -160,6 +160,11 @@ export const ConfigureBitbucketModalBody: FC<{
             value={email.value}
             onChange={(e) => handleEmailChange(e.currentTarget.value)}
             label="Atlassian account email"
+            // CLUSTOX: 'new-password', not 'off' -- Chrome ignores 'off' near
+            // a password-type input. During live testing the password manager
+            // silently replaced field contents with saved logins; the dots
+            // looked right and the pair failed as "invalid credentials".
+            autoComplete="new-password"
             InputLabelProps={{ shrink: true }}
           />
           <Line error tiny mt={1} minHeight={'18px'}>
@@ -185,6 +190,7 @@ export const ConfigureBitbucketModalBody: FC<{
             onChange={(e) => handleTokenChange(e.currentTarget.value)}
             label="Atlassian API Token"
             type="password"
+            autoComplete="new-password"
             // Browsers apply their password-autofill heuristics to any
             // type="password" field, token or not. Keeping the label
             // permanently shrunk removes any race between that and React

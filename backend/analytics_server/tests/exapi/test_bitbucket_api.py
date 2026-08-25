@@ -185,3 +185,19 @@ def test_pr_commits_paginate_like_everything_else():
     commits = service.get_pr_commits("ws", "repo", 42)
 
     assert commits[0]["hash"] == "abc123"
+
+
+def test_workspaces_use_the_permissions_endpoint_not_the_dead_one():
+    # CLUSTOX: /2.0/workspaces returns 410 "CHANGE-2770 - Functionality has
+    # been deprecated" -- discovered live, after every fixture test passed
+    # against it. This pins the replacement URL so a refactor cannot drift
+    # back to the dead endpoint.
+    service = _service_with_pages(
+        [{"values": [{"workspace": {"slug": "clustox"}}, {"not_a_workspace": 1}]}]
+    )
+
+    workspaces = service.get_workspaces()
+
+    url = service._session.get.call_args_list[0].args[0]
+    assert url.endswith("/2.0/user/permissions/workspaces")
+    assert workspaces == [{"slug": "clustox"}]
