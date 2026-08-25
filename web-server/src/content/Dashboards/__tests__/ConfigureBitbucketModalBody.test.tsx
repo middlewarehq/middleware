@@ -65,7 +65,10 @@ describe('ConfigureBitbucketModalBody', () => {
     // CLUSTOX: the API cannot tell a revoked token from an expired one, and
     // Atlassian tokens expose no scope header -- the copy stays broad on
     // purpose.
-    (checkBitbucketValidity as jest.Mock).mockResolvedValue(false);
+    (checkBitbucketValidity as jest.Mock).mockResolvedValue({
+      valid: false,
+      reason: 'invalid_credentials'
+    });
     render(<ConfigureBitbucketModalBody onClose={onClose} />);
     await fillForm();
 
@@ -76,8 +79,46 @@ describe('ConfigureBitbucketModalBody', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('names the missing account scope when the server could tell', async () => {
+    (checkBitbucketValidity as jest.Mock).mockResolvedValue({
+      valid: false,
+      reason: 'missing_account_scope'
+    });
+    render(<ConfigureBitbucketModalBody onClose={onClose} />);
+    await fillForm();
+
+    await waitFor(() =>
+      expect(
+        screen.getByText(/missing the Account read scope/i)
+      ).toBeInTheDocument()
+    );
+    expect(linkProvider).not.toHaveBeenCalled();
+  });
+
+  it('trims pasted whitespace before validating and linking', async () => {
+    // CLUSTOX: a token copied from Atlassian's UI often carries a trailing
+    // newline; untrimmed it corrupts the Basic auth pair into a 401 that
+    // reads exactly like a wrong token.
+    (checkBitbucketValidity as jest.Mock).mockResolvedValue({ valid: true });
+    (linkProvider as jest.Mock).mockResolvedValue({});
+    render(<ConfigureBitbucketModalBody onClose={onClose} />);
+    await fillForm(' hamad@clustox.com ', 'an-api-token ');
+
+    await waitFor(() => expect(linkProvider).toHaveBeenCalledTimes(1));
+    expect(checkBitbucketValidity).toHaveBeenCalledWith(
+      'hamad@clustox.com',
+      'an-api-token'
+    );
+    expect(linkProvider).toHaveBeenCalledWith(
+      'an-api-token',
+      'org-1',
+      expect.anything(),
+      { email: 'hamad@clustox.com' }
+    );
+  });
+
   it('links with the email in meta on a passed check', async () => {
-    (checkBitbucketValidity as jest.Mock).mockResolvedValue(true);
+    (checkBitbucketValidity as jest.Mock).mockResolvedValue({ valid: true });
     (linkProvider as jest.Mock).mockResolvedValue({});
     render(<ConfigureBitbucketModalBody onClose={onClose} />);
     await fillForm();

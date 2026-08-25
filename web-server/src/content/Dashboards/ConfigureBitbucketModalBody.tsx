@@ -49,12 +49,17 @@ export const ConfigureBitbucketModalBody: FC<{
   };
 
   const handleSubmission = useCallback(async () => {
+    // CLUSTOX: trim both fields -- a token copied from Atlassian's UI often
+    // arrives with a trailing newline, which corrupts the Basic auth pair
+    // into a guaranteed 401 that reads exactly like a wrong token.
+    const emailValue = email.value.trim();
+    const tokenValue = token.value.trim();
     try {
-      if (!EMAIL_PATTERN.test(email.value)) {
+      if (!EMAIL_PATTERN.test(emailValue)) {
         emailError.set('Enter the Atlassian account email for this token');
         throw Error('Invalid email');
       }
-      if (!token.value) {
+      if (!tokenValue) {
         tokenError.set('Please enter an API token');
         throw Error('Empty token');
       }
@@ -69,22 +74,27 @@ export const ConfigureBitbucketModalBody: FC<{
     }
 
     depFn(isLoading.true);
-    await checkBitbucketValidity(email.value, token.value)
-      .then((valid) => {
+    await checkBitbucketValidity(emailValue, tokenValue)
+      .then(({ valid, reason }) => {
         if (!valid) {
-          // CLUSTOX: the API cannot tell a revoked token from an expired one,
-          // and Atlassian tokens expose no scope header to name a missing
-          // scope -- so the message stays broad and the help link below names
-          // the required scopes instead.
-          throw new Error('Invalid email or API token');
+          // CLUSTOX: name the real problem when the server could tell it
+          // apart. A scoped token without account read access works against
+          // repositories but fails the sync's own /2.0/user validity check,
+          // so "invalid credentials" would send the user hunting the wrong
+          // bug.
+          throw new Error(
+            reason === 'missing_account_scope'
+              ? 'This token works but is missing the Account read scope. Recreate it with account, repository and pullrequest read scopes.'
+              : 'Invalid email or API token'
+          );
         }
       })
       .then(async () => {
         try {
           // CLUSTOX: the email rides in provider_meta -- it is the Basic auth
           // username, not a secret. Only the token is encrypted.
-          return await linkProvider(token.value, orgId, Integration.BITBUCKET, {
-            email: email.value
+          return await linkProvider(tokenValue, orgId, Integration.BITBUCKET, {
+            email: emailValue
           });
         } catch (e: any) {
           throw new Error(

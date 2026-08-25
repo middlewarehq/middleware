@@ -21,23 +21,37 @@ const endpoint = new Endpoint(nullSchema);
 // /api/resources/orgs/<id>/integration flow.
 endpoint.handle.POST(postSchema, async (req, res) => {
   const { email, token } = req.payload;
+  const headers = {
+    Authorization: `Basic ${Buffer.from(`${email}:${token}`).toString(
+      'base64'
+    )}`
+  };
 
   const response = await fetch('https://api.bitbucket.org/2.0/user', {
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${email}:${token}`).toString(
-        'base64'
-      )}`
-    }
+    headers
   });
 
-  if (!response.ok) {
-    // 401 and 403 both mean unusable credentials; the API cannot tell a
-    // revoked token from an expired one, so neither can our copy.
-    return res.send({ valid: false });
+  if (response.ok) {
+    const user = await response.json();
+    return res.send({ valid: true, nickname: user.nickname ?? null });
   }
 
-  const user = await response.json();
-  return res.send({ valid: true, nickname: user.nickname ?? null });
+  // CLUSTOX: a scoped Atlassian token created without the `account` read
+  // scope fails /2.0/user while working fine against repositories -- and the
+  // sync's own validity check uses /2.0/user, so such a token must be
+  // rejected HERE, with a message that names the actual problem instead of
+  // "invalid credentials". Probe /2.0/workspaces to tell the two apart.
+  const workspaces = await fetch(
+    'https://api.bitbucket.org/2.0/workspaces?pagelen=1',
+    { headers }
+  );
+  if (workspaces.ok) {
+    return res.send({ valid: false, reason: 'missing_account_scope' });
+  }
+
+  // Neither endpoint accepts the pair: wrong email, wrong token, revoked or
+  // expired -- the API cannot tell these apart, so neither can our copy.
+  return res.send({ valid: false, reason: 'invalid_credentials' });
 });
 
 export default endpoint.serve();

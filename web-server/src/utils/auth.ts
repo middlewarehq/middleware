@@ -78,18 +78,26 @@ export const getMissingPATScopes = async (
 // origins, so a browser-direct check dies in preflight. The internal
 // endpoint calls /2.0/user and returns a boolean; the token goes over our
 // own wire once and is never logged or echoed.
+export type BitbucketValidity = {
+  valid: boolean;
+  reason?: 'invalid_credentials' | 'missing_account_scope';
+};
+
 export const checkBitbucketValidity = async (
   email: string,
   token: string
-): Promise<boolean> => {
+): Promise<BitbucketValidity> => {
   try {
     const response = await axios.post('/api/internal/bitbucket/token-check', {
       email,
       token
     });
-    return Boolean(response.data?.valid);
+    return {
+      valid: Boolean(response.data?.valid),
+      reason: response.data?.reason
+    };
   } catch (error) {
-    return false;
+    return { valid: false, reason: 'invalid_credentials' };
   }
 };
 
