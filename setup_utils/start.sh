@@ -40,4 +40,18 @@ if ! grep -qE '^[[:space:]]*SECRET_PRIVATE_KEY[[:space:]]*=[[:space:]]*[^[:space
     exit 1
 fi
 
+# The Python backend reads config.ini directly and needs nothing further.
+# The Node web-server (enc()/dec() in web-server/src/utils/auth-supplementary.ts)
+# reads these as plain environment variables, not from the file -- without
+# this, SECRET_PUBLIC_KEY/SECRET_PRIVATE_KEY are simply undefined for it on
+# every boot, and encrypting any provider token (Jira, GitHub, GitLab) fails
+# outright before ever reaching the provider's API. `export`, not just
+# `KEY=value`: a plain assignment is only a local shell variable and never
+# reaches supervisord's children.
+while IFS='=' read -r key value; do
+    if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ && ! -z "$value" ]]; then
+        export "$key=$value"
+    fi
+done < "$CONFIG_FILE"
+
 /usr/bin/supervisord -c "/etc/supervisord.conf"
