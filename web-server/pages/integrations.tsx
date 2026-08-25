@@ -17,6 +17,7 @@ import { Line } from '@/components/Text';
 import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { GithubIntegrationCard } from '@/content/Dashboards/GithubIntegrationCard';
+import { BitbucketIntegrationCard } from '@/content/Dashboards/BitbucketIntegrationCard';
 import { GitlabIntegrationCard } from '@/content/Dashboards/GitlabIntegrationCard';
 import { JiraIntegrationCard } from '@/content/Dashboards/JiraIntegrationCard';
 import { PageWrapper } from '@/content/PullRequests/PageWrapper';
@@ -175,6 +176,7 @@ const Content = () => {
       <FlexBox gap={2} flexWrap="wrap">
         <GithubIntegrationCard />
         <GitlabIntegrationCard />
+        <BitbucketIntegrationCard />
         <JiraIntegrationCard />
         {/* CLUSTOX: Jenkins as a third deployment-detection provider. */}
         <JenkinsIntegrationCard />

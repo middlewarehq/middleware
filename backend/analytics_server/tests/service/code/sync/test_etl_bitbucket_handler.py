@@ -360,3 +360,15 @@ def test_every_provider_reaches_the_factory():
         assert (
             f"CodeProvider.{provider.name}.value" in source
         ), f"CodeProvider.{provider.name} has no CodeETLFactory branch"
+
+
+def test_every_code_provider_is_in_the_sync_bucket():
+    # CLUSTOX: CODE_INTEGRATION_BUCKET decides which orgs the scheduler syncs.
+    # A provider in the factory but not the bucket links fine in the UI and
+    # then never syncs -- no error, no log, just a dashboard that stays empty.
+    from mhq.service.code.integration import CODE_INTEGRATION_BUCKET
+
+    for provider in CodeProvider:
+        assert (
+            provider.value in CODE_INTEGRATION_BUCKET
+        ), f"CodeProvider.{provider.name} missing from CODE_INTEGRATION_BUCKET"
