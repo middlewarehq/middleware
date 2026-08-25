@@ -88,12 +88,16 @@ the first sync, incremental cost is trivial.
 
 ### Revert detection (CFR)
 
-Bitbucket's own UI titles reverts `Revert: <original title>`. Detection: title
-prefix match (case-insensitive `revert:` / `revert "`), linked to the original
-PR by branch name when the revert branch encodes it, title match otherwise.
-A PR merely *titled* "Revert" that reverts nothing is the known false
-positive; the tests carry a negative case. This is weaker than GitHub's
-structured reverts — recorded here so nobody later mistakes it for parity.
+Bitbucket's own "Revert" button creates the branch `revert-pr-<number>` — a
+structured link to the original PR's number. Detection matches that branch
+pattern in both directions (a revert syncing after its original, and an
+original syncing after its revert), mirroring how the GitLab handler matches
+`revert-<hash>` branches. This is STRONGER than the title-prefix heuristic
+this spec originally proposed: a title alone identifies a PR as "a revert"
+but names no target, and a mapping without both ends is useless to CFR — so
+the title heuristic was dropped during implementation, not weakened.
+A manual revert from a hand-named branch goes undetected; accepted and
+recorded.
 
 ---
 

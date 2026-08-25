@@ -345,3 +345,18 @@ def test_merged_pr_commits_are_adapted():
     assert len(pr_commits) == 1
     assert pr_commits[0].hash == "abc123"
     assert pr_commits[0].author == "Hamad <hamad@clustox.com>"
+
+
+def test_every_provider_reaches_the_factory():
+    # CLUSTOX: a provider enum value with no factory branch fails at sync
+    # time with NotImplementedError -- for the org that linked it, silently,
+    # in a scheduler log. This pins enum and factory together.
+    import inspect
+
+    from mhq.service.code.sync.etl_code_factory import CodeETLFactory
+
+    source = inspect.getsource(CodeETLFactory)
+    for provider in CodeProvider:
+        assert (
+            f"CodeProvider.{provider.name}.value" in source
+        ), f"CodeProvider.{provider.name} has no CodeETLFactory branch"

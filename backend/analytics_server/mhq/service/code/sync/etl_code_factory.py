@@ -1,3 +1,4 @@
+from mhq.service.code.sync.etl_bitbucket_handler import get_bitbucket_etl_handler
 from mhq.service.code.sync.etl_gitlab_handler import get_gitlab_etl_handler
 from mhq.service.code.sync.etl_github_handler import get_github_etl_handler
 from mhq.service.code.sync.etl_provider_handler import CodeProviderETLHandler
@@ -14,5 +15,8 @@ class CodeETLFactory:
 
         if provider == CodeProvider.GITLAB.value:
             return get_gitlab_etl_handler(self.org_id)
+
+        if provider == CodeProvider.BITBUCKET.value:
+            return get_bitbucket_etl_handler(self.org_id)
 
         raise NotImplementedError(f"Unknown provider - {provider}")
