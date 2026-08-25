@@ -372,3 +372,28 @@ def test_every_code_provider_is_in_the_sync_bucket():
         assert (
             provider.value in CODE_INTEGRATION_BUCKET
         ), f"CodeProvider.{provider.name} missing from CODE_INTEGRATION_BUCKET"
+
+
+def test_a_bitbucket_capable_build_changes_nothing_for_other_orgs():
+    # CLUSTOX: provider isolation. The bucket gained a third entry, and this
+    # pins what that must NOT mean: an org with only GitHub linked still gets
+    # exactly ['github'] from the scheduler's provider lookup -- the sync
+    # plan for every existing org is byte-identical to before this feature.
+    from mhq.service.code.integration import CodeIntegrationService
+
+    class _Integration:
+        def __init__(self, name):
+            self.name = name
+
+    class GithubOnlyCoreRepoService:
+        def get_org_integrations_for_names(self, org_id, names):
+            # The service asks for every bucket member; only what is actually
+            # linked comes back.
+            assert "bitbucket" in names
+            return [_Integration("github")]
+
+    providers = CodeIntegrationService(GithubOnlyCoreRepoService()).get_org_providers(
+        "org-1"
+    )
+
+    assert providers == ["github"]
