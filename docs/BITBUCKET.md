@@ -78,7 +78,7 @@ the first sync, incremental cost is trivial.
 | Ours | Bitbucket v2 | Notes |
 |---|---|---|
 | `state` MERGED / OPEN / CLOSED | `state` MERGED / OPEN / DECLINED (+ SUPERSEDED) | DECLINED and SUPERSEDED → CLOSED |
-| `author` | `author.uuid`, display via `author.nickname` | Stored as synced, like GitHub logins — a person on two providers appears twice, already true today |
+| `author` | `author.nickname`, uuid fallback (uuid kept in `data`) | The contributor dropdown lists `author` strings verbatim and the schema has no display indirection, so a stored uuid would surface as `{a1b2…}` in the UI. Nickname renames split history under two handles — the same accepted cost GitHub logins carry today. |
 | `base_branch` / `head_branch` | `destination.branch.name` / `source.branch.name` | |
 | `merge_commit_sha` | `merge_commit.hash` | **Null on unmerged PRs** — adapt per PR, never assume |
 | `state_changed_at` (merge time) | `updated_on` when state=MERGED | Bitbucket has no separate merged_at; `updated_on` at merge is the closest truth and is what lead time keys on |

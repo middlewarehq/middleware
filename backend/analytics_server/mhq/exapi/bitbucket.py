@@ -100,6 +100,13 @@ class BitbucketApiService:
         )
         return self._get_paginated(url)
 
+    def get_pr_commits(self, workspace: str, repo_slug: str, pr_id: int) -> List[Dict]:
+        url = (
+            f"{self.base_url}/repositories/{workspace}/{repo_slug}"
+            f"/pullrequests/{pr_id}/commits"
+        )
+        return self._get_paginated(url)
+
     def get_pr_diffstat(self, workspace: str, repo_slug: str, pr_id: int) -> List[Dict]:
         url = (
             f"{self.base_url}/repositories/{workspace}/{repo_slug}"

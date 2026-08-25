@@ -162,3 +162,26 @@ def test_pr_model_tolerates_null_merge_commit():
 
     assert pr.state == "OPEN"
     assert pr.merge_commit_sha is None
+
+
+def test_pr_commits_paginate_like_everything_else():
+    # CLUSTOX: commits feed first_commit_to_open in lead time -- a handler
+    # that skips them would degrade one lead-time stage to zero silently.
+    page = {
+        "values": [
+            {
+                "hash": "abc123",
+                "message": "feat: thing",
+                "date": "2026-08-20T09:00:00+00:00",
+                "author": {"raw": "Hamad <hamad@clustox.com>"},
+                "links": {
+                    "html": {"href": "https://bitbucket.org/ws/repo/commits/abc123"}
+                },
+            }
+        ]
+    }
+    service = _service_with_pages([page])
+
+    commits = service.get_pr_commits("ws", "repo", 42)
+
+    assert commits[0]["hash"] == "abc123"

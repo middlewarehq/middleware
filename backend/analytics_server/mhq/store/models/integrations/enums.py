@@ -4,6 +4,7 @@ from enum import Enum
 class UserIdentityProvider(Enum):
     GITHUB = "github"
     GITLAB = "gitlab"
+    BITBUCKET = "bitbucket"
     # CLUSTOX: Jenkins credentials live in Integration like any other provider.
     JENKINS = "jenkins"
     # CLUSTOX: Jira is a project-tracker integration, not a code provider --
