@@ -61,9 +61,7 @@ class TestCheckPat:
 
 class TestSearchIssues:
     @patch("mhq.exapi.jira.requests.post")
-    def test_posts_jql_and_expand_changelog_to_the_new_search_endpoint(
-        self, mock_post
-    ):
+    def test_posts_jql_and_expand_changelog_to_the_new_search_endpoint(self, mock_post):
         mock_post.return_value = _response(200, {"issues": []})
 
         _service().search_issues("project = PAY")
@@ -111,9 +109,7 @@ class TestSearchIssues:
 class TestGetAllIssues:
     @patch("mhq.exapi.jira.requests.post")
     def test_stops_when_there_is_no_next_page_token(self, mock_post):
-        mock_post.return_value = _response(
-            200, {"issues": [_issue("1"), _issue("2")]}
-        )
+        mock_post.return_value = _response(200, {"issues": [_issue("1"), _issue("2")]})
 
         issues = _service().get_all_issues("project = PAY")
 
@@ -133,9 +129,7 @@ class TestGetAllIssues:
         assert mock_post.call_count == 2
 
     @patch("mhq.exapi.jira.requests.post")
-    def test_stops_on_an_empty_page_even_if_a_token_is_somehow_present(
-        self, mock_post
-    ):
+    def test_stops_on_an_empty_page_even_if_a_token_is_somehow_present(self, mock_post):
         # Defensive: an empty `issues` page should halt pagination
         # regardless of what nextPageToken says, so a misbehaving/unclear
         # response can't spin this into an infinite loop.

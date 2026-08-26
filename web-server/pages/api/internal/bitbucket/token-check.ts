@@ -27,30 +27,34 @@ endpoint.handle.POST(postSchema, async (req, res) => {
     )}`
   };
 
-  const response = await fetch('https://api.bitbucket.org/2.0/user', {
-    headers
-  });
+  // CLUSTOX: the try/catch is secret hygiene, not politeness. An uncaught
+  // fetch error propagates to the global handler, which logs the whole
+  // request -- token included -- into the server log. A network failure here
+  // must degrade to a clean "invalid" answer instead.
+  let response: Response;
+  try {
+    response = await fetch('https://api.bitbucket.org/2.0/user', { headers });
+  } catch (e) {
+    return res.send({ valid: false, reason: 'network_error' });
+  }
 
   if (response.ok) {
     const user = await response.json();
     return res.send({ valid: true, nickname: user.nickname ?? null });
   }
 
-  // CLUSTOX: a scoped Atlassian token created without the `account` read
-  // scope fails /2.0/user while working fine against repositories -- and the
-  // sync's own validity check uses /2.0/user, so such a token must be
-  // rejected HERE, with a message that names the actual problem instead of
-  // "invalid credentials". Probe /2.0/workspaces to tell the two apart.
-  const workspaces = await fetch(
-    'https://api.bitbucket.org/2.0/workspaces?pagelen=1',
-    { headers }
-  );
-  if (workspaces.ok) {
+  // CLUSTOX: a scoped token missing the account read scope gets 403 from
+  // /2.0/user with otherwise-valid credentials; a wrong pair gets 401. The
+  // sync's own validity check uses /2.0/user, so a 403 token must still be
+  // rejected -- but with a message naming the actual problem. (An earlier
+  // version probed /2.0/workspaces to tell these apart; that endpoint is
+  // dead -- 410 CHANGE-2770 -- so the probe made this reason unreachable.)
+  if (response.status === 403) {
     return res.send({ valid: false, reason: 'missing_account_scope' });
   }
 
-  // Neither endpoint accepts the pair: wrong email, wrong token, revoked or
-  // expired -- the API cannot tell these apart, so neither can our copy.
+  // 401 and everything else: wrong email, wrong token, revoked or expired --
+  // the API cannot tell these apart, so neither can our copy.
   return res.send({ valid: false, reason: 'invalid_credentials' });
 });
 

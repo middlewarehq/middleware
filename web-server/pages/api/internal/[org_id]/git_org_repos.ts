@@ -10,7 +10,7 @@ import {
 import { Endpoint } from '@/api-helpers/global';
 import { Integration } from '@/constants/integrations';
 import { BaseRepo } from '@/types/resources';
-import { adaptBitbucketRepo } from '@/utils/bitbucketRepos';
+import { adaptBitbucketRepo, isBitbucketApiUrl } from '@/utils/bitbucketRepos';
 
 const pathSchema = yup.object({
   org_id: yup.string().required()
@@ -228,7 +228,13 @@ async function fetchBitbucketRepos(params: {
   const { org, email, token, first, after } = params;
   // CLUSTOX: Bitbucket paginates by opaque `next` URLs, not cursors. The
   // `after` value IS the next-page URL, threaded through the cursor field the
-  // shared contract already has -- the UI never inspects it.
+  // shared contract already has -- the UI never inspects it. It is also
+  // client-supplied, and this fetch carries the org's Basic auth header, so
+  // an unvalidated cursor is an SSRF that exfiltrates the token to any host
+  // the caller names. Only Bitbucket's own API may be fetched.
+  if (after && !isBitbucketApiUrl(after)) {
+    throw new Error('Invalid Bitbucket pagination cursor');
+  }
   const url =
     after ||
     `https://api.bitbucket.org/2.0/repositories/${encodeURIComponent(

@@ -21,7 +21,13 @@ def _project(project_id=PROJECT_ID, key="PZDA", name="Project Zero Deposit Afric
     return OrgProject(id=project_id, key=key, name=name)
 
 
-def _ticket(ticket_id="t1", project_id=PROJECT_ID, status="Done", created_at=None, updated_at=None):
+def _ticket(
+    ticket_id="t1",
+    project_id=PROJECT_ID,
+    status="Done",
+    created_at=None,
+    updated_at=None,
+):
     return Ticket(
         id=ticket_id,
         org_project_id=project_id,
@@ -52,11 +58,11 @@ class TestComputeCycleTimeByProject:
         )
         project = _project()
 
-        [result] = compute_cycle_time_by_project(
-            [ticket], [], _projects_by_id(project)
-        )
+        [result] = compute_cycle_time_by_project([ticket], [], _projects_by_id(project))
 
-        assert result.avg_seconds_by_category["Done"] == timedelta(days=9).total_seconds()
+        assert (
+            result.avg_seconds_by_category["Done"] == timedelta(days=9).total_seconds()
+        )
         assert result.avg_seconds_by_category["To Do"] == 0
         assert result.avg_seconds_by_category["In Progress"] == 0
 
@@ -65,8 +71,12 @@ class TestComputeCycleTimeByProject:
         updated_at = datetime(2026, 1, 20, tzinfo=timezone.utc)
         ticket = _ticket(created_at=created_at, updated_at=updated_at)
         states = [
-            _state("t1", "To Do", "In Progress", datetime(2026, 1, 3, tzinfo=timezone.utc)),
-            _state("t1", "In Progress", "QA", datetime(2026, 1, 8, tzinfo=timezone.utc)),
+            _state(
+                "t1", "To Do", "In Progress", datetime(2026, 1, 3, tzinfo=timezone.utc)
+            ),
+            _state(
+                "t1", "In Progress", "QA", datetime(2026, 1, 8, tzinfo=timezone.utc)
+            ),
             _state("t1", "QA", "Done", datetime(2026, 1, 15, tzinfo=timezone.utc)),
         ]
         project = _project()
@@ -87,15 +97,21 @@ class TestComputeCycleTimeByProject:
         created_at = datetime(2026, 1, 1, tzinfo=timezone.utc)
         updated_at = datetime(2026, 1, 6, tzinfo=timezone.utc)
         ticket = _ticket(status="Shipped", created_at=created_at, updated_at=updated_at)
-        state = _state("t1", "Backlog", "Shipped", datetime(2026, 1, 4, tzinfo=timezone.utc))
+        state = _state(
+            "t1", "Backlog", "Shipped", datetime(2026, 1, 4, tzinfo=timezone.utc)
+        )
         project = _project()
 
         [result] = compute_cycle_time_by_project(
             [ticket], [state], _projects_by_id(project)
         )
 
-        assert result.avg_seconds_by_category["To Do"] == timedelta(days=3).total_seconds()
-        assert result.avg_seconds_by_category["Done"] == timedelta(days=2).total_seconds()
+        assert (
+            result.avg_seconds_by_category["To Do"] == timedelta(days=3).total_seconds()
+        )
+        assert (
+            result.avg_seconds_by_category["Done"] == timedelta(days=2).total_seconds()
+        )
         assert result.avg_seconds_by_category["In Progress"] == 0
 
     def test_every_middle_segment_becomes_in_progress_regardless_of_how_many_there_are(
@@ -105,11 +121,22 @@ class TestComputeCycleTimeByProject:
         updated_at = datetime(2026, 1, 20, tzinfo=timezone.utc)
         ticket = _ticket(created_at=created_at, updated_at=updated_at)
         states = [
-            _state("t1", "To Do", "In Progress", datetime(2026, 1, 2, tzinfo=timezone.utc)),
-            _state("t1", "In Progress", "QA", datetime(2026, 1, 5, tzinfo=timezone.utc)),
+            _state(
+                "t1", "To Do", "In Progress", datetime(2026, 1, 2, tzinfo=timezone.utc)
+            ),
+            _state(
+                "t1", "In Progress", "QA", datetime(2026, 1, 5, tzinfo=timezone.utc)
+            ),
             _state("t1", "QA", "In Testing", datetime(2026, 1, 9, tzinfo=timezone.utc)),
-            _state("t1", "In Testing", "In_Review", datetime(2026, 1, 12, tzinfo=timezone.utc)),
-            _state("t1", "In_Review", "Done", datetime(2026, 1, 18, tzinfo=timezone.utc)),
+            _state(
+                "t1",
+                "In Testing",
+                "In_Review",
+                datetime(2026, 1, 12, tzinfo=timezone.utc),
+            ),
+            _state(
+                "t1", "In_Review", "Done", datetime(2026, 1, 18, tzinfo=timezone.utc)
+            ),
         ]
         project = _project()
 
@@ -210,10 +237,18 @@ class TestComputeCycleTimeByProject:
         updated_at = datetime(2026, 1, 20, tzinfo=timezone.utc)
         ticket = _ticket(created_at=created_at, updated_at=updated_at)
         states = [
-            _state("t1", "To Do", "In Progress", datetime(2026, 1, 2, tzinfo=timezone.utc)),
-            _state("t1", "In Progress", "Done", datetime(2026, 1, 5, tzinfo=timezone.utc)),
-            _state("t1", "Done", "In Progress", datetime(2026, 1, 10, tzinfo=timezone.utc)),
-            _state("t1", "In Progress", "Done", datetime(2026, 1, 15, tzinfo=timezone.utc)),
+            _state(
+                "t1", "To Do", "In Progress", datetime(2026, 1, 2, tzinfo=timezone.utc)
+            ),
+            _state(
+                "t1", "In Progress", "Done", datetime(2026, 1, 5, tzinfo=timezone.utc)
+            ),
+            _state(
+                "t1", "Done", "In Progress", datetime(2026, 1, 10, tzinfo=timezone.utc)
+            ),
+            _state(
+                "t1", "In Progress", "Done", datetime(2026, 1, 15, tzinfo=timezone.utc)
+            ),
         ]
         project = _project()
 
@@ -226,5 +261,10 @@ class TestComputeCycleTimeByProject:
         # afterward (Jan5->Jan10, 5d) + the reopened In Progress visit
         # (Jan10->Jan15, 5d) = 13 days, all counted as "In Progress".
         # Only the final Done segment (Jan15->Jan20, 5d) is excluded.
-        assert result.avg_seconds_by_category["In Progress"] == timedelta(days=13).total_seconds()
-        assert result.avg_seconds_by_category["Done"] == timedelta(days=5).total_seconds()
+        assert (
+            result.avg_seconds_by_category["In Progress"]
+            == timedelta(days=13).total_seconds()
+        )
+        assert (
+            result.avg_seconds_by_category["Done"] == timedelta(days=5).total_seconds()
+        )

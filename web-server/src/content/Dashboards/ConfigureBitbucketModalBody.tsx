@@ -99,7 +99,7 @@ export const ConfigureBitbucketModalBody: FC<{
         } catch (e: any) {
           throw new Error(
             `Failed to link Bitbucket${e?.message ? `: ${e?.message}` : ''}`,
-            e
+            { cause: e }
           );
         }
       })

@@ -69,7 +69,9 @@ class TestGetTeamTicketLeadTimeMetrics:
             "pr-1": time_now()
         }
         code_repo = MagicMock()
-        code_repo.get_first_commit_at_by_pr_ids.return_value = {}  # no commit row synced
+        code_repo.get_first_commit_at_by_pr_ids.return_value = (
+            {}
+        )  # no commit row synced
 
         result = _service(
             lead_time_service, code_repo, ticket_matching_repo
@@ -93,9 +95,7 @@ class TestGetTeamTicketLeadTimeMetrics:
             "pr-1": ticket_created_at
         }
         code_repo = MagicMock()
-        code_repo.get_first_commit_at_by_pr_ids.return_value = {
-            "pr-1": first_commit_at
-        }
+        code_repo.get_first_commit_at_by_pr_ids.return_value = {"pr-1": first_commit_at}
 
         result = _service(
             lead_time_service, code_repo, ticket_matching_repo
@@ -130,9 +130,10 @@ class TestGetTeamTicketLeadTimeMetrics:
 
         assert result.matched_pr_count == 2
         # (1 day + 3 days) / 2 = 2 days, in seconds.
-        assert result.avg_ticket_to_first_commit_seconds == timedelta(
-            days=2
-        ).total_seconds()
+        assert (
+            result.avg_ticket_to_first_commit_seconds
+            == timedelta(days=2).total_seconds()
+        )
         # (1000 + 2000) / 2 -- the unmatched PR's 999999s must not leak in.
         assert result.avg_commit_only_lead_time_seconds == 1500
         assert result.avg_extended_lead_time_seconds == (

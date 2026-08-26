@@ -7,7 +7,6 @@ from mhq.utils.time import Interval
 
 from tests.factories.models import get_incident
 
-
 first_week_2024 = datetime(2024, 1, 1, 0, 0, 0, tzinfo=pytz.UTC)
 second_week_2024 = datetime(2024, 1, 8, 0, 0, 0, tzinfo=pytz.UTC)
 third_week_2024 = datetime(2024, 1, 15, 0, 0, 0, tzinfo=pytz.UTC)

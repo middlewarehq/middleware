@@ -1,6 +1,6 @@
 # Bitbucket Cloud integration — design
 
-**Status:** approved, not implemented
+**Status:** phase 1 implemented and live-verified; phase 2 (Pipelines) pending
 **Date:** 2026-08-25
 **Delivery:** two sequential PRs from one design — code provider first, Pipelines second
 **Estimate:** 4–5 days (phase 1), 2–3 days (phase 2)
@@ -22,7 +22,7 @@ Bitbucket + Jenkins is fully served after phase 1 alone.
 | Token validation | **Server-side in the BFF** | Bitbucket's API does not serve CORS for Basic auth from arbitrary origins, so the browser-side check GitHub uses is impossible. GitLab's modal already validates server-side — same pattern. |
 | Delivery | **Two sequential PRs** | Phase 1 ships value alone; a Pipelines problem cannot hold code metrics hostage. Same playbook as Jenkins + contributor filter. |
 | Scope unit | **Workspace** = org | Bitbucket's workspace is the org-level container. Repo listing and sync iterate the workspaces the token can see. |
-| Revert detection | **Title prefix heuristic** | Bitbucket has no structured revert marker. Weaker than GitHub's; stated, not hidden. |
+| Revert detection | **`revert-pr-<number>` branch pattern** | Bitbucket's own Revert button creates this branch — a structured link to the original PR. See the phase-1 section for why the title heuristic was dropped. |
 | Rate limits | **429 = pause + resume, never fail** | ~1,000 req/hr on Cloud. First sync of a large repo will hit it; the bookmark makes stopping safe. |
 
 **No database migration anywhere.** `CodeProvider.BITBUCKET` and
@@ -51,7 +51,7 @@ to the new modal, and the integrations card on the dashboard.
 
 ```
 GET /2.0/user                                       token validity
-GET /2.0/workspaces                                 org discovery
+GET /2.0/user/permissions/workspaces                org discovery (/2.0/workspaces is dead: 410 CHANGE-2770; scoped tokens cannot enumerate at all)
 GET /2.0/repositories/{workspace}                   repo listing (pagelen=50)
 GET /2.0/repositories/{ws}/{slug}/pullrequests      PRs, ?q=updated_on>bookmark
 GET /2.0/repositories/{ws}/{slug}/pullrequests/{id}/activity   reviews/approvals

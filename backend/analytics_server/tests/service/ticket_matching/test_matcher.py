@@ -8,9 +8,7 @@ from mhq.service.ticket_matching.matcher import extract_ticket_keys
 
 
 def test_finds_a_ticket_key_in_a_conventional_commit_style_title():
-    keys = extract_ticket_keys(
-        "fix(PZDA-543): record the accepted policy version", ""
-    )
+    keys = extract_ticket_keys("fix(PZDA-543): record the accepted policy version", "")
     assert keys == ["PZDA-543"]
 
 
@@ -30,9 +28,7 @@ def test_dedupes_the_same_key_appearing_in_both_title_and_branch():
 def test_expands_a_slash_separated_multi_ticket_reference():
     # Real example: "feat(PZDA-544/546): measure the profile-completion
     # reminder interval in working days"
-    keys = extract_ticket_keys(
-        "feat(PZDA-544/546): measure the reminder interval", ""
-    )
+    keys = extract_ticket_keys("feat(PZDA-544/546): measure the reminder interval", "")
     assert keys == ["PZDA-544", "PZDA-546"]
 
 

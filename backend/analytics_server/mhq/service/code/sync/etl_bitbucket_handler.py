@@ -180,6 +180,14 @@ class BitbucketETLHandler(CodeProviderETLHandler):
         pr_model: Optional[PullRequest] = self.code_repo_service.get_repo_pr_by_number(
             repo_id, pr.number
         )
+        # CLUSTOX: kept before the model is rebuilt. A merged PR re-syncs
+        # whenever anything bumps its updated_on (a late comment, say); the
+        # rebuilt meta starts empty, and if THIS run's diffstat fails, the
+        # merge would overwrite the row and erase code_stats it already had --
+        # LOC silently dropping for a PR whose lines never changed.
+        previous_code_stats = (
+            (pr_model.meta or {}).get("code_stats") if pr_model else None
+        )
         pr_event_model_list: List[PullRequestEvent] = (
             self.code_repo_service.get_pr_events(pr_model)
         )
@@ -212,6 +220,8 @@ class BitbucketETLHandler(CodeProviderETLHandler):
                     changed_files=files_changed,
                     comments=None,
                 )
+            elif previous_code_stats:
+                meta["code_stats"] = previous_code_stats
             pr_model.meta = meta
 
         pr_model = self.code_etl_analytics_service.create_pr_metrics(
@@ -272,8 +282,13 @@ class BitbucketETLHandler(CodeProviderETLHandler):
             updated_at=pr.updated_on,
             # CLUSTOX: Bitbucket has no merged_at anywhere in the PR object.
             # updated_on at the moment of merge is the closest truth, and it
-            # is what lead time keys on.
-            state_changed_at=pr.updated_on,
+            # is what lead time keys on. None for OPEN PRs, matching the
+            # GitHub handler -- an open PR's state has not changed, and a
+            # timestamp there would be a silent cross-provider inconsistency
+            # in a load-bearing column.
+            state_changed_at=(
+                pr.updated_on if state != PullRequestState.OPEN else None
+            ),
             repo_id=repo_id,
             requested_reviews=[],
             meta=dict(),
@@ -347,10 +362,14 @@ class BitbucketETLHandler(CodeProviderETLHandler):
             if "approval" in entry:
                 approval = entry["approval"] or {}
                 created_at = _dt_or_none(approval.get("date"))
-                actor = (approval.get("user") or {}).get("nickname")
+                user = approval.get("user") or {}
+                actor = user.get("nickname")
                 if not created_at:
                     return None
-                key = f"approval-{actor}-{approval.get('date')}"
+                # CLUSTOX: keyed on the account uuid, not the nickname -- a
+                # nickname rename would change the key and duplicate this
+                # event on the next re-sync of the PR.
+                key = f"approval-{user.get('uuid') or actor}-{approval.get('date')}"
                 return (
                     PullRequestEventState.APPROVED.value,
                     actor,
@@ -361,10 +380,11 @@ class BitbucketETLHandler(CodeProviderETLHandler):
             if "changes_requested" in entry:
                 changes = entry["changes_requested"] or {}
                 created_at = _dt_or_none(changes.get("date"))
-                actor = (changes.get("user") or {}).get("nickname")
+                user = changes.get("user") or {}
+                actor = user.get("nickname")
                 if not created_at:
                     return None
-                key = f"changes-{actor}-{changes.get('date')}"
+                key = f"changes-{user.get('uuid') or actor}-{changes.get('date')}"
                 return (
                     PullRequestEventState.CHANGES_REQUESTED.value,
                     actor,

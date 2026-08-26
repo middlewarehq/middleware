@@ -29,6 +29,16 @@ export const adaptBitbucketRepo = (
   slug: repo.slug,
   web_url: repo.links?.html?.href,
   branch: repo.mainbranch?.name || null,
-  parent: org,
+  // The canonical slug from the payload, not the user-typed workspace --
+  // typed casing would otherwise propagate into org_name and every API path.
+  parent: repo.workspace?.slug ?? org,
   provider: Integration.BITBUCKET
 });
+
+// CLUSTOX: the Bitbucket page cursor is an opaque URL the CLIENT sends back.
+// Fetched unvalidated, it is an SSRF that carries the org's email:token Basic
+// header to any host a workspace member names -- credential exfiltration in
+// one request. Prefix-anchored, not includes(): a path like
+// evil.example/https://api.bitbucket.org/2.0/ must fail.
+export const isBitbucketApiUrl = (url: string): boolean =>
+  url.startsWith('https://api.bitbucket.org/2.0/');

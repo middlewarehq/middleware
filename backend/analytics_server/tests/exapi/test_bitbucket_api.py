@@ -201,3 +201,17 @@ def test_workspaces_use_the_permissions_endpoint_not_the_dead_one():
     url = service._session.get.call_args_list[0].args[0]
     assert url.endswith("/2.0/user/permissions/workspaces")
     assert workspaces == [{"slug": "clustox"}]
+
+
+def test_check_pat_raises_rate_limit_instead_of_reading_as_invalid():
+    # CLUSTOX: False here becomes "token is invalid, revoked or expired" at
+    # sync start -- and the post-429 resume window is exactly when that check
+    # runs next. A rate limit must stay a rate limit.
+    service = BitbucketApiService("hamad@clustox.com", "token-123")
+    service._session = MagicMock()
+    service._session.get.return_value = _response(
+        {}, status=429, headers={"Retry-After": "600"}
+    )
+
+    with pytest.raises(BitbucketRateLimitExceeded):
+        service.check_pat()

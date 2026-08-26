@@ -397,3 +397,59 @@ def test_a_bitbucket_capable_build_changes_nothing_for_other_orgs():
     )
 
     assert providers == ["github"]
+
+
+def test_open_pr_has_no_state_changed_at():
+    # CLUSTOX: GitHub sets None for OPEN; a timestamp here would be a silent
+    # cross-provider inconsistency in a load-bearing column.
+    pull_requests, _, _ = _sync([dict(BB_PR, state="OPEN", merge_commit=None)])
+
+    assert pull_requests[0].state_changed_at is None
+
+
+def test_approval_event_key_is_uuid_stable_across_nickname_renames():
+    def event_key(nickname):
+        activity = [
+            {
+                "approval": {
+                    "date": "2026-08-21T12:00:00+00:00",
+                    "user": {"uuid": "{u-stable}", "nickname": nickname},
+                }
+            }
+        ]
+        _, _, events = _sync([BB_PR], activity=activity)
+        return events[0].idempotency_key
+
+    # A rename must not change the key -- a changed key duplicates the event
+    # on the next re-sync of the PR.
+    assert event_key("muzz") == event_key("muzz-renamed")
+
+
+def test_resync_diffstat_failure_keeps_previously_stored_code_stats():
+    kept = {"commits": 1, "additions": 10, "deletions": 2, "changed_files": 1}
+
+    class ExistingPRRepoService(FakeCodeRepoService):
+        def get_repo_pr_by_number(self, repo_id, number):
+            class _Existing:
+                id = uuid4()
+                meta = {"code_stats": kept}
+
+            return _Existing()
+
+    handler = BitbucketETLHandler(
+        org_id="org-1",
+        bitbucket_api_service=BrokenDiffstatApiService(prs=[BB_PR]),
+        code_repo_service=ExistingPRRepoService(),
+        code_etl_analytics_service=__import__(
+            "mhq.service.code.sync.etl_code_analytics",
+            fromlist=["CodeETLAnalyticsService"],
+        ).CodeETLAnalyticsService(),
+        bitbucket_revert_pr_sync_handler=None,
+    )
+
+    pull_requests, _, _ = handler.get_repo_pull_requests_data(
+        _Repo(), datetime(2026, 1, 1, tzinfo=timezone.utc)
+    )
+
+    # The re-sync must not erase what an earlier successful sync stored.
+    assert pull_requests[0].meta["code_stats"] == kept

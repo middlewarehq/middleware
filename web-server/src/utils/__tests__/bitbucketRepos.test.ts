@@ -38,3 +38,20 @@ describe('adaptBitbucketRepo', () => {
     expect(adaptBitbucketRepo(empty, 'clustox').branch).toBeNull();
   });
 });
+
+describe('isBitbucketApiUrl', () => {
+  const { isBitbucketApiUrl } = require('@/utils/bitbucketRepos');
+
+  it('accepts only Bitbucket API URLs, prefix-anchored', () => {
+    expect(
+      isBitbucketApiUrl('https://api.bitbucket.org/2.0/repositories/x?page=2')
+    ).toBe(true);
+    // CLUSTOX: the cursor is client-supplied and fetched with the org's
+    // Basic auth header -- each of these is a token-exfiltration attempt.
+    expect(isBitbucketApiUrl('https://evil.example/steal')).toBe(false);
+    expect(
+      isBitbucketApiUrl('https://evil.example/https://api.bitbucket.org/2.0/')
+    ).toBe(false);
+    expect(isBitbucketApiUrl('http://api.bitbucket.org/2.0/x')).toBe(false);
+  });
+});

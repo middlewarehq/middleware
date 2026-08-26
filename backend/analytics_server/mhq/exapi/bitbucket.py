@@ -37,6 +37,13 @@ class BitbucketApiService:
             response = self._session.get(url)
         except Exception as e:
             raise Exception(f"Error in Bitbucket token validation, Error: {e}")
+        # CLUSTOX: a 429 here must surface as a rate limit, not as False --
+        # False becomes "token is invalid, revoked or expired" at sync start,
+        # and the pause-and-resume window after a 429 is exactly when the next
+        # sync's validity check runs. Telling a paused org its token died
+        # would send an admin to rotate a perfectly good credential.
+        if response.status_code == 429:
+            self._handle_error(response)
         return response.status_code == 200
 
     def _handle_error(self, response):
