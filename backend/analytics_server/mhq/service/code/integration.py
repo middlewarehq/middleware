@@ -3,9 +3,15 @@ from typing import List
 from mhq.store.models import UserIdentityProvider, Integration
 from mhq.store.repos.core import CoreRepoService
 
+# CLUSTOX: every code provider must be listed here as well as in
+# CodeETLFactory. This bucket decides WHICH orgs the scheduler syncs at all --
+# a provider registered in the factory but absent here links successfully in
+# the UI and then never syncs, with no error anywhere. (The Jenkins
+# integration shipped exactly this class of gap.)
 CODE_INTEGRATION_BUCKET = [
     UserIdentityProvider.GITHUB.value,
     UserIdentityProvider.GITLAB.value,
+    UserIdentityProvider.BITBUCKET.value,
 ]
 
 

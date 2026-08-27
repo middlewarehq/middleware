@@ -315,26 +315,27 @@ export const getGitHubCustomDomain = async (): Promise<string | null> => {
 
     return head(provider_meta || [])?.custom_domain || null;
   } catch (error) {
-    console.error('Error occured while getting custom domain from database:', error);
+    console.error(
+      'Error occured while getting custom domain from database:',
+      error
+    );
     return null;
   }
 };
 
-const normalizeSlashes = (url: string) =>
-  url.replace(/(?<!:)\/{2,}/g, '/');
+const normalizeSlashes = (url: string) => url.replace(/(?<!:)\/{2,}/g, '/');
 
 export const getGitHubRestApiUrl = async (path: string) => {
   const customDomain = await getGitHubCustomDomain();
-  const base = customDomain
-    ? `${customDomain}/api/v3`
-    : DEFAULT_GH_URL;
+  const base = customDomain ? `${customDomain}/api/v3` : DEFAULT_GH_URL;
   return normalizeSlashes(`${base}/${path}`);
 };
 
-
 export const getGitHubGraphQLUrl = async (): Promise<string> => {
   const customDomain = await getGitHubCustomDomain();
-  return customDomain ? `${customDomain}/api/graphql` : `${DEFAULT_GH_URL}/graphql`;
+  return customDomain
+    ? `${customDomain}/api/graphql`
+    : `${DEFAULT_GH_URL}/graphql`;
 };
 
 export const getGithubToken = async (org_id: ID) => {
@@ -359,4 +360,23 @@ export const getGitlabToken = async (org_id: ID) => {
     .returning('*')
     .then(getFirstRow)
     .then((r) => dec(r.access_token_enc_chunks));
+};
+
+// CLUSTOX: Bitbucket authenticates with Basic auth (email, Atlassian API
+// token), so both halves come back together. The email is not a secret and
+// lives in provider_meta -- the same home GitLab uses for custom_domain --
+// while the token is encrypted like every other provider's.
+export const getBitbucketCredentials = async (org_id: ID) => {
+  return await db('Integration')
+    .select()
+    .where({
+      org_id,
+      name: Integration.BITBUCKET
+    })
+    .returning('*')
+    .then(getFirstRow)
+    .then((r) => ({
+      email: r.provider_meta?.email as string,
+      token: dec(r.access_token_enc_chunks)
+    }));
 };

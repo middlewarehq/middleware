@@ -61,7 +61,10 @@ class TestGetOrgProviders:
     def test_jira_issue_source_disabled_excludes_jira_even_if_linked(self):
         service = _service(
             incident_sources=[IncidentSource.GIT_REPO],
-            linked_providers=[IncidentProvider.JIRA.value, IncidentProvider.GITHUB.value],
+            linked_providers=[
+                IncidentProvider.JIRA.value,
+                IncidentProvider.GITHUB.value,
+            ],
         )
 
         # Jira is linked, but the org hasn't opted the source in --
@@ -80,7 +83,10 @@ class TestGetOrgProviders:
     def test_both_git_repo_and_jira_issue_enabled_returns_both(self):
         service = _service(
             incident_sources=[IncidentSource.GIT_REPO, IncidentSource.JIRA_ISSUE],
-            linked_providers=[IncidentProvider.JIRA.value, IncidentProvider.GITHUB.value],
+            linked_providers=[
+                IncidentProvider.JIRA.value,
+                IncidentProvider.GITHUB.value,
+            ],
         )
 
         providers = service.get_org_providers(ORG_ID)

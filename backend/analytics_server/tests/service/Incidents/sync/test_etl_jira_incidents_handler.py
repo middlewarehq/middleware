@@ -231,7 +231,8 @@ class TestToIncident:
         from tests.factories.models import get_incident
 
         existing_incident = get_incident(
-            id="existing-incident-id", created_at=datetime(2020, 1, 1, tzinfo=timezone.utc)
+            id="existing-incident-id",
+            created_at=datetime(2020, 1, 1, tzinfo=timezone.utc),
         )
         ticket = _ticket()
         handler = _handler(
@@ -257,8 +258,12 @@ class TestToIncident:
     def test_no_site_url_means_no_ticket_url(self):
         ticket = _ticket()
         handler = JiraIncidentsETLHandler(
-            ORG_ID, None, FakeProjectRepoService(), FakeIncidentsRepoService(),
-            FakeSettingsService(), None,
+            ORG_ID,
+            None,
+            FakeProjectRepoService(),
+            FakeIncidentsRepoService(),
+            FakeSettingsService(),
+            None,
         )
 
         incident = handler._to_incident(ticket, states=[])

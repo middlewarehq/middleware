@@ -71,6 +71,36 @@ export const getMissingPATScopes = async (
   }
 };
 
+// Bitbucket functions
+
+// CLUSTOX: server-side, unlike checkGitHubValidity above --
+// api.bitbucket.org sends no CORS headers for Basic auth from foreign
+// origins, so a browser-direct check dies in preflight. The internal
+// endpoint calls /2.0/user and returns a boolean; the token goes over our
+// own wire once and is never logged or echoed.
+export type BitbucketValidity = {
+  valid: boolean;
+  reason?: 'invalid_credentials' | 'missing_account_scope';
+};
+
+export const checkBitbucketValidity = async (
+  email: string,
+  token: string
+): Promise<BitbucketValidity> => {
+  try {
+    const response = await axios.post('/api/internal/bitbucket/token-check', {
+      email,
+      token
+    });
+    return {
+      valid: Boolean(response.data?.valid),
+      reason: response.data?.reason
+    };
+  } catch (error) {
+    return { valid: false, reason: 'invalid_credentials' };
+  }
+};
+
 // Gitlab functions
 
 export const checkGitLabValidity = async (
@@ -149,7 +179,11 @@ export const checkJiraValidity = async (
       email,
       api_token: apiToken
     });
-    return { valid: data.valid, displayName: data.display_name, reason: data.reason };
+    return {
+      valid: data.valid,
+      displayName: data.display_name,
+      reason: data.reason
+    };
   } catch (error) {
     return { valid: false, reason: 'unknown' };
   }

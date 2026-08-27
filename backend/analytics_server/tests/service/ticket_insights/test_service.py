@@ -36,9 +36,9 @@ class TestGetTeamTicketInsights:
         ticket_matching_repo.get_unlinked_merged_pr_count.return_value = 0
 
         team = Team(id="team-1")
-        _service(project_repo, code_repo, ticket_matching_repo).get_team_ticket_insights(
-            team, _interval()
-        )
+        _service(
+            project_repo, code_repo, ticket_matching_repo
+        ).get_team_ticket_insights(team, _interval())
 
         looked_up_project_ids = (
             project_repo.get_tickets_with_states_for_projects.call_args[0][0]
@@ -105,13 +105,13 @@ class TestGetTeamUnlinkedPrs:
         ticket_matching_repo.get_unlinked_merged_prs.return_value = []
 
         team = Team(id="team-1")
-        _service(code_repo=code_repo, ticket_matching_repo=ticket_matching_repo).get_team_unlinked_prs(
-            team, _interval()
-        )
+        _service(
+            code_repo=code_repo, ticket_matching_repo=ticket_matching_repo
+        ).get_team_unlinked_prs(team, _interval())
 
-        looked_up_repo_ids = (
-            ticket_matching_repo.get_unlinked_merged_prs.call_args[0][0]
-        )
+        looked_up_repo_ids = ticket_matching_repo.get_unlinked_merged_prs.call_args[0][
+            0
+        ]
         assert set(looked_up_repo_ids) == {"repo-1", "repo-2"}
 
     def test_returns_exactly_what_the_repo_service_returns(self):
