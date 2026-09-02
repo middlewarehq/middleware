@@ -100,7 +100,16 @@ export const AccountMenu: FC = () => {
         )}
 
         <MenuItem
-          onClick={() => signOut({ callbackUrl: '/login' })}
+          // CLUSTOX: redirect client-side, not via next-auth's callbackUrl.
+          // A relative callbackUrl is resolved server-side against
+          // NEXTAUTH_URL, so on the server (where that env is not the public
+          // domain) signing out landed on localhost's login page.
+          // window.location resolves against whatever origin the user is
+          // actually on, and the full page load clears client state too.
+          onClick={async () => {
+            await signOut({ redirect: false });
+            window.location.assign('/login');
+          }}
           sx={{ color: 'error.main' }}
         >
           <ListItemIcon>
