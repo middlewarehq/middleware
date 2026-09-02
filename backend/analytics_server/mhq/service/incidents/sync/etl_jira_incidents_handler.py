@@ -121,7 +121,9 @@ class JiraIncidentsETLHandler(IncidentsProviderETLHandler):
         incidents: List[Incident] = []
         incident_service_maps: List[IncidentOrgIncidentServiceMap] = []
         for ticket in tickets:
-            incident = self._to_incident(ticket, states_by_ticket.get(str(ticket.id), []))
+            incident = self._to_incident(
+                ticket, states_by_ticket.get(str(ticket.id), [])
+            )
             incidents.append(incident)
             incident_service_maps.append(
                 IncidentOrgIncidentServiceMap(

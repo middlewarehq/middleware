@@ -10,7 +10,5 @@ def adapt_ticket_lead_time_metrics(metrics: TicketLeadTimeMetrics) -> dict:
         "avg_commit_only_lead_time_seconds": round(
             metrics.avg_commit_only_lead_time_seconds
         ),
-        "avg_extended_lead_time_seconds": round(
-            metrics.avg_extended_lead_time_seconds
-        ),
+        "avg_extended_lead_time_seconds": round(metrics.avg_extended_lead_time_seconds),
     }

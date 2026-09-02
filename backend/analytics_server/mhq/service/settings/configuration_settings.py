@@ -377,8 +377,9 @@ class SettingsService:
         ):
             return self._adapt_incident_prs_setting_json_data(specific_setting)
 
-        if setting_type == SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING and isinstance(
-            specific_setting, JiraIncidentIssueTypesSetting
+        if (
+            setting_type == SettingType.JIRA_INCIDENT_ISSUE_TYPES_SETTING
+            and isinstance(specific_setting, JiraIncidentIssueTypesSetting)
         ):
             return self._adapt_jira_incident_issue_types_setting_json_data(
                 specific_setting

@@ -38,9 +38,7 @@ class JiraApiService:
         self._auth = HTTPBasicAuth(email, api_token)
 
     def check_pat(self) -> bool:
-        response = requests.get(
-            f"{self.base_url}/myself", auth=self._auth, timeout=8
-        )
+        response = requests.get(f"{self.base_url}/myself", auth=self._auth, timeout=8)
         return response.status_code == 200
 
     def search_issues(
@@ -173,9 +171,7 @@ class JiraApiService:
 
     def _raise_for_error(self, response: requests.Response) -> None:
         if response.status_code == 429:
-            raise JiraRateLimitExceeded(
-                retry_after=response.headers.get("Retry-After")
-            )
+            raise JiraRateLimitExceeded(retry_after=response.headers.get("Retry-After"))
         if response.status_code in (401, 403):
             raise JiraApiError(
                 "Jira credentials were rejected", status_code=response.status_code

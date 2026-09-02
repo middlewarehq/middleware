@@ -293,9 +293,7 @@ def get_team_ticket_lead_time(team_id: str, from_time: datetime, to_time: dateti
     interval = query_validator.interval_validator(from_time, to_time)
 
     ticket_lead_time_service = get_ticket_lead_time_service()
-    metrics = ticket_lead_time_service.get_team_ticket_lead_time_metrics(
-        team, interval
-    )
+    metrics = ticket_lead_time_service.get_team_ticket_lead_time_metrics(team, interval)
 
     return adapt_ticket_lead_time_metrics(metrics)
 

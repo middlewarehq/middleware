@@ -142,7 +142,9 @@ def _status_segments(ticket: Ticket, states: List[TicketState]):
         # Never transitioned since sync started tracking it -- it's spent
         # its whole observed life (creation to last update) in this one
         # status.
-        return [(ticket.status, (ticket.updated_at - ticket.created_at).total_seconds())]
+        return [
+            (ticket.status, (ticket.updated_at - ticket.created_at).total_seconds())
+        ]
 
     segments = []
     # Jira's changelog is complete back to creation, so the first
@@ -160,6 +162,8 @@ def _status_segments(ticket: Ticket, states: List[TicketState]):
         segment_end = (
             states[i + 1].changed_at if i + 1 < len(states) else ticket.updated_at
         )
-        segments.append((state.to_status, (segment_end - state.changed_at).total_seconds()))
+        segments.append(
+            (state.to_status, (segment_end - state.changed_at).total_seconds())
+        )
 
     return segments
