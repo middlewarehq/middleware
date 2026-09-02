@@ -28,4 +28,7 @@ class TicketLeadTimeMetrics:
 
     @property
     def avg_extended_lead_time_seconds(self) -> float:
-        return self.avg_ticket_to_first_commit_seconds + self.avg_commit_only_lead_time_seconds
+        return (
+            self.avg_ticket_to_first_commit_seconds
+            + self.avg_commit_only_lead_time_seconds
+        )

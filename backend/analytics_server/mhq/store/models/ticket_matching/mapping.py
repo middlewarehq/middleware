@@ -20,8 +20,12 @@ class PullRequestTicketMapping(db.Model):
 
     __tablename__ = "PullRequestTicketMapping"
 
-    pr_id = db.Column(UUID(as_uuid=True), db.ForeignKey("PullRequest.id"), primary_key=True)
-    ticket_id = db.Column(UUID(as_uuid=True), db.ForeignKey("Ticket.id"), primary_key=True)
+    pr_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("PullRequest.id"), primary_key=True
+    )
+    ticket_id = db.Column(
+        UUID(as_uuid=True), db.ForeignKey("Ticket.id"), primary_key=True
+    )
     created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
     updated_at = db.Column(
         db.DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

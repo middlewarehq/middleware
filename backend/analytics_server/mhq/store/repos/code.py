@@ -375,12 +375,19 @@ class CodeRepoService:
 
     @rollback_on_exc
     def get_repos_by_idempotency_keys(
-        self, idempotency_keys: List[str]
+        self, org_id: str, idempotency_keys: List[str]
     ) -> List[OrgRepo]:
-
+        # CLUSTOX: scoped by org. A GitHub repo id is the same string in every
+        # workspace that links the repo, so an unscoped lookup returned another
+        # workspace's row -- and update_org_repos turned that into a permanent
+        # 500 on team save. Pairs with the migration replacing the global
+        # UNIQUE (idempotency_key) with UNIQUE (org_id, idempotency_key).
         return (
             self._db.session.query(OrgRepo)
-            .filter(OrgRepo.idempotency_key.in_(idempotency_keys))
+            .filter(
+                OrgRepo.org_id == org_id,
+                OrgRepo.idempotency_key.in_(idempotency_keys),
+            )
             .all()
         )
 
@@ -507,9 +514,7 @@ class CodeRepoService:
         return query.all()
 
     @rollback_on_exc
-    def get_first_commit_at_by_pr_ids(
-        self, pr_ids: List[str]
-    ) -> Dict[str, datetime]:
+    def get_first_commit_at_by_pr_ids(self, pr_ids: List[str]) -> Dict[str, datetime]:
         """
         Each PR's own earliest recorded commit timestamp, keyed by pr_id.
 

@@ -122,7 +122,7 @@ class RepositoryService:
         idempotency_keys = [repo.idempotency_key for repo in raw_org_repos]
 
         existing_org_repos = self._code_repo_service.get_repos_by_idempotency_keys(
-            idempotency_keys
+            org_id, idempotency_keys
         )
 
         updated_org_repos = []
@@ -136,13 +136,11 @@ class RepositoryService:
                 raw_org_repo.idempotency_key
             )
             if existing_org_repo:
-
-                # ToDo update idempotency key to idempotency_key, provider, org.
-                if str(existing_org_repo.org_id) != str(org_id):
-                    raise Exception(
-                        f"Data integrity error, matching idempotency key across orgs. Team OrgId: {str(org_id)}. Existing Repo OrgID: {str(existing_org_repo.org_id)}. idempotency_key: {raw_org_repo.idempotency_key}"
-                    )
-
+                # CLUSTOX: the lookup above is org-scoped, so a row here always
+                # belongs to this org. The cross-org "Data integrity error"
+                # raise that used to sit here -- a permanent 500 whenever
+                # another workspace already tracked the same repo -- is gone
+                # with the global lookup that made it reachable.
                 existing_org_repo.is_active = True
                 existing_org_repo.slug = raw_org_repo.slug
                 existing_org_repo.name = raw_org_repo.name

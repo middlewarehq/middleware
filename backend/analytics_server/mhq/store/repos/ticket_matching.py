@@ -106,9 +106,7 @@ class TicketMatchingRepoService:
         )
 
     @rollback_on_exc
-    def get_ticket_created_at_by_pr_ids(
-        self, pr_ids: List[str]
-    ) -> Dict[str, datetime]:
+    def get_ticket_created_at_by_pr_ids(self, pr_ids: List[str]) -> Dict[str, datetime]:
         """
         For PRs that already have a PullRequestTicketMapping row, the
         earliest linked ticket's created_at, keyed by pr_id -- the

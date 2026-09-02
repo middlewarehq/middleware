@@ -55,7 +55,9 @@ class TicketInsightsService:
             "prs_without_ticket_count": prs_without_ticket_count,
         }
 
-    def get_team_unlinked_prs(self, team: Team, interval: Interval) -> List[PullRequest]:
+    def get_team_unlinked_prs(
+        self, team: Team, interval: Interval
+    ) -> List[PullRequest]:
         """
         The actual merged PRs behind the Data Hygiene count above --
         title, branch, merge time -- so a real gap in the ticket-key

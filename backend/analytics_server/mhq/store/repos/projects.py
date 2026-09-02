@@ -245,9 +245,7 @@ class ProjectRepoService:
         )
 
     @rollback_on_exc
-    def update_project_issues_bookmarks(
-        self, bookmarks: List[ProjectIssuesBookmark]
-    ):
+    def update_project_issues_bookmarks(self, bookmarks: List[ProjectIssuesBookmark]):
         for bookmark in bookmarks:
             self._db.session.merge(bookmark)
         self._db.session.commit()
