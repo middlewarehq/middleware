@@ -5,6 +5,13 @@ import { Endpoint, nullSchema } from '@/api-helpers/global';
 import { Columns, Table } from '@/constants/db';
 import { db } from '@/utils/db';
 
+// CLUSTOX: hardcoded for the same reason as the invite link -- this was built
+// from NEXTAUTH_URL, which the server's .env still sets to localhost, so a
+// share link generated server-side pointed at a host the recipient cannot
+// reach. Only used when the client does not send its own base_url.
+// See pages/api/clustox/invites/index.ts.
+const APP_URL = 'https://middleware.theclustox.com';
+
 const getSchema = yup.object().shape({
   share_link_id: yup.string().required()
 });
@@ -14,7 +21,10 @@ const postSchema = yup.object().shape({
   base_url: yup.string().optional()
 });
 
-const endpoint = new Endpoint(nullSchema, { unauthenticated: true });
+// CLUSTOX: was unauthenticated, which let anyone POST unbounded rows into
+// URLShortenerData and read stored link state. Everyone who should open a
+// share link has an account, so requiring one costs nothing.
+const endpoint = new Endpoint(nullSchema);
 
 endpoint.handle.GET(getSchema, async (req, res) => {
   const { share_link_id } = req.payload;
@@ -52,7 +62,7 @@ endpoint.handle.POST(postSchema, async (req, res) => {
       response.url = shareLink;
       res.send(response);
     }
-    shareLink = `${process.env.NEXTAUTH_URL}?share=${id}`;
+    shareLink = `${APP_URL}?share=${id}`;
     response.url = shareLink;
     res.send(response);
   } catch (e) {

@@ -38,7 +38,13 @@ enum TableT {
   TicketState,
   UserActivity,
   UIPreferences,
-  URLShortenerData
+  URLShortenerData,
+  // CLUSTOX: auth tables — appended so upstream additions above never conflict.
+  // See docs/superpowers/specs/2026-08-05-auth-rbac-design.md
+  ClustoxUserAuth,
+  ClustoxUserTeamAccess,
+  ClustoxSyncRun,
+  ClustoxInvite
 }
 
 export const Table = objectEnum(TableT);
@@ -147,6 +153,35 @@ export const Columns = {
       prod_branch,
       prod_branches,
       deployment_type
+    }
+    return Columns;
+  }),
+  // CLUSTOX: Jira integration, Phase 2 (project selection). "OrgProject"
+  // and "TeamProjects" were already names in the TableT enum above --
+  // upstream's original Jira support, before this fork's strip-down -- but
+  // neither had a Columns entry, and the actual Postgres tables didn't
+  // exist. See docs/JIRA_INTEGRATION_PROPOSAL.md.
+  [Table.OrgProject]: objectEnumFromFn(() => {
+    enum Columns {
+      id,
+      created_at,
+      updated_at,
+      org_id,
+      key,
+      name,
+      provider,
+      is_active,
+      idempotency_key
+    }
+    return Columns;
+  }),
+  [Table.TeamProjects]: objectEnumFromFn(() => {
+    enum Columns {
+      team_id,
+      created_at,
+      updated_at,
+      is_active,
+      org_project_id
     }
     return Columns;
   }),
@@ -549,6 +584,54 @@ export const Columns = {
       relation,
       related_user_id,
       org_id
+    }
+    return Columns;
+  }),
+  // CLUSTOX: auth tables
+  [Table.ClustoxUserAuth]: objectEnumFromFn(() => {
+    enum Columns {
+      user_id,
+      password_hash,
+      role,
+      created_at,
+      updated_at
+    }
+    return Columns;
+  }),
+  [Table.ClustoxUserTeamAccess]: objectEnumFromFn(() => {
+    enum Columns {
+      user_id,
+      team_id,
+      created_at
+    }
+    return Columns;
+  }),
+  [Table.ClustoxSyncRun]: objectEnumFromFn(() => {
+    enum Columns {
+      id,
+      org_id,
+      started_at,
+      finished_at,
+      status,
+      detail
+    }
+    return Columns;
+  }),
+  [Table.ClustoxInvite]: objectEnumFromFn(() => {
+    enum Columns {
+      id,
+      token_hash,
+      email,
+      name,
+      role,
+      org_id,
+      created_by,
+      created_at,
+      expires_at,
+      accepted_at,
+      accepted_by,
+      revoked_at,
+      emailed_at
     }
     return Columns;
   })

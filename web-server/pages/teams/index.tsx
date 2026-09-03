@@ -16,7 +16,10 @@ import { depFn } from '@/utils/fn';
 function Page() {
   useRedirectWithSession();
   const dispatch = useDispatch();
-  const { orgId, integrationList } = useAuth();
+  // CLUSTOX: hasCodeProviderLinked, not integrationList.length -- a
+  // Jira-only org has no repos to build a team around. See
+  // docs/JIRA_INTEGRATION_PROPOSAL.md.
+  const { orgId, hasCodeProviderLinked } = useAuth();
   const teamsList = useSelector((state) => state.team.teams);
   const loading = useBoolState(!Boolean(teamsList.length));
 
@@ -46,7 +49,7 @@ function Page() {
       showEvenIfNoTeamSelected
       hideAllSelectors
     >
-      {integrationList.length && !loading.value ? (
+      {hasCodeProviderLinked && !loading.value ? (
         <FlexBox col gap={4}>
           {teamsList.length ? <TeamsList /> : <CreateEditTeams />}
         </FlexBox>

@@ -1,5 +1,8 @@
+import { alpha, useTheme } from '@mui/material';
+import { mergeDeepRight } from 'ramda';
 import { useCallback, useEffect, useMemo } from 'react';
 
+import { ChartOptions } from '@/components/Chart2';
 import { Row } from '@/constants/db';
 import {
   changeTimeThresholds,
@@ -9,6 +12,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { doraMetricsSlice } from '@/slices/dora_metrics';
 import { useDispatch, useSelector } from '@/store';
 import { ChangeTimeModes, IntegrationGroup } from '@/types/resources';
+import {
+  BenchmarkBandInput,
+  benchmarkBandOptions
+} from '@/utils/benchmarkBand';
 import { getDoraScore } from '@/utils/dora';
 
 import {
@@ -294,4 +301,171 @@ export const useChangeFailureRateProps = () => {
       ...cfrProps
     };
   }, [cfrProps, changeFailureRate]);
+};
+
+// CLUSTOX: all four DORA cards declared this same object as a module-level
+// `chartOptions` constant. The benchmark band depends on props, so the
+// constant has to become a memo -- and rather than copy that memo into four
+// files where the four copies can silently drift apart, the shared base and
+// the merge live here once.
+const BASE_DORA_CARD_CHART_OPTIONS = {
+  options: {
+    scales: {
+      x: {
+        display: false
+      },
+      y: {
+        display: false
+      }
+    },
+    events: [],
+    plugins: {
+      zoom: {
+        zoom: {
+          drag: {
+            enabled: false
+          }
+        }
+      }
+    }
+  }
+} as ChartOptions;
+
+/**
+ * The chart options for a DORA card, with the benchmark target band merged in
+ * when there is a target to draw.
+ *
+ * Pass `null` when the card should show no band at all -- distinct from
+ * passing an input whose `target` is null, though both render the card exactly
+ * as it looked before this feature.
+ */
+export type DoraCardChartDisplay = {
+  /** ISO week keys, one per plotted point, oldest first. */
+  labels?: string[];
+  /** Formats a plotted value for the tooltip, in the metric's own words. */
+  format?: (value: number) => string;
+};
+
+// CLUSTOX: "Week of Jul 20" rather than the raw ISO key the API buckets by.
+// Falls back to the raw label so a malformed key degrades to ugly-but-true.
+const weekLabel = (iso: string): string => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return `Week of ${date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  })}`;
+};
+
+export const useDoraCardChartOptions = (
+  band: Omit<BenchmarkBandInput, 'theme'> | null,
+  display?: DoraCardChartDisplay
+): ChartOptions => {
+  // CLUSTOX: the tone colours come from the live theme rather than from
+  // benchmarkBand's hex fallbacks; those exist only so the util stays
+  // importable from a unit test that can't load MUI.
+  const theme = useTheme();
+  const labels = display?.labels;
+  const format = display?.format;
+
+  return useMemo(() => {
+    const bandOptions = band ? benchmarkBandOptions({ ...band, theme }) : null;
+    const target = bandOptions?.benchmarkBand?.target;
+
+    // CLUSTOX: hover only -- 'click' stays out of the list so the canvas never
+    // competes with CardRoot's own onClick (the whole card opens the details
+    // overlay). The tooltip and crosshair configs already exist in
+    // InternalChart2; `events: []` was the single switch keeping all of it
+    // dead, which is why these cards read as decoration.
+    // Typed against ChartOptions here so ramda's MergeDeep literal type
+    // collapses to something assignable at the return casts below.
+    const interactive: ChartOptions = {
+      options: {
+        events: ['mousemove', 'mouseout'],
+        plugins: {
+          tooltip: {
+            displayColors: false,
+            callbacks: {
+              title: (items: { dataIndex: number }[]) => {
+                const iso = labels?.[items[0]?.dataIndex];
+                return iso ? weekLabel(iso) : '';
+              },
+              label: (item: { parsed: { y: number } }) => {
+                const value = item.parsed.y;
+                const text = format ? format(value) : String(value);
+                // `!= null`: a target of 0 still gets a verdict. Direction
+                // words only, no glyphs -- the caption below the chart already
+                // carries the judgement, the tooltip just states the fact.
+                if (target != null) {
+                  return `${text} \u00b7 ${
+                    value <= target ? 'under' : 'over'
+                  } target`;
+                }
+                return text;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    const withInteraction = mergeDeepRight(
+      BASE_DORA_CARD_CHART_OPTIONS,
+      interactive
+    );
+
+    // CLUSTOX: no target configured is the state every card is in until an
+    // admin sets one -- nothing benchmark-related is drawn. The tooltip stays:
+    // it describes measured data, which exists with or without a target.
+    if (!bandOptions) return withInteraction as ChartOptions;
+
+    // CLUSTOX: the band goes on the *right* of the merge. Both sides define
+    // `scales.y`, and it is the band's `suggestedMax` that has to survive --
+    // the base only sets `display: false`, which mergeDeepRight preserves from
+    // the left because the keys don't collide.
+    return mergeDeepRight(withInteraction, {
+      options: bandOptions
+    }) as unknown as ChartOptions;
+  }, [band, theme, labels, format]);
+};
+
+/**
+ * The one visual style every DORA card's trend shares: a real 2px stroke in
+ * the card's accent, a fill that fades to transparent toward the axis, and a
+ * dot on the newest point.
+ *
+ * CLUSTOX: before this, the trend was `borderWidth: 0` + a flat grey fill --
+ * a shape with no line, which is most of why the graphs read as decoration.
+ * The gradient rides on chartjs-plugin-gradient (registered in
+ * InternalChart2, previously unused); `backgroundColor` stays set as the
+ * flat fallback for the brief window before that plugin's async registration
+ * lands, so the card is never fill-less.
+ */
+export const doraCardTrendSeries = (
+  label: string,
+  values: number[],
+  accent: string
+) => {
+  const dataMax = Math.max(0, ...values.filter(Number.isFinite));
+  return [
+    {
+      label,
+      fill: 'start',
+      data: values,
+      backgroundColor: alpha(accent, 0.14),
+      borderColor: accent,
+      borderWidth: 2,
+      lineTension: 0.35,
+      pointRadius: values.map((_, i) => (i === values.length - 1 ? 3 : 0)),
+      pointBackgroundColor: accent,
+      ...(dataMax > 0 && {
+        gradient: {
+          backgroundColor: {
+            axis: 'y' as const,
+            colors: { 0: alpha(accent, 0.02), [dataMax]: alpha(accent, 0.28) }
+          }
+        }
+      })
+    }
+  ];
 };

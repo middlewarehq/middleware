@@ -10,8 +10,9 @@ import {
 import { format, isValid } from 'date-fns';
 import { useContext, useMemo } from 'react';
 
+// CLUSTOX: signed-in user + sign out
+import { ClustoxUserFooter } from '@/components/ClustoxUserFooter';
 import { FlexBox } from '@/components/FlexBox';
-import Scrollbar from '@/components/Scrollbar';
 import { Line } from '@/components/Text';
 import { SidebarContext } from '@/contexts/SidebarContext';
 import { useSelector } from '@/store';
@@ -27,7 +28,41 @@ const SidebarWrapper = styled(Box)(
         position: relative;
         z-index: 7;
         height: 100%;
-        padding-bottom: 61px;
+        display: flex;
+        flex-direction: column;
+`
+);
+
+// CLUSTOX FIX: react-custom-scrollbars-2 (still on 4.4.0, peer dep caps at
+// React 17) hides the native scrollbar with a negative-margin trick that
+// depends on ref/DOM timing that React 18 breaks. When it fails, the raw
+// native scrollbar -- OS-drawn arrows, its own gutter color -- shows through
+// instead of the library's thin styled thumb, and the container it applies
+// that trick to is hard-coded to overflow:scroll (always-on) rather than
+// auto, so it renders even when the menu doesn't overflow. A plain
+// overflow-y:auto region with a themed ::-webkit-scrollbar sidesteps both:
+// no legacy scrolling layer, and a scrollbar only when content truly
+// overflows.
+const ScrollableMenu = styled(Box)(
+  ({ theme }) => `
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        &::-webkit-scrollbar {
+          width: 5px;
+        }
+        &::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        &::-webkit-scrollbar-thumb {
+          background: ${theme.colors.alpha.black[10]};
+          border-radius: ${theme.general.borderRadiusLg};
+        }
+        &::-webkit-scrollbar-thumb:hover {
+          background: ${theme.colors.alpha.black[30]};
+        }
 `
 );
 
@@ -74,7 +109,7 @@ const SidebarContent = () => {
 
   return (
     <>
-      <Scrollbar>
+      <ScrollableMenu>
         <SidebarTopSection />
         <Divider
           sx={{
@@ -84,7 +119,10 @@ const SidebarContent = () => {
           }}
         />
         <SidebarMenu />
-      </Scrollbar>
+      </ScrollableMenu>
+      <Divider sx={{ background: theme.colors.alpha.trueWhite[10] }} />
+      {/* CLUSTOX: signed-in identity and the only sign-out affordance. */}
+      <ClustoxUserFooter />
       <Divider sx={{ background: theme.colors.alpha.trueWhite[10] }} />
       <FlexBox justifyCenter alignCenter height="60px">
         <Line small medium secondary>

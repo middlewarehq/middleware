@@ -3,7 +3,10 @@ import {
   GroupsTwoTone,
   Analytics,
   Settings,
-  Dns
+  Dns,
+  // CLUSTOX: icons for user management and workspace health
+  ManageAccounts,
+  Workspaces
 } from '@mui/icons-material';
 
 import { ROUTES } from '@/constants/routes';
@@ -40,7 +43,11 @@ export enum SideBarItems {
   DORA_METRICS = 'DORA Metrics',
   MANAGE_TEAMS = 'Manage Teams',
   MANAGE_INTEGRATIONS = 'Manage Integrations',
-  SERVER_ADMIN = 'Server Admin'
+  SERVER_ADMIN = 'Server Admin',
+  // CLUSTOX: superadmin-only, filtered in useFilteredSidebarItems
+  MANAGE_USERS = 'Manage Users',
+  // CLUSTOX: visible to admins too, scoped to their own workspace
+  WORKSPACES = 'Workspaces'
 }
 
 const menuItems = (): MenuItems[] => [
@@ -71,6 +78,20 @@ const menuItems = (): MenuItems[] => [
         name: 'System Logs',
         icon: Dns,
         link: ROUTES.SYSTEM_LOGS.PATH
+      },
+      // CLUSTOX: sync health. Admins see their own workspace, superadmins all.
+      {
+        name: SideBarItems.WORKSPACES,
+        icon: Workspaces,
+        link: ROUTES.WORKSPACES.PATH
+      },
+      // CLUSTOX: only rendered for superadmins.
+      {
+        name: SideBarItems.MANAGE_USERS,
+        icon: ManageAccounts,
+        link: ROUTES.USERS.PATH,
+        badge: 'NEW',
+        badgeTooltip: 'Invite teammates and manage roles'
       }
     ]
   }

@@ -1,6 +1,13 @@
 import { NextApiRequest } from 'next/types';
 import { AnySchema, InferType, object } from 'yup';
 
+// CLUSTOX: enforce the `authenticated` flag that upstream declared but never read.
+import {
+  assertAuthenticated,
+  assertTeamAccess,
+  assertWorkspaceAccess
+} from '@/auth/guard';
+import { getAuthSession } from '@/auth/session';
 import { Errors, ResponseError } from '@/constants/error';
 import { ApiRequest, ApiResponse, HttpMethods } from '@/types/request';
 
@@ -78,6 +85,16 @@ export class Endpoint<PathSchema extends AnySchema> {
     return async (nextReq: NextApiRequest, res: ApiResponse) => {
       try {
         const req = transformNextRequest(nextReq);
+
+        // CLUSTOX: single enforcement point for all BFF routes. Routes opt out
+        // with `new Endpoint(schema, { unauthenticated: true })`.
+        let session = null;
+        if (this.authenticated) {
+          session = await getAuthSession(nextReq);
+          assertAuthenticated(session);
+          (req as any).session = session;
+        }
+
         if (this.pathSchema) {
           await this.pathSchema.validate(req.payload);
         }
@@ -89,6 +106,23 @@ export class Endpoint<PathSchema extends AnySchema> {
         const [schema, handler] = this.handlers[req.method];
         if (schema) {
           await schema.validate(req.payload);
+        }
+
+        // CLUSTOX: routes addressing a specific workspace or team are scoped
+        // centrally here rather than in each of the ~18 team routes and ~20 org
+        // routes. Doing it at the choke point means a newly added route is
+        // protected by default instead of relying on the author remembering a
+        // guard call.
+        //
+        // Runs *after* schema validation so malformed input is a 400 with a
+        // useful message. Checking first turned a client sending
+        // "/orgs/undefined/integration" into an opaque 403.
+        if (this.authenticated) {
+          const orgId = (req.payload as any)?.org_id;
+          if (orgId) await assertWorkspaceAccess(session, String(orgId));
+
+          const teamId = (req.payload as any)?.team_id;
+          if (teamId) await assertTeamAccess(session, String(teamId));
         }
 
         await handler(req, res);

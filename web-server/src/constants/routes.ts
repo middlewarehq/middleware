@@ -69,7 +69,11 @@ export const ROUTES = {
   },
   INTEGRATIONS: new RoutePath('INTEGRATIONS'),
   SETTINGS: new RoutePath('SETTINGS'),
-  SYSTEM_LOGS: new RoutePath('SYSTEM_LOGS')
+  SYSTEM_LOGS: new RoutePath('SYSTEM_LOGS'),
+  // CLUSTOX: user management (superadmin only)
+  USERS: new RoutePath('USERS'),
+  // CLUSTOX: workspace + sync health
+  WORKSPACES: new RoutePath('WORKSPACES')
 };
 
 export const DEFAULT_HOME_ROUTE = ROUTES.DORA_METRICS;

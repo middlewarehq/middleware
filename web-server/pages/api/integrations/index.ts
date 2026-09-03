@@ -25,6 +25,9 @@ endpoint.handle.GET(getSchema, async (req, res) => {
 });
 
 endpoint.handle.DELETE(deleteSchema, async (req, res) => {
+  // CLUSTOX: admins connect their own integrations, so unlinking one is theirs
+  // to do as well. Endpoint.serve() confines them to their own workspace via
+  // the org_id in the payload.
   const data = await db(Table.Integration)
     .delete()
     .where({

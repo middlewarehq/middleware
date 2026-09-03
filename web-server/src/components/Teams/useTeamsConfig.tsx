@@ -536,7 +536,14 @@ const useReposSearch = () => {
 
 const adaptBaseRepo = (repo: DB_OrgRepo): BaseRepo =>
   ({
-    id: Number(repo.idempotency_key),
+    // CLUSTOX: numeric for GitHub/GitLab, but Bitbucket keys are brace
+    // uuids -- Number() made them NaN, which String()'d to "NaN" on the next
+    // team-repos save. The ETL's uuid match-back then silently stopped
+    // syncing that repo, and NaN identity made it un-removable in the edit
+    // UI. Preserve non-numeric keys verbatim.
+    id: Number.isNaN(Number(repo.idempotency_key))
+      ? repo.idempotency_key
+      : Number(repo.idempotency_key),
     name: repo.name,
     slug: repo.slug,
     branch: repo.default_branch,

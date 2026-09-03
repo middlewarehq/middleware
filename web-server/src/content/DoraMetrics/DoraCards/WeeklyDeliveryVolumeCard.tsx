@@ -1,13 +1,15 @@
-import { alpha, Chip } from '@mui/material';
+import { Chip } from '@mui/material';
 import pluralize from 'pluralize';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -18,42 +20,25 @@ import {
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
+import { benchmarkCaption } from '@/utils/benchmarks';
 import { getSortedDatesAsArrayFromMap } from '@/utils/date';
 
-import { useAvgIntervalBasedDeploymentFrequency } from './sharedHooks';
+import {
+  doraCardTrendSeries,
+  useAvgIntervalBasedDeploymentFrequency,
+  useDoraCardChartOptions
+} from './sharedHooks';
 
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
 
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
-
 export const WeeklyDeliveryVolumeCard = () => {
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
   const deploymentFrequencyProps = useAvgIntervalBasedDeploymentFrequency();
+  const selectedContributors = useSelectedContributors();
 
   const { addPage } = useOverlayPage();
   const deploymentsConfigured = true;
@@ -82,20 +67,95 @@ export const WeeklyDeliveryVolumeCard = () => {
         .total_deployments || 0
   );
 
+  const deploymentFrequencyBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.deployment_frequency
+  );
+
+  // CLUSTOX: the benchmark target is always "deployments/week" (see
+  // task-5-brief), but the card's headline count adapts to the selected
+  // interval (day/week/month) via useAvgIntervalBasedDeploymentFrequency.
+  // Comparing against that would silently mix units, so the weekly-specific
+  // stat is used here instead, regardless of which interval is displayed.
+  const avgWeeklyDeploymentFrequency = useSelector(
+    (s) =>
+      s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
+        .avg_weekly_deployment_frequency
+  );
+
+  // CLUSTOX: these buckets are weekly counts -- the trends endpoint is
+  // `get_weekly_deployment_frequency_trends`, which buckets deployments
+  // "weekly" regardless of the interval the headline is displayed in. That is
+  // what makes it safe to draw a deployments/week target in this chart's own
+  // data space.
+  const weeklyDeploymentCounts = useMemo(
+    () =>
+      getSortedDatesAsArrayFromMap(weekDeliveryVolumeData).map(
+        (date) => weekDeliveryVolumeData[date].count
+      ),
+    [weekDeliveryVolumeData]
+  );
+
   const series = useMemo(
-    () => [
-      {
-        label: 'Deployments',
-        fill: 'start',
-        data: getSortedDatesAsArrayFromMap(weekDeliveryVolumeData).map(
-          (date) => weekDeliveryVolumeData[date].count
-        ),
-        backgroundColor: deploymentFrequencyProps?.backgroundColor,
-        borderColor: alpha(deploymentFrequencyProps?.backgroundColor, 0.5),
-        lineTension: 0.2
-      }
-    ],
-    [deploymentFrequencyProps?.backgroundColor, weekDeliveryVolumeData]
+    () =>
+      doraCardTrendSeries(
+        'Deployments',
+        weeklyDeploymentCounts,
+        deploymentFrequencyProps?.backgroundColor
+      ),
+    [deploymentFrequencyProps?.backgroundColor, weeklyDeploymentCounts]
+  );
+
+  const weekLabels = useMemo(
+    () => getSortedDatesAsArrayFromMap(weekDeliveryVolumeData),
+    [weekDeliveryVolumeData]
+  );
+  const formatDeployments = useCallback(
+    (value: number) => `${value} ${value === 1 ? 'deployment' : 'deployments'}`,
+    []
+  );
+
+  // CLUSTOX: gated on isCodeProviderIntegrationEnabled -- the same guard the
+  // card uses to decide between the chart and NoDataImg. Zero deployments is
+  // still a meaningful comparison against a weekly target (it's the "below
+  // target" case), so no additional zero-count guard here.
+  const deploymentFrequencyBenchmarkCaption = useMemo(
+    () =>
+      isCodeProviderIntegrationEnabled &&
+      deploymentFrequencyBenchmark?.target != null
+        ? benchmarkCaption(
+            'deployment_frequency',
+            avgWeeklyDeploymentFrequency || 0,
+            deploymentFrequencyBenchmark.target,
+            deploymentFrequencyBenchmark.source
+          )
+        : null,
+    [
+      isCodeProviderIntegrationEnabled,
+      deploymentFrequencyBenchmark,
+      avgWeeklyDeploymentFrequency
+    ]
+  );
+
+  // CLUSTOX: `avgWeeklyDeploymentFrequency`, never
+  // `deploymentFrequencyProps.count`. The headline switches unit on its own --
+  // getBadgeDetails picks day / week / month by which average first clears 1 --
+  // so an active team's headline is a *per-day* figure while the target is
+  // per week. Feeding the headline in would compare 2.5/day against a 5/week
+  // target and paint the band warning for a team deploying 17 times a week.
+  //
+  // This is also the only card whose band covers *upward*: deployment
+  // frequency is absent from LOWER_IS_BETTER, so benchmarkBandOptions shades
+  // target -> top of the axis rather than target -> 0.
+  const deploymentFrequencyChartOptions = useDoraCardChartOptions(
+    isCodeProviderIntegrationEnabled
+      ? {
+          metric: 'deployment_frequency',
+          target: deploymentFrequencyBenchmark?.target,
+          actual: avgWeeklyDeploymentFrequency || 0,
+          values: weeklyDeploymentCounts
+        }
+      : null,
+    { labels: weekLabels, format: formatDeployments }
   );
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
@@ -172,6 +232,16 @@ export const WeeklyDeliveryVolumeCard = () => {
             </FlexBox>
           )}
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: filtered by deploy actor, not PR author -- see the note
+          // on ChangeTimeCard for why that distinction has to be visible.
+          <Line small secondary paddingX={2} mt={-1}>
+            deployed by {selectedContributors.join(', ')}
+          </Line>
+        )}
+        {deploymentFrequencyBenchmarkCaption && (
+          <BenchmarkVerdictPill caption={deploymentFrequencyBenchmarkCaption} />
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isCodeProviderIntegrationEnabled ? (
@@ -179,7 +249,7 @@ export const WeeklyDeliveryVolumeCard = () => {
                 id="weekly-delivery-frequency"
                 type="line"
                 series={series}
-                options={chartOptions}
+                options={deploymentFrequencyChartOptions}
               />
             ) : (
               <NoDataImg />
@@ -193,6 +263,10 @@ export const WeeklyDeliveryVolumeCard = () => {
               paddingX={2}
               gap1
               justifyCenter
+              sx={{
+                pointerEvents: 'none',
+                '& > *': { pointerEvents: 'auto' }
+              }}
             >
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={deploymentFrequencyProps.color}>

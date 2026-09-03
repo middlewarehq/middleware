@@ -1,6 +1,9 @@
 from mhq.service.incidents.sync.etl_git_incidents_handler import (
     get_incidents_sync_etl_handler,
 )
+from mhq.service.incidents.sync.etl_jira_incidents_handler import (
+    get_jira_incidents_etl_handler,
+)
 from mhq.service.incidents.sync.etl_provider_handler import IncidentsProviderETLHandler
 from mhq.store.models.incidents import IncidentProvider
 
@@ -15,5 +18,8 @@ class IncidentsETLFactory:
 
         if provider == IncidentProvider.GITLAB.value:
             return get_incidents_sync_etl_handler(self.org_id)
+
+        if provider == IncidentProvider.JIRA.value:
+            return get_jira_incidents_etl_handler(self.org_id)
 
         raise NotImplementedError(f"Unknown provider - {provider}")

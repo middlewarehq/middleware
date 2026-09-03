@@ -5,7 +5,6 @@ import pytz
 
 from mhq.utils.time import Interval, fill_missing_week_buckets
 
-
 last_week_2022 = datetime(2022, 12, 26, 0, 0, 0, tzinfo=pytz.UTC)
 first_week_2023 = datetime(2023, 1, 2, 0, 0, 0, tzinfo=pytz.UTC)
 second_week_2023 = datetime(2023, 1, 9, 0, 0, 0, tzinfo=pytz.UTC)

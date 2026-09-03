@@ -1,14 +1,16 @@
-import { Chip, alpha } from '@mui/material';
+import { Chip } from '@mui/material';
 import pluralize from 'pluralize';
 import { head } from 'ramda';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
@@ -21,41 +23,24 @@ import {
 } from '@/hooks/useStateTeamConfig';
 import { useSelector } from '@/store';
 import { IntegrationGroup } from '@/types/resources';
+import { benchmarkCaption } from '@/utils/benchmarks';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
-import { useChangeFailureRateProps } from './sharedHooks';
+import {
+  doraCardTrendSeries,
+  useChangeFailureRateProps,
+  useDoraCardChartOptions
+} from './sharedHooks';
 
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
 
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
-
 export const ChangeFailureRateCard = () => {
   const { integrationSet } = useAuth();
   const dateRangeLabel = useCurrentDateRangeLabel();
+  const selectedContributors = useSelectedContributors();
 
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isCodeProviderIntegrationEnabled = integrationSet.has(
@@ -83,28 +68,91 @@ export const ChangeFailureRateCard = () => {
 
   const changeFailureRateCount = useCountUp(changeFailureRateProps.count || 0);
 
-  const series = useMemo(
-    () => [
-      {
-        label: 'Change Failure rate',
-        fill: 'start',
-        data: head(trendsSeriesMap?.changeFailureRateTrends || [])?.data.map(
-          (s) => s.y
-        ),
-        backgroundColor: alpha(changeFailureRateProps.backgroundColor, 0.2),
-        lineTension: 0.2
-      }
-    ],
-    [
-      changeFailureRateProps.backgroundColor,
-      trendsSeriesMap?.changeFailureRateTrends
-    ]
+  const changeFailureRateBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.change_failure_rate
   );
+
+  const changeFailureRateValues = useMemo(
+    () =>
+      head(trendsSeriesMap?.changeFailureRateTrends || [])?.data.map(
+        (s) => s.y
+      ) || [],
+    [trendsSeriesMap?.changeFailureRateTrends]
+  );
+
+  const series = useMemo(
+    () =>
+      doraCardTrendSeries(
+        'Change Failure rate',
+        changeFailureRateValues,
+        changeFailureRateProps.backgroundColor
+      ),
+    [changeFailureRateProps.backgroundColor, changeFailureRateValues]
+  );
+
+  const weekLabels = useMemo(
+    () =>
+      head(trendsSeriesMap?.changeFailureRateTrends || [])?.data.map((s) =>
+        String(s.x)
+      ) || [],
+    [trendsSeriesMap?.changeFailureRateTrends]
+  );
+  const formatCfr = useCallback((value: number) => `${value}%`, []);
 
   const { weeksCovered, daysCovered } = useStateDateConfig();
   const isCfrDataAvailable = Boolean(
     changeFailureRateProps.avgWeeklyDeploymentFrequency &&
       (changeFailureRateProps.count || prevChangeFailureRate)
+  );
+
+  // CLUSTOX: change failure rate is incidents / deployments, so the two ways
+  // of having "no data" are not the same thing and must not be treated alike:
+  //
+  //   deployments, no incidents -> a genuine 0%, the best possible result,
+  //                                and it beats every target
+  //   no deployments at all     -> no denominator, so the rate is undefined
+  //
+  // Only the first is a score. Reporting 0% for a team that shipped nothing
+  // would congratulate them for it, which is worse than showing nothing --
+  // the card already says "Due to no deployments" in that state.
+  const hasDeployments = Boolean(
+    changeFailureRateProps.avgWeeklyDeploymentFrequency
+  );
+  // CLUSTOX: `count` is already `Number((cfr || 0).toFixed(2))`, so it is 0
+  // rather than undefined when nothing failed. No substitution needed -- an
+  // earlier `isCfrDataAvailable ? count : 0` here implied one that could
+  // never happen.
+  const cfrActual = changeFailureRateProps.count;
+
+  // CLUSTOX: gated on the *target* existing rather than on incidents existing,
+  // for the reason above. canShowIncidentsData stays in the gate because
+  // without it the card shows a missing-provider link instead of a chart, and
+  // 0% there would be a claim about a team we have no data for.
+  const canCompareCfr = canShowIncidentsData && hasDeployments;
+
+  const changeFailureRateBenchmarkCaption = useMemo(
+    () =>
+      canCompareCfr && changeFailureRateBenchmark?.target != null
+        ? benchmarkCaption(
+            'change_failure_rate',
+            cfrActual,
+            changeFailureRateBenchmark.target,
+            changeFailureRateBenchmark.source
+          )
+        : null,
+    [canCompareCfr, changeFailureRateBenchmark, cfrActual]
+  );
+
+  const changeFailureRateChartOptions = useDoraCardChartOptions(
+    canCompareCfr
+      ? {
+          metric: 'change_failure_rate',
+          target: changeFailureRateBenchmark?.target,
+          actual: cfrActual,
+          values: changeFailureRateValues
+        }
+      : null,
+    { labels: weekLabels, format: formatCfr }
   );
 
   const { addPage } = useOverlayPage();
@@ -171,6 +219,17 @@ export const ChangeFailureRateCard = () => {
             )}
           </FlexBox>
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: unlike Lead Time and Deployment Frequency, this card
+          // has no per-contributor breakdown yet -- say so explicitly, or a
+          // selected filter with an unmoving number reads as broken.
+          <Line small secondary paddingX={2} mt={-1}>
+            team-wide — per-contributor arrives with Jira
+          </Line>
+        )}
+        {changeFailureRateBenchmarkCaption && (
+          <BenchmarkVerdictPill caption={changeFailureRateBenchmarkCaption} />
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowIncidentsData ? (
@@ -178,13 +237,25 @@ export const ChangeFailureRateCard = () => {
                 id="cfr-frequency"
                 type="line"
                 series={series}
-                options={chartOptions}
+                options={changeFailureRateChartOptions}
               />
             ) : (
               <NoDataImg />
             )}
           </FlexBox>
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {canShowIncidentsData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>
                 <Line bigish medium color={changeFailureRateProps.color}>

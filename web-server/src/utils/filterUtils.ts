@@ -84,11 +84,28 @@ export const getWorkFlowFilters = (params: {
 export const getWorkFlowFiltersAsPayloadForSingleTeam = async (params: {
   orgId: ID;
   teamId: ID;
+  // CLUSTOX: contributor filter. Deployments have no author, so the nearest
+  // equivalent is the actor who triggered the run.
+  eventActors?: string[];
 }) => {
-  const { orgId, teamId } = params;
+  const { orgId, teamId, eventActors } = params;
   const teamProdBranchesMap =
     await getAllTeamsReposProdBranchesForOrgAsMap(orgId);
-  return Object.fromEntries(
+  const filter = Object.fromEntries(
     Object.entries(workFlowFiltersFromTeamProdBranches(teamProdBranchesMap))
   )[teamId];
+
+  if (!eventActors?.length) return filter;
+  // CLUSTOX: `event_actors` belongs *inside* the workflow_filter blob, next to
+  // `head_branches`. The backend reads it at that level -- see
+  // ParseWorkflowFilterProcessor.apply in
+  // mhq/service/workflows/workflow_filter.py, which does
+  // `workflow_filter.get("event_actors")` on the parsed blob. Hanging it off
+  // the top level instead makes it a sibling query param, and the
+  // PREVENT_EXTRA voluptuous schema on /teams/<team_id>/deployment_frequency
+  // rejects the whole request.
+  return {
+    ...filter,
+    workflow_filter: { ...filter?.workflow_filter, event_actors: eventActors }
+  };
 };

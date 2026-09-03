@@ -13,6 +13,9 @@ import {
 } from '@/api/resources/orgs/[org_id]/onboarding';
 import { handleRequest } from '@/api-helpers/axios';
 import { Endpoint } from '@/api-helpers/global';
+// CLUSTOX: workspace scoping for the team picker, plus explicit team
+// checks on routes that name the team `id` rather than `team_id`.
+import { assertTeamAccess, getAccessibleTeamIds } from '@/auth/guard';
 import { Row, Table } from '@/constants/db';
 import {
   CIProvider,
@@ -94,13 +97,20 @@ endpoint.handle.GET(getSchema, async (req, res) => {
       : [Integration.GITHUB, Integration.GITLAB]
   );
 
+  // CLUSTOX: an admin must only see their assigned teams in the picker.
+  const accessible = await getAccessibleTeamIds((req as any).session);
+  const allowed = new Set(accessible);
+
   res.send({
-    teams: teams,
+    teams: teams.filter((t: { id: ID }) => allowed.has(t.id)),
     teamReposMap
   });
 });
 
 endpoint.handle.POST(postSchema, async (req, res) => {
+  // CLUSTOX: an admin owns their workspace, so creating teams inside it is
+  // theirs to do. Endpoint.serve() has already confirmed the caller may act on
+  // this org_id, which is what confines them to their own workspace.
   if (req.meta?.features?.use_mock_data) {
     return res.send(getTeamV2Mock);
   }
@@ -155,6 +165,11 @@ endpoint.handle.PATCH(patchSchema, async (req, res) => {
   }
 
   const { org_id, id, name, org_repos } = req.payload;
+
+  // CLUSTOX: this route names the team `id`, not `team_id`, so the central
+  // scoping in Endpoint.serve() does not see it. Without this an admin could
+  // pass their own org_id in the path and a team id from another workspace.
+  await assertTeamAccess((req as any).session, id);
   const orgReposList: ReqRepoWithProvider[] = [];
   forEachObjIndexed((repos, org) => {
     repos.forEach((repo) => {
@@ -194,6 +209,11 @@ endpoint.handle.DELETE(deleteSchema, async (req, res) => {
   if (req.meta?.features?.use_mock_data) {
     return res.send(getTeamV2Mock);
   }
+
+  // CLUSTOX: as with PATCH above, the team arrives as `id` so the central
+  // scoping does not cover it. Deleting another workspace's team would
+  // otherwise be reachable by guessing a uuid.
+  await assertTeamAccess((req as any).session, req.payload.id);
 
   const data = await dbRaw.transaction(async (trx) => {
     const deletedTeamRow = await trx('Team')

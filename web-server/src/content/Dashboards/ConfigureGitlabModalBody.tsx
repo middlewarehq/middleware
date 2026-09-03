@@ -8,6 +8,8 @@ import { FlexBox } from '@/components/FlexBox';
 import { Line } from '@/components/Text';
 import { Integration } from '@/constants/integrations';
 import { useAuth } from '@/hooks/useAuth';
+// CLUSTOX: server-resolved workspace, immune to stale persisted redux state.
+import { useClustoxUser } from '@/hooks/useClustoxUser';
 import { useBoolState, useEasyState } from '@/hooks/useEasyState';
 import { fetchCurrentOrg } from '@/slices/auth';
 import { fetchTeams } from '@/slices/team';
@@ -25,7 +27,12 @@ export const ConfigureGitlabModalBody: FC<{
 }> = ({ onClose }) => {
   const token = useEasyState('');
   const customDomain = useEasyState('');
-  const { orgId } = useAuth();
+  const { orgId: contextOrgId } = useAuth();
+  // CLUSTOX: prefer the server-resolved workspace. The redux copy is persisted
+  // by redux-persist and can rehydrate empty from a previous session, which
+  // previously produced a POST to /orgs/undefined/integration.
+  const { orgId: sessionOrgId } = useClustoxUser();
+  const orgId = sessionOrgId ?? contextOrgId;
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const isLoading = useBoolState();
@@ -67,6 +74,12 @@ export const ConfigureGitlabModalBody: FC<{
       if (customDomain.value && !checkDomainWithRegex(customDomain.value)) {
         setDomainError('Please enter a valid domain');
         throw Error('Invalid domain');
+      }
+
+      // CLUSTOX: refuse rather than POST to /orgs/undefined/integration.
+      if (!orgId) {
+        setScopeError('No workspace selected. Reload the page and try again.');
+        throw Error('No workspace');
       }
     } catch (e) {
       console.error(e);
@@ -163,6 +176,11 @@ export const ConfigureGitlabModalBody: FC<{
             }}
             label="Gitlab Personal Access Token"
             type="password"
+            // Browsers apply their password-autofill heuristics to any
+            // type="password" field, token or not. Keeping the label
+            // permanently shrunk removes any race between that and React
+            // learning the value.
+            InputLabelProps={{ shrink: true }}
           />
           <Line error tiny mt={1}>
             {showScopeError.value}

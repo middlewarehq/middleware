@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+// CLUSTOX: real Clustox role for sidebar visibility
+import { useClustoxUser } from '@/hooks/useClustoxUser';
 import {
   ItemTags,
   SideBarItems
@@ -16,7 +18,9 @@ const checkTag = (tag: string | number[] | number, check: string | number) => {
 };
 
 export const useFilteredSidebarItems = () => {
-  const { integrationList } = useAuth();
+  const { hasCodeProviderLinked } = useAuth();
+  // CLUSTOX: the real role, since useAuth().role is hardcoded upstream.
+  const { isSuperadmin } = useClustoxUser();
 
   const flagFilteredMenuItems = useMemo(() => {
     return menuItems();
@@ -25,8 +29,20 @@ export const useFilteredSidebarItems = () => {
   const sidebarItems = useMemo(() => {
     const filterCheck = (item: MenuItem): boolean => {
       if (checkTag(item.tag, ItemTags.HideItem)) return false;
+      // CLUSTOX: hide user management from non-superadmins. Presentation only
+      // -- the API returns 403 regardless of what the sidebar shows.
+      if (item.name === SideBarItems.MANAGE_USERS && !isSuperadmin) return false;
+      // CLUSTOX: a SuperAdmin owns no workspace, so the workspace they are
+      // viewing may legitimately have no integration yet. Collapsing their nav
+      // to just "Manage Integrations" would strand them, since user management
+      // and the workspace switcher are how they administer the instance.
+      // Gated on a code provider specifically, not "any integration" --
+      // linking only Jira shouldn't unlock Teams/DORA/Settings, which have
+      // nothing to show without repo data behind them. See
+      // docs/JIRA_INTEGRATION_PROPOSAL.md.
       if (
-        !integrationList.length &&
+        !isSuperadmin &&
+        !hasCodeProviderLinked &&
         item.name !== SideBarItems.MANAGE_INTEGRATIONS
       )
         return false;
@@ -46,7 +62,7 @@ export const useFilteredSidebarItems = () => {
         items: itemsFilter(section.items)
       }))
       .filter((section) => section.items?.length);
-  }, [flagFilteredMenuItems, integrationList]);
+  }, [flagFilteredMenuItems, hasCodeProviderLinked, isSuperadmin]);
 
   return sidebarItems;
 };

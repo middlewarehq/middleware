@@ -1,12 +1,13 @@
 import { ArrowForwardRounded, WarningAmberRounded } from '@mui/icons-material';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
-import { alpha, Button, Chip, darken, List, ListItem } from '@mui/material';
+import { Button, Chip, darken, List, ListItem } from '@mui/material';
 import Link from 'next/link';
 import pluralize from 'pluralize';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
@@ -14,14 +15,20 @@ import { track } from '@/constants/events';
 import { ROUTES } from '@/constants/routes';
 import { isRoleLessThanEM } from '@/constants/useRoute';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
-import { usePropsForChangeTimeCard } from '@/content/DoraMetrics/DoraCards/sharedHooks';
+import {
+  doraCardTrendSeries,
+  useDoraCardChartOptions,
+  usePropsForChangeTimeCard
+} from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useSelector } from '@/store';
 import { ChangeTimeModes } from '@/types/resources';
+import { benchmarkCaption } from '@/utils/benchmarks';
 import { merge } from '@/utils/datatype';
 import { getDurationString, getSortedDatesAsArrayFromMap } from '@/utils/date';
 
@@ -30,33 +37,11 @@ import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
 
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
-
 export const ChangeTimeCard = () => {
   const { addPage } = useOverlayPage();
   const { role } = useAuth();
   const isEng = isRoleLessThanEM(role);
+  const selectedContributors = useSelectedContributors();
 
   const {
     reposCountWithWorkflowConfigured,
@@ -75,6 +60,10 @@ export const ChangeTimeCard = () => {
     ]
   );
 
+  const leadTimeBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.lead_time
+  );
+
   const isCodeProviderIntegrationEnabled = true;
 
   const showClassificationBadge =
@@ -85,23 +74,70 @@ export const ChangeTimeCard = () => {
     prevLeadTimeTrendsData
   );
 
+  const leadTimeValues = useMemo(
+    () =>
+      getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map(
+        (key) => mergedLeadTimeTrends[key].lead_time
+      ),
+    [mergedLeadTimeTrends]
+  );
+
   const series = useMemo(
-    () => [
-      {
-        label: 'Lead Time',
-        fill: 'start',
-        data: getSortedDatesAsArrayFromMap(mergedLeadTimeTrends).map(
-          (key) => mergedLeadTimeTrends[key].lead_time
-        ),
-        backgroundColor: activeModeProps.backgroundColor,
-        borderColor: alpha(activeModeProps.backgroundColor, 0.5),
-        lineTension: 0.2
-      }
-    ],
-    [activeModeProps.backgroundColor, mergedLeadTimeTrends]
+    () =>
+      doraCardTrendSeries(
+        'Lead Time',
+        leadTimeValues,
+        activeModeProps.backgroundColor
+      ),
+    [activeModeProps.backgroundColor, leadTimeValues]
+  );
+
+  const weekLabels = useMemo(
+    () => getSortedDatesAsArrayFromMap(mergedLeadTimeTrends),
+    [mergedLeadTimeTrends]
+  );
+  const formatLeadTime = useCallback(
+    (value: number) => getDurationString(value) || '0',
+    []
+  );
+
+  // CLUSTOX: the band is only built when the chart itself is on screen. With
+  // insufficient data the card renders NoDataImg instead, and a band drawn
+  // over a placeholder would be comparing a real target against nothing.
+  const chartOptions = useDoraCardChartOptions(
+    isSufficientDataAvailable
+      ? {
+          metric: 'lead_time',
+          target: leadTimeBenchmark?.target,
+          // CLUSTOX: seconds on both sides -- `activeModeProps.count` and the
+          // plotted `lead_time` trend are both raw seconds, and the target is
+          // stored in seconds too. Nothing to convert here, unlike
+          // Deployment Frequency.
+          actual: activeModeProps.count,
+          values: leadTimeValues
+        }
+      : null,
+    { labels: weekLabels, format: formatLeadTime }
   );
 
   const leadTimeDuration = useCountUp(activeModeProps.count || 0);
+
+  // CLUSTOX: gated on isSufficientDataAvailable -- same guard the card
+  // already uses to decide between the chart and "Insufficient data". A
+  // target line/caption over a placeholder state would compare a real
+  // benchmark against a meaningless zero.
+  const leadTimeBenchmarkCaption = useMemo(
+    () =>
+      isSufficientDataAvailable && leadTimeBenchmark
+        ? benchmarkCaption(
+            'lead_time',
+            activeModeProps.count,
+            leadTimeBenchmark.target,
+            leadTimeBenchmark.source
+          )
+        : null,
+    [isSufficientDataAvailable, leadTimeBenchmark, activeModeProps.count]
+  );
 
   return (
     <CardRoot
@@ -270,6 +306,18 @@ export const ChangeTimeCard = () => {
             )}
           </FlexBox>
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: this card's number is filtered by PR author, while
+          // Deployment Frequency is filtered by deploy actor -- often a
+          // different person. Naming the relationship here is what keeps
+          // the two cards disagreeing from reading as a bug.
+          <Line small secondary paddingX={2} mt={-1}>
+            authored by {selectedContributors.join(', ')}
+          </Line>
+        )}
+        {leadTimeBenchmarkCaption && (
+          <BenchmarkVerdictPill caption={leadTimeBenchmarkCaption} />
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {isSufficientDataAvailable ? (
@@ -284,7 +332,19 @@ export const ChangeTimeCard = () => {
             )}
           </FlexBox>
 
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {isSufficientDataAvailable ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col>
                 <Line bigish medium color={activeModeProps.color}>

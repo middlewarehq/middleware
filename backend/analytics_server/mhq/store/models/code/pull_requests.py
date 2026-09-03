@@ -75,6 +75,21 @@ class PullRequest(db.Model):
     def username(self) -> str:
         return self.meta.get("user_profile", {}).get("username", "")
 
+    @property
+    def description(self) -> str:
+        """
+        The PR's own body text -- "body" on GitHub's payload,
+        "description" on GitLab's, provider-agnostically. CLUSTOX: Jira
+        integration -- ticket-PR matching (mhq/service/ticket_matching)
+        scans this in addition to title/branch, since real PRs
+        frequently reference their ticket(s) only here, under a
+        "Linked Issue(s)" section or similar -- see
+        docs/JIRA_INTEGRATION_PROPOSAL.md.
+        """
+        if not self.data:
+            return ""
+        return self.data.get("body") or self.data.get("description") or ""
+
 
 class PullRequestEvent(db.Model):
     __tablename__ = "PullRequestEvent"

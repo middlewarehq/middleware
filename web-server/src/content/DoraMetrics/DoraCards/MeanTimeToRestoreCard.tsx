@@ -1,55 +1,45 @@
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import { Chip } from '@mui/material';
 import { head } from 'ramda';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 
-import { Chart2, ChartOptions } from '@/components/Chart2';
+import { Chart2 } from '@/components/Chart2';
+import { useSelectedContributors } from '@/components/ContributorFilter';
 import { FlexBox } from '@/components/FlexBox';
 import { useOverlayPage } from '@/components/OverlayPageContext';
 import { Line } from '@/components/Text';
 import { track } from '@/constants/events';
 import {
+  BenchmarkVerdictPill,
   CardRoot,
   NoDataImg
 } from '@/content/DoraMetrics/DoraCards/sharedComponents';
 import { useCountUp } from '@/hooks/useCountUp';
 import { useDoraMetricsGraph } from '@/hooks/useDoraMetricsGraph';
+import { useSelector } from '@/store';
+import {
+  benchmarkCaption,
+  benchmarkSourceLabel,
+  formatBenchmarkValue
+} from '@/utils/benchmarks';
 import { getDurationString } from '@/utils/date';
 
 import { NoIncidentsLabel } from './NoIncidentsLabel';
-import { useMeanTimeToRestoreProps } from './sharedHooks';
+import {
+  doraCardTrendSeries,
+  useDoraCardChartOptions,
+  useMeanTimeToRestoreProps
+} from './sharedHooks';
 
 import { DoraMetricsComparisonPill } from '../DoraMetricsComparisonPill';
 import { getDoraLink } from '../getDoraLink';
 import { MetricExternalRead } from '../MetricExternalRead';
 import { MissingDORAProviderLink } from '../MissingDORAProviderLink';
 
-const chartOptions = {
-  options: {
-    scales: {
-      x: {
-        display: false
-      },
-      y: {
-        display: false
-      }
-    },
-    events: [],
-    plugins: {
-      zoom: {
-        zoom: {
-          drag: {
-            enabled: false
-          }
-        }
-      }
-    }
-  }
-} as ChartOptions;
-
 export const MeanTimeToRestoreCard = () => {
   const { isNoDataAvailable, ...meanTimeToRestoreProps } =
     useMeanTimeToRestoreProps();
+  const selectedContributors = useSelectedContributors();
 
   const { trendsSeriesMap } = useDoraMetricsGraph();
   const isIncidentProviderIntegrationEnabled = true;
@@ -60,24 +50,88 @@ export const MeanTimeToRestoreCard = () => {
   const showClassificationBadge =
     isIncidentProviderIntegrationEnabled && !isNoDataAvailable;
 
+  const meanTimeToRestoreValues = useMemo(
+    () =>
+      head(trendsSeriesMap?.meanTimeToRestoreTrends || [])?.data.map(
+        (s) => s.y
+      ) || [],
+    [trendsSeriesMap?.meanTimeToRestoreTrends]
+  );
+
   const series = useMemo(
-    () => [
-      {
-        label: 'Mean time to restore',
-        fill: 'start',
-        data: head(trendsSeriesMap?.meanTimeToRestoreTrends || [])?.data.map(
-          (s) => s.y
-        ),
-        backgroundColor: meanTimeToRestoreProps.backgroundColor
-      }
-    ],
-    [
-      trendsSeriesMap?.meanTimeToRestoreTrends,
-      meanTimeToRestoreProps.backgroundColor
-    ]
+    () =>
+      doraCardTrendSeries(
+        'Mean time to restore',
+        meanTimeToRestoreValues,
+        meanTimeToRestoreProps.backgroundColor
+      ),
+    [meanTimeToRestoreValues, meanTimeToRestoreProps.backgroundColor]
+  );
+
+  const weekLabels = useMemo(
+    () =>
+      head(trendsSeriesMap?.meanTimeToRestoreTrends || [])?.data.map((s) =>
+        String(s.x)
+      ) || [],
+    [trendsSeriesMap?.meanTimeToRestoreTrends]
+  );
+  const formatMttr = useCallback(
+    (value: number) => getDurationString(value) || '0s',
+    []
   );
 
   const meanTimeToRestoreCount = useCountUp(meanTimeToRestoreProps.count || 0);
+
+  const meanTimeToRecoveryBenchmark = useSelector(
+    (s) => s.doraMetrics.metrics_summary?.benchmarks?.mean_time_to_recovery
+  );
+
+  // CLUSTOX: `canShowMTRData` is NOT sufficient to gate a comparison. It comes
+  // from `isNoDataAvailable`, which mixes periods --
+  // `!incidents && !prevAvgTimeToRestore && !currAvgTimeToRestore` -- so a team
+  // with zero incidents THIS period but any recovery time LAST period passes
+  // it. `count` is then null, `null <= target` is true in JS, and the card
+  // rendered a green "0s is under target" beside its own "No incidents
+  // reported" headline: two contradictory claims in one card, and a
+  // congratulation for a period with nothing measured.
+  //
+  // A recovery time exists only if something was recovered, so the comparison
+  // needs a measured value, not merely a card that is not blank.
+  const hasMeasuredRecovery =
+    meanTimeToRestoreProps.count != null && meanTimeToRestoreProps.count > 0;
+  const canCompareMTTR = canShowMTRData && hasMeasuredRecovery;
+
+  const meanTimeToRecoveryBenchmarkCaption = useMemo(
+    () =>
+      canCompareMTTR && meanTimeToRecoveryBenchmark
+        ? benchmarkCaption(
+            'mean_time_to_recovery',
+            meanTimeToRestoreProps.count,
+            meanTimeToRecoveryBenchmark.target,
+            meanTimeToRecoveryBenchmark.source
+          )
+        : null,
+    [canCompareMTTR, meanTimeToRecoveryBenchmark, meanTimeToRestoreProps.count]
+  );
+
+  // CLUSTOX: the opposite call to Change Failure Rate's, deliberately. Zero
+  // incidents there is a real 0% -- here it means there is no recovery time to
+  // measure at all, so there is nothing to shade a band against and no side of
+  // the target the team can be said to be on. The card names the target
+  // instead (below), so an admin can still see one is configured.
+  const meanTimeToRestoreChartOptions = useDoraCardChartOptions(
+    canCompareMTTR
+      ? {
+          metric: 'mean_time_to_recovery',
+          target: meanTimeToRecoveryBenchmark?.target,
+          // CLUSTOX: seconds throughout -- the stat, the plotted trend and the
+          // stored target are all raw seconds.
+          actual: meanTimeToRestoreProps.count,
+          values: meanTimeToRestoreValues
+        }
+      : null,
+    { labels: weekLabels, format: formatMttr }
+  );
 
   const { addPage } = useOverlayPage();
 
@@ -144,6 +198,16 @@ export const MeanTimeToRestoreCard = () => {
             )}
           </FlexBox>
         </FlexBox>
+        {Boolean(selectedContributors.length) && (
+          // CLUSTOX: see the matching note on ChangeFailureRateCard -- MTTR
+          // has no per-contributor breakdown yet either.
+          <Line small secondary paddingX={2} mt={-1}>
+            team-wide — per-contributor arrives with Jira
+          </Line>
+        )}
+        {meanTimeToRecoveryBenchmarkCaption && (
+          <BenchmarkVerdictPill caption={meanTimeToRecoveryBenchmarkCaption} />
+        )}
         <FlexBox col justifyBetween relative fullWidth flexGrow={1}>
           <FlexBox height={'100%'} sx={{ justifyContent: 'flex-end' }}>
             {canShowMTRData ? (
@@ -151,13 +215,25 @@ export const MeanTimeToRestoreCard = () => {
                 id="mttr-frequency"
                 type="line"
                 series={series}
-                options={chartOptions}
+                options={meanTimeToRestoreChartOptions}
               />
             ) : (
               <NoDataImg />
             )}
           </FlexBox>
-          <FlexBox position="absolute" fill col paddingX={2} gap1 justifyCenter>
+          {/* CLUSTOX: pointer events pass through to the canvas so the
+              chart's tooltip can fire; the content column re-enables them so
+              its own pills, links and tooltips keep working. Card click is
+              unaffected -- it lives on CardRoot, above both. */}
+          <FlexBox
+            position="absolute"
+            fill
+            col
+            paddingX={2}
+            gap1
+            justifyCenter
+            sx={{ pointerEvents: 'none', '& > *': { pointerEvents: 'auto' } }}
+          >
             {canShowMTRData ? (
               <FlexBox justifyCenter sx={{ width: '100%' }} col gap1>
                 <Line bigish medium color={meanTimeToRestoreProps.color}>
@@ -176,17 +252,45 @@ export const MeanTimeToRestoreCard = () => {
                       <NoIncidentsLabel />
                     )}
                   </Line>
-                  <DoraMetricsComparisonPill
-                    val={meanTimeToRestoreProps.count}
-                    against={meanTimeToRestoreProps.prevCount}
-                    prevFormat={(val) => `${getDurationString(val) || 0}`}
-                    positive={false}
-                    boxed
-                    light
-                    size="1.2em"
-                    lineProps={{ bold: false, fontWeight: 600 }}
-                    sx={{ marginBottom: '-8px' }}
-                  />
+                  {/* CLUSTOX: the target-only line also has to be reachable
+                      HERE, not just in the `!canShowMTRData` branch below.
+                      That branch is unreachable when the previous period had
+                      incidents and this one did not -- exactly the state where
+                      a target exists and nothing can be compared to it. */}
+                  {!hasMeasuredRecovery &&
+                    meanTimeToRecoveryBenchmark?.target != null && (
+                      <Line tiny secondary>
+                        target{' '}
+                        {formatBenchmarkValue(
+                          'mean_time_to_recovery',
+                          meanTimeToRecoveryBenchmark.target
+                        )}
+                        {' — '}
+                        {benchmarkSourceLabel(
+                          meanTimeToRecoveryBenchmark.source
+                        )}
+                      </Line>
+                    )}
+                  {/* CLUSTOX: same gate as the band and caption. With no
+                      incidents this period against a recovery time last
+                      period, this computed -100% and -- because MTTR is
+                      lower-is-better, so `positive={false}` inverts the tone --
+                      painted it green, next to a headline reading "No
+                      incidents reported". Nothing was recovered faster; there
+                      was nothing to recover. */}
+                  {hasMeasuredRecovery && (
+                    <DoraMetricsComparisonPill
+                      val={meanTimeToRestoreProps.count}
+                      against={meanTimeToRestoreProps.prevCount}
+                      prevFormat={(val) => `${getDurationString(val) || 0}`}
+                      positive={false}
+                      boxed
+                      light
+                      size="1.2em"
+                      lineProps={{ bold: false, fontWeight: 600 }}
+                      sx={{ marginBottom: '-8px' }}
+                    />
+                  )}
                 </FlexBox>
 
                 <Line
@@ -217,6 +321,21 @@ export const MeanTimeToRestoreCard = () => {
                 <FlexBox col width={'50%'}>
                   <Line huge>No incidents reported</Line>
                   <Line small>Hence Time to Recovery is unavailable </Line>
+                  {/* CLUSTOX: grey and target-only -- it states that a
+                      benchmark exists without claiming the team met or missed
+                      it. There is no measurement here to compare against, so
+                      any tone at all would be inventing a verdict. */}
+                  {meanTimeToRecoveryBenchmark?.target != null && (
+                    <Line tiny secondary>
+                      target{' '}
+                      {formatBenchmarkValue(
+                        'mean_time_to_recovery',
+                        meanTimeToRecoveryBenchmark.target
+                      )}
+                      {' — '}
+                      {benchmarkSourceLabel(meanTimeToRecoveryBenchmark.source)}
+                    </Line>
+                  )}
                 </FlexBox>
               </FlexBox>
             ) : (

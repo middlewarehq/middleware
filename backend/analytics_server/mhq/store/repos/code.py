@@ -1,9 +1,9 @@
 from datetime import datetime
 from operator import and_
-from typing import Optional, List
+from typing import Dict, Optional, List, Tuple
 
 from mhq.store.models.code.enums import CodeProvider
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from sqlalchemy.orm import defer
 from mhq.store.models.core import Team
 
@@ -21,6 +21,7 @@ from mhq.store.models.code import (
     BookmarkMergeToDeployBroker,
     CodeBookmarkType,
 )
+from mhq.utils.string import is_bot_author
 from mhq.utils.time import Interval
 
 
@@ -275,6 +276,21 @@ class CodeRepoService:
             .all()
         )
 
+    # CLUSTOX: every team that tracks this repo, not just one. DeploymentsService
+    # splits a *team's* repos on TeamRepos.deployment_type, so a repo shared by
+    # three teams has three rows and a Jenkins mapping that switched only one of
+    # them would report deployments to one team and nothing to the other two.
+    @rollback_on_exc
+    def get_active_team_repos_by_repo_id(self, repo_id: str) -> List[TeamRepos]:
+        return (
+            self._db.session.query(TeamRepos)
+            .filter(
+                TeamRepos.org_repo_id == repo_id,
+                TeamRepos.is_active.is_(True),
+            )
+            .all()
+        )
+
     @rollback_on_exc
     def get_active_org_repos_by_ids(self, repo_ids: List[str]) -> List[OrgRepo]:
         return (
@@ -359,12 +375,19 @@ class CodeRepoService:
 
     @rollback_on_exc
     def get_repos_by_idempotency_keys(
-        self, idempotency_keys: List[str]
+        self, org_id: str, idempotency_keys: List[str]
     ) -> List[OrgRepo]:
-
+        # CLUSTOX: scoped by org. A GitHub repo id is the same string in every
+        # workspace that links the repo, so an unscoped lookup returned another
+        # workspace's row -- and update_org_repos turned that into a permanent
+        # 500 on team save. Pairs with the migration replacing the global
+        # UNIQUE (idempotency_key) with UNIQUE (org_id, idempotency_key).
         return (
             self._db.session.query(OrgRepo)
-            .filter(OrgRepo.idempotency_key.in_(idempotency_keys))
+            .filter(
+                OrgRepo.org_id == org_id,
+                OrgRepo.idempotency_key.in_(idempotency_keys),
+            )
             .all()
         )
 
@@ -490,6 +513,37 @@ class CodeRepoService:
 
         return query.all()
 
+    @rollback_on_exc
+    def get_first_commit_at_by_pr_ids(self, pr_ids: List[str]) -> Dict[str, datetime]:
+        """
+        Each PR's own earliest recorded commit timestamp, keyed by pr_id.
+
+        CLUSTOX: Jira integration -- the extended Lead Time breakdown's
+        "ticket created -> first commit" segment (docs/
+        JIRA_INTEGRATION_PROPOSAL.md §6A) needs this real timestamp, not
+        PullRequest.first_commit_to_open (a duration measured to
+        ready-for-review time, which is *not* pr.created_at for a PR
+        that was opened as a draft -- see
+        CodeETLAnalyticsService.get_pr_performance). Deriving "first
+        commit at" as `pr.created_at - first_commit_to_open` would
+        silently be wrong for exactly those draft PRs, so this reads the
+        real PullRequestCommit rows instead. One batched query, not one
+        per PR.
+        """
+        if not pr_ids:
+            return {}
+
+        rows = (
+            self._db.session.query(
+                PullRequestCommit.pull_request_id,
+                func.min(PullRequestCommit.created_at),
+            )
+            .filter(PullRequestCommit.pull_request_id.in_(pr_ids))
+            .group_by(PullRequestCommit.pull_request_id)
+            .all()
+        )
+        return {str(pr_id): first_commit_at for pr_id, first_commit_at in rows}
+
     def _filter_prs_by_repo_ids(self, query, repo_ids: List[str]):
         return query.filter(PullRequest.repo_id.in_(repo_ids))
 
@@ -511,3 +565,33 @@ class CodeRepoService:
             ]
             return query.filter(or_(*conditions))
         return query
+
+    # CLUSTOX: distinct authors for the contributor filter, scoped to the
+    # repos and window currently on screen so the dropdown can never offer
+    # someone with no data in view.
+    def get_contributors_for_repos(
+        self, repo_ids: List[str], from_time: datetime, to_time: datetime
+    ) -> List[Tuple[str, int]]:
+        if not repo_ids:
+            return []
+
+        rows = (
+            self._db.session.query(
+                PullRequest.author, func.count(PullRequest.id).label("pr_count")
+            )
+            .filter(
+                PullRequest.repo_id.in_(repo_ids),
+                PullRequest.author.isnot(None),
+                PullRequest.state_changed_at.between(from_time, to_time),
+                # Merged only, matching _filter_prs_merged_in_interval. Every
+                # metric this dropdown filters counts merged PRs, so counting
+                # anything else here inflates the numbers next to each name
+                # and can offer someone whose Lead Time card comes back empty.
+                PullRequest.state == PullRequestState.MERGED,
+            )
+            .group_by(PullRequest.author)
+            .order_by(func.count(PullRequest.id).desc())
+            .all()
+        )
+
+        return [(author, count) for author, count in rows if not is_bot_author(author)]

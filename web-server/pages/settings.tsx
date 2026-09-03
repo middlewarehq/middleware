@@ -13,7 +13,11 @@ import { PageLayout } from '@/types/resources';
 
 function Settings() {
   useRedirectWithSession();
-  const { integrationList } = useAuth();
+  // CLUSTOX: hasCodeProviderLinked, not integrationList.length -- Content
+  // renders SyncDaysSetting, a code-repo sync-cadence control that has
+  // nothing to configure for a Jira-only org. See
+  // docs/JIRA_INTEGRATION_PROPOSAL.md.
+  const { hasCodeProviderLinked } = useAuth();
   const isLoading = useSelector(
     (s) => s.org.requests?.defaultSyncDays === FetchState.REQUEST
   );
@@ -31,7 +35,7 @@ function Settings() {
         showEvenIfNoTeamSelected={true}
         isLoading={isLoading}
       >
-        {integrationList.length > 0 && <Content />}
+        {hasCodeProviderLinked && <Content />}
       </PageWrapper>
     </>
   );

@@ -9,6 +9,7 @@ from voluptuous import Invalid
 from werkzeug.exceptions import BadRequest
 from mhq.store.models.code.repository import TeamRepos
 from mhq.service.code.models.org_repo import RawTeamOrgRepo
+from mhq.service.project.models.org_project import RawTeamOrgProject
 from mhq.store.models.code import WorkflowFilter, CodeProvider
 
 from mhq.service.workflows.workflow_filter import get_workflow_filter_processor
@@ -116,3 +117,17 @@ def coerce_team_repo(team_repo: Dict[str, str]) -> TeamRepos:
 
 def coerce_team_repos(repos: List[Dict[str, str]]) -> List[TeamRepos]:
     return [coerce_team_repo(repo) for repo in repos]
+
+
+def coerce_org_project(project: Dict[str, str]) -> RawTeamOrgProject:
+    return RawTeamOrgProject(
+        team_id=project.get("team_id"),
+        provider=project.get("provider"),
+        key=project.get("key"),
+        name=project.get("name"),
+        idempotency_key=project.get("idempotency_key"),
+    )
+
+
+def coerce_org_projects(projects: List[Dict[str, str]]) -> List[RawTeamOrgProject]:
+    return [coerce_org_project(project) for project in projects]

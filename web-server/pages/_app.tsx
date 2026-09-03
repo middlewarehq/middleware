@@ -2,7 +2,7 @@ import { CacheProvider, EmotionCache } from '@emotion/react';
 import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import Router from 'next/router';
+import Router, { useRouter } from 'next/router';
 import { SnackbarProvider } from 'notistack';
 import nProgress from 'nprogress';
 import { ReactElement, ReactNode } from 'react';
@@ -54,6 +54,10 @@ interface MyAppProps extends AppProps {
 function MyApp(props: MyAppProps) {
   const { Component, emotionCache = clientSideEmotionCache, pageProps } = props;
   const getLayout = Component.getLayout ?? ((page) => page);
+  // CLUSTOX: see the AuthConsumer gate below.
+  const pathname = useRouter().pathname;
+  const isLoginRoute =
+    pathname === '/login' || pathname === '/accept-invite';
   useScrollTop();
   const overrides = useFlagOverrides();
   useResizeEventTracking();
@@ -89,7 +93,12 @@ function MyApp(props: MyAppProps) {
                               <ImageUpdateBanner />
                               <AuthConsumer>
                                 {(auth) =>
-                                  !auth.isInitialized ? (
+                                  // CLUSTOX: the login page must render without
+                                  // auth context. AuthProvider initialises by
+                                  // fetching session data, which now requires a
+                                  // session -- so gating /login on it would wait
+                                  // forever for a login that can never happen.
+                                  !auth.isInitialized && !isLoginRoute ? (
                                     <Loader />
                                   ) : (
                                     getLayout(<Component {...pageProps} />)

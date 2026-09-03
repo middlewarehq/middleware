@@ -270,4 +270,43 @@ describe('getWorkFlowFiltersAsPayloadForSingleTeam', () => {
 
     expect(result).toEqual({ workflow_filter: { head_branches: ['^main$'] } });
   });
+
+  // CLUSTOX: contributor filter. These two cases pin the payload against the
+  // *backend's* parser rather than against this module's own output.
+  // `ParseWorkflowFilterProcessor.apply` in
+  // backend/analytics_server/mhq/service/workflows/workflow_filter.py reads
+  // the JSON blob it is handed and does `workflow_filter.get("event_actors")`
+  // on it -- the same level it reads `head_branches` from. That blob is the
+  // value of the `workflow_filter` query param, so `event_actors` must be a
+  // sibling of `head_branches`, never a sibling of `workflow_filter`. A
+  // top-level key would also be an extra query param, which the PREVENT_EXTRA
+  // voluptuous schema on /teams/<team_id>/deployment_frequency rejects with a
+  // 400.
+  it('should nest event_actors inside workflow_filter, where the backend parser reads it', async () => {
+    const result = await getWorkFlowFiltersAsPayloadForSingleTeam({
+      orgId: 'f48d7cce-25d4-41d1-903e-e09166677d92',
+      teamId: '18d934c1-2699-41bd-af64-c0394ba32fdf',
+      eventActors: ['octocat']
+    });
+
+    expect(result).toEqual({
+      workflow_filter: {
+        head_branches: ['^main$'],
+        event_actors: ['octocat']
+      }
+    });
+    // Guard the exact failure that shipped: a top-level sibling key is an
+    // unrecognised query param and 400s the whole deployment frequency call.
+    expect(result).not.toHaveProperty('event_actors');
+  });
+
+  it('should leave the payload unchanged when eventActors is omitted', async () => {
+    const result = await getWorkFlowFiltersAsPayloadForSingleTeam({
+      orgId: 'f48d7cce-25d4-41d1-903e-e09166677d92',
+      teamId: '18d934c1-2699-41bd-af64-c0394ba32fdf',
+      eventActors: []
+    });
+
+    expect(result).toEqual({ workflow_filter: { head_branches: ['^main$'] } });
+  });
 });

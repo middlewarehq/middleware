@@ -1,19 +1,42 @@
+from datetime import datetime
+
 from flask import Blueprint
 from typing import Any, Dict, List
 from voluptuous import Required, Schema, Optional, All, Coerce
 from werkzeug.exceptions import BadRequest
 from mhq.store.models.code.repository import OrgRepo, TeamRepos
 from mhq.service.code.models.org_repo import RawTeamOrgRepo
+from mhq.service.project.models.org_project import RawTeamOrgProject
 from mhq.api.resources.code_resouces import (
     adapt_team_repos,
     adapt_team_repo_and_org_repo,
 )
+from mhq.api.resources.project_resources import adapt_org_projects
+from mhq.api.resources.ticket_insights_resources import (
+    adapt_ticket_insights,
+    adapt_unlinked_prs,
+)
+from mhq.api.resources.ticket_lead_time_resources import (
+    adapt_ticket_lead_time_metrics,
+)
+from mhq.api.resources.sprint_resources import adapt_sprints
 from mhq.service.code.repository_service import get_repository_service
+from mhq.service.code.ticket_lead_time import get_ticket_lead_time_service
+from mhq.service.project.repository_service import get_project_service
+from mhq.service.sprints import get_sprint_service
+from mhq.service.ticket_insights import get_ticket_insights_service
 from mhq.api.resources.core_resources import adapt_team
 from mhq.store.models.core.teams import Team
+from mhq.store.models.projects import OrgProject
 from mhq.service.core.teams import get_team_service
 
-from mhq.api.request_utils import coerce_org_repos, coerce_team_repos, dataschema
+from mhq.api.request_utils import (
+    coerce_org_repos,
+    coerce_org_projects,
+    coerce_team_repos,
+    dataschema,
+    queryschema,
+)
 from mhq.service.query_validator import get_query_validator
 
 app = Blueprint("teams", __name__)
@@ -156,3 +179,136 @@ def patch_team_repos_mapping(team_id: str, team_repos_data: List[TeamRepos]):
     team_repos_service = get_repository_service()
     team_repos = team_repos_service.patch_team_repos_mapping(team, team_repos_data)
     return adapt_team_repos(team_repos)
+
+
+# CLUSTOX: Jira integration, Phase 2 (project selection) -- a team's chosen
+# Jira project(s), same "GET the current set / PUT the full replacement set"
+# shape as /teams/<team_id>/repos above. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md.
+@app.route("/teams/<team_id>/projects", methods={"GET"})
+def fetch_team_projects(team_id: str):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    project_service = get_project_service()
+    team_org_projects: List[OrgProject] = project_service.get_team_projects(team)
+
+    return adapt_org_projects(team_org_projects)
+
+
+@app.route("/teams/<team_id>/projects", methods={"PUT"})
+@dataschema(
+    Schema(
+        {
+            Required("projects"): All(list, Coerce(coerce_org_projects)),
+        }
+    ),
+)
+def update_team_projects(team_id: str, projects: List[RawTeamOrgProject]):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    project_service = get_project_service()
+    updated_org_projects = project_service.update_team_projects(team, projects)
+
+    return adapt_org_projects(updated_org_projects)
+
+
+# CLUSTOX: Jira integration, Phase 4 (§6C/§6E) -- the DORA Metrics page's
+# ticket-cycle-time widget and "N PRs merged with no linked ticket"
+# callout. Deliberately its own read-only endpoint, not folded into the
+# existing dora_metrics/deployment_analytics ones -- keeps this additive
+# to the 4 existing DORA cards rather than touching their code. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md.
+@app.route("/teams/<team_id>/ticket_insights", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_ticket_insights(team_id: str, from_time: datetime, to_time: datetime):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+    interval = query_validator.interval_validator(from_time, to_time)
+
+    ticket_insights_service = get_ticket_insights_service()
+    insights = ticket_insights_service.get_team_ticket_insights(team, interval)
+
+    return adapt_ticket_insights(insights)
+
+
+# CLUSTOX: Jira integration, Phase 4 (§6E) -- the Data Hygiene card's
+# drill-down. Its own route/fetch, not folded into ticket_insights above:
+# that one loads on every DORA Metrics page view, this one only when
+# someone actually opens the unmatched-PRs list. See
+# docs/JIRA_INTEGRATION_PROPOSAL.md.
+@app.route("/teams/<team_id>/unlinked_prs", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_unlinked_prs(team_id: str, from_time: datetime, to_time: datetime):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+    interval = query_validator.interval_validator(from_time, to_time)
+
+    ticket_insights_service = get_ticket_insights_service()
+    prs = ticket_insights_service.get_team_unlinked_prs(team, interval)
+
+    return adapt_unlinked_prs(prs)
+
+
+# CLUSTOX: Jira integration -- the extended Lead Time breakdown's
+# "ticket created -> first commit" leading phase (docs/
+# JIRA_INTEGRATION_PROPOSAL.md §6A). Its own route, not a change to
+# /teams/<team_id>/lead_time above: that one's response and the plain
+# DORA "Lead Time for Changes" card that depends on it stay exactly as
+# they are. See TicketLeadTimeMetrics for why this is a separate,
+# matched-subset-only average rather than a new field mixed into the
+# org-wide one.
+@app.route("/teams/<team_id>/ticket_lead_time", methods={"GET"})
+@queryschema(
+    Schema(
+        {
+            Required("from_time"): All(str, Coerce(datetime.fromisoformat)),
+            Required("to_time"): All(str, Coerce(datetime.fromisoformat)),
+        }
+    ),
+)
+def get_team_ticket_lead_time(team_id: str, from_time: datetime, to_time: datetime):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+    interval = query_validator.interval_validator(from_time, to_time)
+
+    ticket_lead_time_service = get_ticket_lead_time_service()
+    metrics = ticket_lead_time_service.get_team_ticket_lead_time_metrics(team, interval)
+
+    return adapt_ticket_lead_time_metrics(metrics)
+
+
+# CLUSTOX: Jira integration -- the Sprint rollup chart (docs/
+# JIRA_INTEGRATION_PROPOSAL.md §6D). No date-range params -- a sprint's
+# own start/end dates are its natural window, unlike the DORA Metrics
+# page's selected period.
+@app.route("/teams/<team_id>/sprints", methods={"GET"})
+def get_team_sprints(team_id: str):
+
+    query_validator = get_query_validator()
+    team: Team = query_validator.team_validator(team_id)
+
+    sprint_service = get_sprint_service()
+    sprints = sprint_service.get_team_sprints(team)
+
+    return adapt_sprints(sprints)

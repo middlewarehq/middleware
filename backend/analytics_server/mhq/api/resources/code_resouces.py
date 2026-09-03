@@ -1,4 +1,5 @@
 from typing import Dict, List
+from mhq.service.code.loc import LOCMetrics
 from mhq.service.code.models.lead_time import LeadTimeMetrics
 from mhq.api.resources.core_resources import adapt_user_info
 from mhq.store.models.code import PullRequest, OrgRepo, TeamRepos
@@ -118,6 +119,16 @@ def adapt_lead_time_metrics(lead_time_metric: LeadTimeMetrics) -> Dict[str, any]
         "merge_time": lead_time_metric.merge_time,
         "merge_to_deploy": lead_time_metric.merge_to_deploy,
         "pr_count": lead_time_metric.pr_count,
+    }
+
+
+def adapt_loc_metrics(loc_metrics: LOCMetrics) -> Dict[str, any]:
+    return {
+        "additions": loc_metrics.additions,
+        "deletions": loc_metrics.deletions,
+        "total": loc_metrics.additions + loc_metrics.deletions,
+        "avg_pr_size": loc_metrics.avg_pr_size,
+        "avg_daily": loc_metrics.avg_daily,
     }
 
 

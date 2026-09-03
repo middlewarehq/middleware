@@ -49,6 +49,11 @@ const genericPlugins = [
 ];
 
 const staticOverrides = {
+  // CLUSTOX: knex resolves dialects dynamically, which webpack cannot bundle.
+  // Without this the instrumentation hook (superadmin bootstrap) fails to
+  // compile. API routes were unaffected, so this only surfaced once
+  // instrumentation.ts started importing the db helper.
+  serverExternalPackages: ['knex', 'pg'],
   staticPageGenerationTimeout: 2000,
   images: {
     disableStaticImages: true

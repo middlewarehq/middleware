@@ -31,6 +31,18 @@ export const internalSyncServer = axios.create({
   baseURL: process.env.INTERNAL_SYNC_API_BASE_URL
 });
 
+// CLUSTOX: the Flask servers reject any request without this shared secret.
+// Stamped here because every outbound call funnels through these two
+// instances, so there is no route that can forget it.
+const internalTokenInterceptor = (req: any) => {
+  req.headers = req.headers || {};
+  req.headers['X-Internal-Token'] = process.env.INTERNAL_API_TOKEN;
+  return req;
+};
+
+internal.interceptors.request.use(internalTokenInterceptor);
+internalSyncServer.interceptors.request.use(internalTokenInterceptor);
+
 axiosRetry(internal, {
   retries: 2,
   retryCondition(error) {

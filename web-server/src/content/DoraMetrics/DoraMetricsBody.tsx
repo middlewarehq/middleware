@@ -17,6 +17,8 @@ import { ROUTES } from '@/constants/routes';
 import { FetchState } from '@/constants/ui-states';
 import { useDoraStats } from '@/content/DoraMetrics/DoraCards/sharedHooks';
 import { useAuth } from '@/hooks/useAuth';
+// CLUSTOX: contributor filter -- shared fetch arguments, see the hook's note.
+import { useDoraMetricsFetchArgs } from '@/hooks/useDoraMetricsFetchArgs';
 import { useBoolState } from '@/hooks/useEasyState';
 import { usePageRefreshCallback } from '@/hooks/usePageRefreshCallback';
 import {
@@ -31,19 +33,29 @@ import { getRandomLoadMsg } from '@/utils/loading-messages';
 import { ClassificationPills } from './ClassificationPills';
 import { ChangeFailureRateCard } from './DoraCards/ChangeFailureRateCard';
 import { ChangeTimeCard } from './DoraCards/ChangeTimeCard';
+import { LeadTimeBreakdownCard } from './DoraCards/LeadTimeBreakdownCard';
+import { LinesOfCodeCard } from './DoraCards/LinesOfCodeCard';
 import { MeanTimeToRestoreCard } from './DoraCards/MeanTimeToRestoreCard';
 import { DataStillSyncing } from './DoraCards/SkeletalCard';
+import { SprintRollupCard } from './DoraCards/SprintRollupCard';
+import {
+  DataHygieneCard,
+  TicketCycleTimeCard,
+  useTicketInsights
+} from './DoraCards/TicketCycleTimeCard';
 import { WeeklyDeliveryVolumeCard } from './DoraCards/WeeklyDeliveryVolumeCard';
 
 export const DoraMetricsBody = () => {
   const dispatch = useDispatch();
-  const { orgId, integrationList } = useAuth();
+  const { integrationList } = useAuth();
   const isCodeProviderIntegrated = useMemo(
     () => integrationList.length > 0,
     [integrationList.length]
   );
-  const { singleTeamId, dates } = useSingleTeamConfig();
   const branchPayloadForPrFilters = useBranchesForPrFilters();
+  // CLUSTOX: contributor filter -- org/team/date/contributor arguments come
+  // from one shared hook so every refetch path carries the selection.
+  const doraMetricsFetchArgs = useDoraMetricsFetchArgs();
   const isLoading = useSelector(
     (s) => s.doraMetrics.requests?.metrics_summary === FetchState.REQUEST
   );
@@ -61,7 +73,16 @@ export const DoraMetricsBody = () => {
         .incident_count &&
       !s.doraMetrics.metrics_summary?.lead_time_stats.current.lead_time &&
       !s.doraMetrics.metrics_summary?.deployment_frequency_stats.current
-        .avg_deployment_frequency
+        .avg_deployment_frequency &&
+      // CLUSTOX: lines of code counts as insight too. A team that merges PRs
+      // but has no deployment or incident provider wired up has real, non-zero
+      // LOC and would otherwise have the whole grid -- including its own
+      // populated card -- replaced by "nothing to show yet".
+      //
+      // Additive: one more `&&` can only make this predicate FALSE more often,
+      // so it can only show the grid where it was previously hidden. No team
+      // that sees the dashboard today can start seeing the empty state.
+      !s.doraMetrics.metrics_summary?.loc_stats?.current.total
   );
 
   const { addPage } = useOverlayPage();
@@ -69,19 +90,13 @@ export const DoraMetricsBody = () => {
   useEffect(() => {
     dispatch(
       fetchTeamDoraMetrics({
-        orgId,
-        teamId: singleTeamId,
-        fromDate: dates.start,
-        toDate: dates.end,
+        ...doraMetricsFetchArgs,
         ...branchPayloadForPrFilters
       })
     );
   }, [
-    dates.end,
-    dates.start,
     dispatch,
-    orgId,
-    singleTeamId,
+    doraMetricsFetchArgs,
     isCodeProviderIntegrated,
     branchPayloadForPrFilters
   ]);
@@ -89,6 +104,12 @@ export const DoraMetricsBody = () => {
   const stats = useDoraStats();
 
   const { isSyncing } = useSyncedRepos();
+
+  // CLUSTOX: Jira integration -- one fetch, shared as props between
+  // TicketCycleTimeCard and DataHygieneCard, which now live in
+  // different spots on the page (see the layout below) instead of one
+  // stacked inside the other. See TicketCycleTimeCard.tsx's own note.
+  const ticketInsights = useTicketInsights();
 
   if (isErrored)
     return (
@@ -155,8 +176,56 @@ export const DoraMetricsBody = () => {
         <Grid item xs={12} md={6} order={4}>
           <MeanTimeToRestoreCard />
         </Grid>
+        {/* CLUSTOX: slot five. Slot six is deliberately left empty -- an empty
+            cell reads as room for more, whereas a "coming soon" tile reads as
+            unfinished. At `md` and below the container is already
+            single-column, so nothing above this reflows. */}
+        <Grid item xs={12} md={6} order={5}>
+          <LinesOfCodeCard />
+        </Grid>
       </Grid>
       <Divider />
+      {/* CLUSTOX: Jira integration, Phase 4 -- additive only, doesn't
+          touch the 4 cards above. Renders nothing of its own accord when
+          Jira isn't linked or there's no ticket data for this
+          team/period. See docs/JIRA_INTEGRATION_PROPOSAL.md. */}
+      <LeadTimeBreakdownCard />
+      {/* Side by side, not stacked -- matches the design reference's own
+          two-col layout: Ticket Cycle Time on the left, Sprint rollup on
+          the right. Each wrapped in its own flex-sized FlexBox rather
+          than passing a prop into either card: both already
+          independently render null on their own gating, and neither
+          needed a props-API change for a purely external layout
+          concern.
+
+          alignItems="flex-start", not the default stretch: CardRoot
+          (shared by every DORA card) is height="100%" of its immediate
+          wrapper, so without this, whichever column is naturally taller
+          stretches the other one's wrapper to match, and that shorter
+          card's CardRoot fills the extra height with blank space at the
+          bottom instead of ending where its own content does. */}
+      <FlexBox gap={2} flexWrap="wrap" alignItems="flex-start">
+        <FlexBox flex="1.3" minWidth="360px">
+          <TicketCycleTimeCard
+            isJiraLinked={ticketInsights.isJiraLinked}
+            isLoading={ticketInsights.isLoading}
+            insights={ticketInsights.insights}
+          />
+        </FlexBox>
+        <FlexBox flex={1} minWidth="320px">
+          <SprintRollupCard />
+        </FlexBox>
+      </FlexBox>
+      {/* Its own full-width row, not stacked inside Ticket Cycle Time's
+          column above -- matches the design reference. Renders nothing
+          of its own accord when every merged PR is linked. */}
+      <DataHygieneCard
+        isJiraLinked={ticketInsights.isJiraLinked}
+        isLoading={ticketInsights.isLoading}
+        insights={ticketInsights.insights}
+        teamId={ticketInsights.singleTeamId}
+        dates={ticketInsights.dates}
+      />
       <FlexBox col gap1 flexGrow={1}>
         <FlexBox gap={4}>
           <FlexBox col width="150px">

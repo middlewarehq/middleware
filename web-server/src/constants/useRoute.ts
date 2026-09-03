@@ -2,6 +2,8 @@ import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 
 import { useAuth } from '@/hooks/useAuth';
+// CLUSTOX: a SuperAdmin is not subject to workspace onboarding gates.
+import { useClustoxUser } from '@/hooks/useClustoxUser';
 import { OnboardingStep, UserRole } from '@/types/resources';
 
 import { ROUTES } from './routes';
@@ -14,6 +16,11 @@ export const useRedirectWithSession = () => {
   const defaultRoute = useDefaultRoute();
   const router = useRouter();
   const { org, orgId, onboardingState } = useAuth();
+  // CLUSTOX: a SuperAdmin owns no workspace of their own, so the onboarding
+  // gates below (welcome screen, integration linked, team created) describe a
+  // workspace they are merely viewing. Forcing them through those would leave
+  // them unable to reach user management or the workspace switcher.
+  const { isSuperadmin } = useClustoxUser();
 
   const isOrgWelcomed = onboardingState.includes(OnboardingStep.WELCOME_SCREEN);
 
@@ -28,6 +35,7 @@ export const useRedirectWithSession = () => {
 
   useEffect(() => {
     if (!router.isReady) return;
+    if (isSuperadmin) return;
     if (!isOrgWelcomed) {
       router.replace(ROUTES.WELCOME.PATH);
       return;
@@ -51,6 +59,7 @@ export const useRedirectWithSession = () => {
     defaultRoute.PATH,
     isOneCodeProviderIntegrated,
     isOrgWelcomed,
+    isSuperadmin,
     orgId,
     router
   ]);

@@ -14,8 +14,10 @@ const getSchema = yup.object().shape({
 
 endpoint.handle.GET(getSchema, async (req, res) => {
   const { org_id } = req.payload;
+  // CLUSTOX: integrations are per workspace. Endpoint.serve() has already
+  // checked the caller may access this org_id.
   const [integrationsLinkedAtMap, codeProviderLastSyncedAt] = await Promise.all(
-    [getOrgIntegrations(), getLastSyncedAtForCodeProvider(org_id)]
+    [getOrgIntegrations(org_id), getLastSyncedAtForCodeProvider(org_id)]
   );
   const integrations = {} as IntegrationsMap;
   Object.entries(integrationsLinkedAtMap).forEach(
