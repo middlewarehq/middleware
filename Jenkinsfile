@@ -66,6 +66,104 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                // CLUSTOX: placed before Build/Deploy on purpose -- this is a deploy
+                // pipeline, so the gate below has to be able to stop a release. It sits
+                // after Verify Environment so a missing .env variable still fails fast
+                // and cheaply, before spending a scan.
+                //
+                // The agent has Docker but no sonar-scanner CLI and no SonarQube Scanner
+                // tool installation, so the official scanner image is used.
+                // sonar.working.directory is redirected into the bind-mounted workspace:
+                // the image's baked-in /tmp/.scannerwork is owned by uid 1000 and
+                // unwritable under -u, and the override also lands report-task.txt where
+                // waitForQualityGate looks for it.
+                withSonarQubeEnv('MySonarQube') {
+                    sh '''
+                      docker run --rm \
+                        -u "$(id -u):$(id -g)" \
+                        -e SONAR_HOST_URL="$SONAR_HOST_URL" \
+                        -e SONAR_TOKEN="$SONAR_AUTH_TOKEN" \
+                        -e SONAR_USER_HOME=/tmp/.sonar \
+                        -v "$WORKSPACE:/usr/src" \
+                        -w /usr/src \
+                        sonarsource/sonar-scanner-cli:latest \
+                        -Dsonar.working.directory=/usr/src/.scannerwork \
+                        -Dsonar.projectVersion="${GIT_COMMIT:-$BUILD_NUMBER}"
+                    '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                // CLUSTOX: bounded wait. waitForQualityGate depends on SonarQube calling
+                // back to /sonarqube-webhook/; without the timeout a missed webhook would
+                // hang this stage until the build is killed, holding the deploy hostage.
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Fetch Sonar Issues') {
+            steps {
+                // CLUSTOX: reporting only -- catchError keeps a SonarQube outage or an
+                // expired token from blocking a deploy that already passed the gate. Uses
+                // the read-only token, not the scan credential, and sends it as an
+                // Authorization header so it cannot land in proxy or access logs.
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    withCredentials([string(credentialsId: 'sonarqube-readonly-token', variable: 'SONAR_RO_TOKEN')]) {
+                        sh '''
+                          set -eu
+                          PS=500
+                          TMP=$(mktemp -d)
+                          trap 'rm -rf "$TMP"' EXIT
+                          page=1
+                          while : ; do
+                            curl --fail --silent --show-error \
+                              -H "Authorization: Bearer $SONAR_RO_TOKEN" \
+                              -o "$TMP/page-$page.json" \
+                              "https://sonar.theclustox.com/api/issues/search?componentKeys=middleware&resolved=false&ps=$PS&p=$page"
+                            total=$(jq -r '.paging.total' "$TMP/page-$page.json")
+                            fetched=$(( page * PS ))
+                            echo "fetched page $page (up to $fetched of $total open issues)"
+                            [ "$fetched" -ge "$total" ] && break
+                            [ "$fetched" -ge 10000 ] && { echo "WARNING: capped at 10000 issues"; break; }
+                            page=$(( page + 1 ))
+                          done
+                          # The warnings-ng SonarQube parser sniffs the response format from
+                          # the top-level keys, so the merged document has to look like one
+                          # big api/issues/search page -- dropping total/p/ps makes it
+                          # silently parse to zero issues.
+                          jq -s '
+                            (map(.issues) | add)   as $iss |
+                            (.[0].paging.total)    as $tot |
+                            {
+                              total:       $tot,
+                              p:           1,
+                              ps:          ($iss | length),
+                              paging:      {pageIndex: 1, pageSize: ($iss | length), total: $tot},
+                              effortTotal: (map(.effortTotal // 0) | add),
+                              issues:      $iss,
+                              components:  (map(.components // []) | add | unique_by(.key))
+                            }' "$TMP"/page-*.json > sonar-issues.json
+                          echo "merged $(jq '.issues | length' sonar-issues.json) issues into sonar-issues.json"
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Publish Issue Report') {
+            steps {
+                catchError(buildResult: 'UNSTABLE', stageResult: 'FAILURE') {
+                    recordIssues(tools: [sonarQube(pattern: 'sonar-issues.json')])
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 // CLUSTOX: builds docker-compose.prod.yml, which uses the
