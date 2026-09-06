@@ -69,8 +69,8 @@ They are:
              -p 3333:3333 \
              -p 9696:9696 \
              -p 9697:9697 \
-             -v middleware_postgres_data:/var/lib/postgresql/data \
-             -v middleware_keys:/app/keys \
+             -v middleware_postgres_data:/var/lib/postgresql/15/main \
+             -v middleware_keys:/app/backend/analytics_server/mhq/config \
              -d middlewareeng/middleware:latest
   docker logs -f middleware
   ```
@@ -92,8 +92,8 @@ They are:
    docker rm -f middleware || true
    docker run --name middleware \
               -p 3333:3333 \
-              -v middleware_postgres_data:/var/lib/postgresql/data \
-              -v middleware_keys:/app/keys \
+              -v middleware_postgres_data:/var/lib/postgresql/15/main \
+              -v middleware_keys:/app/backend/analytics_server/mhq/config \
               -d middlewareeng/middleware:latest
    docker logs -f middleware
    ```
